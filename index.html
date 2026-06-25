@@ -412,49 +412,120 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
   </nav>
 </div>
 
-<script>
-// ── helpers ──
+<script type="module">
+// ── FIREBASE SETUP ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
+  authDomain: "arenax-c1586.firebaseapp.com",
+  projectId: "arenax-c1586",
+  storageBucket: "arenax-c1586.firebasestorage.app",
+  messagingSenderId: "1069776825982",
+  appId: "1:1069776825982:web:f2d7f11cef4c206206b22f",
+  measurementId: "G-G95P4JY3J1"
+};
+
+const fireApp = initializeApp(firebaseConfig);
+const auth = getAuth(fireApp);
+const googleProvider = new GoogleAuthProvider();
+
+// ── HELPERS ──
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false};
 
 function goTo(id){
-  document.querySelectorAll('.scr').forEach(s=>{
-    s.classList.remove('on');
-  });
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   $(id).classList.add('on');
 }
 
-// ── LOGIN ──
-$('bGoogle').onclick=()=>{
-  App.user={name:'Saad Rehman',handle:'@saad#2847',av:'https://api.dicebear.com/7.x/bottts/svg?seed=saad'};
-  App.guest=false; boot();
-};
-
-$('bEmail').onclick=()=>{
-  const em=$('iEmail').value.trim(), pw=$('iPass').value.trim();
-  if(!em){shake('iEmail');return}
-  if(!pw){shake('iPass');return}
-  const seed=em.replace(/[^a-z0-9]/gi,'');
-  App.user={name:em.split('@')[0],handle:'@'+em.split('@')[0]+'#'+Math.floor(1000+Math.random()*8999),av:`https://api.dicebear.com/7.x/bottts/svg?seed=${seed}`};
-  App.guest=false; boot();
-};
-
-function shake(id){
-  const el=$(id);
-  el.style.borderColor='#e8404a';
-  el.style.animation='sk .4s ease';
-  setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500);
+// ── LOADING STATE ──
+function setLoading(btnId, loading){
+  const btn=$(btnId);
+  if(!btn)return;
+  btn.disabled=loading;
+  btn.style.opacity=loading?'.6':'1';
 }
 
-$('bGuest').onclick=()=>$('mGuest').classList.remove('hide');
-$('bGBack').onclick=()=>$('mGuest').classList.add('hide');
-$('mGuest').onclick=e=>{if(e.target===$('mGuest'))$('mGuest').classList.add('hide')};
-$('bGConfirm').onclick=()=>{
-  $('mGuest').classList.add('hide');
-  const gid=Math.floor(1e5+Math.random()*9e5);
-  App.user={name:'Guest Player',handle:`@guest#${gid}`,av:`https://api.dicebear.com/7.x/bottts/svg?seed=g${gid}`};
-  App.guest=true; boot();
+function showLoginError(msg){
+  let err=$('loginErr');
+  if(!err){
+    err=document.createElement('div');
+    err.id='loginErr';
+    err.style.cssText='margin-top:12px;padding:10px 14px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.3);border-radius:8px;font-size:12.5px;color:#e8404a;text-align:center;animation:sk .4s ease';
+    document.querySelector('.lcard').appendChild(err);
+  }
+  err.textContent=msg;
+  setTimeout(()=>{if(err)err.textContent=''},4000);
+}
+
+// ── GOOGLE LOGIN ──
+$('bGoogle').onclick=async()=>{
+  setLoading('bGoogle',true);
+  try{
+    const result=await signInWithPopup(auth,googleProvider);
+    // onAuthStateChanged will handle boot
+  }catch(e){
+    setLoading('bGoogle',false);
+    if(e.code==='auth/popup-closed-by-user') return;
+    if(e.code==='auth/popup-blocked') showLoginError('Popup blocked — please allow popups for this site.');
+    else showLoginError('Google sign-in failed. Try again.');
+  }
 };
+
+// ── EMAIL LOGIN / REGISTER ──
+$('bEmail').onclick=async()=>{
+  const em=$('iEmail').value.trim();
+  const pw=$('iPass').value.trim();
+  if(!em){shake('iEmail');return}
+  if(!pw||pw.length<6){shake('iPass');showLoginError('Password must be at least 6 characters.');return}
+  setLoading('bEmail',true);
+  try{
+    // Try sign in first, if user doesn't exist → register
+    await signInWithEmailAndPassword(auth,em,pw);
+  }catch(e){
+    if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
+      try{
+        const cred=await createUserWithEmailAndPassword(auth,em,pw);
+        const displayName=em.split('@')[0];
+        await updateProfile(cred.user,{displayName});
+      }catch(e2){
+        setLoading('bEmail',false);
+        showLoginError(e2.code==='auth/email-already-in-use'?'Wrong password for this email.':'Registration failed. Try again.');
+      }
+    } else if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+      setLoading('bEmail',false);
+      showLoginError('Wrong password. Try again.');
+    } else {
+      setLoading('bEmail',false);
+      showLoginError('Login failed: '+e.message);
+    }
+  }
+};
+
+// ── ENTER KEY on password ──
+$('iPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('bEmail').click()});
+
+// ── FIREBASE AUTH STATE LISTENER ──
+// This fires automatically on login/logout
+onAuthStateChanged(auth, fireUser=>{
+  if(fireUser && !App.guest){
+    // Real logged in user
+    const name = fireUser.displayName || fireUser.email.split('@')[0];
+    const handle = '@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
+    const av = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
+    App.user={name, handle, av};
+    App.guest=false;
+    setLoading('bGoogle',false);
+    setLoading('bEmail',false);
+    boot();
+  } else if(!App.guest){
+    // Logged out — go back to login
+    App.user=null;
+    goTo('sLogin');
+  }
+});
 
 // ── BOOT DASHBOARD ──
 function boot(){
@@ -503,11 +574,20 @@ function switchTab(name){
 }
 
 // ── LOGOUT ──
-$('bLogout').onclick=()=>{
+$('bLogout').onclick=async()=>{
   if(!confirm('Sign out?'))return;
-  App.user=null;App.guest=false;
-  resetChat();
-  goTo('sLogin');
+  if(App.guest){
+    App.user=null; App.guest=false;
+    resetChat(); goTo('sLogin');
+    return;
+  }
+  try{
+    await signOut(auth);
+    App.user=null; App.guest=false;
+    resetChat(); goTo('sLogin');
+  }catch(e){
+    alert('Sign out failed. Try again.');
+  }
 };
 
 // ── ACCORDION ──
