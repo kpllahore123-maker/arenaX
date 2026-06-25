@@ -431,7 +431,6 @@ const fireApp = initializeApp(firebaseConfig);
 const auth = getAuth(fireApp);
 const googleProvider = new GoogleAuthProvider();
 
-// ── HELPERS ──
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false};
 
@@ -440,101 +439,32 @@ function goTo(id){
   $(id).classList.add('on');
 }
 
-// ── LOADING STATE ──
-function setLoading(btnId, loading){
-  const btn=$(btnId);
-  if(!btn)return;
-  btn.disabled=loading;
-  btn.style.opacity=loading?'.6':'1';
-}
-
 function showLoginError(msg){
   let err=$('loginErr');
   if(!err){
     err=document.createElement('div');
     err.id='loginErr';
-    err.style.cssText='margin-top:12px;padding:10px 14px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.3);border-radius:8px;font-size:12.5px;color:#e8404a;text-align:center;animation:sk .4s ease';
+    err.style.cssText='margin-top:12px;padding:10px 14px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.3);border-radius:8px;font-size:12.5px;color:#e8404a;text-align:center';
     document.querySelector('.lcard').appendChild(err);
   }
   err.textContent=msg;
   setTimeout(()=>{if(err)err.textContent=''},4000);
 }
 
-// ── GOOGLE LOGIN ──
-$('bGoogle').onclick=async()=>{
-  setLoading('bGoogle',true);
-  try{
-    const result=await signInWithPopup(auth,googleProvider);
-    // onAuthStateChanged will handle boot
-  }catch(e){
-    setLoading('bGoogle',false);
-    if(e.code==='auth/popup-closed-by-user') return;
-    if(e.code==='auth/popup-blocked') showLoginError('Popup blocked — please allow popups for this site.');
-    else showLoginError('Google sign-in failed. Try again.');
-  }
-};
+function shake(id){
+  const el=$(id);
+  if(!el)return;
+  el.style.borderColor='#e8404a';
+  el.style.animation='sk .4s ease';
+  setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500);
+}
 
-// ── EMAIL LOGIN / REGISTER ──
-$('bEmail').onclick=async()=>{
-  const em=$('iEmail').value.trim();
-  const pw=$('iPass').value.trim();
-  if(!em){shake('iEmail');return}
-  if(!pw||pw.length<6){shake('iPass');showLoginError('Password must be at least 6 characters.');return}
-  setLoading('bEmail',true);
-  try{
-    // Try sign in first, if user doesn't exist → register
-    await signInWithEmailAndPassword(auth,em,pw);
-  }catch(e){
-    if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
-      try{
-        const cred=await createUserWithEmailAndPassword(auth,em,pw);
-        const displayName=em.split('@')[0];
-        await updateProfile(cred.user,{displayName});
-      }catch(e2){
-        setLoading('bEmail',false);
-        showLoginError(e2.code==='auth/email-already-in-use'?'Wrong password for this email.':'Registration failed. Try again.');
-      }
-    } else if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
-      setLoading('bEmail',false);
-      showLoginError('Wrong password. Try again.');
-    } else {
-      setLoading('bEmail',false);
-      showLoginError('Login failed: '+e.message);
-    }
-  }
-};
-
-// ── ENTER KEY on password ──
-$('iPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('bEmail').click()});
-
-// ── FIREBASE AUTH STATE LISTENER ──
-// This fires automatically on login/logout
-onAuthStateChanged(auth, fireUser=>{
-  if(fireUser && !App.guest){
-    // Real logged in user
-    const name = fireUser.displayName || fireUser.email.split('@')[0];
-    const handle = '@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
-    const av = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
-    App.user={name, handle, av};
-    App.guest=false;
-    setLoading('bGoogle',false);
-    setLoading('bEmail',false);
-    boot();
-  } else if(!App.guest){
-    // Logged out — go back to login
-    App.user=null;
-    goTo('sLogin');
-  }
-});
-
-// ── BOOT DASHBOARD ──
 function boot(){
   const u=App.user;
   $('pName').textContent=u.name;
   $('pHandle').textContent=u.handle;
   $('pAv').src=u.av;
   $('avImg').src=u.av;
-
   if(App.guest){
     $('gBanner').classList.remove('hide');
     $('bGuest2').classList.remove('hide');
@@ -552,7 +482,6 @@ function boot(){
     $('wCard').style.opacity='';
     $('wCard').style.pointerEvents='';
   }
-
   renderTours('all');
   switchTab('Profile');
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
@@ -560,48 +489,179 @@ function boot(){
   goTo('sDash');
 }
 
-// ── TABS ──
-document.querySelectorAll('.ni').forEach(btn=>{
-  btn.onclick=()=>{
-    switchTab(btn.dataset.t);
-    document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
-  };
-});
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));
   $('t'+name).classList.add('on');
 }
 
-// ── LOGOUT ──
-$('bLogout').onclick=async()=>{
-  if(!confirm('Sign out?'))return;
-  if(App.guest){
-    App.user=null; App.guest=false;
-    resetChat(); goTo('sLogin');
-    return;
-  }
-  try{
-    await signOut(auth);
-    App.user=null; App.guest=false;
-    resetChat(); goTo('sLogin');
-  }catch(e){
-    alert('Sign out failed. Try again.');
-  }
-};
+// ── WAIT FOR DOM ──
+window.addEventListener('DOMContentLoaded', ()=>{
 
-// ── ACCORDION ──
-document.querySelectorAll('.ah').forEach(h=>{
-  h.onclick=()=>{
-    const item=h.parentElement,was=item.classList.contains('op');
-    document.querySelectorAll('.ai').forEach(i=>i.classList.remove('op'));
-    if(!was)item.classList.add('op');
-  };
+  // GOOGLE
+  $('bGoogle').addEventListener('click', async()=>{
+    const btn=$('bGoogle');
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting...';
+    btn.disabled=true;
+    try{
+      await signInWithPopup(auth, googleProvider);
+    }catch(e){
+      btn.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';
+      btn.disabled=false;
+      if(e.code==='auth/popup-closed-by-user') return;
+      if(e.code==='auth/popup-blocked') showLoginError('Popup blocked — allow popups for this site.');
+      else showLoginError('Google sign-in failed. Try again.');
+    }
+  });
+
+  // EMAIL
+  $('bEmail').addEventListener('click', async()=>{
+    const em=$('iEmail').value.trim();
+    const pw=$('iPass').value.trim();
+    if(!em){shake('iEmail');showLoginError('Email required.');return}
+    if(!pw){shake('iPass');showLoginError('Password required.');return}
+    if(pw.length<6){shake('iPass');showLoginError('Password min 6 characters.');return}
+    const btn=$('bEmail');
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Please wait...';
+    btn.disabled=true;
+    try{
+      await signInWithEmailAndPassword(auth,em,pw);
+    }catch(e){
+      console.log('Login err:',e.code);
+      if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
+        try{
+          btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating account...';
+          const cred=await createUserWithEmailAndPassword(auth,em,pw);
+          await updateProfile(cred.user,{displayName:em.split('@')[0]});
+        }catch(e2){
+          btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
+          btn.disabled=false;
+          if(e2.code==='auth/email-already-in-use') showLoginError('Wrong password. Try again.');
+          else if(e2.code==='auth/weak-password') showLoginError('Password too weak.');
+          else showLoginError('Error: '+e2.code);
+        }
+      } else if(e.code==='auth/wrong-password'){
+        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
+        btn.disabled=false;
+        showLoginError('Wrong password. Try again.');
+      } else if(e.code==='auth/invalid-email'){
+        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
+        btn.disabled=false;
+        shake('iEmail');showLoginError('Invalid email.');
+      } else if(e.code==='auth/too-many-requests'){
+        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
+        btn.disabled=false;
+        showLoginError('Too many attempts. Try later.');
+      } else {
+        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
+        btn.disabled=false;
+        showLoginError('Error: '+e.code);
+      }
+    }
+  });
+
+  $('iPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('bEmail').click()});
+
+  // GUEST
+  $('bGuest').addEventListener('click',()=>$('mGuest').classList.remove('hide'));
+  $('bGBack').addEventListener('click',()=>$('mGuest').classList.add('hide'));
+  $('mGuest').addEventListener('click',e=>{if(e.target===$('mGuest'))$('mGuest').classList.add('hide')});
+  $('bGConfirm').addEventListener('click',()=>{
+    $('mGuest').classList.add('hide');
+    const gid=Math.floor(1e5+Math.random()*9e5);
+    App.user={name:'Guest Player',handle:`@guest#${gid}`,av:`https://api.dicebear.com/7.x/bottts/svg?seed=g${gid}`};
+    App.guest=true;
+    boot();
+  });
+
+  // LOGOUT
+  $('bLogout').addEventListener('click', async()=>{
+    if(!confirm('Sign out?'))return;
+    if(App.guest){
+      App.user=null;App.guest=false;
+      resetChat();goTo('sLogin');return;
+    }
+    try{
+      await signOut(auth);
+      App.user=null;App.guest=false;
+      resetChat();goTo('sLogin');
+    }catch(e){alert('Sign out failed.')}
+  });
+
+  // TABS
+  document.querySelectorAll('.ni').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      switchTab(btn.dataset.t);
+      document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+    });
+  });
+
+  // ACCORDION
+  document.querySelectorAll('.ah').forEach(h=>{
+    h.addEventListener('click',()=>{
+      const item=h.parentElement,was=item.classList.contains('op');
+      document.querySelectorAll('.ai').forEach(i=>i.classList.remove('op'));
+      if(!was)item.classList.add('op');
+    });
+  });
+
+  $('rSearch').addEventListener('input',e=>{
+    const q=e.target.value.toLowerCase();
+    document.querySelectorAll('.ai').forEach(i=>{i.style.display=i.textContent.toLowerCase().includes(q)?'':'none'});
+  });
+
+  // TOURNAMENT FILTERS
+  document.querySelectorAll('.fb').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');renderTours(b.dataset.f);
+    });
+  });
+
+  // WALLET
+  $('bDep').addEventListener('click',()=>{
+    if(App.guest)return;
+    const a=prompt('Deposit amount (AX Coins):');
+    if(a&&+a>0){const cur=+(($('wBal').textContent||'0').replace(/,/g,''));$('wBal').textContent=(cur+ +a).toLocaleString();addTx('deposit',+a)}
+  });
+  $('bWith').addEventListener('click',()=>{
+    if(App.guest)return;
+    const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
+    if(!cur){alert('No balance.');return}
+    const a=prompt(`Withdraw (max ${cur} AX):`);
+    if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur-+a).toLocaleString();addTx('withdraw',+a)}
+    else if(+a>cur)alert('Not enough balance.');
+  });
+
+  // CHAT
+  $('chatSend').addEventListener('click',()=>send($('chatIn').value));
+  $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter')send($('chatIn').value)});
+  document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))send(e.target.dataset.m)});
+
+  // NOTIF
+  $('bBell').addEventListener('click',()=>alert('🔔 Notifications\n\n• City Champions League starts in 3h\n• Your match result was confirmed\n• New: OCG Supremacy I'));
+  document.querySelectorAll('.bup,.upi').forEach(b=>b.addEventListener('click',()=>alert('To upgrade:\nSettings → Link Account → Choose Google.')));
+
+}); // end DOMContentLoaded
+
+// AUTH STATE — outside DOMContentLoaded
+onAuthStateChanged(auth, fireUser=>{
+  if(fireUser && !App.guest){
+    const name=fireUser.displayName||fireUser.email.split('@')[0];
+    const handle='@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
+    const av=fireUser.photoURL||`https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
+    App.user={name,handle,av};
+    App.guest=false;
+    const eb=$('bEmail');
+    if(eb){eb.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';eb.disabled=false;}
+    const gb=$('bGoogle');
+    if(gb){gb.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';gb.disabled=false;}
+    boot();
+  } else if(!App.guest){
+    App.user=null;
+    goTo('sLogin');
+  }
 });
-$('rSearch').oninput=e=>{
-  const q=e.target.value.toLowerCase();
-  document.querySelectorAll('.ai').forEach(i=>{i.style.display=i.textContent.toLowerCase().includes(q)?'':'none'});
-};
 
 // ── TOURNAMENTS ──
 const TOURS=[
@@ -632,20 +692,7 @@ document.querySelectorAll('.fb').forEach(b=>{
   b.onclick=()=>{document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderTours(b.dataset.f)};
 });
 
-// ── WALLET ──
-$('bDep').onclick=()=>{
-  if(App.guest)return;
-  const a=prompt('Deposit amount (AX Coins):');
-  if(a&&+a>0){const cur=+(($('wBal').textContent||'0').replace(/,/g,''));$('wBal').textContent=(cur+ +a).toLocaleString();addTx('deposit',+a)}
-};
-$('bWith').onclick=()=>{
-  if(App.guest)return;
-  const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
-  if(!cur){alert('No balance.');return}
-  const a=prompt(`Withdraw (max ${cur} AX):`);
-  if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur- +a).toLocaleString();addTx('withdraw',+a)}
-  else if(+a>cur)alert('Not enough balance.');
-};
+// ── WALLET FUNCTIONS ──
 function addTx(type,amt){
   const h=$('wHist'),e=h.querySelector('.es');if(e)e.remove();
   const c=type==='deposit'?'#3ddc84':'#e8404a',s=type==='deposit'?'+':'-',ic=type==='deposit'?'fa-arrow-down':'fa-arrow-up',lb=type==='deposit'?'Deposit':'Withdrawal';
@@ -655,7 +702,7 @@ function addTx(type,amt){
   h.appendChild(r);
 }
 
-// ── CHAT ──
+// ── CHAT FUNCTIONS ──
 const BR={
   d:["Thanks! A live agent will review within 24 hours.","I've noted your concern. Team will follow up shortly.","That's logged. Anything else?"],
   match:["For match disputes, share your match ID and both IGNs. We investigate within 48 hours.","Match results lock after both parties confirm. Share the timestamp and we'll review."],
@@ -666,83 +713,38 @@ const BR={
 function pr(a){return a[Math.floor(Math.random()*a.length)]}
 function reply(m){const l=m.toLowerCase();if(l.includes('match')||l.includes('result'))return pr(BR.match);if(l.includes('wallet')||l.includes('coin'))return pr(BR.wallet);if(l.includes('report')||l.includes('cheat'))return pr(BR.report);if(l.includes('general')||l.includes('inquiry'))return pr(BR.gen);return pr(BR.d)}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
-
 function send(txt){
   if(!txt.trim())return;
   const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
   msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-  msgs.scrollTop=9999; $('chatIn').value='';
+  msgs.scrollTop=9999;$('chatIn').value='';
   msgs.innerHTML+=`<div class="msg bot" id="typ"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl"><div class="td2"><span></span><span></span><span></span></div></div></div>`;
   msgs.scrollTop=9999;
   setTimeout(()=>{const t=$('typ');if(t)t.remove();msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${reply(txt)}</div></div>`;msgs.scrollTop=9999},1200+Math.random()*600);
 }
-$('chatSend').onclick=()=>send($('chatIn').value);
-$('chatIn').onkeydown=e=>{if(e.key==='Enter')send($('chatIn').value)};
-document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))send(e.target.dataset.m)});
 function resetChat(){
   $('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hello! I\'m the ArenaX Support Bot. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';
 }
 
-// ── CUSTOM CURSOR ──
+// ── CURSOR ──
 const cur=document.getElementById('cur');
 const ring=document.getElementById('curRing');
-let mx=0,my=0,rx=0,ry=0,trail=[];
-
+let mx=0,my=0,rx=0,ry=0;
 document.addEventListener('mousemove',e=>{
-  mx=e.clientX; my=e.clientY;
-  cur.style.left=mx+'px'; cur.style.top=my+'px';
-
-  // trail particle
-  const tr=document.createElement('div');
-  const sz=3+Math.random()*4;
-  tr.className='ctr';
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+  const tr=document.createElement('div');const sz=3+Math.random()*4;tr.className='ctr';
   tr.style.cssText=`left:${mx}px;top:${my}px;width:${sz}px;height:${sz}px;background:rgba(240,192,64,${.15+Math.random()*.25})`;
-  document.body.appendChild(tr);
-  setTimeout(()=>tr.remove(),550);
+  document.body.appendChild(tr);setTimeout(()=>tr.remove(),550);
 });
-
-// ring follows with lag
-function animRing(){
-  rx+=(mx-rx)*.13;
-  ry+=(my-ry)*.13;
-  ring.style.left=rx+'px';
-  ring.style.top=ry+'px';
-  requestAnimationFrame(animRing);
-}
-animRing();
-
-// click burst
+(function animRing(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing)})();
 document.addEventListener('mousedown',()=>{
-  cur.classList.add('click'); ring.classList.add('click');
-  // burst particles
-  for(let i=0;i<6;i++){
-    const b=document.createElement('div');
-    const angle=(i/6)*Math.PI*2;
-    const dist=18+Math.random()*14;
-    b.className='ctr';
-    b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s ease,top .3s ease,opacity .3s`;
-    document.body.appendChild(b);
-    requestAnimationFrame(()=>{
-      b.style.left=(mx+Math.cos(angle)*dist)+'px';
-      b.style.top=(my+Math.sin(angle)*dist)+'px';
-      b.style.opacity='0';
-    });
-    setTimeout(()=>b.remove(),350);
-  }
+  cur.classList.add('click');ring.classList.add('click');
+  for(let i=0;i<6;i++){const b=document.createElement('div');const angle=(i/6)*Math.PI*2;const dist=18+Math.random()*14;b.className='ctr';b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s,top .3s,opacity .3s`;document.body.appendChild(b);requestAnimationFrame(()=>{b.style.left=(mx+Math.cos(angle)*dist)+'px';b.style.top=(my+Math.sin(angle)*dist)+'px';b.style.opacity='0'});setTimeout(()=>b.remove(),350);}
 });
-document.addEventListener('mouseup',()=>{
-  cur.classList.remove('click'); ring.classList.remove('click');
-});
-
-// hover effect on interactive elements
-document.addEventListener('mouseover',e=>{
-  if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.add('hover')}
-});
-document.addEventListener('mouseout',e=>{
-  if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.remove('hover')}
-});
-
-document.querySelectorAll('.bup,.upi').forEach(b=>b.onclick=()=>alert('To upgrade:\nSettings → Link Account → Choose Google or another platform.'));
+document.addEventListener('mouseup',()=>{cur.classList.remove('click');ring.classList.remove('click')});
+document.addEventListener('mouseover',e=>{if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.add('hover')}});
+document.addEventListener('mouseout',e=>{if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.remove('hover')}});
 </script>
 </body>
 </html>
