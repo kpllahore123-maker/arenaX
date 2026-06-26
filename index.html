@@ -4,240 +4,278 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>ArenaX</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
 :root{
-  --bg:#0a0c12;--panel:#111420;--card:#171b2e;--elevated:#1e2340;
-  --gold:#f0c040;--red:#e8404a;--blue:#4f9eff;--green:#3ddc84;
-  --t1:#f0f2ff;--t2:#8890b0;--t3:#4a5070;
-  --bdr:#252a45;--r8:8px;--r14:14px;--r20:20px;
+  --bg:#0a0c12;--panel:#111420;--card:#171b2e;--ele:#1e2340;
+  --gold:#f0c040;--g2:rgba(240,192,64,.1);--g3:rgba(240,192,64,.22);
+  --red:#e8404a;--blue:#4f9eff;--green:#3ddc84;--purple:#a78bfa;
+  --t1:#f0f2ff;--t2:#8890b0;--t3:#4a5070;--bdr:#252a45;
   --ff:'Rajdhani',sans-serif;--fb:'Inter',sans-serif;
-  --nh:64px;--th:56px;
+  --nh:64px;--th:56px;--r8:8px;--r14:14px;--r20:20px;
+  /* premium */
+  --prm:#a78bfa;--prm2:rgba(167,139,250,.12);--prm3:rgba(167,139,250,.25);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb);font-size:15px;overflow:hidden}
+*{cursor:none!important}
 
-/* ── SCREENS ── */
-.scr{position:fixed;inset:0;overflow-y:auto;background:var(--bg)}
-.scr{display:none!important}
+/* SCREENS */
+.scr{position:fixed;inset:0;overflow-y:auto;background:var(--bg);display:none!important}
 .scr.on{display:block!important}
 #sLogin.on{display:flex!important;align-items:center;justify-content:center;min-height:100vh}
 
-/* ── LOGIN ── */
+/* CURSOR */
+#cur{position:fixed;width:9px;height:9px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(240,192,64,.9),0 0 22px rgba(240,192,64,.4);mix-blend-mode:screen;transition:transform .1s,background .15s}
+#curR{position:fixed;width:30px;height:30px;border:1.5px solid rgba(240,192,64,.5);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:left .1s ease,top .1s ease,width .2s,height .2s,border-color .2s}
+#cur.ck{transform:translate(-50%,-50%) scale(3);background:#fff}
+#curR.hv{width:44px;height:44px;border-color:var(--gold)}
+.ctr{position:fixed;border-radius:50%;pointer-events:none;z-index:99997;transform:translate(-50%,-50%);animation:ctrf .5s ease forwards}
+@keyframes ctrf{to{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+
+/* LOGIN */
 .lglow{position:absolute;inset:0;pointer-events:none}
-.lglow::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(240,192,64,.13) 0%,transparent 70%)}
-.lcon{position:relative;z-index:1;width:100%;max-width:420px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:24px}
+.lglow::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(240,192,64,.12) 0%,transparent 70%)}
+.lcon{position:relative;z-index:1;width:100%;max-width:420px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:22px}
 .llogo{text-align:center}
-.licon{width:70px;height:70px;background:linear-gradient(135deg,var(--gold),#e8a820);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#0a0c12;margin:0 auto 10px;box-shadow:0 0 36px rgba(240,192,64,.4)}
-.ltxt{font-family:var(--ff);font-size:38px;font-weight:700;letter-spacing:2px}
+.licon{width:68px;height:68px;background:linear-gradient(135deg,var(--gold),#e8a820);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:27px;color:#0a0c12;margin:0 auto 10px;box-shadow:0 0 32px rgba(240,192,64,.4)}
+.ltxt{font-family:var(--ff);font-size:36px;font-weight:700;letter-spacing:2px}
 .ltxt span{color:var(--gold)}
-.ltag{font-size:12px;color:var(--t2);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.ltag{font-size:11px;color:var(--t2);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
 .lcard{width:100%;background:var(--panel);border:1px solid var(--bdr);border-radius:var(--r20);padding:26px 22px}
-.lcard h2{font-family:var(--ff);font-size:21px;font-weight:700;margin-bottom:4px}
-.lsub{font-size:13px;color:var(--t2);margin-bottom:22px}
-.lbtn{width:100%;padding:13px 18px;border:none;border-radius:var(--r8);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--fb);transition:all .2s}
-.lg{background:#fff;color:#333}.lg:hover{background:#f0f0f0;transform:translateY(-1px)}
+.lcard h2{font-family:var(--ff);font-size:20px;font-weight:700;margin-bottom:4px}
+.lsub{font-size:12.5px;color:var(--t2);margin-bottom:20px}
+.lbtn{width:100%;padding:13px 16px;border:none;border-radius:var(--r8);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;font-family:var(--fb);transition:all .2s}
+.lg{background:#fff;color:#333}.lg:hover{background:#eee;transform:translateY(-1px)}
 .le{background:var(--gold);color:#0a0c12}.le:hover{background:#e8b830;transform:translateY(-1px)}
 .lgu{background:transparent;color:var(--t2);border:1px solid var(--bdr)}.lgu:hover{border-color:var(--gold);color:var(--gold)}
-.gico{width:18px;height:18px}
-.ef{display:flex;flex-direction:column;gap:10px}
-.inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:13px 15px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
+.gico{width:17px;height:17px}
+.ef{display:flex;flex-direction:column;gap:9px}
+.inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:12px 14px;font-size:13.5px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
 .inp::placeholder{color:var(--t3)}.inp:focus{border-color:var(--gold)}
-.div{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--t3);font-size:12px}
-.div::before,.div::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.divl{display:flex;align-items:center;gap:10px;margin:13px 0;color:var(--t3);font-size:11px}
+.divl::before,.divl::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
-/* ── MODAL ── */
-.mov{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+/* MODALS */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
 .mov.hide{display:none!important}
-.mbox{background:var(--panel);border:1px solid var(--bdr);border-radius:var(--r20);padding:26px 22px;max-width:400px;width:100%;animation:sup .25s ease}
-@keyframes sup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.mica{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px;background:rgba(232,64,74,.15);color:var(--red);border:1px solid rgba(232,64,74,.3)}
-.mbox h3{font-family:var(--ff);font-size:19px;font-weight:700;text-align:center;margin-bottom:14px;color:var(--red)}
-.wm{font-size:13px;color:var(--t2);text-align:center;margin-bottom:10px}
-.wl{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
-.wl li{font-size:12.5px;color:var(--t2);display:flex;align-items:center;gap:7px}
-.wl li i{color:var(--red);font-size:11px;flex-shrink:0}
-.wtip{background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:var(--r8);padding:9px 11px;display:flex;gap:8px;font-size:12px;color:#c0a030}
-.mac{display:flex;gap:10px;margin-top:18px}
-.mbtn{flex:1;padding:11px;border-radius:var(--r8);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--fb);transition:all .2s}
-.mcan{background:var(--elevated);color:var(--t2);border:1px solid var(--bdr)}.mcan:hover{background:var(--card)}
+.mbox{background:var(--panel);border:1px solid var(--bdr);border-radius:var(--r20);padding:26px 22px;max-width:420px;width:100%;animation:mup .25s ease}
+@keyframes mup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.mica{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;margin:0 auto 13px}
+.mbox h3{font-family:var(--ff);font-size:19px;font-weight:700;text-align:center;margin-bottom:13px}
+.mac{display:flex;gap:9px;margin-top:18px}
+.mbtn{flex:1;padding:11px;border-radius:var(--r8);font-size:13px;font-weight:600;border:none;font-family:var(--fb);transition:all .2s}
+.mcan{background:var(--ele);color:var(--t2);border:1px solid var(--bdr)}.mcan:hover{background:var(--card)}
 .mcon{background:var(--red);color:#fff}.mcon:hover{background:#cc3540}
+.wm{font-size:13px;color:var(--t2);text-align:center;margin-bottom:10px}
+.wl{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:13px}
+.wl li{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:7px}
+.wl li i{color:var(--red);font-size:10px;flex-shrink:0}
+.wtip{background:var(--g2);border:1px solid var(--g3);border-radius:var(--r8);padding:9px 11px;display:flex;gap:8px;font-size:11.5px;color:#c0a030}
 
-/* ── DASHBOARD ── */
+/* PREMIUM MODAL */
+.prm-modal .mica{background:var(--prm2);color:var(--prm);border:1px solid var(--prm3)}
+.prm-modal h3{color:var(--prm)}
+.prm-plans{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.prm-plan{padding:14px 16px;border-radius:var(--r14);border:1px solid var(--bdr);background:var(--card);display:flex;align-items:center;gap:12px;transition:all .2s}
+.prm-plan:hover,.prm-plan.sel{border-color:var(--prm);background:var(--prm2)}
+.prm-plan-ico{width:38px;height:38px;border-radius:10px;background:var(--prm2);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--prm);flex-shrink:0}
+.prm-plan-name{font-size:13px;font-weight:600}
+.prm-plan-price{font-family:var(--ff);font-size:20px;font-weight:700;color:var(--prm);margin-left:auto}
+.prm-plan-sub{font-size:10px;color:var(--t3)}
+.prm-features{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.prm-feat{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--t2)}
+.prm-feat i{color:var(--green);font-size:11px;flex-shrink:0}
+.prm-buy{width:100%;padding:13px;background:linear-gradient(135deg,var(--prm),#7c3aed);color:#fff;border:none;border-radius:var(--r8);font-size:14px;font-weight:700;font-family:var(--fb);transition:all .2s}
+.prm-buy:hover{opacity:.9;transform:translateY(-1px)}
+
+/* PROFILE CUSTOMIZE MODAL */
+.cust-modal h3{color:var(--gold)}
+.cust-modal .mica{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
+.cust-section{margin-bottom:14px}
+.cust-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px}
+.cust-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s;margin-bottom:10px}
+.cust-inp:focus{border-color:var(--gold)}
+.cust-colors{display:flex;gap:8px;flex-wrap:wrap}
+.cc-dot{width:28px;height:28px;border-radius:50%;border:2px solid transparent;transition:all .2s}
+.cc-dot.sel,.cc-dot:hover{transform:scale(1.2);border-color:#fff}
+.cust-avatars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cav-opt{width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid var(--bdr);transition:all .2s}
+.cav-opt img{width:100%;height:100%;object-fit:cover}
+.cav-opt.sel,.cav-opt:hover{border-color:var(--gold)}
+
+/* DASHBOARD */
 #sDash.on{display:flex!important;flex-direction:column;height:100vh;overflow:hidden}
 .topbar{height:var(--th);background:var(--panel);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:10}
 .lsm{font-family:var(--ff);font-size:20px;font-weight:700;letter-spacing:1px}
 .lsm span{color:var(--gold)}.lsm i{color:var(--gold);margin-right:3px}
-.tr{display:flex;align-items:center;gap:12px}
-.nbell{position:relative;width:36px;height:36px;background:var(--card);border:1px solid var(--bdr);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--t2)}
-.ndot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--panel)}
-.uav{width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--gold);cursor:pointer}
+.tr{display:flex;align-items:center;gap:10px}
+.nbell{position:relative;width:34px;height:34px;background:var(--card);border:1px solid var(--bdr);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--t2)}
+.ndot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--panel)}
+.uav{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--gold)}
 .uav img{width:100%;height:100%;object-fit:cover}
-.gbanner{background:rgba(240,192,64,.08);border-bottom:1px solid rgba(240,192,64,.2);padding:9px 14px;display:flex;align-items:center;gap:9px;font-size:12.5px;color:#c0a030;flex-shrink:0}
+.gbanner{background:var(--g2);border-bottom:1px solid var(--g3);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#c0a030;flex-shrink:0}
 .gbanner.hide{display:none!important}
-.gbanner i{flex-shrink:0}
-.bup{margin-left:auto;background:var(--gold);color:#0a0c12;border:none;border-radius:6px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer}
+.prmbanner{background:var(--prm2);border-bottom:1px solid var(--prm3);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--prm);flex-shrink:0}
+.prmbanner.hide{display:none!important}
+.bup{margin-left:auto;background:var(--gold);color:#0a0c12;border:none;border-radius:6px;padding:4px 11px;font-size:11px;font-weight:700}
+.bup-prm{margin-left:auto;background:var(--prm);color:#fff;border:none;border-radius:6px;padding:4px 11px;font-size:11px;font-weight:700}
 .dbody{flex:1;overflow-y:auto;padding-bottom:var(--nh)}
-.tab{display:none;padding:16px}
-.tab.on{display:block}
-.sh{margin-bottom:18px}
-.sh h2{font-family:var(--ff);font-size:21px;font-weight:700;display:flex;align-items:center;gap:7px}
+.tab{display:none;padding:16px}.tab.on{display:block}
+.sh{margin-bottom:16px}
+.sh h2{font-family:var(--ff);font-size:20px;font-weight:700;display:flex;align-items:center;gap:7px}
 .sh h2 i{color:var(--gold)}
 
-/* Profile */
-.pc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:18px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+/* PROFILE */
+.pc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:16px;display:flex;align-items:center;gap:13px;margin-bottom:13px;position:relative;overflow:hidden}
+.pc.prm-glow{border-color:var(--prm3);box-shadow:0 0 30px rgba(167,139,250,.08)}
 .paw{position:relative;flex-shrink:0}
-.pav{width:68px;height:68px;border-radius:50%;border:2px solid var(--gold);display:block}
-.pae{position:absolute;bottom:0;right:0;width:21px;height:21px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#0a0c12;cursor:pointer}
-.pi h3{font-family:var(--ff);font-size:19px;font-weight:700}
-.ph{font-size:11px;color:var(--t3);margin-bottom:7px}
+.pav{width:66px;height:66px;border-radius:50%;border:2px solid var(--gold);display:block;transition:border-color .2s}
+.pc.prm-glow .pav{border-color:var(--prm)}
+.pae{position:absolute;bottom:0;right:0;width:20px;height:20px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#0a0c12}
+.pi h3{font-family:var(--ff);font-size:18px;font-weight:700}
+.ph{font-size:11px;color:var(--t3);margin-bottom:6px}
 .pb{display:flex;gap:5px;flex-wrap:wrap}
-.bdg{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:3px}
-.br{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.25)}
-.bg{background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.25)}
+.bdg{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:3px}
+.br{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
+.bg{background:rgba(232,64,74,.1);color:var(--red);border:1px solid rgba(232,64,74,.22)}
+.bprm{background:var(--prm2);color:var(--prm);border:1px solid var(--prm3)}
 .bdg.hide{display:none!important}
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
-.sc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:14px;text-align:center}
-.sv{font-family:var(--ff);font-size:26px;font-weight:700;color:var(--gold)}
-.sl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
-.ps{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);overflow:hidden}
-.ps h4{padding:11px 15px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--bdr)}
-.sr{padding:13px 15px;display:flex;align-items:center;gap:11px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bdr);color:var(--t2);transition:background .15s}
-.sr:last-child{border-bottom:none}.sr:hover{background:var(--elevated);color:var(--t1)}
-.sr i:first-child{color:var(--gold);width:16px;text-align:center}
-.sr .fa-chevron-right{margin-left:auto;font-size:11px}
-.ltag2{margin-left:auto;font-size:10px;background:rgba(79,158,255,.15);color:var(--blue);padding:2px 7px;border-radius:10px;font-weight:700}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.sc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:13px;text-align:center}
+.sv{font-family:var(--ff);font-size:24px;font-weight:700;color:var(--gold)}
+.sl2{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.ps{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);overflow:hidden;margin-bottom:13px}
+.ps h4{padding:10px 14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--bdr)}
+.sr{padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--bdr);color:var(--t2);transition:background .15s}
+.sr:last-child{border-bottom:none}.sr:hover{background:var(--ele);color:var(--t1)}
+.sr i:first-child{color:var(--gold);width:15px;text-align:center}
+.sr .fa-chevron-right{margin-left:auto;font-size:10px}
+.sr .fa-lock{margin-left:auto;font-size:10px;color:var(--t3)}
+.ltag2{margin-left:auto;font-size:9px;background:rgba(79,158,255,.12);color:var(--blue);padding:2px 7px;border-radius:10px;font-weight:700}
+.prm-tag{margin-left:auto;font-size:9px;background:var(--prm2);color:var(--prm);padding:2px 7px;border-radius:10px;font-weight:700}
 .dr{color:var(--red)!important}.dr i:first-child{color:var(--red)!important}
 
-/* Rules */
-.rs{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);display:flex;align-items:center;gap:9px;padding:0 13px;margin-bottom:14px}
-.rs i{color:var(--t3);font-size:13px}
-.rsi{background:none;border:none;outline:none;padding:12px 0;font-size:13px;color:var(--t1);font-family:var(--fb);width:100%}
+/* PREMIUM PROMO CARD */
+.prm-promo{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(124,58,237,.08));border:1px solid var(--prm3);border-radius:var(--r14);padding:16px;margin-bottom:13px;display:flex;align-items:center;gap:13px}
+.prm-promo-ico{width:44px;height:44px;border-radius:12px;background:var(--prm2);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--prm);flex-shrink:0}
+.prm-promo-title{font-family:var(--ff);font-size:16px;font-weight:700;color:var(--prm);margin-bottom:2px}
+.prm-promo-sub{font-size:11.5px;color:var(--t2)}
+.prm-promo-btn{margin-left:auto;padding:7px 14px;background:var(--prm);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--fb);flex-shrink:0}
+
+/* RULES */
+.rs{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);display:flex;align-items:center;gap:9px;padding:0 13px;margin-bottom:13px}
+.rsi{background:none;border:none;outline:none;padding:11px 0;font-size:13px;color:var(--t1);font-family:var(--fb);width:100%}
 .rsi::placeholder{color:var(--t3)}
 .acc{display:flex;flex-direction:column;gap:7px}
 .ai{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);overflow:hidden}
-.ah{padding:13px 14px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;color:var(--t1);transition:background .15s}
-.ah:hover{background:var(--elevated)}
-.ah i:first-child{color:var(--gold);width:15px}
-.aar{margin-left:auto;font-size:11px;color:var(--t3);transition:transform .25s}
+.ah{padding:12px 13px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--t1);transition:background .15s}
+.ah:hover{background:var(--ele)}
+.ah i:first-child{color:var(--gold);width:14px}
+.aar{margin-left:auto;font-size:10px;color:var(--t3);transition:transform .25s}
 .ai.op .aar{transform:rotate(180deg)}
-.ab{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;padding:0 14px}
-.ai.op .ab{max-height:280px;padding:0 14px 14px}
-.rl{list-style:none;display:flex;flex-direction:column;gap:7px}
-.rl li{font-size:12.5px;color:var(--t2);padding-left:13px;position:relative}
-.rl li::before{content:'▸';position:absolute;left:0;color:var(--gold);font-size:10px;top:1px}
+.ab{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;padding:0 13px}
+.ai.op .ab{max-height:280px;padding:0 13px 13px}
+.rl{list-style:none;display:flex;flex-direction:column;gap:6px}
+.rl li{font-size:12.5px;color:var(--t2);padding-left:12px;position:relative}
+.rl li::before{content:'▸';position:absolute;left:0;color:var(--gold);font-size:9px;top:2px}
 
-/* Wallet */
-.wc{background:linear-gradient(135deg,#1a2040,#252b4a);border:1px solid rgba(240,192,64,.25);border-radius:var(--r20);padding:22px;margin-bottom:14px;position:relative;overflow:hidden}
-.wcd{position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(240,192,64,.1) 0%,transparent 70%);pointer-events:none}
-.wt{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+/* WALLET */
+.wc{background:linear-gradient(135deg,#1a2040,#252b4a);border:1px solid rgba(240,192,64,.25);border-radius:var(--r20);padding:20px;margin-bottom:13px;position:relative;overflow:hidden}
+.wcd{position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(240,192,64,.1) 0%,transparent 70%);pointer-events:none}
+.wt{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .wl2{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
-.wb{font-family:var(--ff);font-size:46px;font-weight:700;color:var(--gold);line-height:1}
-.wcl{font-size:12px;color:var(--t3);margin-bottom:18px}
+.wb{font-family:var(--ff);font-size:44px;font-weight:700;color:var(--gold);line-height:1}
+.wcl{font-size:11px;color:var(--t3);margin-bottom:16px}
 .wa{display:flex;gap:9px}
-.wbtn{flex:1;padding:10px;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.25);border-radius:var(--r8);color:var(--gold);font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--fb);transition:all .2s}
+.wbtn{flex:1;padding:9px;background:var(--g2);border:1px solid var(--g3);border-radius:var(--r8);color:var(--gold);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;font-family:var(--fb);transition:all .2s}
 .wbtn:hover{background:rgba(240,192,64,.2)}
-.wh h4{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px}
-.glo{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:28px 18px;text-align:center;margin-bottom:14px}
+.wh h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:9px}
+.glo{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:26px 16px;text-align:center;margin-bottom:13px}
 .glo.hide{display:none!important}
-.glo i{font-size:30px;color:var(--t3);margin-bottom:10px;display:block}
-.glo p{font-size:13px;color:var(--t2);margin-bottom:14px}
-.upi{background:var(--gold);color:#0a0c12;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--fb)}
-.es{text-align:center;padding:36px 18px;color:var(--t3)}
-.es i{font-size:32px;margin-bottom:8px;display:block}
+.glo i{font-size:28px;color:var(--t3);margin-bottom:9px;display:block}
+.glo p{font-size:13px;color:var(--t2);margin-bottom:13px}
+.upi{background:var(--gold);color:#0a0c12;border:none;border-radius:var(--r8);padding:8px 16px;font-size:12px;font-weight:700;font-family:var(--fb)}
+.es{text-align:center;padding:32px 16px;color:var(--t3)}
+.es i{font-size:28px;margin-bottom:7px;display:block}
 .es p{font-size:13px}
 
-/* Tournaments */
-.tf{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:3px}
+/* PLAYER CHAT */
+.pchat-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.pchat-item{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);transition:all .2s}
+.pchat-item:hover{border-color:var(--g3);transform:translateX(3px)}
+.pchat-av{width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--bdr);flex-shrink:0}
+.pchat-av img{width:100%;height:100%;object-fit:cover}
+.pchat-name{font-size:13px;font-weight:600}
+.pchat-last{font-size:11px;color:var(--t3)}
+.pchat-time{font-size:10px;color:var(--t3);margin-left:auto}
+.pchat-unread{width:18px;height:18px;background:var(--gold);border-radius:50%;font-size:9px;font-weight:700;color:#0a0c12;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prm-lock{background:var(--prm2);border:1px solid var(--prm3);border-radius:var(--r14);padding:28px 18px;text-align:center;margin-bottom:13px}
+.prm-lock i{font-size:28px;color:var(--prm);margin-bottom:10px;display:block}
+.prm-lock p{font-size:13px;color:var(--t2);margin-bottom:13px}
+.prm-lock-btn{background:var(--prm);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12.5px;font-weight:700;font-family:var(--fb)}
+
+/* TOURNAMENTS */
+.tf{display:flex;gap:7px;margin-bottom:13px;overflow-x:auto;scrollbar-width:none;padding-bottom:3px}
 .tf::-webkit-scrollbar{display:none}
-.fb{padding:7px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:20px;color:var(--t2);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--fb);transition:all .2s}
+.fb{padding:6px 13px;background:var(--card);border:1px solid var(--bdr);border-radius:20px;color:var(--t2);font-size:12px;font-weight:600;white-space:nowrap;font-family:var(--fb);transition:all .2s}
 .fb.on{background:var(--gold);color:#0a0c12;border-color:var(--gold)}
 .fb:hover:not(.on){border-color:var(--gold);color:var(--gold)}
-.tl{display:flex;flex-direction:column;gap:11px}
-.tcard{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:14px;cursor:pointer;transition:border-color .2s,transform .2s}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tcard{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);padding:13px;transition:all .2s}
 .tcard:hover{border-color:var(--gold);transform:translateY(-1px)}
-.tt{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
-.tn{font-family:var(--ff);font-size:16px;font-weight:700}
-.tg{font-size:11px;color:var(--t3);margin-top:2px}
-.ts{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.sl{background:rgba(232,64,74,.15);color:var(--red);border:1px solid rgba(232,64,74,.3);animation:pr 2s infinite}
-.su{background:rgba(79,158,255,.15);color:var(--blue);border:1px solid rgba(79,158,255,.3)}
-.se{background:rgba(100,100,120,.2);color:var(--t3);border:1px solid var(--bdr)}
+.tt{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.tn{font-family:var(--ff);font-size:15px;font-weight:700}
+.tg{font-size:10px;color:var(--t3);margin-top:2px}
+.ts{padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase}
+.slv{background:rgba(232,64,74,.15);color:var(--red);border:1px solid rgba(232,64,74,.3);animation:pr 2s infinite}
+.sup{background:rgba(79,158,255,.15);color:var(--blue);border:1px solid rgba(79,158,255,.3)}
+.send{background:rgba(100,100,120,.2);color:var(--t3);border:1px solid var(--bdr)}
 @keyframes pr{0%,100%{opacity:1}50%{opacity:.5}}
-.td{display:flex;gap:14px;flex-wrap:wrap}
 .tdi{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t2)}
 .tdi i{color:var(--gold);font-size:10px}
-.tp{font-family:var(--ff);font-size:14px;font-weight:700;color:var(--gold);margin-top:9px}
+.tdrow{display:flex;gap:13px;flex-wrap:wrap}
+.tp{font-family:var(--ff);font-size:13px;font-weight:700;color:var(--gold);margin-top:8px}
 
-/* Chat */
-.cc{display:flex;flex-direction:column;height:calc(100vh - var(--th) - var(--nh) - 88px);background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);overflow:hidden}
-.cm{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
-.msg{display:flex;gap:9px;align-items:flex-end}
+/* SUPPORT CHAT */
+.cc{display:flex;flex-direction:column;height:calc(100vh - var(--th) - var(--nh) - 90px);background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);overflow:hidden}
+.cm{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:11px}
+.msg{display:flex;gap:8px;align-items:flex-end}
 .msg.u{flex-direction:row-reverse}
-.mav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.bav{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.22)}
-.uuav{background:var(--blue);color:#fff;font-size:11px}
-.bbl{max-width:76%;padding:9px 13px;border-radius:13px;font-size:13px;line-height:1.5}
-.msg.bot .bbl{background:var(--elevated);color:var(--t1);border-bottom-left-radius:3px}
+.mav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.bav{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
+.uuav{background:var(--blue);color:#fff;font-size:10px}
+.bbl{max-width:76%;padding:8px 12px;border-radius:12px;font-size:12.5px;line-height:1.5}
+.msg.bot .bbl{background:var(--ele);color:var(--t1);border-bottom-left-radius:3px}
 .msg.u .bbl{background:var(--gold);color:#0a0c12;font-weight:500;border-bottom-right-radius:3px}
-.qr{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-.qrb{padding:5px 11px;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.22);border-radius:20px;color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .2s}
+.qr{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.qrb{padding:4px 10px;background:var(--g2);border:1px solid var(--g3);border-radius:20px;color:var(--gold);font-size:11px;font-weight:600;font-family:var(--fb);transition:all .2s}
 .qrb:hover{background:rgba(240,192,64,.2)}
-.cir{padding:9px 11px;background:var(--panel);border-top:1px solid var(--bdr);display:flex;gap:9px;align-items:center}
-.ci{flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:22px;padding:9px 15px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
-.ci::placeholder{color:var(--t3)}.ci:focus{border-color:var(--gold)}
-.cs{width:38px;height:38px;background:var(--gold);border:none;border-radius:50%;color:#0a0c12;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.cir{padding:8px 10px;background:var(--panel);border-top:1px solid var(--bdr);display:flex;gap:8px;align-items:center}
+.ci{flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:22px;padding:8px 14px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
+.ci:focus{border-color:var(--gold)}
+.cs{width:36px;height:36px;background:var(--gold);border:none;border-radius:50%;color:#0a0c12;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 .cs:hover{background:#e8b830;transform:scale(1.05)}
-.td2{display:flex;gap:4px;align-items:center;padding:4px 0}
-.td2 span{width:7px;height:7px;background:var(--t3);border-radius:50%;animation:bn 1.2s infinite}
+.td2{display:flex;gap:3px;align-items:center;padding:3px 0}
+.td2 span{width:6px;height:6px;background:var(--t3);border-radius:50%;animation:bn 1.2s infinite}
 .td2 span:nth-child(2){animation-delay:.2s}.td2 span:nth-child(3){animation-delay:.4s}
-@keyframes bn{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+@keyframes bn{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
 
-/* Nav */
+/* BOTTOM NAV */
 .bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--panel);border-top:1px solid var(--bdr);display:flex;align-items:stretch;z-index:100}
-.ni{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--t3);font-size:10px;font-family:var(--fb);position:relative;padding:7px 3px;transition:color .2s}
-.ni i{font-size:17px}.ni.on{color:var(--gold)}
-.ni.on::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:26px;height:2px;background:var(--gold);border-radius:0 0 4px 4px}
+.ni{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--t3);font-size:9.5px;font-family:var(--fb);position:relative;padding:6px 3px;transition:color .2s}
+.ni i{font-size:16px}.ni.on{color:var(--gold)}
+.ni.on::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:2px;background:var(--gold);border-radius:0 0 3px 3px}
+
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
 .hide{display:none!important}
-
-/* ── CUSTOM CURSOR ── */
-*{cursor:none!important}
-#cur{
-  position:fixed;width:10px;height:10px;
-  background:var(--gold);border-radius:50%;
-  pointer-events:none;z-index:99999;
-  transform:translate(-50%,-50%);
-  transition:transform .1s ease,background .15s;
-  box-shadow:0 0 10px rgba(240,192,64,.9),0 0 22px rgba(240,192,64,.45);
-  mix-blend-mode:screen;
-}
-#curRing{
-  position:fixed;width:30px;height:30px;
-  border:1.5px solid rgba(240,192,64,.55);
-  border-radius:50%;pointer-events:none;z-index:99998;
-  transform:translate(-50%,-50%);
-  transition:left .12s ease,top .12s ease,width .2s,height .2s,border-color .2s,opacity .2s;
-}
-#cur.click{transform:translate(-50%,-50%) scale(2.8);background:#fff}
-#curRing.click{width:12px;height:12px;opacity:.4}
-#curRing.hover{width:44px;height:44px;border-color:rgba(240,192,64,.9);border-width:1px}
-.ctr{
-  position:fixed;border-radius:50%;pointer-events:none;z-index:99997;
-  transform:translate(-50%,-50%);
-  animation:trfade .55s ease forwards;
-}
-@keyframes trfade{0%{opacity:.5;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
 @keyframes sk{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
 </style>
 </head>
 <body>
-
-<!-- CURSOR -->
-<div id="cur"></div>
-<div id="curRing"></div>
+<div id="cur"></div><div id="curR"></div>
 
 <!-- LOGIN -->
 <div id="sLogin" class="scr on">
@@ -251,38 +289,92 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
     <div class="lcard">
       <h2>Enter the Arena</h2>
       <p class="lsub">Choose how you want to continue</p>
-      <button class="lbtn lg" id="bGoogle">
-        <img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google
-      </button>
-      <div class="div"><span>or</span></div>
+      <button class="lbtn lg" id="bGoogle"><img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google</button>
+      <div class="divl"><span>or</span></div>
       <div class="ef">
         <input type="email" id="iEmail" class="inp" placeholder="Email address"/>
-        <input type="password" id="iPass" class="inp" placeholder="Password"/>
+        <input type="password" id="iPass" class="inp" placeholder="Password (min 6 chars)"/>
         <button class="lbtn le" id="bEmail"><i class="fas fa-envelope"></i> Continue with Email</button>
       </div>
-      <div class="div"><span>or</span></div>
+      <div class="divl"><span>or</span></div>
       <button class="lbtn lgu" id="bGuest"><i class="fas fa-user-secret"></i> Continue as Guest</button>
     </div>
   </div>
 </div>
 
-<!-- GUEST WARNING MODAL -->
+<!-- GUEST WARNING -->
 <div id="mGuest" class="mov hide">
   <div class="mbox">
-    <div class="mica"><i class="fas fa-exclamation-triangle"></i></div>
-    <h3>Guest Account Warning</h3>
+    <div class="mica" style="background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.25)"><i class="fas fa-exclamation-triangle"></i></div>
+    <h3 style="color:var(--red)">Guest Account Warning</h3>
     <p class="wm">Your account <strong>cannot be recovered</strong> under any condition.</p>
     <ul class="wl">
       <li><i class="fas fa-times-circle"></i> No account recovery or password reset</li>
       <li><i class="fas fa-times-circle"></i> Wallet & earnings not transferable</li>
-      <li><i class="fas fa-times-circle"></i> Tournament history may be lost</li>
-      <li><i class="fas fa-times-circle"></i> Live support chat restricted</li>
       <li><i class="fas fa-times-circle"></i> No profile customization</li>
+      <li><i class="fas fa-times-circle"></i> Live support & player chat restricted</li>
+      <li><i class="fas fa-times-circle"></i> Premium features not available</li>
     </ul>
-    <div class="wtip"><i class="fas fa-lightbulb"></i><span>You can upgrade later by linking a Google account or another available platform to save your progress.</span></div>
+    <div class="wtip"><i class="fas fa-lightbulb"></i><span>Link a Google account later to save progress.</span></div>
     <div class="mac">
       <button class="mbtn mcan" id="bGBack">Go Back</button>
-      <button class="mbtn mcon" id="bGConfirm">I Understand, Continue</button>
+      <button class="mbtn mcon" id="bGConfirm">I Understand</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREMIUM MODAL -->
+<div id="mPremium" class="mov hide">
+  <div class="mbox prm-modal">
+    <div class="mica"><i class="fas fa-crown"></i></div>
+    <h3>ArenaX Premium</h3>
+    <div class="prm-features">
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Chat with other players directly</div>
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Full profile customization</div>
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Exclusive Premium badge</div>
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Priority support response</div>
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Custom avatar & profile color</div>
+      <div class="prm-feat"><i class="fas fa-check-circle"></i> Early tournament registration</div>
+    </div>
+    <div class="prm-plans">
+      <div class="prm-plan sel" id="planWeekly">
+        <div class="prm-plan-ico"><i class="fas fa-bolt"></i></div>
+        <div><div class="prm-plan-name">Weekly Pass</div><div class="prm-plan-sub">7 days access</div></div>
+        <div class="prm-plan-price">Rs 299</div>
+      </div>
+      <div class="prm-plan" id="planMonthly">
+        <div class="prm-plan-ico"><i class="fas fa-crown"></i></div>
+        <div><div class="prm-plan-name">Monthly Pass</div><div class="prm-plan-sub">30 days · Best value</div></div>
+        <div class="prm-plan-price">Rs 799</div>
+      </div>
+    </div>
+    <button class="prm-buy" id="bBuyPremium"><i class="fas fa-crown"></i> Get Premium</button>
+    <div class="mac" style="margin-top:10px">
+      <button class="mbtn mcan" id="bClosePremium">Maybe Later</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMIZE MODAL -->
+<div id="mCustomize" class="mov hide">
+  <div class="mbox cust-modal">
+    <div class="mica"><i class="fas fa-palette"></i></div>
+    <h3>Customize Profile</h3>
+    <div class="cust-section">
+      <div class="cust-label">Display Name</div>
+      <input class="cust-inp" id="custName" placeholder="Enter display name"/>
+    </div>
+    <div class="cust-section">
+      <div class="cust-label">Bio</div>
+      <input class="cust-inp" id="custBio" placeholder="Something about you..."/>
+    </div>
+    <div class="cust-section">
+      <div class="cust-label">Avatar Style</div>
+      <div class="cust-avatars" id="custAvatars"></div>
+    </div>
+    <div class="mac">
+      <button class="mbtn mcan" id="bCloseCustomize">Cancel</button>
+      <button class="mbtn" style="background:var(--gold);color:#0a0c12" id="bSaveCustomize">Save Changes</button>
     </div>
   </div>
 </div>
@@ -296,55 +388,69 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
       <div class="uav"><img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax"/></div>
     </div>
   </nav>
-  <div class="gbanner hide" id="gBanner">
-    <i class="fas fa-exclamation-circle"></i>
-    <span>You're on a <strong>Guest Account</strong>. Some features are limited.</span>
-    <button class="bup">Upgrade Now</button>
-  </div>
+  <div class="gbanner hide" id="gBanner"><i class="fas fa-exclamation-circle"></i><span>Guest Account — features limited.</span><button class="bup" id="gUpgradeBtn">Upgrade</button></div>
+  <div class="prmbanner hide" id="prmBanner"><i class="fas fa-crown"></i><span><strong>Premium Active</strong> — All features unlocked!</span></div>
+
   <div class="dbody">
 
     <!-- PROFILE TAB -->
     <section id="tProfile" class="tab on">
       <div class="sh"><h2><i class="fas fa-user-circle"></i> My Profile</h2></div>
-      <div class="pc">
+      <div class="pc" id="profileCard">
         <div class="paw">
           <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="pav"/>
-          <div class="pae"><i class="fas fa-camera"></i></div>
+          <div class="pae" id="btnChangeAv"><i class="fas fa-camera"></i></div>
         </div>
         <div class="pi">
           <h3 id="pName">Player</h3>
           <p id="pHandle" class="ph">@player#0000</p>
+          <p id="pBio" style="font-size:11px;color:var(--t2);margin-bottom:6px;display:none"></p>
           <div class="pb">
-            <span class="bdg br"><i class="fas fa-star"></i> Unranked</span>
+            <span class="bdg br" id="rankBadge"><i class="fas fa-star"></i> Unranked</span>
             <span class="bdg bg hide" id="bGuest2"><i class="fas fa-user-secret"></i> Guest</span>
+            <span class="bdg bprm hide" id="bPrm"><i class="fas fa-crown"></i> Premium</span>
           </div>
         </div>
       </div>
-      <div class="sg">
-        <div class="sc"><div class="sv">0</div><div class="sl">Tournaments</div></div>
-        <div class="sc"><div class="sv">0</div><div class="sl">Wins</div></div>
-        <div class="sc"><div class="sv">0%</div><div class="sl">Win Rate</div></div>
-        <div class="sc"><div class="sv">—</div><div class="sl">Best Finish</div></div>
+
+      <!-- PREMIUM PROMO (non-premium users) -->
+      <div class="prm-promo" id="prmPromo">
+        <div class="prm-promo-ico"><i class="fas fa-crown"></i></div>
+        <div>
+          <div class="prm-promo-title">Go Premium</div>
+          <div class="prm-promo-sub">Rs 299/week · Rs 799/month</div>
+        </div>
+        <button class="prm-promo-btn" id="bOpenPremium">Upgrade</button>
       </div>
+
+      <div class="sg">
+        <div class="sc"><div class="sv" id="statT">0</div><div class="sl2">Tournaments</div></div>
+        <div class="sc"><div class="sv" id="statW">0</div><div class="sl2">Wins</div></div>
+        <div class="sc"><div class="sv" id="statWR">0%</div><div class="sl2">Win Rate</div></div>
+        <div class="sc"><div class="sv" id="statB">—</div><div class="sl2">Best Finish</div></div>
+      </div>
+
       <div class="ps">
         <h4>Account Settings</h4>
-        <div class="sr"><i class="fas fa-pen"></i> Edit Profile<i class="fas fa-chevron-right"></i></div>
-        <div class="sr"><i class="fas fa-link"></i> Link Account<span class="ltag2">Guest Only</span><i class="fas fa-chevron-right"></i></div>
-        <div class="sr"><i class="fas fa-bell"></i> Notifications<i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnEditProfile"><i class="fas fa-pen"></i> Edit Profile<i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnCustomize"><i class="fas fa-palette"></i> Customize Profile<span class="prm-tag">Premium</span><i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnPlayerChat"><i class="fas fa-comments"></i> Player Chat<span class="prm-tag">Premium</span><i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnPremium"><i class="fas fa-crown"></i> Premium Plans<i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnNotif"><i class="fas fa-bell"></i> Notifications<i class="fas fa-chevron-right"></i></div>
         <div class="sr dr" id="bLogout"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
       </div>
     </section>
 
     <!-- RULES TAB -->
     <section id="tRules" class="tab">
-      <div class="sh"><h2><i class="fas fa-book-open"></i> Information & Rules</h2></div>
+      <div class="sh"><h2><i class="fas fa-book-open"></i> Rules</h2></div>
       <div class="rs"><i class="fas fa-search"></i><input class="rsi" id="rSearch" placeholder="Search rules..."/></div>
-      <div class="acc" id="accordion">
-        <div class="ai"><div class="ah"><i class="fas fa-gavel"></i> General Rules<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>All players must register before the tournament deadline.</li><li>Players must be online 10 minutes before match start.</li><li>No-shows result in automatic disqualification.</li><li>Cheating or hacking leads to permanent ban.</li><li>Match results are final once confirmed by both parties.</li></ul></div></div>
-        <div class="ai"><div class="ah"><i class="fas fa-users"></i> Team Composition<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Teams must have 2–5 players.</li><li>Each player can only be on one team per tournament.</li><li>Team name must not contain offensive language.</li><li>Roster changes allowed up to 24 hours before event.</li></ul></div></div>
-        <div class="ai"><div class="ah"><i class="fas fa-trophy"></i> Prizes & Rewards<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Prizes distributed within 72 hours of tournament end.</li><li>Guest accounts may have restricted prize withdrawals.</li><li>All prizes awarded in ArenaX Coins via Wallet.</li><li>Prize disputes must be raised within 48 hours.</li></ul></div></div>
-        <div class="ai"><div class="ah"><i class="fas fa-ban"></i> Prohibited Behaviour<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Harassment, hate speech, or abuse not tolerated.</li><li>Exploiting game bugs intentionally is forbidden.</li><li>Account sharing not allowed.</li><li>VPN usage may be restricted per game rules.</li></ul></div></div>
-        <div class="ai"><div class="ah"><i class="fas fa-shield-alt"></i> Anti-Cheat<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>ArenaX uses automated and manual anti-cheat monitoring.</li><li>Suspicious activity triggers a review period.</li><li>Players found guilty face permanent bans.</li><li>Report suspicious players via support chat.</li></ul></div></div>
+      <div class="acc">
+        <div class="ai"><div class="ah"><i class="fas fa-gavel"></i> General Rules<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Register before tournament deadline — no exceptions.</li><li>Be online 10 minutes before your match starts.</li><li>No-shows = automatic disqualification.</li><li>Cheating or hacking leads to permanent ban.</li><li>Match results are final once confirmed by both parties.</li></ul></div></div>
+        <div class="ai"><div class="ah"><i class="fas fa-users"></i> Team Rules<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Teams must have 2–5 players.</li><li>One player, one team per tournament.</li><li>Team names must be appropriate.</li><li>Roster changes allowed up to 24 hours before event.</li></ul></div></div>
+        <div class="ai"><div class="ah"><i class="fas fa-coins"></i> Prizes & Wallet<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Prizes distributed within 72 hours of tournament end.</li><li>Guest accounts have restricted prize withdrawals.</li><li>All prizes awarded in AX Coins via wallet.</li><li>Prize disputes must be raised within 48 hours.</li></ul></div></div>
+        <div class="ai"><div class="ah"><i class="fas fa-ban"></i> Prohibited Conduct<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Harassment or abuse — instant permanent ban.</li><li>Exploiting bugs intentionally is forbidden.</li><li>Account sharing leads to disqualification.</li><li>Collusion or match-fixing = permanent ban.</li></ul></div></div>
+        <div class="ai"><div class="ah"><i class="fas fa-shield-alt"></i> Anti-Cheat<i class="fas fa-chevron-down aar"></i></div><div class="ab"><ul class="rl"><li>Automated and manual anti-cheat on all matches.</li><li>Suspicious activity triggers mandatory review.</li><li>Confirmed cheating = permanent ban, no appeal.</li><li>Report via support chat with screenshots.</li></ul></div></div>
       </div>
     </section>
 
@@ -353,7 +459,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
       <div class="sh"><h2><i class="fas fa-wallet"></i> Wallet</h2></div>
       <div class="wc" id="wCard">
         <div class="wcd"></div>
-        <div class="wt"><span class="wl2">ArenaX Balance</span><span style="font-size:18px;color:var(--gold)"><i class="fas fa-coins"></i></span></div>
+        <div class="wt"><span class="wl2">ArenaX Balance</span><span style="font-size:17px;color:var(--gold)"><i class="fas fa-coins"></i></span></div>
         <div class="wb" id="wBal">0</div>
         <div class="wcl">AX Coins</div>
         <div class="wa">
@@ -361,13 +467,32 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
           <button class="wbtn" id="bWith"><i class="fas fa-arrow-up"></i> Withdraw</button>
         </div>
       </div>
-      <div class="glo hide" id="wLock"><i class="fas fa-lock"></i><p>Wallet features restricted for Guest accounts.</p><button class="upi">Link Account to Unlock</button></div>
-      <div class="wh" id="wHist"><h4>Transaction History</h4><div class="es"><i class="fas fa-receipt"></i><p>No transactions yet.</p></div></div>
+      <div class="glo hide" id="wLock"><i class="fas fa-lock"></i><p>Wallet restricted for Guest accounts.</p><button class="upi" id="wUpgradeBtn">Link Account</button></div>
+      <div id="wHist"><h4 style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:9px">Transaction History</h4><div class="es"><i class="fas fa-receipt"></i><p>No transactions yet.</p></div></div>
+    </section>
+
+    <!-- PLAYER CHAT TAB -->
+    <section id="tChat" class="tab">
+      <div class="sh"><h2><i class="fas fa-comments"></i> Player Chat</h2></div>
+      <div class="prm-lock" id="chatLock">
+        <i class="fas fa-crown"></i>
+        <p>Player-to-player chat is a <strong>Premium</strong> feature. Upgrade to chat with other players directly.</p>
+        <button class="prm-lock-btn" id="chatUpgradeBtn">Get Premium</button>
+      </div>
+      <div class="hide" id="chatListWrap">
+        <div class="pchat-list">
+          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=ali"/></div><div><div class="pchat-name">Ali Khan</div><div class="pchat-last">gg bro that match was 🔥</div></div><div class="pchat-time">2m</div><div class="pchat-unread">2</div></div>
+          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=zara"/></div><div><div class="pchat-name">Zara Ahmed</div><div class="pchat-last">Ready for the tournament?</div></div><div class="pchat-time">1h</div></div>
+          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=omar"/></div><div><div class="pchat-name">Omar Malik</div><div class="pchat-last">GG wp</div></div><div class="pchat-time">3h</div></div>
+          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=sara"/></div><div><div class="pchat-name">Sara Rizvi</div><div class="pchat-last">Let's team up next round!</div></div><div class="pchat-time">1d</div></div>
+        </div>
+        <div style="text-align:center;padding:16px;font-size:12px;color:var(--t3)"><i class="fas fa-lock-open" style="color:var(--prm);margin-right:5px"></i>Premium feature · Chat with any player</div>
+      </div>
     </section>
 
     <!-- TOURNAMENTS TAB -->
     <section id="tTour" class="tab">
-      <div class="sh"><h2><i class="fas fa-gamepad"></i> Tournament Updates</h2></div>
+      <div class="sh"><h2><i class="fas fa-gamepad"></i> Tournaments</h2></div>
       <div class="tf">
         <button class="fb on" data-f="all">All</button>
         <button class="fb" data-f="live">🔴 Live</button>
@@ -379,13 +504,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 
     <!-- SUPPORT TAB -->
     <section id="tSupport" class="tab">
-      <div class="sh"><h2><i class="fas fa-headset"></i> Support Chat</h2></div>
-      <div class="glo hide" id="sLock"><i class="fas fa-lock"></i><p>Live support not available for Guest accounts.</p><button class="upi">Link Account to Unlock</button></div>
-      <div class="cc" id="chatBox">
+      <div class="sh"><h2><i class="fas fa-headset"></i> Support</h2></div>
+      <div class="glo hide" id="sLock"><i class="fas fa-lock"></i><p>Support chat not available for Guest accounts.</p><button class="upi" id="sUpgradeBtn">Upgrade Account</button></div>
+      <div class="cc hide" id="chatBox">
         <div class="cm" id="chatMsgs">
           <div class="msg bot">
             <div class="mav bav"><i class="fas fa-robot"></i></div>
-            <div class="bbl">👋 Hello! I'm the ArenaX Support Bot. How can I help?
+            <div class="bbl">👋 Hey! I'm ArenaX Support. How can I help?
               <div class="qr" id="qReplies">
                 <button class="qrb" data-m="I have an issue with my match result">Match Issue</button>
                 <button class="qrb" data-m="I need help with my wallet">Wallet Help</button>
@@ -407,64 +532,43 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
     <button class="ni on" data-t="Profile"><i class="fas fa-user"></i><span>Profile</span></button>
     <button class="ni" data-t="Rules"><i class="fas fa-book-open"></i><span>Rules</span></button>
     <button class="ni" data-t="Wallet"><i class="fas fa-wallet"></i><span>Wallet</span></button>
+    <button class="ni" data-t="Chat"><i class="fas fa-comments"></i><span>Chat</span></button>
     <button class="ni" data-t="Tour"><i class="fas fa-trophy"></i><span>Events</span></button>
     <button class="ni" data-t="Support"><i class="fas fa-headset"></i><span>Support</span></button>
   </nav>
 </div>
 
 <script type="module">
-// ── FIREBASE SETUP ──
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
-  authDomain: "arenax-c1586.firebaseapp.com",
-  projectId: "arenax-c1586",
-  storageBucket: "arenax-c1586.firebasestorage.app",
-  messagingSenderId: "1069776825982",
-  appId: "1:1069776825982:web:f2d7f11cef4c206206b22f",
-  measurementId: "G-G95P4JY3J1"
-};
-
-const fireApp = initializeApp(firebaseConfig);
-const auth = getAuth(fireApp);
-const googleProvider = new GoogleAuthProvider();
-
+const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const gProvider=new GoogleAuthProvider();
 const $=id=>document.getElementById(id);
-const App={user:null,guest:false};
+const App={user:null,guest:false,premium:false,selectedPlan:'weekly'};
+const AVATAR_SEEDS=['ax1','ax2','ax3','ax4','bot1','bot2','bot3','bot4'];
 
-function goTo(id){
-  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
-  $(id).classList.add('on');
+// ── SCREEN ──
+function goTo(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));$(id).classList.add('on')}
+
+// ── ERROR MSG ──
+function showErr(msg){
+  let e=$('loginErr');
+  if(!e){e=document.createElement('div');e.id='loginErr';e.style.cssText='margin-top:10px;padding:9px 13px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.28);border-radius:8px;font-size:12px;color:var(--red);text-align:center';document.querySelector('.lcard').appendChild(e)}
+  e.textContent=msg;setTimeout(()=>{if(e)e.textContent=''},4000);
 }
+function shake(id){const el=$(id);if(!el)return;el.style.borderColor='#e8404a';el.style.animation='sk .4s ease';setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500)}
 
-function showLoginError(msg){
-  let err=$('loginErr');
-  if(!err){
-    err=document.createElement('div');
-    err.id='loginErr';
-    err.style.cssText='margin-top:12px;padding:10px 14px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.3);border-radius:8px;font-size:12.5px;color:#e8404a;text-align:center';
-    document.querySelector('.lcard').appendChild(err);
-  }
-  err.textContent=msg;
-  setTimeout(()=>{if(err)err.textContent=''},4000);
-}
-
-function shake(id){
-  const el=$(id);
-  if(!el)return;
-  el.style.borderColor='#e8404a';
-  el.style.animation='sk .4s ease';
-  setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500);
-}
-
+// ── BOOT ──
 function boot(){
   const u=App.user;
   $('pName').textContent=u.name;
   $('pHandle').textContent=u.handle;
   $('pAv').src=u.av;
   $('avImg').src=u.av;
+  // guest
   if(App.guest){
     $('gBanner').classList.remove('hide');
     $('bGuest2').classList.remove('hide');
@@ -473,6 +577,7 @@ function boot(){
     $('chatBox').classList.add('hide');
     $('wCard').style.opacity='.35';
     $('wCard').style.pointerEvents='none';
+    $('prmPromo').classList.add('hide');
   } else {
     $('gBanner').classList.add('hide');
     $('bGuest2').classList.add('hide');
@@ -482,6 +587,8 @@ function boot(){
     $('wCard').style.opacity='';
     $('wCard').style.pointerEvents='';
   }
+  // premium
+  updatePremiumUI();
   renderTours('all');
   switchTab('Profile');
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
@@ -489,76 +596,140 @@ function boot(){
   goTo('sDash');
 }
 
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));
-  $('t'+name).classList.add('on');
+function updatePremiumUI(){
+  if(App.premium){
+    $('bPrm').classList.remove('hide');
+    $('prmBanner').classList.remove('hide');
+    $('prmPromo').classList.add('hide');
+    $('profileCard').classList.add('prm-glow');
+    $('chatLock').classList.add('hide');
+    $('chatListWrap').classList.remove('hide');
+  } else {
+    $('bPrm').classList.add('hide');
+    $('prmBanner').classList.add('hide');
+    if(!App.guest)$('prmPromo').classList.remove('hide');
+    $('profileCard').classList.remove('prm-glow');
+    $('chatLock').classList.remove('hide');
+    $('chatListWrap').classList.add('hide');
+  }
 }
 
-// ── WAIT FOR DOM ──
-window.addEventListener('DOMContentLoaded', ()=>{
+// ── TABS ──
+function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on')}
 
-  // GOOGLE
-  $('bGoogle').addEventListener('click', async()=>{
+// ── TOURNAMENTS ──
+const TOURS=[
+  {id:1,n:'Grand RP Open Cup',g:'Grand RP Mobile',s:'live',p:'48/64',pr:'5,000 AX',t:'Live Now',d:'Jun 22'},
+  {id:2,n:'Orekhov Showdown',g:'Grand RP Mobile',s:'live',p:'16/16',pr:'2,500 AX',t:'Live Now',d:'Jun 22'},
+  {id:3,n:'City Champions League',g:'Grand RP Mobile',s:'upcoming',p:'12/32',pr:'10,000 AX',t:'Starts in 3h',d:'Jun 26'},
+  {id:4,n:'Street Royale S2',g:'Grand RP Mobile',s:'upcoming',p:'6/20',pr:'3,000 AX',t:'Starts in 1d',d:'Jun 27'},
+  {id:5,n:'OCG Supremacy I',g:'Grand RP Mobile',s:'upcoming',p:'0/8',pr:'1,500 AX',t:'Starts in 2d',d:'Jun 28'},
+  {id:6,n:'Spring Series Finals',g:'Grand RP Mobile',s:'ended',p:'64/64',pr:'20,000 AX',t:'Ended',d:'Jun 18'},
+  {id:7,n:'Rookie Rumble Cup',g:'Grand RP Mobile',s:'ended',p:'32/32',pr:'1,000 AX',t:'Ended',d:'Jun 15'},
+];
+function renderTours(f){
+  const list=$('tList');
+  const data=f==='all'?TOURS:TOURS.filter(t=>t.s===f);
+  if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return}
+  list.innerHTML=data.map(t=>`
+    <div class="tcard" data-id="${t.id}">
+      <div class="tt"><div><div class="tn">${t.n}</div><div class="tg">${t.g}</div></div>
+      <div class="ts ${t.s==='live'?'slv':t.s==='upcoming'?'sup':'send'}">${t.s==='live'?'🔴 Live':t.s==='upcoming'?'Upcoming':'Ended'}</div></div>
+      <div class="tdrow"><div class="tdi"><i class="fas fa-users"></i>${t.p}</div><div class="tdi"><i class="fas fa-clock"></i>${t.t}</div><div class="tdi"><i class="fas fa-calendar"></i>${t.d}</div></div>
+      <div class="tp"><i class="fas fa-coins"></i> ${t.pr}</div>
+    </div>`).join('');
+  list.querySelectorAll('.tcard').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const t=TOURS.find(x=>x.id==c.dataset.id);
+      alert(`🏆 ${t.n}\nGame: ${t.g}\nStatus: ${t.s.toUpperCase()}\nPlayers: ${t.p}\nDate: ${t.d}\nPrize: ${t.pr}`);
+    });
+  });
+}
+
+// ── WALLET ──
+function addTx(type,amt){
+  const h=$('wHist'),e=h.querySelector('.es');if(e)e.remove();
+  const c=type==='deposit'?'#3ddc84':'#e8404a',s=type==='deposit'?'+':'-',ic=type==='deposit'?'fa-arrow-down':'fa-arrow-up',lb=type==='deposit'?'Deposit':'Withdrawal';
+  const r=document.createElement('div');
+  r.style.cssText='display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:10px 13px;margin-bottom:7px';
+  r.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${c}22;color:${c};font-size:12px;flex-shrink:0"><i class="fas ${ic}"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:600">${lb}</div><div style="font-size:10px;color:var(--t3)">${new Date().toLocaleString()}</div></div><div style="font-family:var(--ff);font-size:15px;font-weight:700;color:${c}">${s}${amt.toLocaleString()}</div>`;
+  h.appendChild(r);
+}
+
+// ── CHAT BOT ──
+const BR={d:["Thanks! Agent will review within 24h.","Noted. Team will follow up shortly.","Logged! Anything else?"],match:["Share match ID and both IGNs. We investigate within 48h.","Share the timestamp and we'll review immediately."],wallet:["Wallet issues resolved within 72h. Include your handle.","Verify account before requesting large withdrawals."],report:["Need username, match ID, and violation description.","Thank you. We'll investigate immediately."],gen:["Feel free to ask! I'm here for all ArenaX questions.","Happy to help!"]};
+function rep(a){return a[Math.floor(Math.random()*a.length)]}
+function getReply(m){const l=m.toLowerCase();if(l.includes('match')||l.includes('result'))return rep(BR.match);if(l.includes('wallet')||l.includes('coin'))return rep(BR.wallet);if(l.includes('report')||l.includes('cheat'))return rep(BR.report);if(l.includes('general')||l.includes('inquiry'))return rep(BR.gen);return rep(BR.d)}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function sendMsg(txt){
+  if(!txt.trim())return;
+  const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
+  msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
+  msgs.scrollTop=9999;$('chatIn').value='';
+  msgs.innerHTML+=`<div class="msg bot" id="typ"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl"><div class="td2"><span></span><span></span><span></span></div></div></div>`;
+  msgs.scrollTop=9999;
+  setTimeout(()=>{const t=$('typ');if(t)t.remove();msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},1000+Math.random()*700);
+}
+function resetChat(){$('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>'}
+
+// ── CUSTOMIZE AVATARS ──
+function buildAvatarPicker(){
+  const wrap=$('custAvatars');
+  wrap.innerHTML=AVATAR_SEEDS.map((s,i)=>`<div class="cav-opt${i===0?' sel':''}" data-seed="${s}"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${s}"/></div>`).join('');
+  wrap.querySelectorAll('.cav-opt').forEach(el=>{
+    el.addEventListener('click',()=>{wrap.querySelectorAll('.cav-opt').forEach(x=>x.classList.remove('sel'));el.classList.add('sel')});
+  });
+}
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth,fireUser=>{
+  if(fireUser&&!App.guest){
+    const name=fireUser.displayName||fireUser.email.split('@')[0];
+    const handle='@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
+    const av=fireUser.photoURL||`https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
+    App.user={name,handle,av};App.guest=false;
+    // reset btn states
+    const eb=$('bEmail');if(eb){eb.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';eb.disabled=false}
+    const gb=$('bGoogle');if(gb){gb.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';gb.disabled=false}
+    boot();
+  }else if(!App.guest){App.user=null;goTo('sLogin')}
+});
+
+// ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+
+  // GOOGLE LOGIN
+  $('bGoogle').addEventListener('click',async()=>{
     const btn=$('bGoogle');
-    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting...';
-    btn.disabled=true;
-    try{
-      await signInWithPopup(auth, googleProvider);
-    }catch(e){
-      btn.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';
-      btn.disabled=false;
-      if(e.code==='auth/popup-closed-by-user') return;
-      if(e.code==='auth/popup-blocked') showLoginError('Popup blocked — allow popups for this site.');
-      else showLoginError('Google sign-in failed. Try again.');
-    }
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting...';btn.disabled=true;
+    try{await signInWithPopup(auth,gProvider)}
+    catch(e){btn.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';btn.disabled=false;
+      if(e.code==='auth/popup-closed-by-user')return;
+      if(e.code==='auth/popup-blocked')showErr('Popup blocked — allow popups for this site.');
+      else showErr('Google sign-in failed. Try again.');}
   });
 
-  // EMAIL
-  $('bEmail').addEventListener('click', async()=>{
-    const em=$('iEmail').value.trim();
-    const pw=$('iPass').value.trim();
-    if(!em){shake('iEmail');showLoginError('Email required.');return}
-    if(!pw){shake('iPass');showLoginError('Password required.');return}
-    if(pw.length<6){shake('iPass');showLoginError('Password min 6 characters.');return}
+  // EMAIL LOGIN
+  $('bEmail').addEventListener('click',async()=>{
+    const em=$('iEmail').value.trim(),pw=$('iPass').value.trim();
+    if(!em){shake('iEmail');showErr('Email required.');return}
+    if(!pw){shake('iPass');showErr('Password required.');return}
+    if(pw.length<6){shake('iPass');showErr('Password min 6 characters.');return}
     const btn=$('bEmail');
-    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Please wait...';
-    btn.disabled=true;
-    try{
-      await signInWithEmailAndPassword(auth,em,pw);
-    }catch(e){
-      console.log('Login err:',e.code);
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Please wait...';btn.disabled=true;
+    try{await signInWithEmailAndPassword(auth,em,pw)}
+    catch(e){
+      console.log('login err:',e.code);
       if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
-        try{
-          btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating account...';
-          const cred=await createUserWithEmailAndPassword(auth,em,pw);
-          await updateProfile(cred.user,{displayName:em.split('@')[0]});
-        }catch(e2){
-          btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
-          btn.disabled=false;
-          if(e2.code==='auth/email-already-in-use') showLoginError('Wrong password. Try again.');
-          else if(e2.code==='auth/weak-password') showLoginError('Password too weak.');
-          else showLoginError('Error: '+e2.code);
-        }
-      } else if(e.code==='auth/wrong-password'){
-        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
-        btn.disabled=false;
-        showLoginError('Wrong password. Try again.');
-      } else if(e.code==='auth/invalid-email'){
-        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
-        btn.disabled=false;
-        shake('iEmail');showLoginError('Invalid email.');
-      } else if(e.code==='auth/too-many-requests'){
-        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
-        btn.disabled=false;
-        showLoginError('Too many attempts. Try later.');
-      } else {
-        btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';
-        btn.disabled=false;
-        showLoginError('Error: '+e.code);
-      }
+        try{btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Creating account...';
+          const c=await createUserWithEmailAndPassword(auth,em,pw);
+          await updateProfile(c.user,{displayName:em.split('@')[0]});
+        }catch(e2){btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';btn.disabled=false;
+          showErr(e2.code==='auth/email-already-in-use'?'Wrong password. Try again.':'Error: '+e2.code);}
+      }else{btn.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';btn.disabled=false;
+        showErr(e.code==='auth/wrong-password'?'Wrong password.':e.code==='auth/invalid-email'?'Invalid email.':e.code==='auth/too-many-requests'?'Too many attempts. Try later.':'Error: '+e.code);}
     }
   });
-
   $('iPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('bEmail').click()});
 
   // GUEST
@@ -569,22 +740,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
     $('mGuest').classList.add('hide');
     const gid=Math.floor(1e5+Math.random()*9e5);
     App.user={name:'Guest Player',handle:`@guest#${gid}`,av:`https://api.dicebear.com/7.x/bottts/svg?seed=g${gid}`};
-    App.guest=true;
-    boot();
+    App.guest=true;boot();
   });
 
   // LOGOUT
-  $('bLogout').addEventListener('click', async()=>{
+  $('bLogout').addEventListener('click',async()=>{
     if(!confirm('Sign out?'))return;
-    if(App.guest){
-      App.user=null;App.guest=false;
-      resetChat();goTo('sLogin');return;
-    }
-    try{
-      await signOut(auth);
-      App.user=null;App.guest=false;
-      resetChat();goTo('sLogin');
-    }catch(e){alert('Sign out failed.')}
+    if(App.guest){App.user=null;App.guest=false;App.premium=false;resetChat();goTo('sLogin');return}
+    try{await signOut(auth);App.user=null;App.guest=false;App.premium=false;resetChat();goTo('sLogin')}
+    catch(e){alert('Sign out failed.')}
   });
 
   // TABS
@@ -604,18 +768,14 @@ window.addEventListener('DOMContentLoaded', ()=>{
       if(!was)item.classList.add('op');
     });
   });
-
   $('rSearch').addEventListener('input',e=>{
     const q=e.target.value.toLowerCase();
     document.querySelectorAll('.ai').forEach(i=>{i.style.display=i.textContent.toLowerCase().includes(q)?'':'none'});
   });
 
-  // TOURNAMENT FILTERS
+  // TOUR FILTERS
   document.querySelectorAll('.fb').forEach(b=>{
-    b.addEventListener('click',()=>{
-      document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');renderTours(b.dataset.f);
-    });
+    b.addEventListener('click',()=>{document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderTours(b.dataset.f)});
   });
 
   // WALLET
@@ -630,121 +790,114 @@ window.addEventListener('DOMContentLoaded', ()=>{
     if(!cur){alert('No balance.');return}
     const a=prompt(`Withdraw (max ${cur} AX):`);
     if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur-+a).toLocaleString();addTx('withdraw',+a)}
-    else if(+a>cur)alert('Not enough balance.');
+    else if(a&&+a>cur)alert('Not enough balance.');
   });
 
-  // CHAT
-  $('chatSend').addEventListener('click',()=>send($('chatIn').value));
-  $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter')send($('chatIn').value)});
-  document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))send(e.target.dataset.m)});
+  // SUPPORT CHAT
+  $('chatSend').addEventListener('click',()=>sendMsg($('chatIn').value));
+  $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg($('chatIn').value)});
+  document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))sendMsg(e.target.dataset.m)});
 
   // NOTIF
-  $('bBell').addEventListener('click',()=>alert('🔔 Notifications\n\n• City Champions League starts in 3h\n• Your match result was confirmed\n• New: OCG Supremacy I'));
-  document.querySelectorAll('.bup,.upi').forEach(b=>b.addEventListener('click',()=>alert('To upgrade:\nSettings → Link Account → Choose Google.')));
+  $('bBell').addEventListener('click',()=>alert('🔔 Notifications\n\n• City Champions League starts in 3h\n• Your match was confirmed\n• New tournament: OCG Supremacy I'));
+
+  // BANNERS
+  $('gUpgradeBtn').addEventListener('click',()=>alert('To upgrade:\nProfile → Link Account → Choose Google.'));
+  $('wUpgradeBtn').addEventListener('click',()=>alert('To unlock wallet:\nLog in with Google or Email.'));
+  $('sUpgradeBtn').addEventListener('click',()=>alert('To unlock support:\nLog in with Google or Email.'));
+
+  // ── EDIT PROFILE ──
+  $('btnEditProfile').addEventListener('click',()=>{
+    const n=prompt('Display name:',App.user?.name||'');
+    if(n&&n.trim()){$('pName').textContent=n.trim();if(App.user)App.user.name=n.trim()}
+  });
+
+  // ── NOTIFICATIONS ──
+  $('btnNotif').addEventListener('click',()=>alert('🔔 Notification Preferences\n\nAll notifications are currently enabled.\nTournament alerts: ON\nMatch reminders: ON\nWallet alerts: ON'));
+
+  // ── PREMIUM MODAL ──
+  function openPremium(){if(App.guest){alert('Create a real account to get Premium!');return}$('mPremium').classList.remove('hide')}
+  $('bOpenPremium').addEventListener('click',openPremium);
+  $('btnPremium').addEventListener('click',openPremium);
+  $('chatUpgradeBtn').addEventListener('click',openPremium);
+  $('bClosePremium').addEventListener('click',()=>$('mPremium').classList.add('hide'));
+  $('mPremium').addEventListener('click',e=>{if(e.target===$('mPremium'))$('mPremium').classList.add('hide')});
+
+  // PLAN SELECT
+  $('planWeekly').addEventListener('click',()=>{
+    App.selectedPlan='weekly';
+    $('planWeekly').classList.add('sel');$('planMonthly').classList.remove('sel');
+    $('bBuyPremium').textContent='Get Premium — Rs 299/week';
+  });
+  $('planMonthly').addEventListener('click',()=>{
+    App.selectedPlan='monthly';
+    $('planMonthly').classList.add('sel');$('planWeekly').classList.remove('sel');
+    $('bBuyPremium').textContent='Get Premium — Rs 799/month';
+  });
+
+  // BUY PREMIUM (demo — no actual payment)
+  $('bBuyPremium').addEventListener('click',()=>{
+    const price=App.selectedPlan==='weekly'?'Rs 299':'Rs 799';
+    const dur=App.selectedPlan==='weekly'?'7 days':'30 days';
+    if(confirm(`Activate ${dur} Premium for ${price}?\n\n(Demo mode — no actual charge)`)){
+      App.premium=true;
+      $('mPremium').classList.add('hide');
+      updatePremiumUI();
+      alert('🎉 Premium Activated!\n\nWelcome to ArenaX Premium. Enjoy all features!');
+    }
+  });
+
+  // ── PLAYER CHAT ──
+  $('btnPlayerChat').addEventListener('click',()=>{
+    if(!App.premium){openPremium();return}
+    switchTab('Chat');
+    document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
+    document.querySelector('.ni[data-t="Chat"]').classList.add('on');
+  });
+
+  // ── CUSTOMIZE ──
+  $('btnCustomize').addEventListener('click',()=>{
+    if(!App.premium){openPremium();return}
+    $('custName').value=App.user?.name||'';
+    $('custBio').value='';
+    buildAvatarPicker();
+    $('mCustomize').classList.remove('hide');
+  });
+  $('pae').addEventListener('click',()=>{
+    if(!App.premium){openPremium();return}
+    $('custName').value=App.user?.name||'';
+    buildAvatarPicker();
+    $('mCustomize').classList.remove('hide');
+  });
+  $('bCloseCustomize').addEventListener('click',()=>$('mCustomize').classList.add('hide'));
+  $('mCustomize').addEventListener('click',e=>{if(e.target===$('mCustomize'))$('mCustomize').classList.add('hide')});
+  $('bSaveCustomize').addEventListener('click',()=>{
+    const n=$('custName').value.trim();
+    const b=$('custBio').value.trim();
+    const selAv=document.querySelector('.cav-opt.sel');
+    if(n){$('pName').textContent=n;if(App.user)App.user.name=n}
+    if(b){const bioEl=$('pBio');bioEl.textContent=b;bioEl.style.display='block'}
+    if(selAv){const src=`https://api.dicebear.com/7.x/bottts/svg?seed=${selAv.dataset.seed}`;$('pAv').src=src;$('avImg').src=src;if(App.user)App.user.av=src}
+    $('mCustomize').classList.add('hide');
+    alert('Profile updated! ✅');
+  });
+
+  // ── CURSOR ──
+  const cur=$('cur'),ring=$('curR');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{
+    mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';
+    const t=document.createElement('div');const s=2+Math.random()*3;t.className='ctr';
+    t.style.cssText=`left:${mx}px;top:${my}px;width:${s}px;height:${s}px;background:rgba(240,192,64,${.1+Math.random()*.2})`;
+    document.body.appendChild(t);setTimeout(()=>t.remove(),500);
+  });
+  (function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
+  document.addEventListener('mousedown',()=>{cur.classList.add('ck');for(let i=0;i<6;i++){const b=document.createElement('div'),a=(i/6)*Math.PI*2,d=14+Math.random()*12;b.className='ctr';b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s,top .3s,opacity .3s`;document.body.appendChild(b);requestAnimationFrame(()=>{b.style.left=(mx+Math.cos(a)*d)+'px';b.style.top=(my+Math.sin(a)*d)+'px';b.style.opacity='0'});setTimeout(()=>b.remove(),340)}});
+  document.addEventListener('mouseup',()=>cur.classList.remove('ck'));
+  document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.add('hv')});
+  document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.remove('hv')});
 
 }); // end DOMContentLoaded
-
-// AUTH STATE — outside DOMContentLoaded
-onAuthStateChanged(auth, fireUser=>{
-  if(fireUser && !App.guest){
-    const name=fireUser.displayName||fireUser.email.split('@')[0];
-    const handle='@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
-    const av=fireUser.photoURL||`https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
-    App.user={name,handle,av};
-    App.guest=false;
-    const eb=$('bEmail');
-    if(eb){eb.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';eb.disabled=false;}
-    const gb=$('bGoogle');
-    if(gb){gb.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';gb.disabled=false;}
-    boot();
-  } else if(!App.guest){
-    App.user=null;
-    goTo('sLogin');
-  }
-});
-
-// ── TOURNAMENTS ──
-const TOURS=[
-  {id:1,n:'Grand RP Open Cup',g:'Grand RP Mobile',s:'live',p:'48/64',pr:'5,000 AX',t:'Live Now',d:'Jun 22'},
-  {id:2,n:'Orekhov Showdown',g:'Grand RP Mobile',s:'live',p:'16/16',pr:'2,500 AX',t:'Live Now',d:'Jun 22'},
-  {id:3,n:'City Champions League',g:'Grand RP Mobile',s:'upcoming',p:'12/32',pr:'10,000 AX',t:'Starts in 3h',d:'Jun 22'},
-  {id:4,n:'Street Royale S2',g:'Grand RP Mobile',s:'upcoming',p:'6/20',pr:'3,000 AX',t:'Starts in 1d',d:'Jun 23'},
-  {id:5,n:'OCG Supremacy I',g:'Grand RP Mobile',s:'upcoming',p:'0/8',pr:'1,500 AX',t:'Starts in 2d',d:'Jun 24'},
-  {id:6,n:'Spring Series Finals',g:'Grand RP Mobile',s:'ended',p:'64/64',pr:'20,000 AX',t:'Ended',d:'Jun 18'},
-  {id:7,n:'Rookie Rumble Cup',g:'Grand RP Mobile',s:'ended',p:'32/32',pr:'1,000 AX',t:'Ended',d:'Jun 15'},
-];
-function renderTours(f){
-  const list=$('tList');
-  const data=f==='all'?TOURS:TOURS.filter(t=>t.s===f);
-  if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return}
-  list.innerHTML=data.map(t=>`
-    <div class="tcard" data-id="${t.id}">
-      <div class="tt"><div><div class="tn">${t.n}</div><div class="tg">${t.g}</div></div>
-      <div class="ts ${t.s==='live'?'sl':t.s==='upcoming'?'su':'se'}">${t.s==='live'?'🔴 Live':t.s==='upcoming'?'Upcoming':'Ended'}</div></div>
-      <div class="td"><div class="tdi"><i class="fas fa-users"></i>${t.p}</div><div class="tdi"><i class="fas fa-clock"></i>${t.t}</div><div class="tdi"><i class="fas fa-calendar"></i>${t.d}</div></div>
-      <div class="tp"><i class="fas fa-coins"></i> ${t.pr}</div>
-    </div>`).join('');
-  list.querySelectorAll('.tcard').forEach(c=>{
-    c.onclick=()=>{const t=TOURS.find(x=>x.id==c.dataset.id);alert(`🏆 ${t.n}\nGame: ${t.g}\nStatus: ${t.s.toUpperCase()}\nPlayers: ${t.p}\nDate: ${t.d}\nPrize: ${t.pr}`)};
-  });
-}
-document.querySelectorAll('.fb').forEach(b=>{
-  b.onclick=()=>{document.querySelectorAll('.fb').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderTours(b.dataset.f)};
-});
-
-// ── WALLET FUNCTIONS ──
-function addTx(type,amt){
-  const h=$('wHist'),e=h.querySelector('.es');if(e)e.remove();
-  const c=type==='deposit'?'#3ddc84':'#e8404a',s=type==='deposit'?'+':'-',ic=type==='deposit'?'fa-arrow-down':'fa-arrow-up',lb=type==='deposit'?'Deposit':'Withdrawal';
-  const r=document.createElement('div');
-  r.style.cssText='display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:11px 13px;margin-bottom:7px';
-  r.innerHTML=`<div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${c}22;color:${c};font-size:13px;flex-shrink:0"><i class="fas ${ic}"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:600">${lb}</div><div style="font-size:10px;color:var(--t3)">${new Date().toLocaleString()}</div></div><div style="font-family:var(--ff);font-size:16px;font-weight:700;color:${c}">${s}${amt.toLocaleString()}</div>`;
-  h.appendChild(r);
-}
-
-// ── CHAT FUNCTIONS ──
-const BR={
-  d:["Thanks! A live agent will review within 24 hours.","I've noted your concern. Team will follow up shortly.","That's logged. Anything else?"],
-  match:["For match disputes, share your match ID and both IGNs. We investigate within 48 hours.","Match results lock after both parties confirm. Share the timestamp and we'll review."],
-  wallet:["Wallet issues resolved within 72 hours. Include your handle in the ticket.","Ensure your account is verified before requesting withdrawals."],
-  report:["We need the username, match ID, and violation description. Reviewed within 24 hours.","Thank you. Cheating is taken seriously — we'll investigate immediately."],
-  gen:["Feel free to ask! I'm here for all ArenaX questions.","Happy to help! What would you like to know?"]
-};
-function pr(a){return a[Math.floor(Math.random()*a.length)]}
-function reply(m){const l=m.toLowerCase();if(l.includes('match')||l.includes('result'))return pr(BR.match);if(l.includes('wallet')||l.includes('coin'))return pr(BR.wallet);if(l.includes('report')||l.includes('cheat'))return pr(BR.report);if(l.includes('general')||l.includes('inquiry'))return pr(BR.gen);return pr(BR.d)}
-function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
-function send(txt){
-  if(!txt.trim())return;
-  const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
-  msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-  msgs.scrollTop=9999;$('chatIn').value='';
-  msgs.innerHTML+=`<div class="msg bot" id="typ"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl"><div class="td2"><span></span><span></span><span></span></div></div></div>`;
-  msgs.scrollTop=9999;
-  setTimeout(()=>{const t=$('typ');if(t)t.remove();msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${reply(txt)}</div></div>`;msgs.scrollTop=9999},1200+Math.random()*600);
-}
-function resetChat(){
-  $('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hello! I\'m the ArenaX Support Bot. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';
-}
-
-// ── CURSOR ──
-const cur=document.getElementById('cur');
-const ring=document.getElementById('curRing');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{
-  mx=e.clientX;my=e.clientY;
-  cur.style.left=mx+'px';cur.style.top=my+'px';
-  const tr=document.createElement('div');const sz=3+Math.random()*4;tr.className='ctr';
-  tr.style.cssText=`left:${mx}px;top:${my}px;width:${sz}px;height:${sz}px;background:rgba(240,192,64,${.15+Math.random()*.25})`;
-  document.body.appendChild(tr);setTimeout(()=>tr.remove(),550);
-});
-(function animRing(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing)})();
-document.addEventListener('mousedown',()=>{
-  cur.classList.add('click');ring.classList.add('click');
-  for(let i=0;i<6;i++){const b=document.createElement('div');const angle=(i/6)*Math.PI*2;const dist=18+Math.random()*14;b.className='ctr';b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s,top .3s,opacity .3s`;document.body.appendChild(b);requestAnimationFrame(()=>{b.style.left=(mx+Math.cos(angle)*dist)+'px';b.style.top=(my+Math.sin(angle)*dist)+'px';b.style.opacity='0'});setTimeout(()=>b.remove(),350);}
-});
-document.addEventListener('mouseup',()=>{cur.classList.remove('click');ring.classList.remove('click')});
-document.addEventListener('mouseover',e=>{if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.add('hover')}});
-document.addEventListener('mouseout',e=>{if(e.target.matches('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb')){ring.classList.remove('hover')}});
 </script>
 </body>
 </html>
