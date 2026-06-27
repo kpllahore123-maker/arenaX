@@ -618,6 +618,8 @@ const auth=getAuth(app);
 const gProvider=new GoogleAuthProvider();
 const db=getFirestore(app);
 let _chatUnsub=null;
+window._fbAuth=auth;
+window._fbDb=db;
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false,premium:false,selectedPlan:'weekly'};
 const AVATAR_SEEDS=['ax1','ax2','ax3','ax4','bot1','bot2','bot3','bot4'];
@@ -738,7 +740,7 @@ async function sendMsg(txt){
   if(!txt.trim())return;
   const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
   $('chatIn').value='';
-  const fireUser=auth.currentUser;
+  const fireUser=window._fbAuth?.currentUser||auth.currentUser;
   if(!fireUser){
     msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
     msgs.scrollTop=9999;
@@ -769,7 +771,7 @@ function resetChat(){
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
 }
 function startChatListener(){
-  const fireUser=auth.currentUser;
+  const fireUser=window._fbAuth?.currentUser||auth.currentUser;
   if(!fireUser)return;
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
   const ticketId=fireUser.uid+'_ticket';
