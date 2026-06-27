@@ -610,7 +610,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
 const app=initializeApp(firebaseConfig);
@@ -620,6 +620,7 @@ const db=getFirestore(app);
 let _chatUnsub=null;
 window._fbAuth=auth;
 window._fbDb=db;
+window._fsExtra={setDoc,doc};
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false,premium:false,selectedPlan:'weekly'};
 const AVATAR_SEEDS=['ax1','ax2','ax3','ax4','bot1','bot2','bot3','bot4'];
@@ -860,7 +861,15 @@ onAuthStateChanged(auth,fireUser=>{
     const name=fireUser.displayName||fireUser.email.split('@')[0];
     const handle='@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
     const av=fireUser.photoURL||`https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
-    App.user={name,handle,av};App.guest=false;
+    App.user={name,handle,av,uid:fireUser.uid};App.guest=false;
+    // Save/update user in Firestore
+    try{
+      setDoc(doc(db,'users',fireUser.uid),{
+        name,handle,av,email:fireUser.email||'',
+        uid:fireUser.uid,premium:false,banned:false,balance:0,
+        createdAt:new Date().toISOString()
+      },{merge:true}).catch(e=>console.log('Firestore:',e));
+    }catch(e){console.log('Firestore user save:',e);}
     // reset btn states
     const eb=$('bEmail');if(eb){eb.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';eb.disabled=false}
     const gb=$('bGoogle');if(gb){gb.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';gb.disabled=false}
