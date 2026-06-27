@@ -467,7 +467,7 @@ window.showPage=function(id){
   if(id==='pgUsers')renderUsers();
   if(id==='pgPayments')renderPayments();
   if(id==='pgWithdraw')renderWithdrawals();
-  if(id==='pgTours')renderTournaments();
+  if(id==='pgTours')loadTournaments();
   if(id==='pgReports')renderReports();
   if(id==='pgSupport')loadSupportTickets();
 }
@@ -652,16 +652,34 @@ window.rejectWith=function(id){
 }
 
 // ── TOURNAMENTS ──
-function renderTournaments(){
-  $('toursTbody').innerHTML=DB.tournaments.map(t=>`
+// ── TOURNAMENTS (Firestore) ──
+let _toursUnsub=null;
+
+function loadTournaments(){
+  if(_toursUnsub){_toursUnsub();_toursUnsub=null;}
+  const q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
+  _toursUnsub=onSnapshot(q,snap=>{
+    const list=[];
+    snap.forEach(d=>list.push({id:d.id,...d.data()}));
+    renderTournaments(list);
+  });
+}
+
+function renderTournaments(list){
+  if(!list){return;}
+  if(!list.length){
+    $('toursTbody').innerHTML=`<tr class="empty-row"><td colspan="6">No tournaments yet — add one!</td></tr>`;
+    return;
+  }
+  $('toursTbody').innerHTML=list.map(t=>`
     <tr>
       <td style="font-weight:600">${t.name}</td>
-      <td style="color:var(--t2)">${t.game}</td>
-      <td>${t.players}</td>
-      <td style="font-family:var(--ff);color:var(--gold)">${t.prize}</td>
+      <td style="color:var(--t2)">${t.game||'Grand RP Mobile'}</td>
+      <td>${t.registered||0}/${t.maxPlayers||32}</td>
+      <td style="font-family:var(--ff);color:var(--gold)">${t.prize||'TBD'}</td>
       <td><span class="badge ${t.status==='live'?'red':t.status==='upcoming'?'blue':'gray'}">${t.status==='live'?'🔴 Live':t.status==='upcoming'?'Upcoming':'Ended'}</span></td>
       <td>
-        <button class="act-btn view" onclick="editTour('${t.id}')">Edit</button>
+        <button class="act-btn view" onclick="editTour('${t.id}','${t.name}','${t.prize||''}','${t.status}')">Edit</button>
         <button class="act-btn reject" onclick="deleteTour('${t.id}')">Delete</button>
       </td>
     </tr>`).join('');
@@ -672,37 +690,50 @@ window.openAddTour=function(){
     <input class="modal-inp" id="tName" placeholder="Tournament Name"/>
     <input class="modal-inp" id="tGame" placeholder="Game Name" value="Grand RP Mobile"/>
     <input class="modal-inp" id="tPrize" placeholder="Prize (e.g. 5,000 AX)"/>
-    <input class="modal-inp" id="tMax" placeholder="Max Players (e.g. 32)" type="number"/>`,
-  ()=>{
-    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value,max=$('tMax').value;
-    if(!name){toast('Enter tournament name','err');return;}
-    DB.tournaments.push({id:'t'+Date.now(),name,game:game||'Grand RP Mobile',players:'0/'+(max||32),prize:prize||'TBD',status:'upcoming'});
-    renderTournaments();refreshDash();toast('Tournament added: '+name);
-  });
-}
-
-window.editTour=function(id){
-  const t=DB.tournaments.find(x=>x.id===id);if(!t)return;
-  openModal('Edit: '+t.name,`
-    <input class="modal-inp" id="eName" value="${t.name}"/>
-    <input class="modal-inp" id="ePrize" value="${t.prize}"/>
-    <select class="modal-inp" id="eStat" style="background:var(--card);color:var(--t1)">
-      <option value="live" ${t.status==='live'?'selected':''}>Live</option>
-      <option value="upcoming" ${t.status==='upcoming'?'selected':''}>Upcoming</option>
-      <option value="ended" ${t.status==='ended'?'selected':''}>Ended</option>
+    <input class="modal-inp" id="tMax" placeholder="Max Players (e.g. 32)" type="number"/>
+    <select class="modal-inp" id="tStat" style="background:var(--card);color:var(--t1)">
+      <option value="upcoming">Upcoming</option>
+      <option value="live">Live</option>
+      <option value="ended">Ended</option>
     </select>`,
-  ()=>{
-    t.name=$('eName').value||t.name;
-    t.prize=$('ePrize').value||t.prize;
-    t.status=$('eStat').value;
-    renderTournaments();toast('Tournament updated');
+  async ()=>{
+    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value,max=+($('tMax').value)||32,status=$('tStat').value;
+    if(!name){toast('Enter tournament name','err');return;}
+    try{
+      await addDoc(collection(db,'tournaments'),{
+        name,game:game||'Grand RP Mobile',prize:prize||'TBD',
+        maxPlayers:max,registered:0,status,createdAt:serverTimestamp()
+      });
+      toast('Tournament added: '+name);
+    }catch(e){toast('Error: '+e.message,'err');}
   });
 }
 
-window.deleteTour=function(id){
+window.editTour=function(id,name,prize,status){
+  openModal('Edit Tournament',`
+    <input class="modal-inp" id="eName" value="${name}"/>
+    <input class="modal-inp" id="ePrize" value="${prize}"/>
+    <select class="modal-inp" id="eStat" style="background:var(--card);color:var(--t1)">
+      <option value="live" ${status==='live'?'selected':''}>🔴 Live</option>
+      <option value="upcoming" ${status==='upcoming'?'selected':''}>Upcoming</option>
+      <option value="ended" ${status==='ended'?'selected':''}>Ended</option>
+    </select>`,
+  async ()=>{
+    try{
+      await updateDoc(doc(db,'tournaments',id),{
+        name:$('eName').value,prize:$('ePrize').value,status:$('eStat').value
+      });
+      toast('Tournament updated!');
+    }catch(e){toast('Error: '+e.message,'err');}
+  });
+}
+
+window.deleteTour=async function(id){
   if(!confirm('Delete this tournament?'))return;
-  DB.tournaments=DB.tournaments.filter(t=>t.id!==id);
-  renderTournaments();toast('Tournament deleted','err');
+  try{
+    await deleteDoc(doc(db,'tournaments',id));
+    toast('Tournament deleted','err');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
 // ── REPORTS ──
@@ -860,6 +891,7 @@ onAuthStateChanged(auth,user=>{
     $('adminApp').style.display='block';
     refreshDash();
     loadSupportTickets();
+    loadTournaments();
   }
 });
 
