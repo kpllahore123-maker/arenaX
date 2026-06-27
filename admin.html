@@ -765,7 +765,7 @@ function renderSupport(){
 }
 
 // Support Chat Modal
-function openSupportChat(ticketId, userName){
+window.openSupportChat=function openSupportChat(ticketId, userName){
   _openChatTicketId=ticketId;
   $('scModalName').textContent='Chat: '+userName;
   $('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">Loading...</div>';
