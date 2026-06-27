@@ -610,11 +610,14 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const gProvider=new GoogleAuthProvider();
+const db=getFirestore(app);
+let _chatUnsub=null;
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false,premium:false,selectedPlan:'weekly'};
 const AVATAR_SEEDS=['ax1','ax2','ax3','ax4','bot1','bot2','bot3','bot4'];
@@ -663,6 +666,7 @@ function boot(){
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
   document.querySelector('.ni[data-t="Profile"]').classList.add('on');
   goTo('sDash');
+  startChatListener();
 }
 
 function updatePremiumUI(){
@@ -730,16 +734,57 @@ const BR={d:["Thanks! Agent will review within 24h.","Noted. Team will follow up
 function rep(a){return a[Math.floor(Math.random()*a.length)]}
 function getReply(m){const l=m.toLowerCase();if(l.includes('match')||l.includes('result'))return rep(BR.match);if(l.includes('wallet')||l.includes('coin'))return rep(BR.wallet);if(l.includes('report')||l.includes('cheat'))return rep(BR.report);if(l.includes('general')||l.includes('inquiry'))return rep(BR.gen);return rep(BR.d)}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
-function sendMsg(txt){
+async function sendMsg(txt){
   if(!txt.trim())return;
   const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
-  msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-  msgs.scrollTop=9999;$('chatIn').value='';
-  msgs.innerHTML+=`<div class="msg bot" id="typ"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl"><div class="td2"><span></span><span></span><span></span></div></div></div>`;
-  msgs.scrollTop=9999;
-  setTimeout(()=>{const t=$('typ');if(t)t.remove();msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},1000+Math.random()*700);
+  $('chatIn').value='';
+  if(!App.user||App.guest){
+    msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
+    msgs.scrollTop=9999;
+    setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
+    return;
+  }
+  try{
+    const ticketId=App.user.uid+'_ticket';
+    await addDoc(collection(db,'support',ticketId,'messages'),{
+      text:txt,sender:'user',senderName:App.user.name,
+      uid:App.user.uid,createdAt:serverTimestamp()
+    });
+    // Update ticket meta
+    await addDoc(collection(db,'support_tickets'),{
+      uid:App.user.uid,userName:App.user.name,userHandle:App.user.handle,
+      lastMsg:txt,status:'open',updatedAt:serverTimestamp(),ticketId
+    }).catch(()=>{});
+  }catch(e){
+    msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
+    msgs.scrollTop=9999;
+    setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
+  }
 }
-function resetChat(){$('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>'}
+function resetChat(){
+  $('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';
+  if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
+}
+function startChatListener(){
+  if(!App.user||App.guest)return;
+  if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
+  const ticketId=App.user.uid+'_ticket';
+  const msgs=$('chatMsgs');
+  const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
+  _chatUnsub=onSnapshot(q,snap=>{
+    msgs.innerHTML='';
+    snap.forEach(d=>{
+      const m=d.data();
+      if(m.sender==='user'){
+        msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(m.text)}</div></div>`;
+      } else {
+        msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-${m.sender==='admin'?'shield-alt':'robot'}"></i></div><div class="bbl">${esc(m.text)}</div></div>`;
+      }
+    });
+    if(snap.empty){msgs.innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';}
+    msgs.scrollTop=9999;
+  });
+}
 
 // ── CUSTOMIZE AVATARS ──
 function buildAvatarPicker(){
