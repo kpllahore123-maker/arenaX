@@ -745,46 +745,42 @@ function addTx(type,amt){
 let _escalated=false;
 
 const _botRules=[
-  {keys:['jazzcash','jazz cash'],reply:'JazzCash se deposit karne ke liye: JazzCash app kholo → Send Money → 0302-4686897 (ArenaX) → amount bhejo → Wallet mein Deposit dabao. Coins turant add ho jayenge! ✅'},
-  {keys:['easypaisa','easy paisa'],reply:'EasyPaisa se deposit: app kholo → Send Money → 0315-9876543 (ArenaX) → amount bhejo → confirm karo. Coins 5 min mein add ho jayenge! ✅'},
-  {keys:['deposit','add coins','add money','recharge'],reply:'Wallet mein jaao → Deposit dabao → JazzCash ya EasyPaisa choose karo → amount enter karo → confirm. Minimum Rs 50 hai. 💰'},
-  {keys:['withdraw','withdrawal','nikalna','paise nikalo'],reply:'Wallet → Withdraw dabao → amount enter karo → confirm. Processing 24-48 hours mein hoti hai. 📤'},
-  {keys:['balance','coins','wallet'],reply:'Apna balance dekhne ke liye Wallet section mein jaao. Deposit aur withdrawal history bhi wahan milegi. 💎'},
-  {keys:['tournament','join','register','event'],reply:'Events section mein jaao → koi bhi tournament choose karo → Register dabao. Premium members priority registration milti hai! 🏆'},
-  {keys:['premium','upgrade'],reply:'Premium ke liye Profile → Premium Plan choose karo. Premium users ko exclusive tournaments, priority support, aur special badges milte hain! 👑'},
-  {keys:['rules','rule','guidelines'],reply:'Rules section mein saari guidelines hain. Main rules: fair play, no cheating, no abusive language. Violation pe ban ho sakta hai. 📋'},
-  {keys:['password','login','sign in','account'],reply:'Login issues ke liye: Email/password correct check karo. Bhool gaye? Firebase se password reset karo. Google se bhi login kar sakte ho! 🔐'},
-  {keys:['profile','avatar','customize','name'],reply:'Profile section mein jaao → Customize button dabao → name, bio, avatar sab change kar sakte ho! ✏️'},
-  {keys:['hello','hi','hey','salam','assalam'],reply:'Hello! 👋 Main ArenaX Support Bot hoon. Wallet, tournaments, deposits, ya koi bhi sawaal puchho!'},
-  {keys:['thanks','thank you','shukriya','ok done'],reply:'Khushi hui madad karke! Aur kuch chahiye toh batao. 😊'},
-  {keys:['report','cheat','cheating','hacking'],reply:'Cheater report karne ke liye: match ID, player username, aur violation describe karo. Hamare team 48 ghante mein action lega. Serious case? "Agent" likho. 🚨'},
-  {keys:['prize','prize pool','winning'],reply:'Har tournament ka prize alag hota hai — Events section mein dekho. Prize AX Coins mein milta hai jo withdraw kar sakte ho! 💵'},
-  {keys:['ban','banned','suspend'],reply:'Agar account suspend hua hai toh reason email pe aata hai. Appeal karne ke liye "Agent se baat karni hai" likho. ⚠️'},
+  {keys:['jazzcash','jazz cash'],reply:'To deposit via JazzCash: Open JazzCash app → Send Money → 0302-4686897 (ArenaX) → enter amount → tap Confirm. Coins will be added instantly! ✅'},
+  {keys:['easypaisa','easy paisa'],reply:'To deposit via EasyPaisa: Open app → Send Money → 0315-9876543 (ArenaX) → enter amount → confirm. Coins credited within 5 minutes! ✅'},
+  {keys:['deposit','add coins','add money','recharge','fund'],reply:'Go to Wallet → tap Deposit → choose JazzCash or EasyPaisa → enter amount → confirm. Minimum deposit is Rs 50. 💰'},
+  {keys:['withdraw','withdrawal'],reply:'Go to Wallet → tap Withdraw → enter amount → confirm. Processing takes 24-48 hours. 📤'},
+  {keys:['balance','coins','wallet'],reply:'Check your balance in the Wallet section. Deposit and withdrawal history is also available there. 💎'},
+  {keys:['tournament','join','register','event'],reply:'Go to Events → choose a tournament → tap Register. Premium members get priority registration! 🏆'},
+  {keys:['premium','upgrade','vip'],reply:'Go to Profile → choose a Premium Plan. Premium users get exclusive tournaments, priority support, and special badges! 👑'},
+  {keys:['rules','rule','guidelines','policy'],reply:'Check the Rules section for all guidelines. Key rules: fair play, no cheating, no abusive language. Violations may result in a ban. 📋'},
+  {keys:['password','login','sign in','cant login','cannot login'],reply:'For login issues: double-check your email and password. Forgot password? Use Firebase password reset. You can also sign in with Google! 🔐'},
+  {keys:['profile','avatar','customize','name','bio'],reply:'Go to Profile → tap Customize → you can change your name, bio, and avatar! ✏️'},
+  {keys:['hello','hi','hey','sup','greetings'],reply:'Hello! 👋 I am the ArenaX Support Bot. Ask me anything about wallet, tournaments, deposits, or your account!'},
+  {keys:['thanks','thank you','ok done','got it','great'],reply:'Happy to help! Let me know if you need anything else. 😊'},
+  {keys:['report','cheat','cheating','hack','hacking'],reply:'To report a player: provide the match ID, player username, and describe the violation. Our team investigates within 48 hours. For urgent cases, type "agent". 🚨'},
+  {keys:['prize','prize pool','winning','reward'],reply:'Each tournament has a different prize — check the Events section. Prizes are awarded in AX Coins which you can withdraw! 💵'},
+  {keys:['ban','banned','suspend','suspended'],reply:'If your account is suspended, the reason is sent to your email. To appeal, type "agent" to connect with our support team. ⚠️'},
+  {keys:['match','result','score','game result'],reply:'For match result issues: note the match ID and timestamp, then type "agent" to connect with our team who can review it directly. 🎮'},
 ];
 
-const _humanTriggers=['agent','human','real person','admin','serious problem','mujhe koi nhi sun raha','help karo','please help','urgent','koi jawab nhi','issue nhi solve','complaint'];
+const _humanTriggers=['agent','human','real person','real support','urgent','complaint','serious','not resolved','still not working','need help now','connect me'];
 
 function getBotReply(txt, msgs){
   const l=txt.toLowerCase();
-  
-  // Check human trigger
   if(_humanTriggers.some(k=>l.includes(k))){
     _escalated=true;
     setTimeout(()=>{
-      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav" style="background:rgba(232,64,74,.15)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl" style="border-color:rgba(232,64,74,.2)">🔴 <strong>Human Agent se connect ho rahe hain...</strong><br>Tumhara message admin ko bhej diya gaya hai. Jaldi reply aayegi! Thoda wait karo. ⏳</div></div>`;
+      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav" style="background:rgba(232,64,74,.15)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl" style="border-color:rgba(232,64,74,.2)">🔴 <strong>Connecting to Human Agent...</strong><br>Your message has been escalated to our support team. An admin will reply here shortly. Please wait! ⏳</div></div>`;
       msgs.scrollTop=9999;
     },800);
     return;
   }
-
-  // Match keyword rules
   const matched=_botRules.find(r=>r.keys.some(k=>l.includes(k)));
-  
   setTimeout(()=>{
     if(matched){
       msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 ${matched.reply}</div></div>`;
     } else {
-      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 Samajh nahi aaya! Kuch aur tarike se poochho, ya <strong>"agent"</strong> likho toh real support se connect kar deta hoon. 😊</div></div>`;
+      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 I am not sure about that! Try rephrasing your question, or type <strong>"agent"</strong> to connect with a real support member. 😊</div></div>`;
     }
     msgs.scrollTop=9999;
   },700);
