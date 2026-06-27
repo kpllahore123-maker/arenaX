@@ -389,7 +389,7 @@ const auth=getAuth(app);
 const db=getFirestore(app);
 
 // ── ADMIN UIDs — apna Firebase UID yahan daalo ──
-const ADMIN_UIDS=['REPLACE_WITH_YOUR_FIREBASE_UID'];
+const ADMIN_UIDS=['xDa31jOrsoQC2HxjSheO3wBqyII2'];
 
 // ── DEMO DATA (jab tak Firestore mein data nahi) ──
 let DB={
@@ -755,7 +755,7 @@ window.doLogin=async function(){
   try{
     const cred=await signInWithEmailAndPassword(auth,em,pw);
     // Check if admin
-    if(!ADMIN_UIDS.includes('REPLACE_WITH_YOUR_FIREBASE_UID')&&!ADMIN_UIDS.includes(cred.user.uid)){
+    if(!ADMIN_UIDS.includes(cred.user.uid)){
       await signOut(auth);
       err.textContent='Access denied — not an admin account';err.style.display='block';return;
     }
@@ -777,7 +777,7 @@ window.doLogout=async function(){
 }
 
 onAuthStateChanged(auth,user=>{
-  if(user&&(ADMIN_UIDS.includes(xDa31jOrsoQC2HxjSheO3wBqyII2)||ADMIN_UIDS.includes('xDa31jOrsoQC2HxjSheO3wBqyII2'))){
+  if(user&&ADMIN_UIDS.includes(user.uid)){
     $('adminNameSb').textContent=user.displayName||user.email?.split('@')[0]||'Admin';
     $('loginScreen').style.display='none';
     $('adminApp').style.display='block';
