@@ -738,26 +738,29 @@ async function sendMsg(txt){
   if(!txt.trim())return;
   const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
   $('chatIn').value='';
-  if(!App.user||App.guest){
+  const fireUser=auth.currentUser;
+  if(!fireUser){
     msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
     msgs.scrollTop=9999;
     setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
     return;
   }
+  const ticketId=fireUser.uid+'_ticket';
+  const uName=App.user?.name||fireUser.displayName||fireUser.email?.split('@')[0]||'Player';
+  const uHandle=App.user?.handle||'';
+  msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
+  msgs.scrollTop=9999;
   try{
-    const ticketId=App.user.uid+'_ticket';
     await addDoc(collection(db,'support',ticketId,'messages'),{
-      text:txt,sender:'user',senderName:App.user.name,
-      uid:App.user.uid,createdAt:serverTimestamp()
+      text:txt,sender:'user',senderName:uName,
+      uid:fireUser.uid,createdAt:serverTimestamp()
     });
-    // Update ticket meta
     await addDoc(collection(db,'support_tickets'),{
-      uid:App.user.uid,userName:App.user.name,userHandle:App.user.handle,
+      uid:fireUser.uid,userName:uName,userHandle:uHandle,
       lastMsg:txt,status:'open',updatedAt:serverTimestamp(),ticketId
     }).catch(()=>{});
   }catch(e){
-    msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-    msgs.scrollTop=9999;
+    console.error('Firestore error:',e);
     setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
   }
 }
@@ -766,9 +769,10 @@ function resetChat(){
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
 }
 function startChatListener(){
-  if(!App.user||App.guest)return;
+  const fireUser=auth.currentUser;
+  if(!fireUser)return;
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
-  const ticketId=App.user.uid+'_ticket';
+  const ticketId=fireUser.uid+'_ticket';
   const msgs=$('chatMsgs');
   const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
   _chatUnsub=onSnapshot(q,snap=>{
