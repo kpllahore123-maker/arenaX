@@ -381,7 +381,7 @@ a{text-decoration:none}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,collection,getDocs,doc,updateDoc,addDoc,deleteDoc,serverTimestamp,query,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,collection,getDocs,doc,updateDoc,addDoc,deleteDoc,serverTimestamp,query,orderBy,limit,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
 const app=initializeApp(firebaseConfig);
