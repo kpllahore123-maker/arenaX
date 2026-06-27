@@ -1039,7 +1039,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     buildAvatarPicker();
     $('mCustomize').classList.remove('hide');
   });
-  $('pae').addEventListener('click',()=>{
+  if($('pae'))$('pae').addEventListener('click',()=>{
     if(App.guest){alert('Create a real account to customize!');return}
     $('custName').value=App.user?.name||'';
     buildAvatarPicker();
