@@ -741,10 +741,73 @@ function addTx(type,amt){
   h.appendChild(r);
 }
 
-// ── CHAT BOT ──
-const BR={d:["Thanks! Agent will review within 24h.","Noted. Team will follow up shortly.","Logged! Anything else?"],match:["Share match ID and both IGNs. We investigate within 48h.","Share the timestamp and we'll review immediately."],wallet:["Wallet issues resolved within 72h. Include your handle.","Verify account before requesting large withdrawals."],report:["Need username, match ID, and violation description.","Thank you. We'll investigate immediately."],gen:["Feel free to ask! I'm here for all ArenaX questions.","Happy to help!"]};
-function rep(a){return a[Math.floor(Math.random()*a.length)]}
-function getReply(m){const l=m.toLowerCase();if(l.includes('match')||l.includes('result'))return rep(BR.match);if(l.includes('wallet')||l.includes('coin'))return rep(BR.wallet);if(l.includes('report')||l.includes('cheat'))return rep(BR.report);if(l.includes('general')||l.includes('inquiry'))return rep(BR.gen);return rep(BR.d)}
+// ── CHAT BOT (AI + Human Handoff) ──
+let _escalated=false;
+const _humanKeywords=['human','agent','admin','real person','real support','help me','urgent','serious','issue','problem','not working','cannot','cannot','wrong','error','scam','cheating','ban','banned','stolen'];
+const _simpleKeywords=['hello','hi','hey','what is','how do','rules','how to','tournament','join','register','wallet','deposit','withdraw','coins','jazzcash','easypaisa','prize','game','rank','level','profile'];
+
+function needsHuman(msg){
+  const l=msg.toLowerCase();
+  return _humanKeywords.some(k=>l.includes(k));
+}
+function isSimple(msg){
+  const l=msg.toLowerCase();
+  return _simpleKeywords.some(k=>l.includes(k));
+}
+
+async function getAIReply(userMsg){
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:200,
+        system:`You are ArenaX Support Bot for a mobile gaming tournament platform called ArenaX. 
+Answer ONLY simple, factual questions about: tournaments, wallet/coins, deposits via JazzCash (0302-4686897) or EasyPaisa, game rules, profile, registration.
+Keep replies SHORT (1-2 sentences max). Friendly tone.
+If the issue is complex, serious, or needs account access — say: "I'm escalating this to a human agent. Please wait."
+Do NOT make up specific account info. Do NOT promise specific outcomes.`,
+        messages:[{role:'user',content:userMsg}]
+      })
+    });
+    const data=await res.json();
+    return data.content?.[0]?.text||null;
+  }catch(e){return null;}
+}
+
+async function getBotReply(txt, msgs){
+  const typing=document.createElement('div');
+  typing.className='msg bot';typing.id='botTyping';
+  typing.innerHTML='<div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl"><div class="td2"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(typing);msgs.scrollTop=9999;
+
+  // Check if needs human
+  if(needsHuman(txt)||_escalated){
+    await new Promise(r=>setTimeout(r,800));
+    typing.remove();
+    _escalated=true;
+    msgs.innerHTML+=`<div class="msg bot"><div class="mav bav" style="background:rgba(232,64,74,.2)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl" style="border-color:rgba(232,64,74,.2)">🔴 <strong>Escalated to Human Agent</strong><br>Your message has been sent to our support team. An admin will reply here soon. You'll be notified when they respond.</div></div>`;
+    msgs.scrollTop=9999;
+    return;
+  }
+
+  // Try AI for simple questions
+  const aiReply=await getAIReply(txt);
+  typing.remove();
+  if(aiReply&&aiReply.includes('escalating')){
+    _escalated=true;
+    msgs.innerHTML+=`<div class="msg bot"><div class="mav bav" style="background:rgba(232,64,74,.2)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl" style="border-color:rgba(232,64,74,.2)">🔴 <strong>Connecting to Human Agent</strong><br>An admin will reply here shortly.</div></div>`;
+  } else if(aiReply){
+    msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 ${aiReply}</div></div>`;
+  } else {
+    // Fallback
+    msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">Thanks for reaching out! Our team will review your message shortly.</div></div>`;
+  }
+  msgs.scrollTop=9999;
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 async function sendMsg(txt){
   if(!txt.trim())return;
@@ -754,7 +817,7 @@ async function sendMsg(txt){
   if(!fireUser){
     msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
     msgs.scrollTop=9999;
-    setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
+    getBotReply(txt, msgs);
     return;
   }
   const ticketId=fireUser.uid+'_ticket';
@@ -771,9 +834,11 @@ async function sendMsg(txt){
       uid:fireUser.uid,userName:uName,userHandle:uHandle,
       lastMsg:txt,status:'open',updatedAt:serverTimestamp(),ticketId
     }).catch(()=>{});
+    // AI bot reply (only if not waiting for human)
+    if(!_escalated)getBotReply(txt, msgs);
   }catch(e){
     console.error('Firestore error:',e);
-    setTimeout(()=>{msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">${getReply(txt)}</div></div>`;msgs.scrollTop=9999},900);
+    getBotReply(txt, msgs);
   }
 }
 function resetChat(){
