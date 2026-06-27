@@ -19,20 +19,12 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb);font-size:15px;overflow:hidden}
-*{cursor:none!important}
 
 /* SCREENS */
 .scr{position:fixed;inset:0;overflow-y:auto;background:var(--bg);display:none!important}
 .scr.on{display:block!important}
 #sLogin.on{display:flex!important;align-items:center;justify-content:center;min-height:100vh}
 
-/* CURSOR */
-#cur{position:fixed;width:9px;height:9px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(240,192,64,.9),0 0 22px rgba(240,192,64,.4);mix-blend-mode:screen;transition:transform .1s,background .15s}
-#curR{position:fixed;width:30px;height:30px;border:1.5px solid rgba(240,192,64,.5);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:left .1s ease,top .1s ease,width .2s,height .2s,border-color .2s}
-#cur.ck{transform:translate(-50%,-50%) scale(3);background:#fff}
-#curR.hv{width:44px;height:44px;border-color:var(--gold)}
-.ctr{position:fixed;border-radius:50%;pointer-events:none;z-index:99997;transform:translate(-50%,-50%);animation:ctrf .5s ease forwards}
-@keyframes ctrf{to{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
 
 /* LOGIN */
 .lglow{position:absolute;inset:0;pointer-events:none}
@@ -201,42 +193,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .es i{font-size:28px;margin-bottom:7px;display:block}
 .es p{font-size:13px}
 
-/* PAYMENT MODAL */
-.pay-modal h3{color:var(--gold)}
-.pay-modal .mica{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
-.pay-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.pay-method{padding:14px 16px;border-radius:var(--r14);border:2px solid var(--bdr);background:var(--card);display:flex;align-items:center;gap:13px;transition:all .2s;position:relative;overflow:hidden}
-.pay-method:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.pay-method.jc{border-color:rgba(0,160,80,.3);background:rgba(0,160,80,.06)}
-.pay-method.jc:hover{border-color:#00a050;background:rgba(0,160,80,.12)}
-.pay-method.ep{border-color:rgba(100,60,180,.3);background:rgba(100,60,180,.06)}
-.pay-method.ep:hover{border-color:#643cb4;background:rgba(100,60,180,.12)}
-.pay-method.cc{border-color:rgba(79,158,255,.3);background:rgba(79,158,255,.06)}
-.pay-method.cc:hover{border-color:var(--blue);background:rgba(79,158,255,.12)}
-.pay-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-weight:800;font-family:var(--ff);font-size:10px;letter-spacing:.5px;text-align:center;line-height:1.2}
-.jc .pay-logo{background:#00a050;color:#fff}
-.ep .pay-logo{background:#643cb4;color:#fff}
-.cc .pay-logo{background:var(--blue);color:#fff}
-.pay-name{font-size:13px;font-weight:700}
-.pay-sub{font-size:11px;color:var(--t3);margin-top:1px}
-.pay-arrow{margin-left:auto;color:var(--t3);font-size:12px}
-.pay-amt-row{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap}
-.pay-amt-chip{padding:7px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);color:var(--t2);font-size:12px;font-weight:600;font-family:var(--fb);transition:all .2s}
-.pay-amt-chip.sel,.pay-amt-chip:hover{background:var(--g2);border-color:var(--gold);color:var(--gold)}
-.pay-inp-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
-.pay-inp{flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--ff);outline:none;transition:border-color .2s;font-weight:700}
-.pay-inp:focus{border-color:var(--gold)}
-.pay-cur{font-size:11px;color:var(--t3);white-space:nowrap}
-.pay-step{display:none}.pay-step.on{display:block}
-.pay-back{background:none;border:none;color:var(--t2);font-size:12px;padding:6px 0;font-family:var(--fb);margin-bottom:12px;display:flex;align-items:center;gap:5px}
-.pay-back:hover{color:var(--gold)}
-.pay-instr{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:13px;font-size:12.5px;color:var(--t2);line-height:1.7;margin-bottom:13px}
-.pay-instr strong{color:var(--t1)}
-.pay-confirm{width:100%;padding:13px;border:none;border-radius:var(--r8);font-size:14px;font-weight:700;font-family:var(--fb);transition:all .2s}
-.jc-btn{background:#00a050;color:#fff}.jc-btn:hover{background:#008040}
-.ep-btn{background:#643cb4;color:#fff}.ep-btn:hover{background:#5030a0}
-.cc-btn{background:var(--blue);color:#fff}.cc-btn:hover{background:#3a8ef0}
-
 /* PLAYER CHAT */
 .pchat-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
 .pchat-item{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r14);transition:all .2s}
@@ -308,6 +264,39 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 ::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
 .hide{display:none!important}
 @keyframes sk{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+/* PAYMENT MODAL */
+.pay-modal h3{color:var(--gold);margin-bottom:16px}
+.pay-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.pay-method{padding:14px 16px;border-radius:var(--r14);border:2px solid var(--bdr);background:var(--card);display:flex;align-items:center;gap:13px;transition:all .2s;cursor:pointer}
+.pay-method:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.pay-method.jc{border-color:rgba(0,160,80,.3);background:rgba(0,160,80,.06)}
+.pay-method.jc:hover{border-color:#00a050;background:rgba(0,160,80,.14)}
+.pay-method.ep{border-color:rgba(100,60,180,.3);background:rgba(100,60,180,.06)}
+.pay-method.ep:hover{border-color:#643cb4;background:rgba(100,60,180,.14)}
+.pay-method.cc{border-color:rgba(79,158,255,.3);background:rgba(79,158,255,.06)}
+.pay-method.cc:hover{border-color:var(--blue);background:rgba(79,158,255,.14)}
+.pay-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.jc .pay-logo{background:#00a050;color:#fff}
+.ep .pay-logo{background:#643cb4;color:#fff}
+.cc .pay-logo{background:var(--blue);color:#fff}
+.pay-name{font-size:13px;font-weight:700}
+.pay-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.pay-arrow{margin-left:auto;color:var(--t3);font-size:12px}
+.pay-amt-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.pay-amt-chip{padding:7px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);color:var(--t2);font-size:12px;font-weight:600;font-family:var(--fb);transition:all .2s;cursor:pointer}
+.pay-amt-chip.sel,.pay-amt-chip:hover{background:var(--g2);border-color:var(--gold);color:var(--gold)}
+.pay-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--ff);outline:none;margin-bottom:4px;font-weight:700}
+.pay-inp:focus{border-color:var(--gold)}
+.pay-step{display:none}.pay-step.on{display:block}
+.pay-back{background:none;border:none;color:var(--t2);font-size:12px;padding:4px 0;font-family:var(--fb);margin-bottom:12px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.pay-back:hover{color:var(--gold)}
+.pay-instr{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:13px;font-size:12px;color:var(--t2);line-height:1.75;margin-bottom:13px}
+.pay-instr strong{color:var(--t1)}
+.pay-confirm{width:100%;padding:13px;border:none;border-radius:var(--r8);font-size:14px;font-weight:700;font-family:var(--fb);cursor:pointer;transition:all .2s}
+.jc-btn{background:#00a050;color:#fff}.jc-btn:hover{background:#008040}
+.ep-btn{background:#643cb4;color:#fff}.ep-btn:hover{background:#5030a0}
+.cc-btn{background:var(--blue);color:#fff}.cc-btn:hover{background:#3a8ff0}
 </style>
 </head>
 <body>
@@ -420,50 +409,41 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
   <div class="mbox pay-modal">
     <div class="mica"><i class="fas fa-wallet"></i></div>
     <h3 id="payTitle">Add Funds</h3>
-    <!-- Step 1: Choose Method -->
     <div class="pay-step on" id="payStep1">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px">Choose Payment Method</div>
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px">Choose Payment Method</p>
       <div class="pay-methods">
         <div class="pay-method jc" id="pmJC">
-          <div class="pay-logo"><i class="fas fa-mobile-alt" style="font-size:20px"></i></div>
+          <div class="pay-logo"><i class="fas fa-mobile-alt"></i></div>
           <div><div class="pay-name" style="color:#00c060">JazzCash</div><div class="pay-sub">Mobile wallet · Instant</div></div>
           <i class="fas fa-chevron-right pay-arrow"></i>
         </div>
         <div class="pay-method ep" id="pmEP">
-          <div class="pay-logo"><i class="fas fa-wallet" style="font-size:20px"></i></div>
+          <div class="pay-logo"><i class="fas fa-wallet"></i></div>
           <div><div class="pay-name" style="color:#9b6fe0">EasyPaisa</div><div class="pay-sub">Mobile account · Instant</div></div>
           <i class="fas fa-chevron-right pay-arrow"></i>
         </div>
         <div class="pay-method cc" id="pmCC">
-          <div class="pay-logo"><i class="fas fa-credit-card" style="font-size:20px"></i></div>
+          <div class="pay-logo"><i class="fas fa-credit-card"></i></div>
           <div><div class="pay-name" style="color:var(--blue)">Card / Bank</div><div class="pay-sub">Visa · Mastercard · HBL</div></div>
           <i class="fas fa-chevron-right pay-arrow"></i>
         </div>
       </div>
-      <div class="mac" style="margin-top:6px">
-        <button class="mbtn mcan" id="bClosePayment">Cancel</button>
-      </div>
+      <div class="mac"><button class="mbtn mcan" id="bClosePayment">Cancel</button></div>
     </div>
-    <!-- Step 2: Amount + Confirm -->
     <div class="pay-step" id="payStep2">
       <button class="pay-back" id="payBackBtn"><i class="fas fa-arrow-left"></i> Back</button>
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Select Amount</div>
-      <div class="pay-amt-row" id="payChips">
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Select Amount</p>
+      <div class="pay-amt-row">
         <button class="pay-amt-chip" data-v="100">Rs 100</button>
         <button class="pay-amt-chip" data-v="200">Rs 200</button>
         <button class="pay-amt-chip" data-v="500">Rs 500</button>
         <button class="pay-amt-chip" data-v="1000">Rs 1000</button>
       </div>
-      <div class="pay-inp-row">
-        <input class="pay-inp" id="payAmtInp" type="number" placeholder="Custom amount" min="50"/>
-        <span class="pay-cur">PKR</span>
-      </div>
-      <div style="font-size:10.5px;color:var(--t3);margin-bottom:14px">Min Rs 50 · 1 PKR = 1 AX Coin</div>
+      <input class="pay-inp" id="payAmtInp" type="number" placeholder="Or type custom amount (min Rs 50)" min="50"/>
+      <p style="font-size:10px;color:var(--t3);margin-bottom:12px">1 PKR = 1 AX Coin</p>
       <div class="pay-instr" id="payInstr"></div>
-      <button class="pay-confirm" id="payConfirmBtn"><i class="fas fa-check-circle"></i> Confirm Payment</button>
-      <div class="mac" style="margin-top:10px">
-        <button class="mbtn mcan" id="bClosePayment2">Cancel</button>
-      </div>
+      <button class="pay-confirm" id="payConfirmBtn">Confirm Payment</button>
+      <div class="mac" style="margin-top:10px"><button class="mbtn mcan" id="bClosePayment2">Cancel</button></div>
     </div>
   </div>
 </div>
@@ -868,35 +848,55 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   // WALLET
-  // ── Payment Modal ──
-  let payMethod='';
-  const payMethods={
-    jc:{name:'JazzCash',cls:'jc-btn',instr:`<strong>JazzCash Instructions:</strong><br>1. Open JazzCash app or dial *786#<br>2. Go to <strong>Send Money</strong><br>3. Enter ArenaX number: <strong>0300-1234567</strong><br>4. Enter the amount below<br>5. Use ref code: <strong>AX-DEPOSIT</strong><br>6. Click Confirm after sending`},
-    ep:{name:'EasyPaisa',cls:'ep-btn',instr:`<strong>EasyPaisa Instructions:</strong><br>1. Open EasyPaisa app or dial *786#<br>2. Go to <strong>Send Money</strong><br>3. Enter ArenaX number: <strong>0315-9876543</strong><br>4. Enter the amount below<br>5. Use ref code: <strong>AX-DEPOSIT</strong><br>6. Click Confirm after sending`},
-    cc:{name:'Card/Bank',cls:'cc-btn',instr:`<strong>Card / Bank Transfer:</strong><br>1. Use account: <strong>HBL 1234-5678-0000</strong><br>2. Account Title: <strong>ArenaX Pvt Ltd</strong><br>3. Enter amount below and transfer<br>4. Keep your transaction ID<br>5. Click Confirm — coins credited in 5 min`}
+  // Payment Modal
+  let _payMethod='';
+  const _payInfo={
+    jc:{name:'JazzCash',cls:'jc-btn',icon:'fa-mobile-alt',instr:'<strong>JazzCash Steps:</strong><br>1. <a href="jazzcash://send?mobile=03024686897" style="color:#00c060;font-weight:700" onclick="window.open(\"https://www.jazzcash.com.pk\",\"_blank\")">👆 Open JazzCash App</a><br>2. Go to <strong>Send Money</strong><br>3. Number: <strong>0302-4686897</strong> (ArenaX)<br>4. Enter the amount and send<br>5. Reference: <strong>AX-DEPOSIT</strong><br>6. Click Confirm Payment below'},
+    ep:{name:'EasyPaisa',cls:'ep-btn',icon:'fa-wallet',instr:'<strong>EasyPaisa Steps:</strong><br>1. Open EasyPaisa app or dial <strong>*786#</strong><br>2. Go to <strong>Send Money</strong><br>3. Number: <strong>0315-9876543</strong> (ArenaX)<br>4. Enter the amount and send<br>5. Reference: <strong>AX-DEPOSIT</strong><br>6. Click Confirm Payment below'},
+    cc:{name:'Card/Bank',cls:'cc-btn',icon:'fa-credit-card',instr:'<strong>Bank Transfer Steps:</strong><br>1. Bank: <strong>HBL</strong><br>2. Account: <strong>1234-5678-0000</strong><br>3. Title: <strong>ArenaX Pvt Ltd</strong><br>4. Transfer the amount<br>5. Save your transaction ID<br>6. Click Confirm — coins credited in 5 min'}
   };
   function openPayModal(){
-    if(App.guest){alert('Link your account to use the wallet!');return}
+    if(App.guest){alert('Create a real account to use the wallet!');return}
     $('payStep1').classList.add('on');$('payStep2').classList.remove('on');
-    $('payAmtInp').value='';
+    $('payAmtInp').value='';$('payTitle').textContent='Add Funds';
     document.querySelectorAll('.pay-amt-chip').forEach(c=>c.classList.remove('sel'));
     $('mPayment').classList.remove('hide');
   }
-  function goPayStep2(method){
-    payMethod=method;
-    const m=payMethods[method];
-    $('payTitle').textContent='Pay via '+m.name;
-    $('payInstr').innerHTML=m.instr;
-    $('payConfirmBtn').className='pay-confirm '+m.cls;
-    $('payConfirmBtn').innerHTML=`<i class="fas fa-check-circle"></i> Confirm via ${m.name}`;
+  $('bDep').addEventListener('click', openPayModal);
+  $('pmJC').addEventListener('click',()=>{
+    _payMethod='jc';
+    $('payTitle').textContent='Pay via JazzCash';
+    $('payInstr').innerHTML=_payInfo.jc.instr;
+    $('payConfirmBtn').className='pay-confirm jc-btn';
+    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm via JazzCash';
     $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
-  }
-  $('pmJC').addEventListener('click',()=>goPayStep2('jc'));
-  $('pmEP').addEventListener('click',()=>goPayStep2('ep'));
-  $('pmCC').addEventListener('click',()=>goPayStep2('cc'));
-  $('payBackBtn').addEventListener('click',()=>{$('payStep1').classList.add('on');$('payStep2').classList.remove('on');$('payTitle').textContent='Add Funds'});
-  [$('bClosePayment'),$('bClosePayment2')].forEach(b=>b&&b.addEventListener('click',()=>$('mPayment').classList.add('hide')));
-  $('mPayment').addEventListener('click',e=>{if(e.target===$('mPayment'))$('mPayment').classList.add('hide')});
+    // Try to open JazzCash app, fallback to website
+    setTimeout(()=>{
+      const a=document.createElement('a');
+      a.href='jazzcash://send?mobile=03024686897';
+      a.click();
+      setTimeout(()=>window.open('https://www.jazzcash.com.pk','_blank'),1500);
+    },300);
+  });
+  $('pmEP').addEventListener('click',()=>{
+    _payMethod='ep';
+    $('payTitle').textContent='Pay via EasyPaisa';
+    $('payInstr').innerHTML=_payInfo.ep.instr;
+    $('payConfirmBtn').className='pay-confirm ep-btn';
+    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm via EasyPaisa';
+    $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
+  });
+  $('pmCC').addEventListener('click',()=>{
+    _payMethod='cc';
+    $('payTitle').textContent='Card / Bank Transfer';
+    $('payInstr').innerHTML=_payInfo.cc.instr;
+    $('payConfirmBtn').className='pay-confirm cc-btn';
+    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm Transfer';
+    $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
+  });
+  $('payBackBtn').addEventListener('click',()=>{
+    $('payStep1').classList.add('on');$('payStep2').classList.remove('on');$('payTitle').textContent='Add Funds';
+  });
   document.querySelectorAll('.pay-amt-chip').forEach(c=>{
     c.addEventListener('click',()=>{
       document.querySelectorAll('.pay-amt-chip').forEach(x=>x.classList.remove('sel'));
@@ -905,19 +905,21 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   $('payConfirmBtn').addEventListener('click',()=>{
     const a=+$('payAmtInp').value;
-    if(!a||a<50){$('payAmtInp').style.borderColor='var(--red)';setTimeout(()=>$('payAmtInp').style.borderColor='',1000);alert('Minimum deposit is Rs 50!');return}
+    if(!a||a<50){$('payAmtInp').style.borderColor='var(--red)';setTimeout(()=>$('payAmtInp').style.borderColor='',1200);alert('Minimum deposit is Rs 50!');return}
     const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
     $('wBal').textContent=(cur+a).toLocaleString();
     addTx('deposit',a);
     $('mPayment').classList.add('hide');
-    alert(`✅ Rs ${a} deposited via ${payMethods[payMethod].name}!\n${a} AX Coins added to your wallet.\n\n(Demo mode — no real charge)`);
+    alert('✅ Rs '+a+' deposit confirmed via '+_payInfo[_payMethod].name+'!\n'+a+' AX Coins added.\n\n(Demo — no real charge)');
   });
-  $('bDep').addEventListener('click',()=>openPayModal());
+  $('bClosePayment').addEventListener('click',()=>$('mPayment').classList.add('hide'));
+  $('bClosePayment2').addEventListener('click',()=>$('mPayment').classList.add('hide'));
+  $('mPayment').addEventListener('click',e=>{if(e.target===$('mPayment'))$('mPayment').classList.add('hide')});
   $('bWith').addEventListener('click',()=>{
-    if(App.guest){alert('Link your account to use the wallet!');return}
+    if(App.guest){alert('Create a real account to use the wallet!');return}
     const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
-    if(!cur){alert('No balance.');return}
-    const a=prompt(`Withdraw (max ${cur} AX Coins):`);
+    if(!cur){alert('No balance to withdraw.');return}
+    const a=prompt('Withdraw how many AX Coins? (max '+cur+')');
     if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur-+a).toLocaleString();addTx('withdraw',+a)}
     else if(a&&+a>cur)alert('Not enough balance.');
   });
@@ -985,15 +987,19 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   // ── CUSTOMIZE ──
-  function openCustomize(){
-    if(App.guest){alert('Create a real account to customize your profile!');return}
+  $('btnCustomize').addEventListener('click',()=>{
+    if(App.guest){alert('Create a real account to customize!');return}
     $('custName').value=App.user?.name||'';
     $('custBio').value='';
     buildAvatarPicker();
     $('mCustomize').classList.remove('hide');
-  }
-  $('btnCustomize').addEventListener('click',openCustomize);
-  $('pae').addEventListener('click',openCustomize);
+  });
+  $('pae').addEventListener('click',()=>{
+    if(App.guest){alert('Create a real account to customize!');return}
+    $('custName').value=App.user?.name||'';
+    buildAvatarPicker();
+    $('mCustomize').classList.remove('hide');
+  });
   $('bCloseCustomize').addEventListener('click',()=>$('mCustomize').classList.add('hide'));
   $('mCustomize').addEventListener('click',e=>{if(e.target===$('mCustomize'))$('mCustomize').classList.add('hide')});
   $('bSaveCustomize').addEventListener('click',()=>{
@@ -1009,9 +1015,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── CURSOR ──
   const cur=$('cur'),ring=$('curR');
-  let mx=window.innerWidth/2,my=window.innerHeight/2,rx=mx,ry=my;
-  cur.style.left=mx+'px';cur.style.top=my+'px';
-  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  let mx=0,my=0,rx=0,ry=0;
   document.addEventListener('mousemove',e=>{
     mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';
     const t=document.createElement('div');const s=2+Math.random()*3;t.className='ctr';
