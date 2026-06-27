@@ -469,7 +469,7 @@ window.showPage=function(id){
   if(id==='pgWithdraw')renderWithdrawals();
   if(id==='pgTours')renderTournaments();
   if(id==='pgReports')renderReports();
-  if(id==='pgSupport')renderSupport();
+  if(id==='pgSupport')loadSupportTickets();
 }
 document.querySelectorAll('.sb-item[data-page]').forEach(item=>{
   item.addEventListener('click',()=>showPage(item.dataset.page));
@@ -729,21 +729,98 @@ window.banFromReport=function(id){
   renderReports();toast(`${r.reported} banned`,'err');
 }
 
-// ── SUPPORT ──
+// ── SUPPORT (Firestore Real-time) ──
+let _supportTickets=[];
+let _openChatTicketId=null;
+
+function loadSupportTickets(){
+  const q=query(collection(db,'support_tickets'),orderBy('updatedAt','desc'));
+  onSnapshot(q,snap=>{
+    _supportTickets=[];
+    snap.forEach(d=>_supportTickets.push({id:d.id,...d.data()}));
+    renderSupport();
+    // update dash count
+    const openCount=_supportTickets.filter(t=>t.status==='open').length;
+    $('stReports').textContent=openCount;
+  });
+}
+
 function renderSupport(){
-  $('supportTbody').innerHTML=DB.support.map(s=>`
+  const list=_supportTickets;
+  if(!list.length){
+    $('supportTbody').innerHTML=`<tr class="empty-row"><td colspan="5"><i class="fas fa-headset"></i> No support tickets yet</td></tr>`;
+    return;
+  }
+  $('supportTbody').innerHTML=list.map(s=>`
     <tr>
-      <td style="font-weight:600">${s.user}</td>
-      <td style="color:var(--t2);max-width:240px">${s.msg}</td>
-      <td style="color:var(--t3);white-space:nowrap">${s.time}</td>
+      <td style="font-weight:600">${s.userName||'Unknown'}<div style="font-size:10px;color:var(--t3)">${s.userHandle||''}</div></td>
+      <td style="color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.lastMsg||'—'}</td>
+      <td style="color:var(--t3);white-space:nowrap;font-size:11px">${s.updatedAt?.toDate?.()?.toLocaleString('en-PK')||'just now'}</td>
       <td><span class="badge ${s.status==='open'?'red':'green'}">${s.status}</span></td>
-      <td>${s.status==='open'?`<button class="act-btn approve" onclick="resolveSupport('${s.id}')">Resolve</button>`:'—'}</td>
+      <td>
+        <button class="act-btn view" onclick="openSupportChat('${s.ticketId}','${s.userName}')"><i class="fas fa-comments"></i> Reply</button>
+        ${s.status==='open'?`<button class="act-btn approve" onclick="resolveTicket('${s.id}','${s.ticketId}')">Resolve</button>`:''}
+      </td>
     </tr>`).join('');
 }
 
-window.resolveSupport=function(id){
-  const s=DB.support.find(x=>x.id===id);if(!s)return;
-  s.status='resolved';renderSupport();toast('Ticket resolved for '+s.user);
+// Support Chat Modal
+function openSupportChat(ticketId, userName){
+  _openChatTicketId=ticketId;
+  $('scModalName').textContent='Chat: '+userName;
+  $('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">Loading...</div>';
+  $('scModal').classList.add('on');
+  // Listen to messages
+  if(window._scUnsub)window._scUnsub();
+  const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
+  window._scUnsub=onSnapshot(q,snap=>{
+    if(snap.empty){$('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">No messages yet</div>';return;}
+    $('scMsgs').innerHTML='';
+    snap.forEach(d=>{
+      const m=d.data();
+      const isAdmin=m.sender==='admin';
+      $('scMsgs').innerHTML+=`
+        <div style="display:flex;gap:8px;margin-bottom:10px;${isAdmin?'flex-direction:row-reverse':''}">
+          <div style="width:28px;height:28px;border-radius:50%;background:${isAdmin?'var(--red)':'var(--ele)'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">
+            <i class="fas fa-${isAdmin?'shield-alt':'user'}"></i>
+          </div>
+          <div style="max-width:75%">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:3px;${isAdmin?'text-align:right':''}">${isAdmin?'Admin':m.senderName||'Player'}</div>
+            <div style="background:${isAdmin?'rgba(232,64,74,.15)':'var(--card)'};border:1px solid ${isAdmin?'rgba(232,64,74,.25)':'var(--bdr)'};border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5">${m.text}</div>
+          </div>
+        </div>`;
+    });
+    $('scMsgs').scrollTop=9999;
+  });
+}
+
+window.sendAdminReply=async function(){
+  const txt=$('scInp').value.trim();
+  if(!txt||!_openChatTicketId)return;
+  $('scInp').value='';
+  try{
+    await addDoc(collection(db,'support',_openChatTicketId,'messages'),{
+      text:txt,sender:'admin',senderName:'Admin',createdAt:serverTimestamp()
+    });
+    // update ticket
+    const ticket=_supportTickets.find(t=>t.ticketId===_openChatTicketId);
+    if(ticket){
+      await updateDoc(doc(db,'support_tickets',ticket.id),{lastMsg:'[Admin]: '+txt,updatedAt:serverTimestamp()});
+    }
+    toast('Reply sent!');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.resolveTicket=async function(docId, ticketId){
+  try{
+    await updateDoc(doc(db,'support_tickets',docId),{status:'resolved'});
+    toast('Ticket resolved');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.closeSupportChat=function(){
+  $('scModal').classList.remove('on');
+  if(window._scUnsub){window._scUnsub();window._scUnsub=null;}
 }
 
 // ── AUTH ──
@@ -782,11 +859,912 @@ onAuthStateChanged(auth,user=>{
     $('loginScreen').style.display='none';
     $('adminApp').style.display='block';
     refreshDash();
+    loadSupportTickets();
   }
 });
 
 // init
 refreshDash();
 </script>
+
+<!-- SUPPORT CHAT MODAL -->
+<div class="modal-overlay" id="scModal" style="z-index:600">
+  <div class="modal-box" style="max-width:500px;height:540px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 id="scModalName" style="margin:0">Support Chat</h3>
+      <button onclick="closeSupportChat()" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="scMsgs" style="flex:1;overflow-y:auto;padding:4px 2px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="modal-inp" id="scInp" placeholder="Type admin reply..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendAdminReply()"/>
+      <button onclick="sendAdminReply()" style="padding:10px 16px;background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ArenaX Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+:root{
+  --bg:#07090f;--panel:#0f1220;--card:#141828;--ele:#1a2038;
+  --gold:#f0c040;--g2:rgba(240,192,64,.1);--g3:rgba(240,192,64,.2);
+  --red:#e8404a;--blue:#4f9eff;--green:#3ddc84;--purple:#a78bfa;
+  --t1:#f0f2ff;--t2:#8890b0;--t3:#4a5070;--bdr:#1e2440;
+  --ff:'Rajdhani',sans-serif;--fb:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb);font-size:14px}
+button{cursor:pointer;font-family:var(--fb)}
+a{text-decoration:none}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999}
+.login-box{width:100%;max-width:380px;padding:20px}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,#e8404a,#c02030);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px;box-shadow:0 0 30px rgba(232,64,74,.4)}
+.login-logo h1{font-family:var(--ff);font-size:28px;letter-spacing:2px}.login-logo h1 span{color:var(--red)}
+.login-logo p{font-size:11px;color:var(--t3);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.lcard{background:var(--panel);border:1px solid var(--bdr);border-radius:16px;padding:24px}
+.lcard h2{font-family:var(--ff);font-size:18px;margin-bottom:4px}
+.lcard p{font-size:12px;color:var(--t2);margin-bottom:20px}
+.inp-wrap{margin-bottom:12px}
+.inp-wrap label{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px}
+.inp-wrap input{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
+.inp-wrap input:focus{border-color:var(--red)}
+.login-btn{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:var(--ff);letter-spacing:1px;margin-top:6px;transition:all .2s}
+.login-btn:hover{background:#c02030;transform:translateY(-1px)}
+.err-msg{margin-top:10px;padding:9px 13px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.28);border-radius:8px;font-size:12px;color:var(--red);text-align:center;display:none}
+
+/* LAYOUT */
+#adminApp{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--panel);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{padding:20px 18px;border-bottom:1px solid var(--bdr)}
+.sb-logo h2{font-family:var(--ff);font-size:20px;letter-spacing:2px}.sb-logo h2 span{color:var(--red)}
+.sb-logo p{font-size:10px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.sb-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sb-section{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;padding:10px 18px 6px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--t2);font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent}
+.sb-item:hover{color:var(--t1);background:var(--card)}
+.sb-item.on{color:var(--gold);background:var(--g2);border-left-color:var(--gold)}
+.sb-item i{width:16px;text-align:center;font-size:13px}
+.sb-bottom{padding:14px 18px;border-top:1px solid var(--bdr)}
+.admin-badge{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.admin-av{width:34px;height:34px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0}
+.admin-info{flex:1;min-width:0}
+.admin-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-role{font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.logout-btn{width:100%;padding:8px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);border-radius:8px;color:var(--red);font-size:12px;font-weight:600;transition:all .2s}
+.logout-btn:hover{background:rgba(232,64,74,.2)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0}
+.topbar h3{font-family:var(--ff);font-size:18px;font-weight:700;flex:1}
+.topbar-time{font-size:11px;color:var(--t3)}
+.content{flex:1;overflow-y:auto;padding:20px}
+
+/* PAGES */
+.page{display:none}.page.on{display:block}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:16px}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:10px}
+.stat-val{font-family:var(--ff);font-size:26px;font-weight:700}
+.stat-lbl{font-size:11px;color:var(--t2);margin-top:2px}
+.stat-chg{font-size:10px;margin-top:4px}
+.stat-chg.up{color:var(--green)}.stat-chg.dn{color:var(--red)}
+
+/* TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.table-head{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bdr);gap:10px}
+.table-head h4{font-family:var(--ff);font-size:16px;flex:1}
+.search-inp{background:var(--ele);border:1px solid var(--bdr);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--t1);font-family:var(--fb);outline:none;width:180px}
+.search-inp:focus{border-color:var(--gold)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{padding:10px 14px;text-align:left;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr);font-weight:600}
+.tbl td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge.green{background:rgba(61,220,132,.12);color:var(--green)}
+.badge.red{background:rgba(232,64,74,.12);color:var(--red)}
+.badge.gold{background:var(--g2);color:var(--gold)}
+.badge.blue{background:rgba(79,158,255,.12);color:var(--blue)}
+.badge.gray{background:rgba(255,255,255,.06);color:var(--t2)}
+.act-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;transition:all .2s}
+.act-btn.approve{background:rgba(61,220,132,.15);color:var(--green);border:1px solid rgba(61,220,132,.25)}
+.act-btn.approve:hover{background:rgba(61,220,132,.28)}
+.act-btn.reject{background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.22)}
+.act-btn.reject:hover{background:rgba(232,64,74,.25)}
+.act-btn.ban{background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.22)}
+.act-btn.unban{background:rgba(61,220,132,.12);color:var(--green);border:1px solid rgba(61,220,132,.22)}
+.act-btn.view{background:rgba(79,158,255,.12);color:var(--blue);border:1px solid rgba(79,158,255,.22)}
+.act-btn.prm{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
+.act-btn + .act-btn{margin-left:5px}
+.avatar-sm{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--bdr)}
+.user-cell{display:flex;align-items:center;gap:9px}
+.user-cell .uname{font-weight:600;font-size:13px}
+.user-cell .uhandle{font-size:10px;color:var(--t3)}
+.empty-row td{text-align:center;padding:32px;color:var(--t3);font-size:13px}
+
+/* FILTER TABS */
+.ftabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ftab{padding:6px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--card);color:var(--t2);font-size:12px;font-weight:600;transition:all .2s}
+.ftab.on,.ftab:hover{background:var(--g2);border-color:var(--gold);color:var(--gold)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;display:none}
+.modal-overlay.on{display:flex}
+.modal-box{background:var(--panel);border:1px solid var(--bdr);border-radius:16px;padding:24px;width:100%;max-width:420px}
+.modal-box h3{font-family:var(--ff);font-size:18px;margin-bottom:14px;color:var(--gold)}
+.modal-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:10px}
+.modal-inp:focus{border-color:var(--gold)}
+.modal-btns{display:flex;gap:8px;margin-top:4px}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:700;font-family:var(--ff)}
+.modal-ok{background:var(--green);color:#0a0c12}
+.modal-can{background:var(--ele);color:var(--t2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--bdr);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:9px;box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.on{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(61,220,132,.3);color:var(--green)}
+.toast.err{border-color:rgba(232,64,74,.3);color:var(--red)}
+
+/* CHART BAR */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;margin:10px 0}
+.bar{flex:1;background:var(--g2);border-radius:4px 4px 0 0;border:1px solid var(--g3);transition:height .4s;position:relative;min-width:0}
+.bar:hover{background:var(--g3)}
+.bar-lbl{font-size:9px;color:var(--t3);text-align:center;margin-top:4px}
+
+/* RESPONSIVE */
+@media(max-width:640px){.sidebar{width:56px}.sb-item span,.sb-logo p,.sb-logo h2,.sb-section,.admin-info,.admin-name,.admin-role{display:none}.sb-item{padding:12px;justify-content:center}.sb-logo{padding:14px;text-align:center}.sb-bottom{padding:10px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon"><i class="fas fa-shield-alt"></i></div>
+      <h1>Arena<span>X</span></h1>
+      <p>Admin Panel</p>
+    </div>
+    <div class="lcard">
+      <h2>Admin Login</h2>
+      <p>Only authorized admins can access this panel</p>
+      <div class="inp-wrap">
+        <label>Email</label>
+        <input type="email" id="adminEmail" placeholder="admin@arenax.com"/>
+      </div>
+      <div class="inp-wrap">
+        <label>Password</label>
+        <input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="login-btn" onclick="doLogin()"><i class="fas fa-lock"></i> Login to Admin Panel</button>
+      <div class="err-msg" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-logo">
+        <h2>Arena<span style="color:var(--red)">X</span></h2>
+        <p>Admin Panel</p>
+      </div>
+      <nav class="sb-nav">
+        <div class="sb-section">Main</div>
+        <div class="sb-item on" data-page="pgDash"><i class="fas fa-chart-line"></i><span>Dashboard</span></div>
+        <div class="sb-item" data-page="pgUsers"><i class="fas fa-users"></i><span>Users</span></div>
+        <div class="sb-section">Finance</div>
+        <div class="sb-item" data-page="pgPayments"><i class="fas fa-wallet"></i><span>Payments</span></div>
+        <div class="sb-item" data-page="pgWithdraw"><i class="fas fa-arrow-up"></i><span>Withdrawals</span></div>
+        <div class="sb-section">Content</div>
+        <div class="sb-item" data-page="pgTours"><i class="fas fa-trophy"></i><span>Tournaments</span></div>
+        <div class="sb-item" data-page="pgReports"><i class="fas fa-flag"></i><span>Reports</span></div>
+        <div class="sb-item" data-page="pgSupport"><i class="fas fa-headset"></i><span>Support</span></div>
+      </nav>
+      <div class="sb-bottom">
+        <div class="admin-badge">
+          <div class="admin-av"><i class="fas fa-user-shield"></i></div>
+          <div class="admin-info">
+            <div class="admin-name" id="adminNameSb">Admin</div>
+            <div class="admin-role">Super Admin</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <h3 id="pageTitle">Dashboard</h3>
+        <span class="topbar-time" id="clockEl"></span>
+      </div>
+      <div class="content">
+
+        <!-- DASHBOARD -->
+        <div class="page on" id="pgDash">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(79,158,255,.12);color:var(--blue)"><i class="fas fa-users"></i></div>
+              <div class="stat-val" id="stUsers">0</div>
+              <div class="stat-lbl">Total Users</div>
+              <div class="stat-chg up" id="stUsersChg"></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(61,220,132,.12);color:var(--green)"><i class="fas fa-coins"></i></div>
+              <div class="stat-val" id="stDeposits">0</div>
+              <div class="stat-lbl">Total Deposits (AX)</div>
+              <div class="stat-chg up" id="stDepChg"></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--g2);color:var(--gold)"><i class="fas fa-crown"></i></div>
+              <div class="stat-val" id="stPremium">0</div>
+              <div class="stat-lbl">Premium Users</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(232,64,74,.12);color:var(--red)"><i class="fas fa-clock"></i></div>
+              <div class="stat-val" id="stPending">0</div>
+              <div class="stat-lbl">Pending Payments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(167,139,250,.12);color:var(--purple)"><i class="fas fa-trophy"></i></div>
+              <div class="stat-val" id="stTours">7</div>
+              <div class="stat-lbl">Tournaments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(232,64,74,.12);color:var(--red)"><i class="fas fa-flag"></i></div>
+              <div class="stat-val" id="stReports">0</div>
+              <div class="stat-lbl">Open Reports</div>
+            </div>
+          </div>
+
+          <!-- Activity Chart -->
+          <div class="table-wrap" style="padding:16px;margin-bottom:20px">
+            <div style="font-family:var(--ff);font-size:16px;margin-bottom:4px">Deposits This Week</div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Daily AX coin deposits</div>
+            <div class="bar-chart" id="barChart"></div>
+            <div style="display:flex;gap:6px" id="barLabels"></div>
+          </div>
+
+          <!-- Recent Payments -->
+          <div class="table-wrap">
+            <div class="table-head">
+              <h4>Recent Payments</h4>
+              <button class="ftab on" onclick="showPage('pgPayments')">View All →</button>
+            </div>
+            <table class="tbl" id="recentPayTbl">
+              <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="recentPayBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- USERS -->
+        <div class="page" id="pgUsers">
+          <div class="ftabs" id="userFilters">
+            <button class="ftab on" data-f="all">All Users</button>
+            <button class="ftab" data-f="premium">Premium</button>
+            <button class="ftab" data-f="banned">Banned</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head">
+              <h4>Users</h4>
+              <input class="search-inp" placeholder="🔍 Search users..." id="userSearch" oninput="renderUsers()"/>
+            </div>
+            <table class="tbl">
+              <thead><tr><th>User</th><th>Balance</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+              <tbody id="usersTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAYMENTS -->
+        <div class="page" id="pgPayments">
+          <div class="ftabs" id="payFilters">
+            <button class="ftab on" data-f="pending">Pending</button>
+            <button class="ftab" data-f="approved">Approved</button>
+            <button class="ftab" data-f="rejected">Rejected</button>
+            <button class="ftab" data-f="all">All</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head">
+              <h4>Deposit Requests</h4>
+              <button class="act-btn approve" onclick="approveAllPending()"><i class="fas fa-check-double"></i> Approve All</button>
+            </div>
+            <table class="tbl">
+              <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="payTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WITHDRAWALS -->
+        <div class="page" id="pgWithdraw">
+          <div class="table-wrap">
+            <div class="table-head"><h4>Withdrawal Requests</h4></div>
+            <table class="tbl">
+              <thead><tr><th>User</th><th>Amount</th><th>Account</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="withTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TOURNAMENTS -->
+        <div class="page" id="pgTours">
+          <div class="table-wrap">
+            <div class="table-head">
+              <h4>Tournaments</h4>
+              <button class="act-btn prm" onclick="openAddTour()"><i class="fas fa-plus"></i> Add New</button>
+            </div>
+            <table class="tbl">
+              <thead><tr><th>Name</th><th>Game</th><th>Players</th><th>Prize</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="toursTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- REPORTS -->
+        <div class="page" id="pgReports">
+          <div class="table-wrap">
+            <div class="table-head"><h4>Player Reports</h4></div>
+            <table class="tbl">
+              <thead><tr><th>Reporter</th><th>Reported</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="reportsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUPPORT -->
+        <div class="page" id="pgSupport">
+          <div class="table-wrap">
+            <div class="table-head"><h4>Support Tickets</h4></div>
+            <table class="tbl">
+              <thead><tr><th>User</th><th>Message</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="supportTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- end content -->
+    </div><!-- end main -->
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">Action</h3>
+    <div id="modalBody"></div>
+    <div class="modal-btns">
+      <button class="modal-can" onclick="closeModal()">Cancel</button>
+      <button class="modal-ok" id="modalOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getFirestore,collection,getDocs,doc,updateDoc,addDoc,deleteDoc,serverTimestamp,query,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+// ── ADMIN UIDs — apna Firebase UID yahan daalo ──
+const ADMIN_UIDS=['xDa31jOrsoQC2HxjSheO3wBqyII2'];
+
+// ── DEMO DATA (jab tak Firestore mein data nahi) ──
+let DB={
+  users:[
+    {id:'u1',name:'Ali Khan',handle:'@alikhan#1234',email:'ali@gmail.com',balance:1500,premium:true,banned:false,av:'https://api.dicebear.com/7.x/bottts/svg?seed=ali',joined:'Jun 10, 2025'},
+    {id:'u2',name:'Sara Ahmed',handle:'@sara#5678',email:'sara@gmail.com',balance:300,premium:false,banned:false,av:'https://api.dicebear.com/7.x/bottts/svg?seed=sara',joined:'Jun 15, 2025'},
+    {id:'u3',name:'Hamza Raza',handle:'@hamza#9012',email:'hamza@gmail.com',balance:0,premium:false,banned:true,av:'https://api.dicebear.com/7.x/bottts/svg?seed=hamza',joined:'Jun 18, 2025'},
+    {id:'u4',name:'Ayesha Malik',handle:'@ayesha#3456',email:'ayesha@gmail.com',balance:4200,premium:true,av:'https://api.dicebear.com/7.x/bottts/svg?seed=ayesha',joined:'Jun 20, 2025'},
+    {id:'u5',name:'Usman Tariq',handle:'@usman#7890',email:'usman@gmail.com',balance:750,premium:false,banned:false,av:'https://api.dicebear.com/7.x/bottts/svg?seed=usman',joined:'Jun 22, 2025'},
+  ],
+  payments:[
+    {id:'p1',userId:'u2',userName:'Sara Ahmed',method:'JazzCash',amount:500,status:'pending',time:'2 min ago'},
+    {id:'p2',userId:'u5',userName:'Usman Tariq',method:'EasyPaisa',amount:200,status:'pending',time:'15 min ago'},
+    {id:'p3',userId:'u1',userName:'Ali Khan',method:'JazzCash',amount:1000,status:'approved',time:'1 hr ago'},
+    {id:'p4',userId:'u4',userName:'Ayesha Malik',method:'Card/Bank',amount:2000,status:'approved',time:'3 hr ago'},
+    {id:'p5',userId:'u3',userName:'Hamza Raza',method:'EasyPaisa',amount:300,status:'rejected',time:'5 hr ago'},
+  ],
+  withdrawals:[
+    {id:'w1',userId:'u1',userName:'Ali Khan',amount:500,account:'0300-1234567 (JazzCash)',status:'pending'},
+    {id:'w2',userId:'u4',userName:'Ayesha Malik',amount:1000,account:'0315-9876543 (EasyPaisa)',status:'pending'},
+  ],
+  tournaments:[
+    {id:'t1',name:'Grand RP Open Cup',game:'Grand RP Mobile',players:'48/64',prize:'5,000 AX',status:'live'},
+    {id:'t2',name:'Orekhov Showdown',game:'Grand RP Mobile',players:'16/16',prize:'2,500 AX',status:'live'},
+    {id:'t3',name:'City Champions League',game:'Grand RP Mobile',players:'12/32',prize:'10,000 AX',status:'upcoming'},
+    {id:'t4',name:'Street Royale S2',game:'Grand RP Mobile',players:'6/20',prize:'3,000 AX',status:'upcoming'},
+    {id:'t5',name:'Spring Series Finals',game:'Grand RP Mobile',players:'64/64',prize:'20,000 AX',status:'ended'},
+  ],
+  reports:[
+    {id:'r1',reporter:'Ali Khan',reported:'Hamza Raza',reason:'Cheating in match',status:'open'},
+    {id:'r2',reporter:'Sara Ahmed',reported:'Unknown#0001',reason:'Verbal abuse in chat',status:'open'},
+    {id:'r3',reporter:'Usman Tariq',reported:'Player#9999',reason:'Match abandonment',status:'resolved'},
+  ],
+  support:[
+    {id:'s1',user:'Sara Ahmed',msg:'My deposit of Rs 500 via JazzCash is not showing.',time:'5 min ago',status:'open'},
+    {id:'s2',user:'Usman Tariq',msg:'How do I join the tournament?',time:'1 hr ago',status:'open'},
+    {id:'s3',user:'Ayesha Malik',msg:'I want to upgrade to premium.',time:'3 hr ago',status:'resolved'},
+  ],
+};
+
+// ── HELPERS ──
+const $=id=>document.getElementById(id);
+let currentFilter={users:'all',pay:'pending'};
+
+function toast(msg,type='ok'){
+  const t=$('toast');
+  t.className='toast on '+(type==='ok'?'ok':'err');
+  t.innerHTML=(type==='ok'?'<i class="fas fa-check-circle"></i>':'<i class="fas fa-times-circle"></i>')+' '+msg;
+  setTimeout(()=>t.classList.remove('on'),3000);
+}
+
+function closeModal(){$('modalOverlay').classList.remove('on')}
+window.closeModal=closeModal;
+
+function openModal(title,body,onOk){
+  $('modalTitle').textContent=title;
+  $('modalBody').innerHTML=body;
+  $('modalOkBtn').onclick=()=>{onOk();closeModal()};
+  $('modalOverlay').classList.add('on');
+}
+
+// ── CLOCK ──
+function updateClock(){$('clockEl').textContent=new Date().toLocaleString('en-PK',{weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+setInterval(updateClock,1000);updateClock();
+
+// ── NAV ──
+window.showPage=function(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  $(id).classList.add('on');
+  const sbItem=document.querySelector(`.sb-item[data-page="${id}"]`);
+  if(sbItem)sbItem.classList.add('on');
+  const titles={pgDash:'Dashboard',pgUsers:'Users',pgPayments:'Deposit Payments',pgWithdraw:'Withdrawals',pgTours:'Tournaments',pgReports:'Player Reports',pgSupport:'Support Tickets'};
+  $('pageTitle').textContent=titles[id]||'Admin';
+  if(id==='pgUsers')renderUsers();
+  if(id==='pgPayments')renderPayments();
+  if(id==='pgWithdraw')renderWithdrawals();
+  if(id==='pgTours')renderTournaments();
+  if(id==='pgReports')renderReports();
+  if(id==='pgSupport')loadSupportTickets();
+}
+document.querySelectorAll('.sb-item[data-page]').forEach(item=>{
+  item.addEventListener('click',()=>showPage(item.dataset.page));
+});
+
+// ── DASHBOARD STATS ──
+function refreshDash(){
+  $('stUsers').textContent=DB.users.length;
+  $('stPremium').textContent=DB.users.filter(u=>u.premium).length;
+  $('stPending').textContent=DB.payments.filter(p=>p.status==='pending').length;
+  $('stReports').textContent=DB.reports.filter(r=>r.status==='open').length;
+  const totalDep=DB.payments.filter(p=>p.status==='approved').reduce((s,p)=>s+p.amount,0);
+  $('stDeposits').textContent=totalDep.toLocaleString();
+  renderBarChart();
+  renderRecentPay();
+}
+
+function renderBarChart(){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals=[320,580,240,900,450,1200,680];
+  const max=Math.max(...vals);
+  $('barChart').innerHTML=vals.map((v,i)=>`<div class="bar" style="height:${(v/max*100)}%" title="${days[i]}: ${v} AX"></div>`).join('');
+  $('barLabels').innerHTML=days.map(d=>`<div class="bar-lbl" style="flex:1;text-align:center">${d}</div>`).join('');
+}
+
+function renderRecentPay(){
+  const recent=DB.payments.slice(0,4);
+  $('recentPayBody').innerHTML=recent.map(p=>`
+    <tr>
+      <td>${p.userName}</td>
+      <td><span class="badge ${p.method==='JazzCash'?'green':p.method==='EasyPaisa'?'gold':'blue'}">${p.method}</span></td>
+      <td style="font-family:var(--ff);color:var(--green)">+${p.amount} AX</td>
+      <td><span class="badge ${p.status==='pending'?'red':p.status==='approved'?'green':'gray'}">${p.status}</span></td>
+      <td>${p.status==='pending'?`<button class="act-btn approve" onclick="approvePayment('${p.id}')">Approve</button><button class="act-btn reject" onclick="rejectPayment('${p.id}')">Reject</button>`:'—'}</td>
+    </tr>`).join('');
+}
+
+// ── USERS ──
+window.renderUsers=function(){
+  const filter=currentFilter.users;
+  const search=$('userSearch').value.toLowerCase();
+  let list=DB.users.filter(u=>{
+    if(filter==='premium'&&!u.premium)return false;
+    if(filter==='banned'&&!u.banned)return false;
+    if(search&&!u.name.toLowerCase().includes(search)&&!u.handle.toLowerCase().includes(search))return false;
+    return true;
+  });
+  $('usersTbody').innerHTML=list.length?list.map(u=>`
+    <tr>
+      <td><div class="user-cell"><img class="avatar-sm" src="${u.av}"/><div><div class="uname">${u.name}</div><div class="uhandle">${u.handle}</div></div></div></td>
+      <td style="font-family:var(--ff);color:var(--gold)">${u.balance.toLocaleString()} AX</td>
+      <td>${u.banned?'<span class="badge red">Banned</span>':u.premium?'<span class="badge gold"><i class="fas fa-crown"></i> Premium</span>':'<span class="badge gray">Free</span>'}</td>
+      <td style="color:var(--t3)">${u.joined||'—'}</td>
+      <td>
+        <button class="act-btn view" onclick="viewUser('${u.id}')">View</button>
+        <button class="act-btn prm" onclick="togglePremium('${u.id}')">${u.premium?'Remove Premium':'Give Premium'}</button>
+        <button class="act-btn ${u.banned?'unban':'ban'}" onclick="toggleBan('${u.id}')">${u.banned?'Unban':'Ban'}</button>
+      </td>
+    </tr>`).join(''):`<tr class="empty-row"><td colspan="5"><i class="fas fa-users"></i> No users found</td></tr>`;
+}
+
+window.viewUser=function(id){
+  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  openModal('User: '+u.name,`
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+      <img src="${u.av}" style="width:50px;height:50px;border-radius:50%;border:2px solid var(--bdr)"/>
+      <div><div style="font-size:15px;font-weight:700">${u.name}</div><div style="font-size:11px;color:var(--t3)">${u.handle}</div><div style="font-size:11px;color:var(--t3)">${u.email||'—'}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div style="background:var(--card);border-radius:8px;padding:10px"><div style="color:var(--t3)">Balance</div><div style="font-family:var(--ff);font-size:18px;color:var(--gold)">${u.balance} AX</div></div>
+      <div style="background:var(--card);border-radius:8px;padding:10px"><div style="color:var(--t3)">Status</div><div style="font-family:var(--ff);font-size:16px">${u.banned?'Banned':u.premium?'Premium':'Free'}</div></div>
+    </div>
+    <div style="margin-top:12px">
+      <label style="font-size:11px;color:var(--t2);display:block;margin-bottom:5px">Adjust Balance (AX Coins)</label>
+      <input class="modal-inp" type="number" id="adjBal" placeholder="e.g. 500 (add) or -200 (remove)" value="0"/>
+    </div>`,
+  ()=>{
+    const adj=+$('adjBal').value;
+    if(adj){u.balance=Math.max(0,u.balance+adj);renderUsers();refreshDash();toast(`Balance updated: ${adj>0?'+':''}${adj} AX for ${u.name}`);}
+  });
+}
+
+window.togglePremium=function(id){
+  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  u.premium=!u.premium;
+  renderUsers();refreshDash();
+  toast(`${u.name} — Premium ${u.premium?'activated':'removed'}`);
+}
+
+window.toggleBan=function(id){
+  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  u.banned=!u.banned;
+  renderUsers();
+  toast(`${u.name} ${u.banned?'banned':'unbanned'}`,(u.banned?'err':'ok'));
+}
+
+// Setup user filter tabs
+document.querySelectorAll('#userFilters .ftab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#userFilters .ftab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    currentFilter.users=btn.dataset.f;
+    renderUsers();
+  });
+});
+
+// ── PAYMENTS ──
+window.renderPayments=function(){
+  const filter=document.querySelector('#payFilters .ftab.on')?.dataset.f||'pending';
+  const list=filter==='all'?DB.payments:DB.payments.filter(p=>p.status===filter);
+  $('payTbody').innerHTML=list.length?list.map(p=>`
+    <tr>
+      <td>${p.userName}</td>
+      <td><span class="badge ${p.method==='JazzCash'?'green':p.method==='EasyPaisa'?'gold':'blue'}">${p.method}</span></td>
+      <td style="font-family:var(--ff);font-size:15px;color:var(--green)">Rs ${p.amount}</td>
+      <td style="color:var(--t3)">${p.time}</td>
+      <td><span class="badge ${p.status==='pending'?'red':p.status==='approved'?'green':'gray'}">${p.status}</span></td>
+      <td>${p.status==='pending'?`<button class="act-btn approve" onclick="approvePayment('${p.id}')"><i class="fas fa-check"></i> Approve</button><button class="act-btn reject" onclick="rejectPayment('${p.id}')"><i class="fas fa-times"></i> Reject</button>`:'—'}</td>
+    </tr>`).join(''):`<tr class="empty-row"><td colspan="6"><i class="fas fa-check-circle"></i> No payments in this category</td></tr>`;
+}
+
+window.approvePayment=function(id){
+  const p=DB.payments.find(x=>x.id===id);if(!p)return;
+  p.status='approved';
+  // Add coins to user
+  const u=DB.users.find(x=>x.id===p.userId);
+  if(u)u.balance+=p.amount;
+  renderPayments();renderRecentPay();refreshDash();
+  toast(`✅ Rs ${p.amount} approved for ${p.userName} — ${p.amount} AX added`);
+}
+
+window.rejectPayment=function(id){
+  const p=DB.payments.find(x=>x.id===id);if(!p)return;
+  p.status='rejected';
+  renderPayments();renderRecentPay();refreshDash();
+  toast(`Payment rejected for ${p.userName}`,'err');
+}
+
+window.approveAllPending=function(){
+  const pending=DB.payments.filter(p=>p.status==='pending');
+  if(!pending.length){toast('No pending payments','err');return;}
+  pending.forEach(p=>{
+    p.status='approved';
+    const u=DB.users.find(x=>x.id===p.userId);
+    if(u)u.balance+=p.amount;
+  });
+  renderPayments();refreshDash();
+  toast(`✅ All ${pending.length} payments approved!`);
+}
+
+document.querySelectorAll('#payFilters .ftab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#payFilters .ftab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    renderPayments();
+  });
+});
+
+// ── WITHDRAWALS ──
+function renderWithdrawals(){
+  $('withTbody').innerHTML=DB.withdrawals.length?DB.withdrawals.map(w=>`
+    <tr>
+      <td>${w.userName}</td>
+      <td style="font-family:var(--ff);color:var(--red)">-${w.amount} AX</td>
+      <td style="color:var(--t3)">${w.account}</td>
+      <td><span class="badge ${w.status==='pending'?'red':'green'}">${w.status}</span></td>
+      <td>${w.status==='pending'?`<button class="act-btn approve" onclick="approveWith('${w.id}')">Send Money</button><button class="act-btn reject" onclick="rejectWith('${w.id}')">Reject</button>`:'—'}</td>
+    </tr>`).join(''):`<tr class="empty-row"><td colspan="5">No withdrawal requests</td></tr>`;
+}
+
+window.approveWith=function(id){
+  const w=DB.withdrawals.find(x=>x.id===id);if(!w)return;
+  const u=DB.users.find(x=>x.id===w.userId);
+  if(u&&u.balance>=w.amount){u.balance-=w.amount;w.status='sent';renderWithdrawals();toast(`Rs ${w.amount} sent to ${w.userName} via ${w.account}`);}
+  else{toast('User has insufficient balance','err');}
+}
+window.rejectWith=function(id){
+  const w=DB.withdrawals.find(x=>x.id===id);if(!w)return;
+  w.status='rejected';renderWithdrawals();toast('Withdrawal rejected','err');
+}
+
+// ── TOURNAMENTS ──
+function renderTournaments(){
+  $('toursTbody').innerHTML=DB.tournaments.map(t=>`
+    <tr>
+      <td style="font-weight:600">${t.name}</td>
+      <td style="color:var(--t2)">${t.game}</td>
+      <td>${t.players}</td>
+      <td style="font-family:var(--ff);color:var(--gold)">${t.prize}</td>
+      <td><span class="badge ${t.status==='live'?'red':t.status==='upcoming'?'blue':'gray'}">${t.status==='live'?'🔴 Live':t.status==='upcoming'?'Upcoming':'Ended'}</span></td>
+      <td>
+        <button class="act-btn view" onclick="editTour('${t.id}')">Edit</button>
+        <button class="act-btn reject" onclick="deleteTour('${t.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+window.openAddTour=function(){
+  openModal('Add Tournament',`
+    <input class="modal-inp" id="tName" placeholder="Tournament Name"/>
+    <input class="modal-inp" id="tGame" placeholder="Game Name" value="Grand RP Mobile"/>
+    <input class="modal-inp" id="tPrize" placeholder="Prize (e.g. 5,000 AX)"/>
+    <input class="modal-inp" id="tMax" placeholder="Max Players (e.g. 32)" type="number"/>`,
+  ()=>{
+    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value,max=$('tMax').value;
+    if(!name){toast('Enter tournament name','err');return;}
+    DB.tournaments.push({id:'t'+Date.now(),name,game:game||'Grand RP Mobile',players:'0/'+(max||32),prize:prize||'TBD',status:'upcoming'});
+    renderTournaments();refreshDash();toast('Tournament added: '+name);
+  });
+}
+
+window.editTour=function(id){
+  const t=DB.tournaments.find(x=>x.id===id);if(!t)return;
+  openModal('Edit: '+t.name,`
+    <input class="modal-inp" id="eName" value="${t.name}"/>
+    <input class="modal-inp" id="ePrize" value="${t.prize}"/>
+    <select class="modal-inp" id="eStat" style="background:var(--card);color:var(--t1)">
+      <option value="live" ${t.status==='live'?'selected':''}>Live</option>
+      <option value="upcoming" ${t.status==='upcoming'?'selected':''}>Upcoming</option>
+      <option value="ended" ${t.status==='ended'?'selected':''}>Ended</option>
+    </select>`,
+  ()=>{
+    t.name=$('eName').value||t.name;
+    t.prize=$('ePrize').value||t.prize;
+    t.status=$('eStat').value;
+    renderTournaments();toast('Tournament updated');
+  });
+}
+
+window.deleteTour=function(id){
+  if(!confirm('Delete this tournament?'))return;
+  DB.tournaments=DB.tournaments.filter(t=>t.id!==id);
+  renderTournaments();toast('Tournament deleted','err');
+}
+
+// ── REPORTS ──
+function renderReports(){
+  $('reportsTbody').innerHTML=DB.reports.map(r=>`
+    <tr>
+      <td>${r.reporter}</td>
+      <td style="color:var(--red)">${r.reported}</td>
+      <td style="color:var(--t2)">${r.reason}</td>
+      <td><span class="badge ${r.status==='open'?'red':'green'}">${r.status}</span></td>
+      <td>${r.status==='open'?`<button class="act-btn approve" onclick="resolveReport('${r.id}')">Resolve</button><button class="act-btn ban" onclick="banFromReport('${r.id}')">Ban User</button>`:'—'}</td>
+    </tr>`).join('');
+}
+
+window.resolveReport=function(id){
+  const r=DB.reports.find(x=>x.id===id);if(!r)return;
+  r.status='resolved';renderReports();refreshDash();toast('Report resolved');
+}
+window.banFromReport=function(id){
+  const r=DB.reports.find(x=>x.id===id);if(!r)return;
+  r.status='resolved';
+  const u=DB.users.find(x=>x.name===r.reported);
+  if(u)u.banned=true;
+  renderReports();toast(`${r.reported} banned`,'err');
+}
+
+// ── SUPPORT (Firestore Real-time) ──
+let _supportTickets=[];
+let _openChatTicketId=null;
+
+function loadSupportTickets(){
+  const q=query(collection(db,'support_tickets'),orderBy('updatedAt','desc'));
+  onSnapshot(q,snap=>{
+    _supportTickets=[];
+    snap.forEach(d=>_supportTickets.push({id:d.id,...d.data()}));
+    renderSupport();
+    // update dash count
+    const openCount=_supportTickets.filter(t=>t.status==='open').length;
+    $('stReports').textContent=openCount;
+  });
+}
+
+function renderSupport(){
+  const list=_supportTickets;
+  if(!list.length){
+    $('supportTbody').innerHTML=`<tr class="empty-row"><td colspan="5"><i class="fas fa-headset"></i> No support tickets yet</td></tr>`;
+    return;
+  }
+  $('supportTbody').innerHTML=list.map(s=>`
+    <tr>
+      <td style="font-weight:600">${s.userName||'Unknown'}<div style="font-size:10px;color:var(--t3)">${s.userHandle||''}</div></td>
+      <td style="color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.lastMsg||'—'}</td>
+      <td style="color:var(--t3);white-space:nowrap;font-size:11px">${s.updatedAt?.toDate?.()?.toLocaleString('en-PK')||'just now'}</td>
+      <td><span class="badge ${s.status==='open'?'red':'green'}">${s.status}</span></td>
+      <td>
+        <button class="act-btn view" onclick="openSupportChat('${s.ticketId}','${s.userName}')"><i class="fas fa-comments"></i> Reply</button>
+        ${s.status==='open'?`<button class="act-btn approve" onclick="resolveTicket('${s.id}','${s.ticketId}')">Resolve</button>`:''}
+      </td>
+    </tr>`).join('');
+}
+
+// Support Chat Modal
+function openSupportChat(ticketId, userName){
+  _openChatTicketId=ticketId;
+  $('scModalName').textContent='Chat: '+userName;
+  $('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">Loading...</div>';
+  $('scModal').classList.add('on');
+  // Listen to messages
+  if(window._scUnsub)window._scUnsub();
+  const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
+  window._scUnsub=onSnapshot(q,snap=>{
+    if(snap.empty){$('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">No messages yet</div>';return;}
+    $('scMsgs').innerHTML='';
+    snap.forEach(d=>{
+      const m=d.data();
+      const isAdmin=m.sender==='admin';
+      $('scMsgs').innerHTML+=`
+        <div style="display:flex;gap:8px;margin-bottom:10px;${isAdmin?'flex-direction:row-reverse':''}">
+          <div style="width:28px;height:28px;border-radius:50%;background:${isAdmin?'var(--red)':'var(--ele)'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">
+            <i class="fas fa-${isAdmin?'shield-alt':'user'}"></i>
+          </div>
+          <div style="max-width:75%">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:3px;${isAdmin?'text-align:right':''}">${isAdmin?'Admin':m.senderName||'Player'}</div>
+            <div style="background:${isAdmin?'rgba(232,64,74,.15)':'var(--card)'};border:1px solid ${isAdmin?'rgba(232,64,74,.25)':'var(--bdr)'};border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5">${m.text}</div>
+          </div>
+        </div>`;
+    });
+    $('scMsgs').scrollTop=9999;
+  });
+}
+
+window.sendAdminReply=async function(){
+  const txt=$('scInp').value.trim();
+  if(!txt||!_openChatTicketId)return;
+  $('scInp').value='';
+  try{
+    await addDoc(collection(db,'support',_openChatTicketId,'messages'),{
+      text:txt,sender:'admin',senderName:'Admin',createdAt:serverTimestamp()
+    });
+    // update ticket
+    const ticket=_supportTickets.find(t=>t.ticketId===_openChatTicketId);
+    if(ticket){
+      await updateDoc(doc(db,'support_tickets',ticket.id),{lastMsg:'[Admin]: '+txt,updatedAt:serverTimestamp()});
+    }
+    toast('Reply sent!');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.resolveTicket=async function(docId, ticketId){
+  try{
+    await updateDoc(doc(db,'support_tickets',docId),{status:'resolved'});
+    toast('Ticket resolved');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.closeSupportChat=function(){
+  $('scModal').classList.remove('on');
+  if(window._scUnsub){window._scUnsub();window._scUnsub=null;}
+}
+
+// ── AUTH ──
+window.doLogin=async function(){
+  const em=$('adminEmail').value.trim(),pw=$('adminPass').value;
+  const err=$('loginErr');
+  err.style.display='none';
+  if(!em||!pw){err.textContent='Enter email and password';err.style.display='block';return;}
+  try{
+    const cred=await signInWithEmailAndPassword(auth,em,pw);
+    // Check if admin
+    if(!ADMIN_UIDS.includes(cred.user.uid)){
+      await signOut(auth);
+      err.textContent='Access denied — not an admin account';err.style.display='block';return;
+    }
+    $('adminNameSb').textContent=cred.user.displayName||cred.user.email.split('@')[0];
+    $('loginScreen').style.display='none';
+    $('adminApp').style.display='block';
+    refreshDash();
+  }catch(e){
+    err.textContent=e.code==='auth/invalid-credential'?'Wrong email or password':e.code==='auth/user-not-found'?'Account not found':('Error: '+e.code);
+    err.style.display='block';
+  }
+}
+
+window.doLogout=async function(){
+  await signOut(auth);
+  $('loginScreen').style.display='flex';
+  $('adminApp').style.display='none';
+  $('adminEmail').value='';$('adminPass').value='';
+}
+
+onAuthStateChanged(auth,user=>{
+  if(user&&ADMIN_UIDS.includes(user.uid)){
+    $('adminNameSb').textContent=user.displayName||user.email?.split('@')[0]||'Admin';
+    $('loginScreen').style.display='none';
+    $('adminApp').style.display='block';
+    refreshDash();
+    loadSupportTickets();
+  }
+});
+
+// init
+refreshDash();
+</script>
+
+<!-- SUPPORT CHAT MODAL -->
+<div class="modal-overlay" id="scModal" style="z-index:600">
+  <div class="modal-box" style="max-width:500px;height:540px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 id="scModalName" style="margin:0">Support Chat</h3>
+      <button onclick="closeSupportChat()" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="scMsgs" style="flex:1;overflow-y:auto;padding:4px 2px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="modal-inp" id="scInp" placeholder="Type admin reply..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendAdminReply()"/>
+      <button onclick="sendAdminReply()" style="padding:10px 16px;background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
