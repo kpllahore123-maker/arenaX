@@ -777,7 +777,7 @@ window.doLogout=async function(){
 }
 
 onAuthStateChanged(auth,user=>{
-  if(user&&(ADMIN_UIDS.includes(user.uid)||ADMIN_UIDS.includes('xDa31jOrsoQC2HxjSheO3wBqyII2'))){
+  if(user&&(ADMIN_UIDS.includes(xDa31jOrsoQC2HxjSheO3wBqyII2)||ADMIN_UIDS.includes('xDa31jOrsoQC2HxjSheO3wBqyII2'))){
     $('adminNameSb').textContent=user.displayName||user.email?.split('@')[0]||'Admin';
     $('loginScreen').style.display='none';
     $('adminApp').style.display='block';
