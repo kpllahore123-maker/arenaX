@@ -808,7 +808,6 @@ async function getBotReply(txt, msgs){
 }
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
-function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 async function sendMsg(txt){
   if(!txt.trim())return;
   const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
