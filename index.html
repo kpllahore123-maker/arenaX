@@ -789,6 +789,250 @@ function showErr(msg){
 }
 function shake(id){const el=$(id);if(!el)return;el.style.borderColor='#e8404a';el.style.animation='sk .4s ease';setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500)}
 
+  // ── FRIEND SYSTEM ──
+  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
+
+  function loadFriends(){
+    if(!auth.currentUser||App.guest)return;
+    const uid=auth.currentUser.uid;
+    // Listen to friends list
+    if(_friendsUnsub)_friendsUnsub();
+    _friendsUnsub=onSnapshot(collection(db,'users',uid,'friends'),snap=>{
+      const list=$('friendsList');
+      if(snap.empty){list.innerHTML='<div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Tap Add Friend!</p></div>';return;}
+      list.innerHTML='';
+      snap.forEach(d=>{
+        const f=d.data();
+        const div=document.createElement('div');
+        div.className='pchat-item';
+        div.style.cursor='pointer';
+        div.innerHTML=`<div class="pchat-av"><img src="${f.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+f.uid}"/></div><div style="flex:1"><div class="pchat-name">${f.name}</div><div class="pchat-last">${f.handle}</div></div><i class="fas fa-chevron-right" style="color:var(--t3);font-size:11px"></i>`;
+        div.addEventListener('click',()=>openDM(f));
+        list.appendChild(div);
+      });
+    });
+    // Listen to incoming requests
+    if(_reqUnsub)_reqUnsub();
+    _reqUnsub=onSnapshot(collection(db,'users',uid,'friendRequests'),snap=>{
+      const wrap=$('friendReqsWrap');
+      if(snap.empty){wrap.classList.add('hide');wrap.innerHTML='';return;}
+      wrap.classList.remove('hide');
+      wrap.innerHTML='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Friend Requests</div>';
+      snap.forEach(d=>{
+        const r=d.data();
+        wrap.innerHTML+=`<div class="freq-card">
+          <img class="freq-av" src="${r.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+r.uid}"/>
+          <div class="freq-info"><div class="freq-name">${r.name}</div><div class="freq-handle">${r.handle}</div></div>
+          <div class="freq-btns">
+            <button class="freq-acc" onclick="acceptFriend('${d.id}','${r.uid}','${r.name}','${r.handle}','${r.av||''}')"><i class="fas fa-check"></i></button>
+            <button class="freq-dec" onclick="declineFriend('${d.id}')"><i class="fas fa-times"></i></button>
+          </div>
+        </div>`;
+      });
+    });
+  }
+
+  // Add Friend Modal
+  if($('btnAddFriend'))$('btnAddFriend').addEventListener('click',()=>{
+    if(App.guest){alert('Create an account first!');return;}
+    $('friendHandleInp').value='';$('friendSearchResult').innerHTML='';
+    $('mAddFriend').classList.remove('hide');
+  });
+  if($('bCloseAddFriend'))$('bCloseAddFriend').addEventListener('click',()=>$('mAddFriend').classList.add('hide'));
+  if($('mAddFriend'))$('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
+
+  // Search player by handle
+  let _searchTimer=null;
+  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',()=>{
+    clearTimeout(_searchTimer);
+    const h=$('friendHandleInp').value.trim().toLowerCase();
+    const res=$('friendSearchResult');
+    if(h.length<3){res.innerHTML='';return;}
+    res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
+    _searchTimer=setTimeout(async()=>{
+      try{
+        const snap=await getDocs(collection(db,'users'));
+        let found=null;
+        snap.forEach(d=>{
+          const u=d.data();
+          const handle=(u.handle||'').toLowerCase();
+          if(handle===h||handle.includes(h))found={id:d.id,...u};
+        });
+        if(!found||found.uid===auth.currentUser.uid){
+          res.innerHTML='<div style="font-size:12px;color:var(--red)">❌ Player not found. Check the handle.</div>';return;
+        }
+        res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+(found.uid||'x')}"/><div class="freq-info"><div class="freq-name">${found.name||'Player'}</div><div class="freq-handle">${found.handle||''}</div></div><span style="color:var(--green);font-size:11px">✓ Found</span></div>`;
+        $('bSendFriendReq').dataset.targetId=found.uid||found.id;
+        $('bSendFriendReq').dataset.targetName=found.name||'Player';
+        $('bSendFriendReq').dataset.targetHandle=found.handle||'';
+        $('bSendFriendReq').dataset.targetAv=found.av||'';
+      }catch(e){
+        console.error('Search error:',e);
+        res.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>';
+      }
+    },500);
+  });
+
+  if($('bSendFriendReq'))$('bSendFriendReq').addEventListener('click',async()=>{
+    const tid=$('bSendFriendReq').dataset.targetId;
+    if(!tid){alert('Search for a player first!');return;}
+    const me=auth.currentUser;
+    const myData=App.user;
+    try{
+      await setDoc(doc(db,'users',tid,'friendRequests',me.uid),{
+        uid:me.uid,name:myData.name,handle:myData.handle,
+        av:myData.av||'',sentAt:serverTimestamp()
+      });
+      $('mAddFriend').classList.add('hide');
+      alert('Friend request sent! ✅');
+    }catch(e){alert('Error: '+e.message);}
+  });
+
+  window.acceptFriend=async function(reqId,fromUid,fromName,fromHandle,fromAv){
+    const me=auth.currentUser;
+    const myData=App.user;
+    try{
+      // Add to both users' friends
+      await setDoc(doc(db,'users',me.uid,'friends',fromUid),{uid:fromUid,name:fromName,handle:fromHandle,av:fromAv,addedAt:serverTimestamp()});
+      await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name,handle:myData.handle,av:myData.av||'',addedAt:serverTimestamp()});
+      // Remove request
+      await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
+      alert('✅ Friend added: '+fromName);
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  window.declineFriend=async function(reqId){
+    try{
+      await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));
+    }catch(e){}
+  };
+
+  // DM Chat
+  function openDM(friend){
+    _activeDMId=friend.uid;
+    $('dmChatName').textContent=friend.name;
+    $('dmChatAv').src=friend.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid;
+    $('dmMsgs').innerHTML='';
+    $('mDMChat').classList.remove('hide');
+    listenDMTyping(friend.uid,friend.name);
+    // Clear unread dot
+    document.querySelectorAll('.pchat-item').forEach(item=>{
+      if(item.querySelector('.pchat-name')?.textContent===friend.name){
+        item.querySelector('.pchat-unread-dot')?.remove();
+      }
+    });
+    if(_dmUnsub)_dmUnsub();
+    const chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
+    const q=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
+    _dmUnsub=onSnapshot(q,snap=>{
+      $('dmMsgs').innerHTML='';
+      snap.forEach(d=>{
+        const m=d.data();
+        const isMe=m.sender===auth.currentUser.uid;
+        const div=document.createElement('div');
+        div.className='dm-msg '+(isMe?'me':'them');
+        div.textContent=m.text;
+        $('dmMsgs').appendChild(div);
+      });
+      $('dmMsgs').scrollTop=9999;
+    });
+  }
+
+  if($('dmSendBtn'))$('dmSendBtn').addEventListener('click',sendDM);
+  if($('dmInp'))$('dmInp').addEventListener('keydown',e=>{if(e.key==='Enter')sendDM()});
+  async function sendDM(){
+    const txt=$('dmInp').value.trim();
+    if(!txt||!_activeDMId)return;
+    $('dmInp').value='';
+    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
+    try{
+      await addDoc(collection(db,'dms',chatId,'messages'),{
+        text:txt,sender:auth.currentUser.uid,
+        senderName:App.user.name,createdAt:serverTimestamp()
+      });
+    }catch(e){console.error('DM error:',e);}
+  }
+
+  if($('mDMChat'))$('mDMChat').addEventListener('click',e=>{
+    if(e.target===$('mDMChat')){
+      $('mDMChat').classList.add('hide');
+      if(_dmUnsub){_dmUnsub();_dmUnsub=null;}
+    }
+  });
+
+
+  // ── TYPING INDICATORS ──
+  let _dmTypingTimer=null;
+  let _supportTypingTimer=null;
+
+  // DM typing — send typing status to Firestore
+  if($('dmInp'))$('dmInp').addEventListener('input',()=>{
+    if(!_activeDMId||!auth.currentUser)return;
+    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
+    setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{
+      uid:auth.currentUser.uid,name:App.user?.name||'',
+      chatId,typing:true,updatedAt:serverTimestamp()
+    },{merge:true}).catch(()=>{});
+    clearTimeout(_dmTypingTimer);
+    _dmTypingTimer=setTimeout(()=>{
+      setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{typing:false},{merge:true}).catch(()=>{});
+    },2000);
+  });
+
+  // Listen for other person typing in DM
+  function listenDMTyping(friendId,friendName){
+    if(!auth.currentUser)return;
+    const chatId=[auth.currentUser.uid,friendId].sort().join('_');
+    const typingDocId=chatId+'_'+friendId;
+    onSnapshot(doc(db,'typing',typingDocId),snap=>{
+      const data=snap.data();
+      const typingEl=$('dmTyping');
+      const nameEl=$('dmTypingName');
+      if(data?.typing&&typingEl){
+        nameEl.textContent=friendName+' is typing';
+        typingEl.classList.remove('hide');
+        $('dmMsgs').scrollTop=9999;
+      } else if(typingEl){
+        typingEl.classList.add('hide');
+      }
+    });
+  }
+
+  // Support typing for admin
+  if($('chatIn'))$('chatIn').addEventListener('input',()=>{
+    if(!auth.currentUser||App.guest)return;
+    const ticketId=auth.currentUser.uid+'_ticket';
+    setDoc(doc(db,'typing','support_'+ticketId),{
+      uid:auth.currentUser.uid,typing:true,updatedAt:serverTimestamp()
+    },{merge:true}).catch(()=>{});
+    clearTimeout(_supportTypingTimer);
+    _supportTypingTimer=setTimeout(()=>{
+      setDoc(doc(db,'typing','support_'+ticketId),{typing:false},{merge:true}).catch(()=>{});
+    },2000);
+  });
+
+  // ── UNREAD NOTIFICATIONS BADGE ──
+  function listenNotifications(){
+    if(!auth.currentUser||App.guest)return;
+    const uid=auth.currentUser.uid;
+    onSnapshot(collection(db,'notifications'),snap=>{
+      let unread=0;
+      snap.forEach(d=>{const n=d.data();if(n.userId===uid&&!n.read)unread++;});
+      const badge=$('notifBadge');
+      if(badge){
+        if(unread>0){badge.textContent=unread>9?'9+':unread;badge.classList.remove('hide');}
+        else badge.classList.add('hide');
+      }
+    });
+  }
+
+
+  // ── FRIEND UNREAD DOT ──
+  function listenFriendMessages(){
+    // Simple version - no nested listeners to avoid complexity
+  }
+
+
 // ── BOOT ──
 function boot(){
   const u=App.user;
@@ -823,8 +1067,8 @@ function boot(){
   document.querySelector('.ni[data-t="Profile"]').classList.add('on');
   goTo('sDash');
   startChatListener();
-  listenNotifications();
-  listenFriendMessages();
+  try{listenNotifications();}catch(e){console.log('notif:',e);}
+  try{loadFriends();}catch(e){console.log('friends:',e);}
 }
 
 function updatePremiumUI(){
@@ -842,7 +1086,7 @@ function updatePremiumUI(){
 }
 
 // ── TABS ──
-function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on');if(name==='Chat'&&!App.guest)loadFriends();}
+function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on');if(name==='Chat'&&!App.guest){try{loadFriends();}catch(e){}}}
 
 // ── TOURNAMENTS ──
 let _toursData=[];
@@ -1199,7 +1443,16 @@ window.addEventListener('DOMContentLoaded',()=>{
     try{
       const snap=await getDocs(collection(db,'notifications'));
       let msgs=[];
-      snap.forEach(d=>{const n=d.data();if(n.userId===auth.currentUser?.uid)msgs.push(n.message);});
+      const markRead=[];
+      snap.forEach(d=>{
+        const n=d.data();
+        if(n.userId===auth.currentUser?.uid){
+          msgs.push(n.message);
+          if(!n.read)markRead.push(d.id);
+        }
+      });
+      // Mark all as read
+      markRead.forEach(id=>updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{}));
       alert(msgs.length?'🔔 Notifications\n\n'+msgs.map(m=>'• '+m).join('\n'):'🔔 No new notifications!');
     }catch(e){alert('🔔 No notifications yet!');}
   });
@@ -1216,7 +1469,20 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   // ── NOTIFICATIONS ──
-  $('btnNotif').addEventListener('click',()=>alert('🔔 Notification Preferences\n\nAll notifications are currently enabled.\nTournament alerts: ON\nMatch reminders: ON\nWallet alerts: ON'));
+  $('btnNotif').addEventListener('click',async()=>{
+    if(App.guest){alert('Login to see notifications!');return;}
+    try{
+      const snap=await getDocs(collection(db,'notifications'));
+      let msgs=[];
+      const markRead=[];
+      snap.forEach(d=>{
+        const n=d.data();
+        if(n.userId===auth.currentUser?.uid){msgs.push(n.message);if(!n.read)markRead.push(d.id);}
+      });
+      markRead.forEach(id=>updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{}));
+      alert(msgs.length?'🔔 Notifications\n\n'+msgs.map(m=>'• '+m).join('\n'):'🔔 No new notifications!');
+    }catch(e){alert('🔔 No notifications yet!');}
+  });
 
   // ── PREMIUM MODAL ──
   function openPremium(){if(App.guest){alert('Create a real account to get Premium!');return}$('mPremium').classList.remove('hide')}
@@ -1304,176 +1570,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 
 
-  // ── FRIEND SYSTEM ──
-  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
-
-  function loadFriends(){
-    if(!auth.currentUser||App.guest)return;
-    const uid=auth.currentUser.uid;
-    // Listen to friends list
-    if(_friendsUnsub)_friendsUnsub();
-    _friendsUnsub=onSnapshot(collection(db,'users',uid,'friends'),snap=>{
-      const list=$('friendsList');
-      if(snap.empty){list.innerHTML='<div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Tap Add Friend!</p></div>';return;}
-      list.innerHTML='';
-      snap.forEach(d=>{
-        const f=d.data();
-        const div=document.createElement('div');
-        div.className='pchat-item';
-        div.style.cursor='pointer';
-        div.innerHTML=`<div class="pchat-av"><img src="${f.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+f.uid}"/></div><div style="flex:1"><div class="pchat-name">${f.name}</div><div class="pchat-last">${f.handle}</div></div><i class="fas fa-chevron-right" style="color:var(--t3);font-size:11px"></i>`;
-        div.addEventListener('click',()=>openDM(f));
-        list.appendChild(div);
-      });
-    });
-    // Listen to incoming requests
-    if(_reqUnsub)_reqUnsub();
-    _reqUnsub=onSnapshot(collection(db,'users',uid,'friendRequests'),snap=>{
-      const wrap=$('friendReqsWrap');
-      if(snap.empty){wrap.classList.add('hide');wrap.innerHTML='';return;}
-      wrap.classList.remove('hide');
-      wrap.innerHTML='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Friend Requests</div>';
-      snap.forEach(d=>{
-        const r=d.data();
-        wrap.innerHTML+=`<div class="freq-card">
-          <img class="freq-av" src="${r.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+r.uid}"/>
-          <div class="freq-info"><div class="freq-name">${r.name}</div><div class="freq-handle">${r.handle}</div></div>
-          <div class="freq-btns">
-            <button class="freq-acc" onclick="acceptFriend('${d.id}','${r.uid}','${r.name}','${r.handle}','${r.av||''}')"><i class="fas fa-check"></i></button>
-            <button class="freq-dec" onclick="declineFriend('${d.id}')"><i class="fas fa-times"></i></button>
-          </div>
-        </div>`;
-      });
-    });
-  }
-
-  // Add Friend Modal
-  if($('btnAddFriend'))$('btnAddFriend').addEventListener('click',()=>{
-    if(App.guest){alert('Create an account first!');return;}
-    $('friendHandleInp').value='';$('friendSearchResult').innerHTML='';
-    $('mAddFriend').classList.remove('hide');
-  });
-  if($('bCloseAddFriend'))$('bCloseAddFriend').addEventListener('click',()=>$('mAddFriend').classList.add('hide'));
-  if($('mAddFriend'))$('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
-
-  // Search player by handle
-  let _searchTimer=null;
-  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',()=>{
-    clearTimeout(_searchTimer);
-    const h=$('friendHandleInp').value.trim().toLowerCase();
-    const res=$('friendSearchResult');
-    if(h.length<3){res.innerHTML='';return;}
-    res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
-    _searchTimer=setTimeout(async()=>{
-      try{
-        const snap=await getDocs(collection(db,'users'));
-        let found=null;
-        snap.forEach(d=>{
-          const u=d.data();
-          const handle=(u.handle||'').toLowerCase();
-          if(handle===h||handle.includes(h))found={id:d.id,...u};
-        });
-        if(!found||found.uid===auth.currentUser.uid){
-          res.innerHTML='<div style="font-size:12px;color:var(--red)">❌ Player not found. Check the handle.</div>';return;
-        }
-        res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+(found.uid||'x')}"/><div class="freq-info"><div class="freq-name">${found.name||'Player'}</div><div class="freq-handle">${found.handle||''}</div></div><span style="color:var(--green);font-size:11px">✓ Found</span></div>`;
-        $('bSendFriendReq').dataset.targetId=found.uid||found.id;
-        $('bSendFriendReq').dataset.targetName=found.name||'Player';
-        $('bSendFriendReq').dataset.targetHandle=found.handle||'';
-        $('bSendFriendReq').dataset.targetAv=found.av||'';
-      }catch(e){
-        console.error('Search error:',e);
-        res.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>';
-      }
-    },500);
-  });
-
-  if($('bSendFriendReq'))$('bSendFriendReq').addEventListener('click',async()=>{
-    const tid=$('bSendFriendReq').dataset.targetId;
-    if(!tid){alert('Search for a player first!');return;}
-    const me=auth.currentUser;
-    const myData=App.user;
-    try{
-      await setDoc(doc(db,'users',tid,'friendRequests',me.uid),{
-        uid:me.uid,name:myData.name,handle:myData.handle,
-        av:myData.av||'',sentAt:serverTimestamp()
-      });
-      $('mAddFriend').classList.add('hide');
-      alert('Friend request sent! ✅');
-    }catch(e){alert('Error: '+e.message);}
-  });
-
-  window.acceptFriend=async function(reqId,fromUid,fromName,fromHandle,fromAv){
-    const me=auth.currentUser;
-    const myData=App.user;
-    try{
-      // Add to both users' friends
-      await setDoc(doc(db,'users',me.uid,'friends',fromUid),{uid:fromUid,name:fromName,handle:fromHandle,av:fromAv,addedAt:serverTimestamp()});
-      await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name,handle:myData.handle,av:myData.av||'',addedAt:serverTimestamp()});
-      // Remove request
-      await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
-      alert('✅ Friend added: '+fromName);
-    }catch(e){alert('Error: '+e.message);}
-  };
-
-  window.declineFriend=async function(reqId){
-    try{
-      await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));
-    }catch(e){}
-  };
-
-  // DM Chat
-  function openDM(friend){
-    _activeDMId=friend.uid;
-    $('dmChatName').textContent=friend.name;
-    $('dmChatAv').src=friend.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid;
-    $('dmMsgs').innerHTML='';
-    $('mDMChat').classList.remove('hide');
-    listenDMTyping(friend.uid,friend.name);
-    // Clear unread dot
-    document.querySelectorAll('.pchat-item').forEach(item=>{
-      if(item.querySelector('.pchat-name')?.textContent===friend.name){
-        item.querySelector('.pchat-unread-dot')?.remove();
-      }
-    });
-    if(_dmUnsub)_dmUnsub();
-    const chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
-    const q=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
-    _dmUnsub=onSnapshot(q,snap=>{
-      $('dmMsgs').innerHTML='';
-      snap.forEach(d=>{
-        const m=d.data();
-        const isMe=m.sender===auth.currentUser.uid;
-        const div=document.createElement('div');
-        div.className='dm-msg '+(isMe?'me':'them');
-        div.textContent=m.text;
-        $('dmMsgs').appendChild(div);
-      });
-      $('dmMsgs').scrollTop=9999;
-    });
-  }
-
-  if($('dmSendBtn'))$('dmSendBtn').addEventListener('click',sendDM);
-  if($('dmInp'))$('dmInp').addEventListener('keydown',e=>{if(e.key==='Enter')sendDM()});
-  async function sendDM(){
-    const txt=$('dmInp').value.trim();
-    if(!txt||!_activeDMId)return;
-    $('dmInp').value='';
-    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
-    try{
-      await addDoc(collection(db,'dms',chatId,'messages'),{
-        text:txt,sender:auth.currentUser.uid,
-        senderName:App.user.name,createdAt:serverTimestamp()
-      });
-    }catch(e){console.error('DM error:',e);}
-  }
-
-  if($('mDMChat'))$('mDMChat').addEventListener('click',e=>{
-    if(e.target===$('mDMChat')){
-      $('mDMChat').classList.add('hide');
-      if(_dmUnsub){_dmUnsub();_dmUnsub=null;}
-    }
-  });
 
   // ── TOURNAMENT REGISTRATION ──
   let _activeTour=null;
@@ -1563,75 +1659,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   if($('tregDone'))$('tregDone').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
 
-  // ── TYPING INDICATORS ──
-  let _dmTypingTimer=null;
-  let _supportTypingTimer=null;
-
-  // DM typing — send typing status to Firestore
-  if($('dmInp'))$('dmInp').addEventListener('input',()=>{
-    if(!_activeDMId||!auth.currentUser)return;
-    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
-    setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{
-      uid:auth.currentUser.uid,name:App.user?.name||'',
-      chatId,typing:true,updatedAt:serverTimestamp()
-    },{merge:true}).catch(()=>{});
-    clearTimeout(_dmTypingTimer);
-    _dmTypingTimer=setTimeout(()=>{
-      setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{typing:false},{merge:true}).catch(()=>{});
-    },2000);
-  });
-
-  // Listen for other person typing in DM
-  function listenDMTyping(friendId,friendName){
-    if(!auth.currentUser)return;
-    const chatId=[auth.currentUser.uid,friendId].sort().join('_');
-    const typingDocId=chatId+'_'+friendId;
-    onSnapshot(doc(db,'typing',typingDocId),snap=>{
-      const data=snap.data();
-      const typingEl=$('dmTyping');
-      const nameEl=$('dmTypingName');
-      if(data?.typing&&typingEl){
-        nameEl.textContent=friendName+' is typing';
-        typingEl.classList.remove('hide');
-        $('dmMsgs').scrollTop=9999;
-      } else if(typingEl){
-        typingEl.classList.add('hide');
-      }
-    });
-  }
-
-  // Support typing for admin
-  if($('chatIn'))$('chatIn').addEventListener('input',()=>{
-    if(!auth.currentUser||App.guest)return;
-    const ticketId=auth.currentUser.uid+'_ticket';
-    setDoc(doc(db,'typing','support_'+ticketId),{
-      uid:auth.currentUser.uid,typing:true,updatedAt:serverTimestamp()
-    },{merge:true}).catch(()=>{});
-    clearTimeout(_supportTypingTimer);
-    _supportTypingTimer=setTimeout(()=>{
-      setDoc(doc(db,'typing','support_'+ticketId),{typing:false},{merge:true}).catch(()=>{});
-    },2000);
-  });
-
-  // ── UNREAD NOTIFICATIONS BADGE ──
-  function listenNotifications(){
-    if(!auth.currentUser||App.guest)return;
-    const uid=auth.currentUser.uid;
-    onSnapshot(collection(db,'notifications'),snap=>{
-      let unread=0;
-      snap.forEach(d=>{const n=d.data();if(n.userId===uid&&!n.read)unread++;});
-      const badge=$('notifBadge');
-      if(badge){
-        if(unread>0){badge.textContent=unread>9?'9+':unread;badge.classList.remove('hide');}
-        else badge.classList.add('hide');
-      }
-    });
-  }
-
-  // ── FRIEND UNREAD DOT ──
-  function listenFriendMessages(){
-    // Simple version - no nested listeners to avoid complexity
-  }
 
 }); // end DOMContentLoaded
 </script>
