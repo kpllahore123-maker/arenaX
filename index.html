@@ -297,6 +297,20 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .jc-btn{background:#00a050;color:#fff}.jc-btn:hover{background:#008040}
 .ep-btn{background:#643cb4;color:#fff}.ep-btn:hover{background:#5030a0}
 .cc-btn{background:var(--blue);color:#fff}.cc-btn:hover{background:#3a8ff0}
+
+/* FRIEND SYSTEM */
+.freq-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.freq-av{width:36px;height:36px;border-radius:50%;border:2px solid var(--bdr);flex-shrink:0}
+.freq-info{flex:1}
+.freq-name{font-size:13px;font-weight:700}
+.freq-handle{font-size:10px;color:var(--t3)}
+.freq-btns{display:flex;gap:6px}
+.freq-acc{padding:6px 12px;background:rgba(61,220,132,.15);border:1px solid rgba(61,220,132,.3);color:var(--green);border-radius:6px;font-size:11px;font-weight:700;border:none}
+.freq-dec{padding:6px 12px;background:rgba(232,64,74,.12);border:1px solid rgba(232,64,74,.25);color:var(--red);border-radius:6px;font-size:11px;font-weight:700;border:none}
+.dm-msg{max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.dm-msg.me{background:var(--gold);color:#0a0c12;align-self:flex-end;border-bottom-right-radius:3px}
+.dm-msg.them{background:var(--card);border:1px solid var(--bdr);color:var(--t1);align-self:flex-start;border-bottom-left-radius:3px}
+.notif-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:absolute;top:2px;right:2px}
 </style>
 </head>
 <body>
@@ -503,7 +517,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
         <h4>Account Settings</h4>
         <div class="sr" id="btnEditProfile"><i class="fas fa-pen"></i> Edit Profile<i class="fas fa-chevron-right"></i></div>
         <div class="sr" id="btnCustomize"><i class="fas fa-palette"></i> Customize Profile<span class="prm-tag">Premium</span><i class="fas fa-chevron-right"></i></div>
-        <div class="sr" id="btnPlayerChat"><i class="fas fa-comments"></i> Player Chat<span class="prm-tag">Premium</span><i class="fas fa-chevron-right"></i></div>
+        <div class="sr" id="btnPlayerChat"><i class="fas fa-comments"></i> Player Chat<i class="fas fa-chevron-right"></i></div>
         <div class="sr" id="btnPremium"><i class="fas fa-crown"></i> Premium Plans<i class="fas fa-chevron-right"></i></div>
         <div class="sr" id="btnNotif"><i class="fas fa-bell"></i> Notifications<i class="fas fa-chevron-right"></i></div>
         <div class="sr dr" id="bLogout"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
@@ -542,20 +556,45 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 
     <!-- PLAYER CHAT TAB -->
     <section id="tChat" class="tab">
-      <div class="sh"><h2><i class="fas fa-comments"></i> Player Chat</h2></div>
-      <div class="prm-lock" id="chatLock">
-        <i class="fas fa-crown"></i>
-        <p>Player-to-player chat is a <strong>Premium</strong> feature. Upgrade to chat with other players directly.</p>
-        <button class="prm-lock-btn" id="chatUpgradeBtn">Get Premium</button>
+      <div class="sh"><h2><i class="fas fa-comments"></i> Player Chat</h2>
+        <button id="btnAddFriend" style="background:var(--g2);border:1px solid var(--g3);color:var(--gold);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;font-family:var(--fb)"><i class="fas fa-user-plus"></i> Add Friend</button>
       </div>
-      <div class="hide" id="chatListWrap">
-        <div class="pchat-list">
-          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=ali"/></div><div><div class="pchat-name">Ali Khan</div><div class="pchat-last">gg bro that match was 🔥</div></div><div class="pchat-time">2m</div><div class="pchat-unread">2</div></div>
-          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=zara"/></div><div><div class="pchat-name">Zara Ahmed</div><div class="pchat-last">Ready for the tournament?</div></div><div class="pchat-time">1h</div></div>
-          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=omar"/></div><div><div class="pchat-name">Omar Malik</div><div class="pchat-last">GG wp</div></div><div class="pchat-time">3h</div></div>
-          <div class="pchat-item"><div class="pchat-av"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=sara"/></div><div><div class="pchat-name">Sara Rizvi</div><div class="pchat-last">Let's team up next round!</div></div><div class="pchat-time">1d</div></div>
+      <!-- Friend Requests -->
+      <div id="friendReqsWrap" class="hide" style="margin-bottom:12px"></div>
+      <!-- Friends List -->
+      <div id="chatListWrap">
+        <div class="pchat-list" id="friendsList">
+          <div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Add someone!</p></div>
         </div>
-        <div style="text-align:center;padding:16px;font-size:12px;color:var(--t3)"><i class="fas fa-lock-open" style="color:var(--prm);margin-right:5px"></i>Premium feature · Chat with any player</div>
+      </div>
+      <!-- Add Friend Modal -->
+      <div class="mov hide" id="mAddFriend">
+        <div class="mbox">
+          <div class="mica"><i class="fas fa-user-plus"></i></div>
+          <h3 style="color:var(--gold);margin-bottom:14px">Add Friend</h3>
+          <p style="font-size:12px;color:var(--t2);margin-bottom:12px">Enter the player's handle (e.g. @username#1234)</p>
+          <input id="friendHandleInp" style="width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:12px" placeholder="@handle#1234"/>
+          <div id="friendSearchResult" style="margin-bottom:12px"></div>
+          <div class="mac">
+            <button class="mbtn mcan" id="bCloseAddFriend">Cancel</button>
+            <button class="mbtn" id="bSendFriendReq" style="background:var(--gold);color:#0a0c12">Send Request</button>
+          </div>
+        </div>
+      </div>
+      <!-- DM Chat Modal -->
+      <div class="mov hide" id="mDMChat">
+        <div class="mbox" style="padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--panel)">
+            <img id="dmChatAv" src="" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--bdr)"/>
+            <div style="flex:1"><div id="dmChatName" style="font-weight:700;font-size:14px"></div><div style="font-size:10px;color:var(--green)">● Online</div></div>
+            <button onclick="document.getElementById('mDMChat').classList.add('hide')" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
+          </div>
+          <div id="dmMsgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div>
+          <div style="padding:10px 14px;border-top:1px solid var(--bdr);display:flex;gap:8px;background:var(--panel)">
+            <input id="dmInp" style="flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none" placeholder="Type a message..."/>
+            <button id="dmSendBtn" style="width:40px;height:40px;background:var(--gold);border:none;border-radius:8px;color:#0a0c12;font-size:14px"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1093,10 +1132,11 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── PLAYER CHAT ──
   $('btnPlayerChat').addEventListener('click',()=>{
-    if(!App.premium){openPremium();return}
+    if(App.guest){alert('Create an account to use Player Chat!');return}
     switchTab('Chat');
     document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
     document.querySelector('.ni[data-t="Chat"]').classList.add('on');
+    loadFriends();
   });
 
   // ── CUSTOMIZE ──
@@ -1142,6 +1182,157 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.remove('hv')});
 
 }); // end DOMContentLoaded
+
+  // ── FRIEND SYSTEM ──
+  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
+
+  function loadFriends(){
+    if(!auth.currentUser||App.guest)return;
+    const uid=auth.currentUser.uid;
+    // Listen to friends list
+    if(_friendsUnsub)_friendsUnsub();
+    _friendsUnsub=onSnapshot(collection(db,'users',uid,'friends'),snap=>{
+      const list=$('friendsList');
+      if(snap.empty){list.innerHTML='<div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Tap Add Friend!</p></div>';return;}
+      list.innerHTML='';
+      snap.forEach(d=>{
+        const f=d.data();
+        const div=document.createElement('div');
+        div.className='pchat-item';
+        div.style.cursor='pointer';
+        div.innerHTML=`<div class="pchat-av"><img src="${f.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+f.uid}"/></div><div style="flex:1"><div class="pchat-name">${f.name}</div><div class="pchat-last">${f.handle}</div></div><i class="fas fa-chevron-right" style="color:var(--t3);font-size:11px"></i>`;
+        div.addEventListener('click',()=>openDM(f));
+        list.appendChild(div);
+      });
+    });
+    // Listen to incoming requests
+    if(_reqUnsub)_reqUnsub();
+    _reqUnsub=onSnapshot(collection(db,'users',uid,'friendRequests'),snap=>{
+      const wrap=$('friendReqsWrap');
+      if(snap.empty){wrap.classList.add('hide');wrap.innerHTML='';return;}
+      wrap.classList.remove('hide');
+      wrap.innerHTML='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Friend Requests</div>';
+      snap.forEach(d=>{
+        const r=d.data();
+        wrap.innerHTML+=`<div class="freq-card">
+          <img class="freq-av" src="${r.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+r.uid}"/>
+          <div class="freq-info"><div class="freq-name">${r.name}</div><div class="freq-handle">${r.handle}</div></div>
+          <div class="freq-btns">
+            <button class="freq-acc" onclick="acceptFriend('${d.id}','${r.uid}','${r.name}','${r.handle}','${r.av||''}')"><i class="fas fa-check"></i></button>
+            <button class="freq-dec" onclick="declineFriend('${d.id}')"><i class="fas fa-times"></i></button>
+          </div>
+        </div>`;
+      });
+    });
+  }
+
+  // Add Friend Modal
+  $('btnAddFriend').addEventListener('click',()=>{
+    if(App.guest){alert('Create an account first!');return;}
+    $('friendHandleInp').value='';$('friendSearchResult').innerHTML='';
+    $('mAddFriend').classList.remove('hide');
+  });
+  $('bCloseAddFriend').addEventListener('click',()=>$('mAddFriend').classList.add('hide'));
+  $('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
+
+  // Search player by handle
+  $('friendHandleInp').addEventListener('input',async()=>{
+    const h=$('friendHandleInp').value.trim().toLowerCase();
+    const res=$('friendSearchResult');
+    if(h.length<3){res.innerHTML='';return;}
+    res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
+    try{
+      const snap=await getDocs(collection(db,'users'));
+      let found=null;
+      snap.forEach(d=>{const u=d.data();if((u.handle||'').toLowerCase()===h||(u.handle||'').toLowerCase().includes(h))found={id:d.id,...u};});
+      if(!found||found.uid===auth.currentUser.uid){res.innerHTML='<div style="font-size:12px;color:var(--red)">Player not found.</div>';return;}
+      res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+found.uid}"/><div class="freq-info"><div class="freq-name">${found.name}</div><div class="freq-handle">${found.handle}</div></div></div>`;
+      $('bSendFriendReq').dataset.targetId=found.uid;
+      $('bSendFriendReq').dataset.targetName=found.name;
+      $('bSendFriendReq').dataset.targetHandle=found.handle;
+      $('bSendFriendReq').dataset.targetAv=found.av||'';
+    }catch(e){res.innerHTML='<div style="font-size:12px;color:var(--red)">Error searching.</div>';}
+  });
+
+  $('bSendFriendReq').addEventListener('click',async()=>{
+    const tid=$('bSendFriendReq').dataset.targetId;
+    if(!tid){alert('Search for a player first!');return;}
+    const me=auth.currentUser;
+    const myData=App.user;
+    try{
+      await setDoc(doc(db,'users',tid,'friendRequests',me.uid),{
+        uid:me.uid,name:myData.name,handle:myData.handle,
+        av:myData.av||'',sentAt:serverTimestamp()
+      });
+      $('mAddFriend').classList.add('hide');
+      alert('Friend request sent! ✅');
+    }catch(e){alert('Error: '+e.message);}
+  });
+
+  window.acceptFriend=async function(reqId,fromUid,fromName,fromHandle,fromAv){
+    const me=auth.currentUser;
+    const myData=App.user;
+    try{
+      // Add to both users' friends
+      await setDoc(doc(db,'users',me.uid,'friends',fromUid),{uid:fromUid,name:fromName,handle:fromHandle,av:fromAv,addedAt:serverTimestamp()});
+      await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name,handle:myData.handle,av:myData.av||'',addedAt:serverTimestamp()});
+      // Remove request
+      await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
+      toast('Friend added: '+fromName);
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  window.declineFriend=async function(reqId){
+    try{
+      await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));
+    }catch(e){}
+  };
+
+  // DM Chat
+  function openDM(friend){
+    _activeDMId=friend.uid;
+    $('dmChatName').textContent=friend.name;
+    $('dmChatAv').src=friend.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid;
+    $('dmMsgs').innerHTML='';
+    $('mDMChat').classList.remove('hide');
+    if(_dmUnsub)_dmUnsub();
+    const chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
+    const q=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
+    _dmUnsub=onSnapshot(q,snap=>{
+      $('dmMsgs').innerHTML='';
+      snap.forEach(d=>{
+        const m=d.data();
+        const isMe=m.sender===auth.currentUser.uid;
+        const div=document.createElement('div');
+        div.className='dm-msg '+(isMe?'me':'them');
+        div.textContent=m.text;
+        $('dmMsgs').appendChild(div);
+      });
+      $('dmMsgs').scrollTop=9999;
+    });
+  }
+
+  $('dmSendBtn').addEventListener('click',sendDM);
+  $('dmInp').addEventListener('keydown',e=>{if(e.key==='Enter')sendDM()});
+  async function sendDM(){
+    const txt=$('dmInp').value.trim();
+    if(!txt||!_activeDMId)return;
+    $('dmInp').value='';
+    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
+    try{
+      await addDoc(collection(db,'dms',chatId,'messages'),{
+        text:txt,sender:auth.currentUser.uid,
+        senderName:App.user.name,createdAt:serverTimestamp()
+      });
+    }catch(e){console.error('DM error:',e);}
+  }
+
+  $('mDMChat').addEventListener('click',e=>{
+    if(e.target===$('mDMChat')){
+      $('mDMChat').classList.add('hide');
+      if(_dmUnsub){_dmUnsub();_dmUnsub=null;}
+    }
+  });
 </script>
 </body>
 </html>
