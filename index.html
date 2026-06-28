@@ -311,6 +311,29 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .dm-msg.me{background:var(--gold);color:#0a0c12;align-self:flex-end;border-bottom-right-radius:3px}
 .dm-msg.them{background:var(--card);border:1px solid var(--bdr);color:var(--t1);align-self:flex-start;border-bottom-left-radius:3px}
 .notif-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:absolute;top:2px;right:2px}
+
+/* TOURNAMENT REGISTRATION */
+.treg-modal .mbox{max-width:440px;max-height:90vh;overflow-y:auto;padding:20px}
+.treg-section{margin-bottom:18px}
+.treg-section h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
+.treg-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:10px;transition:border-color .2s}
+.treg-inp:focus{border-color:var(--gold)}
+.treg-label{font-size:12px;color:var(--t2);margin-bottom:5px;display:block}
+.treg-check{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:12px;color:var(--t2);line-height:1.5}
+.treg-check input{margin-top:2px;accent-color:var(--gold);flex-shrink:0;width:16px;height:16px}
+.treg-disclaimer{background:rgba(232,64,74,.08);border:1px solid rgba(232,64,74,.2);border-radius:8px;padding:12px;font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:14px}
+.treg-disclaimer strong{color:var(--red)}
+.tour-detail-banner{background:linear-gradient(135deg,var(--g2),rgba(79,158,255,.08));border:1px solid var(--bdr);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
+.tour-detail-name{font-family:var(--ff);font-size:22px;font-weight:700;margin-bottom:4px}
+.tour-detail-game{font-size:12px;color:var(--t3);margin-bottom:12px}
+.tour-detail-stats{display:flex;justify-content:center;gap:20px}
+.tour-detail-stat{text-align:center}
+.tour-detail-stat .val{font-family:var(--ff);font-size:18px;font-weight:700;color:var(--gold)}
+.tour-detail-stat .lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.treg-success{text-align:center;padding:20px 10px}
+.treg-success i{font-size:48px;color:var(--green);margin-bottom:14px;display:block}
+.treg-success h3{font-family:var(--ff);font-size:20px;margin-bottom:10px;color:var(--green)}
+.treg-success p{font-size:13px;color:var(--t2);line-height:1.6}
 </style>
 </head>
 <body>
@@ -458,6 +481,85 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
       <div class="pay-instr" id="payInstr"></div>
       <button class="pay-confirm" id="payConfirmBtn">Confirm Payment</button>
       <div class="mac" style="margin-top:10px"><button class="mbtn mcan" id="bClosePayment2">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOURNAMENT DETAIL + REGISTRATION MODAL -->
+<div class="mov hide treg-modal" id="mTourDetail">
+  <div class="mbox">
+    <!-- Step 1: Details -->
+    <div id="tregStep1">
+      <div class="tour-detail-banner">
+        <div id="tdetName" class="tour-detail-name"></div>
+        <div id="tdetGame" class="tour-detail-game"></div>
+        <div class="tour-detail-stats">
+          <div class="tour-detail-stat"><div class="val" id="tdetPlayers"></div><div class="lbl">Players</div></div>
+          <div class="tour-detail-stat"><div class="val" id="tdetPrize"></div><div class="lbl">Prize</div></div>
+          <div class="tour-detail-stat"><div class="val" id="tdetStatus"></div><div class="lbl">Status</div></div>
+        </div>
+      </div>
+      <div class="treg-disclaimer">
+        <strong>⚠️ Disclaimer:</strong> If any child activity, false information, cheating, or rule violation is detected, the entry fee will <strong>not be refunded</strong> and the account may be temporarily or permanently banned.
+      </div>
+      <div class="mac" style="gap:10px">
+        <button class="mbtn mcan" id="bCloseTourDetail">Close</button>
+        <button class="mbtn" id="bParticipate" style="background:var(--gold);color:#0a0c12;font-weight:700"><i class="fas fa-gamepad"></i> Participate</button>
+      </div>
+    </div>
+    <!-- Step 2: Registration Form -->
+    <div id="tregStep2" class="hide">
+      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px"><i class="fas fa-user-edit"></i> Registration Form</h3>
+      <div class="treg-section">
+        <h4>Player Information</h4>
+        <label class="treg-label">Real Name *</label>
+        <input class="treg-inp" id="tregRealName" placeholder="Your full name"/>
+        <label class="treg-label">In-Game Name *</label>
+        <input class="treg-inp" id="tregGameName" placeholder="Your in-game username"/>
+        <label class="treg-label">Game UID *</label>
+        <input class="treg-inp" id="tregUID" placeholder="Your game UID/ID"/>
+        <label class="treg-label">Age *</label>
+        <input class="treg-inp" id="tregAge" placeholder="Your age" type="number" min="10" max="99"/>
+      </div>
+      <div class="treg-section">
+        <h4>Rules Agreement</h4>
+        <label class="treg-check"><input type="checkbox" id="tregCheck1"/> I confirm that I will not use hacks, cheats, panels, or any illegal software.</label>
+        <label class="treg-check"><input type="checkbox" id="tregCheck2"/> I understand that the match will be monitored by administrators and any suspicious activity may result in a permanent ban and no refund.</label>
+      </div>
+      <div class="mac" style="gap:10px">
+        <button class="mbtn" id="tregDecline" style="background:rgba(232,64,74,.15);color:var(--red);border:1px solid rgba(232,64,74,.25)"><i class="fas fa-times"></i> Decline</button>
+        <button class="mbtn" id="tregAgree" style="background:var(--gold);color:#0a0c12;font-weight:700"><i class="fas fa-check"></i> Agree & Continue</button>
+      </div>
+    </div>
+    <!-- Step 3: Payment -->
+    <div id="tregStep3" class="hide">
+      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px"><i class="fas fa-receipt"></i> Payment</h3>
+      <div class="treg-section">
+        <h4>Entry Fee Payment</h4>
+        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.7">
+          Send entry fee to:<br>
+          <strong style="color:var(--t1)">JazzCash: 0302-4686897</strong><br>
+          <strong style="color:var(--t1)">EasyPaisa: 0315-9876543</strong><br>
+          Reference: <strong style="color:var(--gold)" id="tregTourRef"></strong>
+        </div>
+        <label class="treg-label">Transaction ID / Token *</label>
+        <input class="treg-inp" id="tregTxnId" placeholder="e.g. TXN123456789"/>
+        <label class="treg-label">Payment Screenshot (optional)</label>
+        <input class="treg-inp" id="tregScreenshot" placeholder="Paste image URL or describe payment"/>
+      </div>
+      <div class="mac" style="gap:10px">
+        <button class="mbtn mcan" id="tregBack">Back</button>
+        <button class="mbtn" id="tregSubmit" style="background:var(--green);color:#0a0c12;font-weight:700"><i class="fas fa-paper-plane"></i> Submit Registration</button>
+      </div>
+    </div>
+    <!-- Step 4: Success -->
+    <div id="tregStep4" class="hide">
+      <div class="treg-success">
+        <i class="fas fa-check-circle"></i>
+        <h3>Registration Submitted!</h3>
+        <p>Please wait for an administrator to review your application.<br><br>You will receive a notification once your request is <strong>accepted</strong> or <strong>rejected</strong>.</p>
+        <button class="mbtn" id="tregDone" style="background:var(--gold);color:#0a0c12;font-weight:700;margin-top:16px;width:100%">Done</button>
+      </div>
     </div>
   </div>
 </div>
@@ -649,7 +751,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
 const app=initializeApp(firebaseConfig);
@@ -744,7 +846,7 @@ function renderTours(f){
   list.querySelectorAll('.tcard').forEach(c=>{
     c.addEventListener('click',()=>{
       const t=_toursData.find(x=>x.id==c.dataset.id);if(!t)return;
-      alert('🏆 '+(t.name||t.n)+'\nGame: '+(t.game||t.g)+'\nStatus: '+(t.status||t.s||'').toUpperCase()+'\nPlayers: '+(t.registered||0)+'/'+(t.maxPlayers||32)+'\nPrize: '+(t.prize||t.pr||'TBD'));
+      openTourDetail(t);
     });
   });
 }
@@ -1342,6 +1444,94 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(_dmUnsub){_dmUnsub();_dmUnsub=null;}
     }
   });
+
+  // ── TOURNAMENT REGISTRATION ──
+  let _activeTour=null;
+
+  function openTourDetail(t){
+    _activeTour=t;
+    $('tdetName').textContent=t.name||t.n||'Tournament';
+    $('tdetGame').textContent=t.game||t.g||'Grand RP Mobile';
+    $('tdetPlayers').textContent=(t.registered||0)+'/'+(t.maxPlayers||32);
+    $('tdetPrize').textContent=t.prize||t.pr||'TBD';
+    const s=t.status||t.s||'upcoming';
+    $('tdetStatus').textContent=s==='live'?'🔴 Live':s==='upcoming'?'Upcoming':'Ended';
+    $('tregTourRef').textContent='TOUR-'+(t.id||'').slice(-6).toUpperCase();
+    // Reset steps
+    ['tregStep1','tregStep2','tregStep3','tregStep4'].forEach((id,i)=>{
+      $(id).classList.toggle('hide',i!==0);
+    });
+    $('tregRealName').value='';$('tregGameName').value='';$('tregUID').value='';$('tregAge').value='';
+    $('tregTxnId').value='';$('tregScreenshot').value='';
+    $('tregCheck1').checked=false;$('tregCheck2').checked=false;
+    $('mTourDetail').classList.remove('hide');
+  }
+
+  if($('bCloseTourDetail'))$('bCloseTourDetail').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
+  if($('mTourDetail'))$('mTourDetail').addEventListener('click',e=>{if(e.target===$('mTourDetail'))$('mTourDetail').classList.add('hide')});
+
+  if($('bParticipate'))$('bParticipate').addEventListener('click',()=>{
+    if(App.guest){alert('Login to participate in tournaments!');return;}
+    const s=_activeTour?.status||_activeTour?.s;
+    if(s==='ended'){alert('This tournament has ended.');return;}
+    $('tregStep1').classList.add('hide');
+    $('tregStep2').classList.remove('hide');
+  });
+
+  if($('tregDecline'))$('tregDecline').addEventListener('click',()=>{
+    $('mTourDetail').classList.add('hide');
+  });
+
+  if($('tregAgree'))$('tregAgree').addEventListener('click',()=>{
+    const rn=$('tregRealName').value.trim();
+    const gn=$('tregGameName').value.trim();
+    const uid=$('tregUID').value.trim();
+    const age=$('tregAge').value.trim();
+    if(!rn||!gn||!uid||!age){alert('Please fill all required fields!');return;}
+    if(!$('tregCheck1').checked||!$('tregCheck2').checked){alert('You must agree to both rules!');return;}
+    $('tregStep2').classList.add('hide');
+    $('tregStep3').classList.remove('hide');
+  });
+
+  if($('tregBack'))$('tregBack').addEventListener('click',()=>{
+    $('tregStep3').classList.add('hide');
+    $('tregStep2').classList.remove('hide');
+  });
+
+  if($('tregSubmit'))$('tregSubmit').addEventListener('click',async()=>{
+    const txn=$('tregTxnId').value.trim();
+    if(!txn){alert('Please enter your Transaction ID!');return;}
+    const btn=$('tregSubmit');
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    btn.disabled=true;
+    try{
+      await addDoc(collection(db,'tournament_registrations'),{
+        tournamentId:_activeTour.id,
+        tournamentName:_activeTour.name||_activeTour.n,
+        userId:auth.currentUser?.uid||'guest',
+        userName:App.user?.name||'',
+        userHandle:App.user?.handle||'',
+        realName:$('tregRealName').value.trim(),
+        gameName:$('tregGameName').value.trim(),
+        gameUID:$('tregUID').value.trim(),
+        age:$('tregAge').value.trim(),
+        txnId:txn,
+        screenshot:$('tregScreenshot').value.trim(),
+        status:'pending',
+        submittedAt:serverTimestamp()
+      });
+      $('tregStep3').classList.add('hide');
+      $('tregStep4').classList.remove('hide');
+      btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Registration';
+      btn.disabled=false;
+    }catch(e){
+      btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Registration';
+      btn.disabled=false;
+      alert('Error submitting: '+e.message);
+    }
+  });
+
+  if($('tregDone'))$('tregDone').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
 </script>
 </body>
 </html>
