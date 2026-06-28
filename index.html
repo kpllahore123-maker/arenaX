@@ -104,7 +104,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .lsm span{color:var(--gold)}.lsm i{color:var(--gold);margin-right:3px}
 .tr{display:flex;align-items:center;gap:10px}
 .nbell{position:relative;width:34px;height:34px;background:var(--card);border:1px solid var(--bdr);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--t2)}
-.ndot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--panel)}
+.ndot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--gold);border-radius:50%;border:2px solid var(--panel)}
 .uav{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--gold)}
 .uav img{width:100%;height:100%;object-fit:cover}
 .gbanner{background:var(--g2);border-bottom:1px solid var(--g3);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#c0a030;flex-shrink:0}
@@ -580,7 +580,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
   <nav class="topbar">
     <div class="lsm"><i class="fas fa-trophy"></i>Arena<span>X</span></div>
     <div class="tr">
-      <div class="nbell" id="bBell"><i class="fas fa-bell"></i><span class="ndot"></span></div>
+      <div class="nbell" id="bBell"><i class="fas fa-bell"></i><span class="ndot" style="display:none"></span></div>
       <div class="uav"><img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax"/></div>
     </div>
   </nav>
@@ -839,6 +839,20 @@ function shake(id){const el=$(id);if(!el)return;el.style.borderColor='#e8404a';e
     $('mAddFriend').classList.remove('hide');
   });
   if($('bCloseAddFriend'))$('bCloseAddFriend').addEventListener('click',()=>$('mAddFriend').classList.add('hide'));
+  // Report tournament hack/cheat
+  function reportTour(tourId, tourName){
+    if(App.guest){alert('Login to report!');return;}
+    const reason=prompt('Describe the issue (e.g. player using hacks, cheating):');
+    if(!reason||!reason.trim())return;
+    addDoc(collection(db,'tournament_reports'),{
+      tournamentId:tourId,tournamentName:tourName,
+      reporterId:auth.currentUser?.uid,reporterName:App.user?.name||'',
+      reason:reason.trim(),status:'open',createdAt:serverTimestamp()
+    }).then(()=>alert('✅ Report submitted! Admin will review within 24 hours.'))
+      .catch(e=>alert('Error: '+e.message));
+  }
+  window.reportTour=reportTour;
+
   if($('mAddFriend'))$('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
 
   // Search player by handle
@@ -1015,15 +1029,38 @@ function shake(id){const el=$(id);if(!el)return;el.style.borderColor='#e8404a';e
   function listenNotifications(){
     if(!auth.currentUser||App.guest)return;
     const uid=auth.currentUser.uid;
+    let firstLoad=true;
     onSnapshot(collection(db,'notifications'),snap=>{
       let unread=0;
-      snap.forEach(d=>{const n=d.data();if(n.userId===uid&&!n.read)unread++;});
-      const badge=$('notifBadge');
-      if(badge){
-        if(unread>0){badge.textContent=unread>9?'9+':unread;badge.classList.remove('hide');}
-        else badge.classList.add('hide');
+      let latestMsg=null;
+      let latestType=null;
+      snap.forEach(d=>{
+        const n=d.data();
+        if(n.userId===uid&&!n.read){
+          unread++;
+          if(!latestMsg){latestMsg=n.message;latestType=n.type;}
+        }
+      });
+      const ndot=$('bBell')?.parentElement?.querySelector('.ndot');
+      if(ndot)ndot.style.display=unread>0?'block':'none';
+      // Show popup for new notification (not on first load)
+      if(!firstLoad&&latestMsg){
+        showNotifPopup(latestMsg,latestType);
       }
+      firstLoad=false;
     });
+  }
+
+  function showNotifPopup(msg,type){
+    const existing=document.getElementById('notifPopup');
+    if(existing)existing.remove();
+    const div=document.createElement('div');
+    div.id='notifPopup';
+    div.style.cssText='position:fixed;top:70px;right:14px;max-width:280px;background:var(--panel);border:1px solid '+(type==='approved'?'var(--green)':type==='rejected'?'var(--red)':'var(--gold)')+';border-radius:12px;padding:14px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:13px;line-height:1.5;animation:fadeIn .3s';
+    div.innerHTML=msg+'<div style="margin-top:8px;font-size:11px;color:var(--t3)">Tap to dismiss</div>';
+    div.addEventListener('click',()=>div.remove());
+    document.body.appendChild(div);
+    setTimeout(()=>div?.remove(),6000);
   }
 
 
@@ -1094,13 +1131,26 @@ function renderTours(f){
   const list=$('tList');
   const data=f==='all'?_toursData:_toursData.filter(t=>(t.status||t.s)===f);
   if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return}
-  list.innerHTML=data.map(t=>`
-    <div class="tcard" data-id="${t.id}">
-      <div class="tt"><div><div class="tn">${t.name||t.n}</div><div class="tg">${t.game||t.g||'Grand RP Mobile'}</div></div>
-      <div class="ts ${(t.status||t.s)==='live'?'slv':(t.status||t.s)==='upcoming'?'sup':'send'}">${(t.status||t.s)==='live'?'🔴 Live':(t.status||t.s)==='upcoming'?'Upcoming':'Ended'}</div></div>
-      <div class="tdrow"><div class="tdi"><i class="fas fa-users"></i>${t.registered||0}/${t.maxPlayers||32}</div><div class="tdi"><i class="fas fa-coins"></i>${t.prize||t.pr||'TBD'}</div></div>
-      <div class="tp"><i class="fas fa-trophy"></i> Prize: ${t.prize||t.pr||'TBD'}</div>
-    </div>`).join('');
+  // Check user registrations for color coding
+  const _uid=auth.currentUser?.uid||'';
+  list.innerHTML=data.map(t=>{
+    const reg=_userRegs[t.id];
+    const rs=reg?.status||null;
+    const borderStyle=rs==='approved'?'border-color:var(--green);background:rgba(61,220,132,.05)':rs==='rejected'?'border-color:var(--red);background:rgba(232,64,74,.05)':'';
+    const regBadge=rs==='approved'?'<div style="color:var(--green);font-size:12px;font-weight:700;margin-top:6px">\u2705 You are Registered!</div>':rs==='rejected'?'<div style="color:var(--red);font-size:12px;font-weight:700;margin-top:6px">\u274C Registration Declined</div>':rs==='pending'?'<div style="color:var(--gold);font-size:12px;font-weight:700;margin-top:6px">\u23F3 Registration Pending...</div>':'';
+    const dateRow=t.date?'<div class="tdi"><i class="fas fa-calendar"></i>'+t.date+'</div>':'';
+    const timeRow=t.time?'<div class="tdi"><i class="fas fa-clock"></i>'+t.time+'</div>':'';
+    const feeRow=t.entryFee?'<div style="font-size:11px;color:var(--t3);margin-top:4px"><i class="fas fa-ticket-alt"></i> Entry: '+t.entryFee+'</div>':'';
+    const tname=(t.name||t.n||'').replace(/'/g,'');
+    return '<div class="tcard" data-id="'+t.id+'" style="'+borderStyle+'">'+
+      '<div class="tt"><div><div class="tn">'+(t.name||t.n)+'</div><div class="tg">'+(t.game||t.g||'Grand RP Mobile')+'</div></div>'+
+      '<div class="ts '+((t.status||t.s)==='live'?'slv':(t.status||t.s)==='upcoming'?'sup':'send')+'">'+(t.status||t.s)==='live'?'🔴 Live':(t.status||t.s)==='upcoming'?'Upcoming':'Ended'+'</div></div>'+
+      '<div class="tdrow"><div class="tdi"><i class="fas fa-users"></i>'+(t.registered||0)+'/'+(t.maxPlayers||t.p||32)+'</div>'+
+      '<div class="tdi"><i class="fas fa-coins"></i>'+(t.prize||t.pr||'TBD')+'</div>'+dateRow+timeRow+'</div>'+
+      feeRow+regBadge+
+      '<div style="margin-top:8px"><button onclick="event.stopPropagation();reportTour(''+tname+'')" style="width:100%;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);color:var(--red);border-radius:8px;padding:6px;font-size:11px;font-weight:600"><i class="fas fa-flag"></i> Report Hack/Cheat</button></div>'+
+      '</div>';
+  }).join('');
   list.querySelectorAll('.tcard').forEach(c=>{
     c.addEventListener('click',()=>{
       const t=_toursData.find(x=>x.id==c.dataset.id);if(!t)return;
@@ -1108,6 +1158,7 @@ function renderTours(f){
     });
   });
 }
+let _userRegs={};
 function loadToursFromFirestore(){
   try{
     const q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
@@ -1125,6 +1176,19 @@ function loadToursFromFirestore(){
       const activeFilter=document.querySelector('.fb.on')?.dataset?.f||'all';
       renderTours(activeFilter);
     });
+    // Listen to user's own registrations
+    if(auth.currentUser&&!App.guest){
+      const q2=query(collection(db,'tournament_registrations'));
+      onSnapshot(q2,snap=>{
+        _userRegs={};
+        snap.forEach(d=>{
+          const r=d.data();
+          if(r.userId===auth.currentUser?.uid)_userRegs[r.tournamentId]={status:r.status,id:d.id};
+        });
+        const f=document.querySelector('.fb.on')?.dataset?.f||'all';
+        renderTours(f);
+      });
+    }
   }catch(e){console.error('Tours error:',e);}
 }
 // ── WALLET ──
@@ -1571,95 +1635,10 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 
 
-  // ── TOURNAMENT REGISTRATION ──
-  let _activeTour=null;
 
-  function openTourDetail(t){
-    _activeTour=t;
-    $('tdetName').textContent=t.name||t.n||'Tournament';
-    $('tdetGame').textContent=t.game||t.g||'Grand RP Mobile';
-    $('tdetPlayers').textContent=(t.registered||0)+'/'+(t.maxPlayers||32);
-    $('tdetPrize').textContent=t.prize||t.pr||'TBD';
-    const s=t.status||t.s||'upcoming';
-    $('tdetStatus').textContent=s==='live'?'🔴 Live':s==='upcoming'?'Upcoming':'Ended';
-    $('tregTourRef').textContent='TOUR-'+(t.id||'').slice(-6).toUpperCase();
-    // Reset steps
-    ['tregStep1','tregStep2','tregStep3','tregStep4'].forEach((id,i)=>{
-      $(id).classList.toggle('hide',i!==0);
-    });
-    $('tregRealName').value='';$('tregGameName').value='';$('tregUID').value='';$('tregAge').value='';
-    $('tregTxnId').value='';$('tregScreenshot').value='';
-    $('tregCheck1').checked=false;$('tregCheck2').checked=false;
-    $('mTourDetail').classList.remove('hide');
-  }
+  // ── FRIEND SYSTEM ──
+  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
 
-  if($('bCloseTourDetail'))$('bCloseTourDetail').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
-  if($('mTourDetail'))$('mTourDetail').addEventListener('click',e=>{if(e.target===$('mTourDetail'))$('mTourDetail').classList.add('hide')});
-
-  if($('bParticipate'))$('bParticipate').addEventListener('click',()=>{
-    if(App.guest){alert('Login to participate in tournaments!');return;}
-    const s=_activeTour?.status||_activeTour?.s;
-    if(s==='ended'){alert('This tournament has ended.');return;}
-    $('tregStep1').classList.add('hide');
-    $('tregStep2').classList.remove('hide');
-  });
-
-  if($('tregDecline'))$('tregDecline').addEventListener('click',()=>{
-    $('mTourDetail').classList.add('hide');
-  });
-
-  if($('tregAgree'))$('tregAgree').addEventListener('click',()=>{
-    const rn=$('tregRealName').value.trim();
-    const gn=$('tregGameName').value.trim();
-    const uid=$('tregUID').value.trim();
-    const age=$('tregAge').value.trim();
-    if(!rn||!gn||!uid||!age){alert('Please fill all required fields!');return;}
-    if(!$('tregCheck1').checked||!$('tregCheck2').checked){alert('You must agree to both rules!');return;}
-    $('tregStep2').classList.add('hide');
-    $('tregStep3').classList.remove('hide');
-  });
-
-  if($('tregBack'))$('tregBack').addEventListener('click',()=>{
-    $('tregStep3').classList.add('hide');
-    $('tregStep2').classList.remove('hide');
-  });
-
-  if($('tregSubmit'))$('tregSubmit').addEventListener('click',async()=>{
-    const txn=$('tregTxnId').value.trim();
-    if(!txn){alert('Please enter your Transaction ID!');return;}
-    const btn=$('tregSubmit');
-    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting...';
-    btn.disabled=true;
-    try{
-      await addDoc(collection(db,'tournament_registrations'),{
-        tournamentId:_activeTour.id,
-        tournamentName:_activeTour.name||_activeTour.n,
-        userId:auth.currentUser?.uid||'guest',
-        userName:App.user?.name||'',
-        userHandle:App.user?.handle||'',
-        realName:$('tregRealName').value.trim(),
-        gameName:$('tregGameName').value.trim(),
-        gameUID:$('tregUID').value.trim(),
-        age:$('tregAge').value.trim(),
-        txnId:txn,
-        screenshot:$('tregScreenshot').value.trim(),
-        status:'pending',
-        submittedAt:serverTimestamp()
-      });
-      $('tregStep3').classList.add('hide');
-      $('tregStep4').classList.remove('hide');
-      btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Registration';
-      btn.disabled=false;
-    }catch(e){
-      btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Registration';
-      btn.disabled=false;
-      alert('Error submitting: '+e.message);
-    }
-  });
-
-  if($('tregDone'))$('tregDone').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
-
-
-}); // end DOMContentLoaded
-</script>
-</body>
+  function loadFriends(){
+    if(!auth.currentUser||App.guest)return;
+    const uid=auth.currentUser.uid;
