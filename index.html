@@ -1131,26 +1131,43 @@ function renderTours(f){
   const list=$('tList');
   const data=f==='all'?_toursData:_toursData.filter(t=>(t.status||t.s)===f);
   if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return}
-  // Check user registrations for color coding
   const _uid=auth.currentUser?.uid||'';
-  list.innerHTML=data.map(t=>{
-    const reg=_userRegs[t.id];
-    const rs=reg?.status||null;
-    const borderStyle=rs==='approved'?'border-color:var(--green);background:rgba(61,220,132,.05)':rs==='rejected'?'border-color:var(--red);background:rgba(232,64,74,.05)':'';
-    const regBadge=rs==='approved'?'<div style="color:var(--green);font-size:12px;font-weight:700;margin-top:6px">\u2705 You are Registered!</div>':rs==='rejected'?'<div style="color:var(--red);font-size:12px;font-weight:700;margin-top:6px">\u274C Registration Declined</div>':rs==='pending'?'<div style="color:var(--gold);font-size:12px;font-weight:700;margin-top:6px">\u23F3 Registration Pending...</div>':'';
-    const dateRow=t.date?'<div class="tdi"><i class="fas fa-calendar"></i>'+t.date+'</div>':'';
-    const timeRow=t.time?'<div class="tdi"><i class="fas fa-clock"></i>'+t.time+'</div>':'';
-    const feeRow=t.entryFee?'<div style="font-size:11px;color:var(--t3);margin-top:4px"><i class="fas fa-ticket-alt"></i> Entry: '+t.entryFee+'</div>':'';
-    const tname=(t.name||t.n||'').replace(/'/g,'');
-    return '<div class="tcard" data-id="'+t.id+'" style="'+borderStyle+'">'+
-      '<div class="tt"><div><div class="tn">'+(t.name||t.n)+'</div><div class="tg">'+(t.game||t.g||'Grand RP Mobile')+'</div></div>'+
-      '<div class="ts '+((t.status||t.s)==='live'?'slv':(t.status||t.s)==='upcoming'?'sup':'send')+'">'+(t.status||t.s)==='live'?'🔴 Live':(t.status||t.s)==='upcoming'?'Upcoming':'Ended'+'</div></div>'+
-      '<div class="tdrow"><div class="tdi"><i class="fas fa-users"></i>'+(t.registered||0)+'/'+(t.maxPlayers||t.p||32)+'</div>'+
-      '<div class="tdi"><i class="fas fa-coins"></i>'+(t.prize||t.pr||'TBD')+'</div>'+dateRow+timeRow+'</div>'+
-      feeRow+regBadge+
-      '<div style="margin-top:8px"><button onclick="event.stopPropagation();reportTour(''+tname+'')" style="width:100%;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);color:var(--red);border-radius:8px;padding:6px;font-size:11px;font-weight:600"><i class="fas fa-flag"></i> Report Hack/Cheat</button></div>'+
-      '</div>';
-  }).join('');
+  list.innerHTML='';
+  data.forEach(function(t){
+    var reg=_userRegs[t.id];
+    var rs=reg?reg.status:null;
+    var div=document.createElement('div');
+    div.className='tcard';
+    div.dataset.id=t.id;
+    if(rs==='approved'){div.style.borderColor='var(--green)';div.style.background='rgba(61,220,132,.05)';}
+    else if(rs==='rejected'){div.style.borderColor='var(--red)';div.style.background='rgba(232,64,74,.05)';}
+    var status=t.status||t.s||'upcoming';
+    var statusClass=status==='live'?'slv':status==='upcoming'?'sup':'send';
+    var statusLabel=status==='live'?'Live':status==='upcoming'?'Upcoming':'Ended';
+    var tt=document.createElement('div');tt.className='tt';
+    var nameDiv=document.createElement('div');
+    var tnDiv=document.createElement('div');tnDiv.className='tn';tnDiv.textContent=t.name||t.n||'';
+    var tgDiv=document.createElement('div');tgDiv.className='tg';tgDiv.textContent=t.game||t.g||'Grand RP Mobile';
+    nameDiv.appendChild(tnDiv);nameDiv.appendChild(tgDiv);
+    var tsDiv=document.createElement('div');tsDiv.className='ts '+statusClass;tsDiv.textContent=statusLabel;
+    if(status==='live'){var dot=document.createElement('span');dot.textContent='🔴 ';tsDiv.insertBefore(dot,tsDiv.firstChild);}
+    tt.appendChild(nameDiv);tt.appendChild(tsDiv);
+    div.appendChild(tt);
+    var dr=document.createElement('div');dr.className='tdrow';
+    var pl=document.createElement('div');pl.className='tdi';pl.innerHTML='<i class="fas fa-users"></i> '+(t.registered||0)+'/'+(t.maxPlayers||t.p||32);
+    var pr=document.createElement('div');pr.className='tdi';pr.innerHTML='<i class="fas fa-coins"></i> '+(t.prize||t.pr||'TBD');
+    dr.appendChild(pl);dr.appendChild(pr);
+    if(t.date){var dd=document.createElement('div');dd.className='tdi';dd.innerHTML='<i class="fas fa-calendar"></i> '+t.date;dr.appendChild(dd);}
+    if(t.time){var td=document.createElement('div');td.className='tdi';td.innerHTML='<i class="fas fa-clock"></i> '+t.time;dr.appendChild(td);}
+    div.appendChild(dr);
+    if(t.entryFee){var fee=document.createElement('div');fee.style.cssText='font-size:11px;color:var(--t3);margin-top:4px';fee.innerHTML='<i class="fas fa-ticket-alt"></i> Entry: '+t.entryFee;div.appendChild(fee);}
+    if(rs){var rb=document.createElement('div');rb.style.cssText='font-size:12px;font-weight:700;margin-top:6px';rb.style.color=rs==='approved'?'var(--green)':rs==='rejected'?'var(--red)':'var(--gold)';rb.textContent=rs==='approved'?'You are Registered!':rs==='rejected'?'Registration Declined':'Registration Pending...';div.appendChild(rb);}
+    var rBtn=document.createElement('button');rBtn.style.cssText='width:100%;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);color:var(--red);border-radius:8px;padding:6px;font-size:11px;font-weight:600;margin-top:8px';
+    rBtn.innerHTML='<i class="fas fa-flag"></i> Report Hack/Cheat';
+    rBtn.addEventListener('click',function(e){e.stopPropagation();reportTour(t.id,t.name||t.n||'');});
+    div.appendChild(rBtn);
+    list.appendChild(div);
+  });
   list.querySelectorAll('.tcard').forEach(c=>{
     c.addEventListener('click',()=>{
       const t=_toursData.find(x=>x.id==c.dataset.id);if(!t)return;
@@ -1626,19 +1643,4 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.body.appendChild(t);setTimeout(()=>t.remove(),500);
   });
   (function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
-  document.addEventListener('mousedown',()=>{cur.classList.add('ck');for(let i=0;i<6;i++){const b=document.createElement('div'),a=(i/6)*Math.PI*2,d=14+Math.random()*12;b.className='ctr';b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s,top .3s,opacity .3s`;document.body.appendChild(b);requestAnimationFrame(()=>{b.style.left=(mx+Math.cos(a)*d)+'px';b.style.top=(my+Math.sin(a)*d)+'px';b.style.opacity='0'});setTimeout(()=>b.remove(),340)}});
-  document.addEventListener('mouseup',()=>cur.classList.remove('ck'));
-  document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.add('hv')});
-  document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.remove('hv')});
-
-
-
-
-
-
-  // ── FRIEND SYSTEM ──
-  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
-
-  function loadFriends(){
-    if(!auth.currentUser||App.guest)return;
-    const uid=auth.currentUser.uid;
+  document.addEventListener('mousedown',()=>{cur.classList.add('ck');for(let i=0;i<6;i++){const b=document.createElement('div'),a=(i/6)*Math.PI*2,d=14+Math.random()*12;b.className='ctr';b.style.cssText=`left:${mx}px
