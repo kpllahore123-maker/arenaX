@@ -333,7 +333,7 @@ a{text-decoration:none}
               <button class="act-btn prm" onclick="openAddTour()"><i class="fas fa-plus"></i> Add New</button>
             </div>
             <table class="tbl">
-              <thead><tr><th>Name</th><th>Game</th><th>Players</th><th>Prize</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Name / Date</th><th>Game</th><th>Players</th><th>Prize</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="toursTbody"></tbody>
             </table>
           </div>
@@ -473,7 +473,7 @@ window.showPage=function(id){
   if(id==='pgPayments')renderPayments();
   if(id==='pgWithdraw')renderWithdrawals();
   if(id==='pgTours')loadTournaments();
-  if(id==='pgReports')renderReports();
+  if(id==='pgReports')loadReports();
   if(id==='pgSupport')loadSupportTickets();
   if(id==='pgRegistrations'){loadRegistrations();}
 }
@@ -686,13 +686,14 @@ function renderTournaments(list){
   }
   $('toursTbody').innerHTML=list.map(t=>`
     <tr>
-      <td style="font-weight:600">${t.name}</td>
+      <td style="font-weight:600">${t.name}<div style="font-size:10px;color:var(--t3)">${t.date||'TBA'} · ${t.time||'TBA'}</div></td>
       <td style="color:var(--t2)">${t.game||'Grand RP Mobile'}</td>
       <td>${t.registered||0}/${t.maxPlayers||32}</td>
       <td style="font-family:var(--ff);color:var(--gold)">${t.prize||'TBD'}</td>
+      <td style="color:var(--t3);font-size:11px">${t.entryFee||'Free'}</td>
       <td><span class="badge ${t.status==='live'?'red':t.status==='upcoming'?'blue':'gray'}">${t.status==='live'?'🔴 Live':t.status==='upcoming'?'Upcoming':'Ended'}</span></td>
       <td>
-        <button class="act-btn view" onclick="editTour('${t.id}','${t.name}','${t.prize||''}','${t.status}')">Edit</button>
+        <button class="act-btn view" onclick="editTour('${t.id}','${t.name}','${t.prize||''}','${t.status}','${t.date||''}','${t.time||''}','${t.entryFee||''}')">Edit</button>
         <button class="act-btn reject" onclick="deleteTour('${t.id}')">Delete</button>
       </td>
     </tr>`).join('');
@@ -704,28 +705,38 @@ window.openAddTour=function(){
     <input class="modal-inp" id="tGame" placeholder="Game Name" value="Grand RP Mobile"/>
     <input class="modal-inp" id="tPrize" placeholder="Prize (e.g. 5,000 AX)"/>
     <input class="modal-inp" id="tMax" placeholder="Max Players (e.g. 32)" type="number"/>
+    <input class="modal-inp" id="tDate" placeholder="Date (e.g. Jul 5, 2026)" type="text"/>
+    <input class="modal-inp" id="tTime" placeholder="Time (e.g. 8:00 PM PKT)" type="text"/>
+    <input class="modal-inp" id="tFee" placeholder="Entry Fee (e.g. Rs 100 or Free)" type="text"/>
     <select class="modal-inp" id="tStat" style="background:var(--card);color:var(--t1)">
       <option value="upcoming">Upcoming</option>
-      <option value="live">Live</option>
+      <option value="live">🔴 Live</option>
       <option value="ended">Ended</option>
     </select>`,
   async ()=>{
-    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value,max=+($('tMax').value)||32,status=$('tStat').value;
+    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value;
+    const max=+($('tMax').value)||32,status=$('tStat').value;
+    const date=$('tDate').value,time=$('tTime').value,fee=$('tFee').value;
     if(!name){toast('Enter tournament name','err');return;}
     try{
       await addDoc(collection(db,'tournaments'),{
         name,game:game||'Grand RP Mobile',prize:prize||'TBD',
-        maxPlayers:max,registered:0,status,createdAt:serverTimestamp()
+        maxPlayers:max,registered:0,status,
+        date:date||'TBA',time:time||'TBA',entryFee:fee||'Free',
+        createdAt:serverTimestamp()
       });
       toast('Tournament added: '+name);
     }catch(e){toast('Error: '+e.message,'err');}
   });
 }
 
-window.editTour=function(id,name,prize,status){
+window.editTour=function(id,name,prize,status,date,time,fee){
   openModal('Edit Tournament',`
-    <input class="modal-inp" id="eName" value="${name}"/>
-    <input class="modal-inp" id="ePrize" value="${prize}"/>
+    <input class="modal-inp" id="eName" value="${name||''}"/>
+    <input class="modal-inp" id="ePrize" value="${prize||''}"/>
+    <input class="modal-inp" id="eDate" value="${date||''}" placeholder="Date (e.g. Jul 5, 2026)"/>
+    <input class="modal-inp" id="eTime" value="${time||''}" placeholder="Time (e.g. 8:00 PM PKT)"/>
+    <input class="modal-inp" id="eFee" value="${fee||''}" placeholder="Entry Fee (e.g. Rs 100 or Free)"/>
     <select class="modal-inp" id="eStat" style="background:var(--card);color:var(--t1)">
       <option value="live" ${status==='live'?'selected':''}>🔴 Live</option>
       <option value="upcoming" ${status==='upcoming'?'selected':''}>Upcoming</option>
@@ -734,7 +745,8 @@ window.editTour=function(id,name,prize,status){
   async ()=>{
     try{
       await updateDoc(doc(db,'tournaments',id),{
-        name:$('eName').value,prize:$('ePrize').value,status:$('eStat').value
+        name:$('eName').value,prize:$('ePrize').value,status:$('eStat').value,
+        date:$('eDate').value,time:$('eTime').value,entryFee:$('eFee').value
       });
       toast('Tournament updated!');
     }catch(e){toast('Error: '+e.message,'err');}
@@ -774,7 +786,7 @@ function renderRegistrations(){
       <td>
         ${r.status==='pending'?`
           <button class="act-btn approve" onclick="approveReg('${r.id}','${r.userId}','${r.tournamentName}')"><i class="fas fa-check"></i> Approve</button>
-          <button class="act-btn reject" onclick="rejectReg('${r.id}','${r.userId}')"><i class="fas fa-times"></i> Reject</button>
+          <button class="act-btn reject" onclick="rejectReg('${r.id}','${r.userId}','${r.tournamentName||''}')"><i class="fas fa-times"></i> Reject</button>
         `:'—'}
       </td>
     </tr>`).join(''):`<tr class="empty-row"><td colspan="7">No registrations in this category</td></tr>`;
@@ -783,20 +795,21 @@ function renderRegistrations(){
 window.approveReg=async function(id,userId,tourName){
   try{
     await updateDoc(doc(db,'tournament_registrations',id),{status:'approved'});
-    // Send notification to user
     await addDoc(collection(db,'notifications'),{
-      userId,message:'✅ Your registration for "'+tourName+'" has been approved! Get ready!',
+      userId,
+      message:'🎉 Congratulations! Your registration for "'+tourName+'" has been APPROVED! Get ready to compete!',
       type:'approved',read:false,createdAt:serverTimestamp()
     });
-    toast('Registration approved!');
+    toast('✅ Registration approved!');
   }catch(e){toast('Error: '+e.message,'err');}
 }
 
-window.rejectReg=async function(id,userId){
+window.rejectReg=async function(id,userId,tourName){
   try{
     await updateDoc(doc(db,'tournament_registrations',id),{status:'rejected'});
     await addDoc(collection(db,'notifications'),{
-      userId,message:'❌ Your tournament registration was rejected. Contact support for more info.',
+      userId,
+      message:'❌ Your registration for "'+tourName+'" was declined. Please contact support for more information.',
       type:'rejected',read:false,createdAt:serverTimestamp()
     });
     toast('Registration rejected','err');
@@ -811,27 +824,51 @@ document.querySelectorAll('#regFilters .ftab').forEach(btn=>{
 });
 
 // ── REPORTS ──
+let _reportsData=[];
 function renderReports(){
-  $('reportsTbody').innerHTML=DB.reports.map(r=>`
+  if(!_reportsData.length){
+    $('reportsTbody').innerHTML='<tr class="empty-row"><td colspan="5">No reports yet</td></tr>';
+    return;
+  }
+  $('reportsTbody').innerHTML=_reportsData.map(r=>`
     <tr>
-      <td>${r.reporter}</td>
-      <td style="color:var(--red)">${r.reported}</td>
-      <td style="color:var(--t2)">${r.reason}</td>
+      <td style="font-weight:600">${r.reporterName||'Unknown'}</td>
+      <td style="color:var(--red)">${r.tournamentName||r.reported||'—'}</td>
+      <td style="color:var(--t2);max-width:200px">${r.reason||'—'}</td>
       <td><span class="badge ${r.status==='open'?'red':'green'}">${r.status}</span></td>
-      <td>${r.status==='open'?`<button class="act-btn approve" onclick="resolveReport('${r.id}')">Resolve</button><button class="act-btn ban" onclick="banFromReport('${r.id}')">Ban User</button>`:'—'}</td>
+      <td>
+        ${r.status==='open'?`
+          <button class="act-btn approve" onclick="resolveReport('${r.id}')">Resolve</button>
+          <button class="act-btn ban" onclick="banReporter('${r.id}','${r.reporterId||''}')">Ban Player</button>
+        `:'—'}
+      </td>
     </tr>`).join('');
 }
 
-window.resolveReport=function(id){
-  const r=DB.reports.find(x=>x.id===id);if(!r)return;
-  r.status='resolved';renderReports();refreshDash();toast('Report resolved');
+function loadReports(){
+  const q=query(collection(db,'tournament_reports'),orderBy('createdAt','desc'));
+  onSnapshot(q,snap=>{
+    _reportsData=[];
+    snap.forEach(d=>_reportsData.push({id:d.id,...d.data()}));
+    renderReports();
+    refreshDash();
+  });
 }
-window.banFromReport=function(id){
-  const r=DB.reports.find(x=>x.id===id);if(!r)return;
-  r.status='resolved';
-  const u=DB.users.find(x=>x.name===r.reported);
-  if(u)u.banned=true;
-  renderReports();toast(`${r.reported} banned`,'err');
+
+window.resolveReport=async function(id){
+  try{
+    await updateDoc(doc(db,'tournament_reports',id),{status:'resolved'});
+    toast('Report resolved');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.banReporter=async function(id,userId){
+  if(!userId){toast('No user ID','err');return;}
+  try{
+    await updateDoc(doc(db,'tournament_reports',id),{status:'resolved'});
+    await updateDoc(doc(db,'users',userId),{banned:true});
+    toast('Player banned!','err');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
 // ── SUPPORT (Firestore Real-time) ──
@@ -975,6 +1012,7 @@ onAuthStateChanged(auth,user=>{
     loadUsers();
     loadSupportTickets();
     loadTournaments();
+    loadReports();
   }
 });
 
