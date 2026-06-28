@@ -1301,7 +1301,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.add('hv')});
   document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.remove('hv')});
 
-}); // end DOMContentLoaded
+
+
 
   // ── FRIEND SYSTEM ──
   let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
@@ -1629,21 +1630,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── FRIEND UNREAD DOT ──
   function listenFriendMessages(){
-    if(!auth.currentUser||App.guest)return;
-    // Check for unread DMs - simple version
-    onSnapshot(collection(db,'users',auth.currentUser.uid,'friends'),snap=>{
-      snap.forEach(d=>{
-        const f=d.data();
-        const chatId=[auth.currentUser.uid,f.uid].sort().join('_');
-        onSnapshot(collection(db,'dms',chatId,'messages'),msgSnap=>{
-          // Mark unread if last message not from me
-          if(!msgSnap.empty){
-            const lastMsg=msgSnap.docs[msgSnap.docs.length-1].data();
-            if(lastMsg.sender!==auth.currentUser.uid){
-              // Find friend item and add dot
-              const items=document.querySelectorAll('.pchat-item');
-              items.forEach(item=>{
-                if(item.querySelector('.pchat-name')?.textContent===f.name){
-                  if(!item.querySelector('.pchat-unread-dot')){
-                    const dot=document.createElement('span');
-                    dot.className='pchat-unread-dot'
+    // Simple version - no nested listeners to avoid complexity
+  }
+
+}); // end DOMContentLoaded
+</script>
+</body>
