@@ -1232,22 +1232,35 @@ window.addEventListener('DOMContentLoaded',()=>{
   if($('mAddFriend'))$('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
 
   // Search player by handle
-  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',async()=>{
+  let _searchTimer=null;
+  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',()=>{
+    clearTimeout(_searchTimer);
     const h=$('friendHandleInp').value.trim().toLowerCase();
     const res=$('friendSearchResult');
     if(h.length<3){res.innerHTML='';return;}
     res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
-    try{
-      const snap=await getDocs(collection(db,'users'));
-      let found=null;
-      snap.forEach(d=>{const u=d.data();if((u.handle||'').toLowerCase()===h||(u.handle||'').toLowerCase().includes(h))found={id:d.id,...u};});
-      if(!found||found.uid===auth.currentUser.uid){res.innerHTML='<div style="font-size:12px;color:var(--red)">Player not found.</div>';return;}
-      res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+found.uid}"/><div class="freq-info"><div class="freq-name">${found.name}</div><div class="freq-handle">${found.handle}</div></div></div>`;
-      $('bSendFriendReq').dataset.targetId=found.uid;
-      $('bSendFriendReq').dataset.targetName=found.name;
-      $('bSendFriendReq').dataset.targetHandle=found.handle;
-      $('bSendFriendReq').dataset.targetAv=found.av||'';
-    }catch(e){res.innerHTML='<div style="font-size:12px;color:var(--red)">Error searching.</div>';}
+    _searchTimer=setTimeout(async()=>{
+      try{
+        const snap=await getDocs(collection(db,'users'));
+        let found=null;
+        snap.forEach(d=>{
+          const u=d.data();
+          const handle=(u.handle||'').toLowerCase();
+          if(handle===h||handle.includes(h))found={id:d.id,...u};
+        });
+        if(!found||found.uid===auth.currentUser.uid){
+          res.innerHTML='<div style="font-size:12px;color:var(--red)">❌ Player not found. Check the handle.</div>';return;
+        }
+        res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+(found.uid||'x')}"/><div class="freq-info"><div class="freq-name">${found.name||'Player'}</div><div class="freq-handle">${found.handle||''}</div></div><span style="color:var(--green);font-size:11px">✓ Found</span></div>`;
+        $('bSendFriendReq').dataset.targetId=found.uid||found.id;
+        $('bSendFriendReq').dataset.targetName=found.name||'Player';
+        $('bSendFriendReq').dataset.targetHandle=found.handle||'';
+        $('bSendFriendReq').dataset.targetAv=found.av||'';
+      }catch(e){
+        console.error('Search error:',e);
+        res.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>';
+      }
+    },500);
   });
 
   if($('bSendFriendReq'))$('bSendFriendReq').addEventListener('click',async()=>{
