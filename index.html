@@ -334,6 +334,17 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .treg-success i{font-size:48px;color:var(--green);margin-bottom:14px;display:block}
 .treg-success h3{font-family:var(--ff);font-size:20px;margin-bottom:10px;color:var(--green)}
 .treg-success p{font-size:13px;color:var(--t2);line-height:1.6}
+
+/* TYPING INDICATOR & NOTIFICATIONS */
+.typing-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin:0 2px;animation:typingBounce .8s infinite ease-in-out}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+.typing-wrap{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;color:var(--t3)}
+.notif-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
+.bBell-wrap{position:relative;display:inline-flex}
+.pchat-unread-dot{width:9px;height:9px;background:var(--gold);border-radius:50%;flex-shrink:0;box-shadow:0 0 6px var(--gold)}
+.support-typing{padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3)}
 </style>
 </head>
 <body>
@@ -691,7 +702,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
             <div style="flex:1"><div id="dmChatName" style="font-weight:700;font-size:14px"></div><div style="font-size:10px;color:var(--green)">● Online</div></div>
             <button onclick="document.getElementById('mDMChat').classList.add('hide')" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
           </div>
-          <div id="dmMsgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div>
+          <div id="dmMsgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div><div id="dmTyping" class="typing-wrap hide"><span style="font-size:11px;color:var(--t3)" id="dmTypingName"></span><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
           <div style="padding:10px 14px;border-top:1px solid var(--bdr);display:flex;gap:8px;background:var(--panel)">
             <input id="dmInp" style="flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none" placeholder="Type a message..."/>
             <button id="dmSendBtn" style="width:40px;height:40px;background:var(--gold);border:none;border-radius:8px;color:#0a0c12;font-size:14px"><i class="fas fa-paper-plane"></i></button>
@@ -730,6 +741,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
             </div>
           </div>
         </div>
+        <div id="supportTyping" class="support-typing hide"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span><span style="margin-left:4px">Admin is typing...</span></div>
         <div class="cir">
           <input class="ci" id="chatIn" placeholder="Type your message..."/>
           <button class="cs" id="chatSend"><i class="fas fa-paper-plane"></i></button>
@@ -811,6 +823,8 @@ function boot(){
   document.querySelector('.ni[data-t="Profile"]').classList.add('on');
   goTo('sDash');
   startChatListener();
+  listenNotifications();
+  listenFriendMessages();
 }
 
 function updatePremiumUI(){
@@ -1397,7 +1411,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name,handle:myData.handle,av:myData.av||'',addedAt:serverTimestamp()});
       // Remove request
       await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
-      toast('Friend added: '+fromName);
+      alert('✅ Friend added: '+fromName);
     }catch(e){alert('Error: '+e.message);}
   };
 
@@ -1414,6 +1428,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     $('dmChatAv').src=friend.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid;
     $('dmMsgs').innerHTML='';
     $('mDMChat').classList.remove('hide');
+    listenDMTyping(friend.uid,friend.name);
+    // Clear unread dot
+    document.querySelectorAll('.pchat-item').forEach(item=>{
+      if(item.querySelector('.pchat-name')?.textContent===friend.name){
+        item.querySelector('.pchat-unread-dot')?.remove();
+      }
+    });
     if(_dmUnsub)_dmUnsub();
     const chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
     const q=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
@@ -1540,6 +1561,89 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   if($('tregDone'))$('tregDone').addEventListener('click',()=>$('mTourDetail').classList.add('hide'));
-</script>
-</body>
-</html>
+
+  // ── TYPING INDICATORS ──
+  let _dmTypingTimer=null;
+  let _supportTypingTimer=null;
+
+  // DM typing — send typing status to Firestore
+  if($('dmInp'))$('dmInp').addEventListener('input',()=>{
+    if(!_activeDMId||!auth.currentUser)return;
+    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
+    setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{
+      uid:auth.currentUser.uid,name:App.user?.name||'',
+      chatId,typing:true,updatedAt:serverTimestamp()
+    },{merge:true}).catch(()=>{});
+    clearTimeout(_dmTypingTimer);
+    _dmTypingTimer=setTimeout(()=>{
+      setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{typing:false},{merge:true}).catch(()=>{});
+    },2000);
+  });
+
+  // Listen for other person typing in DM
+  function listenDMTyping(friendId,friendName){
+    if(!auth.currentUser)return;
+    const chatId=[auth.currentUser.uid,friendId].sort().join('_');
+    const typingDocId=chatId+'_'+friendId;
+    onSnapshot(doc(db,'typing',typingDocId),snap=>{
+      const data=snap.data();
+      const typingEl=$('dmTyping');
+      const nameEl=$('dmTypingName');
+      if(data?.typing&&typingEl){
+        nameEl.textContent=friendName+' is typing';
+        typingEl.classList.remove('hide');
+        $('dmMsgs').scrollTop=9999;
+      } else if(typingEl){
+        typingEl.classList.add('hide');
+      }
+    });
+  }
+
+  // Support typing for admin
+  if($('chatIn'))$('chatIn').addEventListener('input',()=>{
+    if(!auth.currentUser||App.guest)return;
+    const ticketId=auth.currentUser.uid+'_ticket';
+    setDoc(doc(db,'typing','support_'+ticketId),{
+      uid:auth.currentUser.uid,typing:true,updatedAt:serverTimestamp()
+    },{merge:true}).catch(()=>{});
+    clearTimeout(_supportTypingTimer);
+    _supportTypingTimer=setTimeout(()=>{
+      setDoc(doc(db,'typing','support_'+ticketId),{typing:false},{merge:true}).catch(()=>{});
+    },2000);
+  });
+
+  // ── UNREAD NOTIFICATIONS BADGE ──
+  function listenNotifications(){
+    if(!auth.currentUser||App.guest)return;
+    const uid=auth.currentUser.uid;
+    onSnapshot(collection(db,'notifications'),snap=>{
+      let unread=0;
+      snap.forEach(d=>{const n=d.data();if(n.userId===uid&&!n.read)unread++;});
+      const badge=$('notifBadge');
+      if(badge){
+        if(unread>0){badge.textContent=unread>9?'9+':unread;badge.classList.remove('hide');}
+        else badge.classList.add('hide');
+      }
+    });
+  }
+
+  // ── FRIEND UNREAD DOT ──
+  function listenFriendMessages(){
+    if(!auth.currentUser||App.guest)return;
+    // Check for unread DMs - simple version
+    onSnapshot(collection(db,'users',auth.currentUser.uid,'friends'),snap=>{
+      snap.forEach(d=>{
+        const f=d.data();
+        const chatId=[auth.currentUser.uid,f.uid].sort().join('_');
+        onSnapshot(collection(db,'dms',chatId,'messages'),msgSnap=>{
+          // Mark unread if last message not from me
+          if(!msgSnap.empty){
+            const lastMsg=msgSnap.docs[msgSnap.docs.length-1].data();
+            if(lastMsg.sender!==auth.currentUser.uid){
+              // Find friend item and add dot
+              const items=document.querySelectorAll('.pchat-item');
+              items.forEach(item=>{
+                if(item.querySelector('.pchat-name')?.textContent===f.name){
+                  if(!item.querySelector('.pchat-unread-dot')){
+                    const dot=document.createElement('span');
+                    dot.className='pchat-unread-dot'
