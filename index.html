@@ -828,7 +828,7 @@ function updatePremiumUI(){
 }
 
 // ── TABS ──
-function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on')}
+function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on');if(name==='Chat'&&!App.guest)loadFriends();}
 
 // ── TOURNAMENTS ──
 let _toursData=[];
@@ -1180,7 +1180,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))sendMsg(e.target.dataset.m)});
 
   // NOTIF
-  $('bBell').addEventListener('click',()=>alert('🔔 Notifications\n\n• City Champions League starts in 3h\n• Your match was confirmed\n• New tournament: OCG Supremacy I'));
+  $('bBell').addEventListener('click',async()=>{
+    if(App.guest){alert('Login to see notifications!');return;}
+    try{
+      const snap=await getDocs(collection(db,'notifications'));
+      let msgs=[];
+      snap.forEach(d=>{const n=d.data();if(n.userId===auth.currentUser?.uid)msgs.push(n.message);});
+      alert(msgs.length?'🔔 Notifications\n\n'+msgs.map(m=>'• '+m).join('\n'):'🔔 No new notifications!');
+    }catch(e){alert('🔔 No notifications yet!');}
+  });
 
   // BANNERS
   $('gUpgradeBtn').addEventListener('click',()=>alert('To upgrade:\nProfile → Link Account → Choose Google.'));
