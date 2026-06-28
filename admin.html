@@ -144,6 +144,8 @@ a{text-decoration:none}
 
 /* RESPONSIVE */
 @media(max-width:640px){.sidebar{width:56px}.sb-item span,.sb-logo p,.sb-logo h2,.sb-section,.admin-info,.admin-name,.admin-role{display:none}.sb-item{padding:12px;justify-content:center}.sb-logo{padding:14px;text-align:center}.sb-bottom{padding:10px}}
+
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
 </style>
 </head>
 <body>
@@ -921,6 +923,14 @@ window.resolveTicket=async function(docId, ticketId){
   }catch(e){toast('Error: '+e.message,'err');}
 }
 
+window.adminTyping=function(){
+  if(!_openChatTicketId)return;
+  setDoc(doc(db,'typing','admin_'+_openChatTicketId),{typing:true,updatedAt:serverTimestamp()},{merge:true}).catch(()=>{});
+  clearTimeout(window._adminTypTimer);
+  window._adminTypTimer=setTimeout(()=>{
+    setDoc(doc(db,'typing','admin_'+_openChatTicketId),{typing:false},{merge:true}).catch(()=>{});
+  },2000);
+}
 window.closeSupportChat=function(){
   $('scModal').classList.remove('on');
   if(window._scUnsub){window._scUnsub();window._scUnsub=null;}
@@ -980,6 +990,7 @@ refreshDash();
       <button onclick="closeSupportChat()" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
     </div>
     <div id="scMsgs" style="flex:1;overflow-y:auto;padding:4px 2px;margin-bottom:12px"></div>
+    <div id="scTyping" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--t3);padding:4px 0"><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s infinite ease-in-out;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s .15s infinite ease-in-out;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s .3s infinite ease-in-out;display:inline-block"></span><span style="margin-left:4px">User is typing...</span></div>
     <div style="display:flex;gap:8px">
       <input class="modal-inp" id="scInp" placeholder="Type admin reply..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendAdminReply()"/>
       <button onclick="sendAdminReply()" style="padding:10px 16px;background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px"><i class="fas fa-paper-plane"></i></button>
