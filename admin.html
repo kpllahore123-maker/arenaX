@@ -192,6 +192,7 @@ a{text-decoration:none}
         <div class="sb-section">Content</div>
         <div class="sb-item" data-page="pgTours"><i class="fas fa-trophy"></i><span>Tournaments</span></div>
         <div class="sb-item" data-page="pgReports"><i class="fas fa-flag"></i><span>Reports</span></div>
+        <div class="sb-item" data-page="pgRegistrations"><i class="fas fa-clipboard-list"></i><span>Registrations</span></div>
         <div class="sb-item" data-page="pgSupport"><i class="fas fa-headset"></i><span>Support</span></div>
       </nav>
       <div class="sb-bottom">
@@ -336,6 +337,23 @@ a{text-decoration:none}
           </div>
         </div>
 
+        <!-- REGISTRATIONS -->
+        <div class="page" id="pgRegistrations">
+          <div class="ftabs" id="regFilters">
+            <button class="ftab on" data-f="pending">Pending</button>
+            <button class="ftab" data-f="approved">Approved</button>
+            <button class="ftab" data-f="rejected">Rejected</button>
+            <button class="ftab" data-f="all">All</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head"><h4>Tournament Registrations</h4></div>
+            <table class="tbl">
+              <thead><tr><th>Player</th><th>Tournament</th><th>Game Name</th><th>UID</th><th>Txn ID</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="regTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- REPORTS -->
         <div class="page" id="pgReports">
           <div class="table-wrap">
@@ -447,7 +465,7 @@ window.showPage=function(id){
   $(id).classList.add('on');
   const sbItem=document.querySelector(`.sb-item[data-page="${id}"]`);
   if(sbItem)sbItem.classList.add('on');
-  const titles={pgDash:'Dashboard',pgUsers:'Users',pgPayments:'Deposit Payments',pgWithdraw:'Withdrawals',pgTours:'Tournaments',pgReports:'Player Reports',pgSupport:'Support Tickets'};
+  const titles={pgDash:'Dashboard',pgUsers:'Users',pgPayments:'Deposit Payments',pgWithdraw:'Withdrawals',pgTours:'Tournaments',pgReports:'Player Reports',pgSupport:'Support Tickets',pgRegistrations:'Tournament Registrations'};
   $('pageTitle').textContent=titles[id]||'Admin';
   if(id==='pgUsers')loadUsers();
   if(id==='pgPayments')renderPayments();
@@ -455,6 +473,7 @@ window.showPage=function(id){
   if(id==='pgTours')loadTournaments();
   if(id==='pgReports')renderReports();
   if(id==='pgSupport')loadSupportTickets();
+  if(id==='pgRegistrations'){loadRegistrations();}
 }
 document.querySelectorAll('.sb-item[data-page]').forEach(item=>{
   item.addEventListener('click',()=>showPage(item.dataset.page));
@@ -727,6 +746,67 @@ window.deleteTour=async function(id){
     toast('Tournament deleted','err');
   }catch(e){toast('Error: '+e.message,'err');}
 }
+
+// ── REGISTRATIONS ──
+let _regsData=[];
+function loadRegistrations(){
+  const filter=document.querySelector('#regFilters .ftab.on')?.dataset?.f||'pending';
+  const q=query(collection(db,'tournament_registrations'),orderBy('submittedAt','desc'));
+  onSnapshot(q,snap=>{
+    _regsData=[];
+    snap.forEach(d=>_regsData.push({id:d.id,...d.data()}));
+    renderRegistrations();
+  });
+}
+function renderRegistrations(){
+  const filter=document.querySelector('#regFilters .ftab.on')?.dataset?.f||'pending';
+  const list=filter==='all'?_regsData:_regsData.filter(r=>r.status===filter);
+  $('regTbody').innerHTML=list.length?list.map(r=>`
+    <tr>
+      <td><div style="font-weight:600">${r.realName||'—'}</div><div style="font-size:10px;color:var(--t3)">${r.userHandle||''}</div></td>
+      <td style="color:var(--gold);font-size:12px">${r.tournamentName||'—'}</td>
+      <td>${r.gameName||'—'}</td>
+      <td style="color:var(--t3);font-size:11px">${r.gameUID||'—'}</td>
+      <td style="color:var(--blue);font-size:11px">${r.txnId||'—'}</td>
+      <td><span class="badge ${r.status==='pending'?'red':r.status==='approved'?'green':'gray'}">${r.status}</span></td>
+      <td>
+        ${r.status==='pending'?`
+          <button class="act-btn approve" onclick="approveReg('${r.id}','${r.userId}','${r.tournamentName}')"><i class="fas fa-check"></i> Approve</button>
+          <button class="act-btn reject" onclick="rejectReg('${r.id}','${r.userId}')"><i class="fas fa-times"></i> Reject</button>
+        `:'—'}
+      </td>
+    </tr>`).join(''):`<tr class="empty-row"><td colspan="7">No registrations in this category</td></tr>`;
+}
+
+window.approveReg=async function(id,userId,tourName){
+  try{
+    await updateDoc(doc(db,'tournament_registrations',id),{status:'approved'});
+    // Send notification to user
+    await addDoc(collection(db,'notifications'),{
+      userId,message:'✅ Your registration for "'+tourName+'" has been approved! Get ready!',
+      type:'approved',read:false,createdAt:serverTimestamp()
+    });
+    toast('Registration approved!');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+window.rejectReg=async function(id,userId){
+  try{
+    await updateDoc(doc(db,'tournament_registrations',id),{status:'rejected'});
+    await addDoc(collection(db,'notifications'),{
+      userId,message:'❌ Your tournament registration was rejected. Contact support for more info.',
+      type:'rejected',read:false,createdAt:serverTimestamp()
+    });
+    toast('Registration rejected','err');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+document.querySelectorAll('#regFilters .ftab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#regFilters .ftab').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');renderRegistrations();
+  });
+});
 
 // ── REPORTS ──
 function renderReports(){
