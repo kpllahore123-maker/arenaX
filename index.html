@@ -454,7 +454,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 </div>
 
 <!-- TOURNAMENT DETAIL MODAL -->
-<div class="mov hide" id="mTourDetail" style="z-index:400">
+<div class="mov hide" id="mTourDetail" style="z-index:500">
   <div class="mbox" style="max-height:90vh;overflow-y:auto">
     <div id="tregStep1">
       <div class="tour-detail-banner">
@@ -1027,6 +1027,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       switchTab(btn.dataset.t);
       document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
       btn.classList.add('on');
+      if(btn.dataset.t==='Chat'&&!App.guest){try{loadFriendsSystem();}catch(e){}}
     });
   });
 
@@ -1221,7 +1222,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(t.date)extra+='Date: '+t.date+'  ';
     if(t.time)extra+='Time: '+t.time+'  ';
     if(t.entryFee)extra+='Entry: '+t.entryFee;
-    $('tdetExtra').textContent=extra;
+    if($('tdetExtra'))$('tdetExtra').textContent=extra;
     $('tregTourRef').textContent='TOUR-'+(t.id||'').slice(-6).toUpperCase();
     ['tregStep1','tregStep2','tregStep3','tregStep4'].forEach(function(id,i){$(id).classList.toggle('hide',i!==0);});
     $('tregRealName').value='';$('tregGameName').value='';$('tregUID').value='';$('tregAge').value='';
