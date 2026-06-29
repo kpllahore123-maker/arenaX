@@ -789,7 +789,7 @@ function switchTab(name){document.querySelectorAll('.tab').forEach(function(s){s
 let _toursData=[];
 let _userRegs={};
 
-function renderTours(f){
+window.renderTours=function(f){
   const list=document.getElementById('tList');
   const data=f==='all'?_toursData:_toursData.filter(function(t){return (t.status||t.s)===f;});
   list.innerHTML='';
@@ -829,7 +829,7 @@ function renderTours(f){
   });
 }
 
-function loadToursFromFirestore(){
+window.loadToursFromFirestore=function(){
   try{
     var q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
     onSnapshot(q,function(snap){
@@ -880,7 +880,7 @@ var _botRules=[
   {keys:['report','cheat','hack'],reply:'To report a player: describe the issue and type "agent" to connect with our team.'},
   {keys:['ban','banned'],reply:'If suspended, check your email for details. Type "agent" to appeal.'},
 ];
-function getBotReply(txt,msgs){
+window.getBotReply=function(txt,msgs){
   var l=txt.toLowerCase();
   if(['agent','human','urgent','complaint','connect me'].some(function(k){return l.includes(k);})){
     _escalated=true;
@@ -897,7 +897,7 @@ function getBotReply(txt,msgs){
     msgs.appendChild(d);msgs.scrollTop=9999;
   },700);
 }
-async function sendMsg(txt){
+window.sendMsg=async function(txt){
   if(!txt.trim())return;
   var msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
   $('chatIn').value='';
@@ -915,11 +915,11 @@ async function sendMsg(txt){
   }catch(e){getBotReply(txt,msgs);}
 }
 var _chatUnsub=null;
-function resetChat(){
+window.resetChat=function(){
   $('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
 }
-function startChatListener(){
+window.startChatListener=function(){
   var fireUser=auth.currentUser;
   if(!fireUser)return;
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
@@ -1057,7 +1057,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     ep:{name:'EasyPaisa',cls:'ep-btn',instr:'<strong>EasyPaisa:</strong><br>1. Open EasyPaisa app<br>2. Send Money to <strong>0315-9876543</strong><br>3. Enter amount<br>4. Ref: <strong>AX-DEPOSIT</strong><br>5. Click Confirm below'},
     cc:{name:'Card/Bank',cls:'cc-btn',instr:'<strong>Bank Transfer:</strong><br>Bank: HBL<br>Account: <strong>1234-5678-0000</strong><br>Title: <strong>ArenaX Pvt Ltd</strong><br>Transfer and click Confirm'}
   };
-  function openPayModal(){
+  window.openPayModal=function(){
     if(App.guest){alert('Create an account to use the wallet!');return;}
     $('payStep1').classList.add('on');$('payStep2').classList.remove('on');
     $('payAmtInp').value='';$('payTitle').textContent='Add Funds';
@@ -1127,7 +1127,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function openPremium(){if(App.guest){alert('Create a real account to get Premium!');return}$('mPremium').classList.remove('hide')}
   $('bOpenPremium').addEventListener('click',openPremium);
   $('btnPremium').addEventListener('click',openPremium);
-  $('chatUpgradeBtn').addEventListener('click',openPremium);
+  if($('chatUpgradeBtn'))$('chatUpgradeBtn').addEventListener('click',openPremium);
   $('bClosePremium').addEventListener('click',()=>$('mPremium').classList.add('hide'));
   $('mPremium').addEventListener('click',e=>{if(e.target===$('mPremium'))$('mPremium').classList.add('hide')});
 
@@ -1210,7 +1210,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── TOURNAMENT DETAIL + REGISTRATION ──
   var _activeTour=null;
-  function openTourDetail(t){
+  window.openTourDetail=function(t){
     _activeTour=t;
     $('tdetName').textContent=t.name||t.n||'';
     $('tdetGame').textContent=t.game||t.g||'Grand RP Mobile';
@@ -1266,7 +1266,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   if($('tregDone'))$('tregDone').addEventListener('click',function(){$('mTourDetail').classList.add('hide');});
 
-  function reportHack(tourId,tourName){
+  window.reportHack=function(tourId,tourName){
     if(App.guest){alert('Login to report!');return;}
     var reason=prompt('Describe the issue (hacks, cheating, etc):');
     if(!reason||!reason.trim())return;
@@ -1280,7 +1280,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── FRIEND SYSTEM ──
   var _activeDMId=null,_dmUnsub=null,_friendsUnsub=null,_reqUnsub=null;
-  function loadFriendsSystem(){
+  window.loadFriendsSystem=function(){
     var fireUser=auth.currentUser;
     if(!fireUser||App.guest)return;
     var uid=fireUser.uid;
@@ -1397,7 +1397,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     try{await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));}catch(e){}
   };
 
-  function openDM(friend){
+  window.openDM=function(friend){
     _activeDMId=friend.uid;
     $('dmChatName').textContent=friend.name||'';
     $('dmChatAv').src=friend.av||('https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid);
@@ -1418,7 +1418,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
   if($('dmSendBtn'))$('dmSendBtn').addEventListener('click',sendDM);
   if($('dmInp'))$('dmInp').addEventListener('keydown',function(e){if(e.key==='Enter')sendDM();});
-  async function sendDM(){
+  window.sendDM=async function(){
     var txt=$('dmInp').value.trim();
     if(!txt||!_activeDMId)return;
     $('dmInp').value='';
@@ -1429,7 +1429,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   if($('mDMChat'))$('mDMChat').addEventListener('click',function(e){if(e.target===$('mDMChat')){$('mDMChat').classList.add('hide');if(_dmUnsub){_dmUnsub();_dmUnsub=null;}}});
 
   // ── NOTIFICATIONS ──
-  function listenNotifications(){
+  window.listenNotifications=function(){
     if(!auth.currentUser||App.guest)return;
     var uid=auth.currentUser.uid;
     var firstLoad=true;
