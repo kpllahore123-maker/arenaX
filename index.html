@@ -1104,10 +1104,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       toRead.forEach(function(id){updateDoc(doc(db,'notifications',id),{read:true}).catch(function(){});});
       var ndot=$('bBell').parentElement?$('bBell').parentElement.querySelector('.ndot'):null;
       if(ndot)ndot.style.display='none';
-      alert(msgs.length?'Notifications:
-
-'+msgs.map(function(m){return '• '+m;}).join('
-'):'No new notifications!');
+      alert(msgs.length ? 'Notifications:\n\n' + msgs.map(function(m){ return '• ' + m; }).join('\n') : 'No new notifications!');
     }catch(e){alert('No notifications yet!');}
   });
 
