@@ -3,1037 +3,1316 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>ArenaX Admin Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<title>ArenaX — Staff Control Panel</title>
+<!-- Google Fonts (Rajdhani & Inter) -->
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<style>
-:root{
-  --bg:#07090f;--panel:#0f1220;--card:#141828;--ele:#1a2038;
-  --gold:#f0c040;--g2:rgba(240,192,64,.1);--g3:rgba(240,192,64,.2);
-  --red:#e8404a;--blue:#4f9eff;--green:#3ddc84;--purple:#a78bfa;
-  --t1:#f0f2ff;--t2:#8890b0;--t3:#4a5070;--bdr:#1e2440;
-  --ff:'Rajdhani',sans-serif;--fb:'Inter',sans-serif;
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#07090f',
+        panel: '#0f1220',
+        card: '#141828',
+        ele: '#1e2440',
+        gold: '#f0c040',
+        red: '#e8404a',
+        blue: '#4f9eff',
+        green: '#3ddc84',
+        purple: '#a78bfa',
+        t1: '#f0f2ff',
+        t2: '#8890b0',
+        t3: '#4a5070',
+        bdr: '#1e2440'
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        display: ['Rajdhani', 'sans-serif'],
+      }
+    }
+  }
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb);font-size:14px}
-button{cursor:pointer;font-family:var(--fb)}
-a{text-decoration:none}
-
-/* LOGIN */
-#loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999}
-.login-box{width:100%;max-width:380px;padding:20px}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,#e8404a,#c02030);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px;box-shadow:0 0 30px rgba(232,64,74,.4)}
-.login-logo h1{font-family:var(--ff);font-size:28px;letter-spacing:2px}.login-logo h1 span{color:var(--red)}
-.login-logo p{font-size:11px;color:var(--t3);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
-.lcard{background:var(--panel);border:1px solid var(--bdr);border-radius:16px;padding:24px}
-.lcard h2{font-family:var(--ff);font-size:18px;margin-bottom:4px}
-.lcard p{font-size:12px;color:var(--t2);margin-bottom:20px}
-.inp-wrap{margin-bottom:12px}
-.inp-wrap label{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px}
-.inp-wrap input{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;transition:border-color .2s}
-.inp-wrap input:focus{border-color:var(--red)}
-.login-btn{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:var(--ff);letter-spacing:1px;margin-top:6px;transition:all .2s}
-.login-btn:hover{background:#c02030;transform:translateY(-1px)}
-.err-msg{margin-top:10px;padding:9px 13px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.28);border-radius:8px;font-size:12px;color:var(--red);text-align:center;display:none}
-
-/* LAYOUT */
-#adminApp{display:none;height:100vh;overflow:hidden}
-.layout{display:flex;height:100vh}
-
-/* SIDEBAR */
-.sidebar{width:220px;background:var(--panel);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0}
-.sb-logo{padding:20px 18px;border-bottom:1px solid var(--bdr)}
-.sb-logo h2{font-family:var(--ff);font-size:20px;letter-spacing:2px}.sb-logo h2 span{color:var(--red)}
-.sb-logo p{font-size:10px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
-.sb-nav{flex:1;padding:12px 0;overflow-y:auto}
-.sb-section{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;padding:10px 18px 6px}
-.sb-item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--t2);font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent}
-.sb-item:hover{color:var(--t1);background:var(--card)}
-.sb-item.on{color:var(--gold);background:var(--g2);border-left-color:var(--gold)}
-.sb-item i{width:16px;text-align:center;font-size:13px}
-.sb-bottom{padding:14px 18px;border-top:1px solid var(--bdr)}
-.admin-badge{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.admin-av{width:34px;height:34px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0}
-.admin-info{flex:1;min-width:0}
-.admin-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.admin-role{font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:1px}
-.logout-btn{width:100%;padding:8px;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);border-radius:8px;color:var(--red);font-size:12px;font-weight:600;transition:all .2s}
-.logout-btn:hover{background:rgba(232,64,74,.2)}
-
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0}
-.topbar h3{font-family:var(--ff);font-size:18px;font-weight:700;flex:1}
-.topbar-time{font-size:11px;color:var(--t3)}
-.content{flex:1;overflow-y:auto;padding:20px}
-
-/* PAGES */
-.page{display:none}.page.on{display:block}
-
-/* STATS GRID */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
-.stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:16px}
-.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:10px}
-.stat-val{font-family:var(--ff);font-size:26px;font-weight:700}
-.stat-lbl{font-size:11px;color:var(--t2);margin-top:2px}
-.stat-chg{font-size:10px;margin-top:4px}
-.stat-chg.up{color:var(--green)}.stat-chg.dn{color:var(--red)}
-
-/* TABLE */
-.table-wrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:20px}
-.table-head{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bdr);gap:10px}
-.table-head h4{font-family:var(--ff);font-size:16px;flex:1}
-.search-inp{background:var(--ele);border:1px solid var(--bdr);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--t1);font-family:var(--fb);outline:none;width:180px}
-.search-inp:focus{border-color:var(--gold)}
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{padding:10px 14px;text-align:left;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr);font-weight:600}
-.tbl td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:rgba(255,255,255,.02)}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.badge.green{background:rgba(61,220,132,.12);color:var(--green)}
-.badge.red{background:rgba(232,64,74,.12);color:var(--red)}
-.badge.gold{background:var(--g2);color:var(--gold)}
-.badge.blue{background:rgba(79,158,255,.12);color:var(--blue)}
-.badge.gray{background:rgba(255,255,255,.06);color:var(--t2)}
-.act-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;transition:all .2s}
-.act-btn.approve{background:rgba(61,220,132,.15);color:var(--green);border:1px solid rgba(61,220,132,.25)}
-.act-btn.approve:hover{background:rgba(61,220,132,.28)}
-.act-btn.reject{background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.22)}
-.act-btn.reject:hover{background:rgba(232,64,74,.25)}
-.act-btn.ban{background:rgba(232,64,74,.12);color:var(--red);border:1px solid rgba(232,64,74,.22)}
-.act-btn.unban{background:rgba(61,220,132,.12);color:var(--green);border:1px solid rgba(61,220,132,.22)}
-.act-btn.view{background:rgba(79,158,255,.12);color:var(--blue);border:1px solid rgba(79,158,255,.22)}
-.act-btn.prm{background:var(--g2);color:var(--gold);border:1px solid var(--g3)}
-.act-btn + .act-btn{margin-left:5px}
-.avatar-sm{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--bdr)}
-.user-cell{display:flex;align-items:center;gap:9px}
-.user-cell .uname{font-weight:600;font-size:13px}
-.user-cell .uhandle{font-size:10px;color:var(--t3)}
-.empty-row td{text-align:center;padding:32px;color:var(--t3);font-size:13px}
-
-/* FILTER TABS */
-.ftabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.ftab{padding:6px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--card);color:var(--t2);font-size:12px;font-weight:600;transition:all .2s}
-.ftab.on,.ftab:hover{background:var(--g2);border-color:var(--gold);color:var(--gold)}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;display:none}
-.modal-overlay.on{display:flex}
-.modal-box{background:var(--panel);border:1px solid var(--bdr);border-radius:16px;padding:24px;width:100%;max-width:420px}
-.modal-box h3{font-family:var(--ff);font-size:18px;margin-bottom:14px;color:var(--gold)}
-.modal-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:10px}
-.modal-inp:focus{border-color:var(--gold)}
-.modal-btns{display:flex;gap:8px;margin-top:4px}
-.modal-btns button{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:700;font-family:var(--ff)}
-.modal-ok{background:var(--green);color:#0a0c12}
-.modal-can{background:var(--ele);color:var(--t2)}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--bdr);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:9px;box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
-.toast.on{transform:translateY(0);opacity:1}
-.toast.ok{border-color:rgba(61,220,132,.3);color:var(--green)}
-.toast.err{border-color:rgba(232,64,74,.3);color:var(--red)}
-
-/* CHART BAR */
-.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;margin:10px 0}
-.bar{flex:1;background:var(--g2);border-radius:4px 4px 0 0;border:1px solid var(--g3);transition:height .4s;position:relative;min-width:0}
-.bar:hover{background:var(--g3)}
-.bar-lbl{font-size:9px;color:var(--t3);text-align:center;margin-top:4px}
-
-/* RESPONSIVE */
-@media(max-width:640px){.sidebar{width:56px}.sb-item span,.sb-logo p,.sb-logo h2,.sb-section,.admin-info,.admin-name,.admin-role{display:none}.sb-item{padding:12px;justify-content:center}.sb-logo{padding:14px;text-align:center}.sb-bottom{padding:10px}}
-
-@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+</script>
+<style>
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #07090f; }
+::-webkit-scrollbar-thumb { background: #1e2440; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #f0c040; }
 </style>
 </head>
-<body>
+<body class="bg-bg text-t1 font-sans min-h-screen relative overflow-hidden select-none">
 
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><i class="fas fa-shield-alt"></i></div>
-      <h1>Arena<span>X</span></h1>
-      <p>Admin Panel</p>
+<!-- ==================== ADMIN LOGIN SCREEN ==================== -->
+<div id="sLogin" class="fixed inset-0 bg-bg z-[200] flex items-center justify-center p-4">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-b from-red/10 to-transparent rounded-full filter blur-[120px]"></div>
+  </div>
+  <div class="relative w-full max-w-[420px] space-y-6">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-gradient-to-br from-red to-[#cc3540] rounded-2xl flex items-center justify-center text-3xl text-white mx-auto shadow-[0_0_32px_rgba(232,64,74,0.3)]">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h1 class="font-display text-4xl font-extrabold tracking-wider mt-4">Arena<span class="text-red">X</span> STAFF</h1>
+      <p class="text-[10px] text-t2 tracking-[4px] uppercase mt-1">Authorized Admins Panel Only</p>
     </div>
-    <div class="lcard">
-      <h2>Admin Login</h2>
-      <p>Only authorized admins can access this panel</p>
-      <div class="inp-wrap">
-        <label>Email</label>
-        <input type="email" id="adminEmail" placeholder="admin@arenax.com"/>
+
+    <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-4">
+      <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Admin Email</label>
+          <input type="email" id="iEmail" placeholder="admin@arenax.com" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-red transition text-white"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Passphrase Key</label>
+          <input type="password" id="iPass" placeholder="••••••••" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-red transition text-white"/>
+        </div>
+        <button id="bLogin" class="w-full py-3 bg-red hover:bg-[#cc3540] text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
+          <i class="fas fa-key"></i> Authenticate Credentials
+        </button>
       </div>
-      <div class="inp-wrap">
-        <label>Password</label>
-        <input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
-      </div>
-      <button class="login-btn" onclick="doLogin()"><i class="fas fa-lock"></i> Login to Admin Panel</button>
-      <div class="err-msg" id="loginErr"></div>
     </div>
   </div>
 </div>
 
-<!-- ADMIN APP -->
-<div id="adminApp">
-  <div class="layout">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sb-logo">
-        <h2>Arena<span style="color:var(--red)">X</span></h2>
-        <p>Admin Panel</p>
+<!-- ==================== MAIN ADMIN CONTROL PANEL ==================== -->
+<div id="sDash" class="hidden flex h-screen overflow-hidden">
+  
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-[230px] bg-panel border-r border-bdr flex flex-col flex-shrink-0">
+    <div class="p-5 border-b border-bdr text-center">
+      <h2 class="font-display text-xl font-extrabold tracking-wider">
+        Arena<span class="text-red">X</span> STAFF
+      </h2>
+      <p class="text-[9px] text-t3 tracking-widest uppercase mt-0.5">Moderator Central</p>
+    </div>
+
+    <nav class="flex-1 py-4 overflow-y-auto space-y-1.5">
+      <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2">Analytics</div>
+      
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Dash">
+        <i class="fas fa-chart-line w-4 text-center"></i> Dashboard
+      </button>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Users">
+        <i class="fas fa-users w-4 text-center"></i> Users Log
+      </button>
+
+      <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2 pt-4">Tournaments</div>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Tours">
+        <i class="fas fa-trophy w-4 text-center"></i> Events Config
+      </button>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Registrations">
+        <i class="fas fa-clipboard-list w-4 text-center"></i> Verify Slots <span id="regPendingCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
+      </button>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Reports">
+        <i class="fas fa-flag w-4 text-center"></i> Hack Reports <span id="repOpenCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
+      </button>
+
+      <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2 pt-4">Customer Channels</div>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Support">
+        <i class="fas fa-headset w-4 text-center"></i> Support Tickets <span id="tktOpenCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-bdr space-y-3 bg-[#0a0d16]/50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-red text-white flex items-center justify-center text-xs font-bold uppercase">AD</div>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-white truncate">Administrator</div>
+          <div class="text-[9px] uppercase tracking-wider text-red font-bold">Full Access</div>
+        </div>
       </div>
-      <nav class="sb-nav">
-        <div class="sb-section">Main</div>
-        <div class="sb-item on" data-page="pgDash"><i class="fas fa-chart-line"></i><span>Dashboard</span></div>
-        <div class="sb-item" data-page="pgUsers"><i class="fas fa-users"></i><span>Users</span></div>
-        <div class="sb-section">Finance</div>
-        <div class="sb-item" data-page="pgPayments"><i class="fas fa-wallet"></i><span>Payments</span></div>
-        <div class="sb-item" data-page="pgWithdraw"><i class="fas fa-arrow-up"></i><span>Withdrawals</span></div>
-        <div class="sb-section">Content</div>
-        <div class="sb-item" data-page="pgTours"><i class="fas fa-trophy"></i><span>Tournaments</span></div>
-        <div class="sb-item" data-page="pgReports"><i class="fas fa-flag"></i><span>Reports</span></div>
-        <div class="sb-item" data-page="pgRegistrations"><i class="fas fa-clipboard-list"></i><span>Registrations</span></div>
-        <div class="sb-item" data-page="pgSupport"><i class="fas fa-headset"></i><span>Support</span></div>
-      </nav>
-      <div class="sb-bottom">
-        <div class="admin-badge">
-          <div class="admin-av"><i class="fas fa-user-shield"></i></div>
-          <div class="admin-info">
-            <div class="admin-name" id="adminNameSb">Admin</div>
-            <div class="admin-role">Super Admin</div>
+      <button id="bLogout" class="w-full py-2 bg-ele hover:bg-card text-xs font-semibold rounded-lg text-t2 hover:text-white transition flex items-center justify-center gap-1.5">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN BODY CONTENT -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-bg">
+    
+    <!-- TOP BAR -->
+    <header class="h-14 bg-panel border-b border-bdr flex items-center justify-between px-6 flex-shrink-0">
+      <h3 id="topBarTitle" class="font-display text-lg font-bold text-white uppercase tracking-wider">Dashboard Overview</h3>
+      <div class="flex items-center gap-3 text-xs text-t3 font-mono">
+        <span class="w-2.5 h-2.5 rounded-full bg-green animate-pulse"></span>
+        <span id="pkrClock">Mon 12:00:00 PM (PKR)</span>
+      </div>
+    </header>
+
+    <!-- CONTENT PANEL -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ── DASHBOARD PAGE ── -->
+      <section id="pDash" class="page space-y-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Total Users</div>
+            <div id="statUsers" class="font-display text-3xl font-black text-gold mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Registered player database</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Premium Users</div>
+            <div id="statPremium" class="font-display text-3xl font-black text-purple mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">VIP passes granted</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Pending Registrations</div>
+            <div id="statRegs" class="font-display text-3xl font-black text-red mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Slot verifications</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Active Hack Reports</div>
+            <div id="statReports" class="font-display text-3xl font-black text-red mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Unresolved cheat logs</p>
           </div>
         </div>
-        <button class="logout-btn" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-bdr bg-panel/30 flex justify-between items-center">
+            <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider">Recent Registration Requests</h4>
+            <button onclick="switchPage('Registrations')" class="text-xs text-gold hover:underline font-semibold">View All →</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Player</th>
+                  <th class="p-4">Tournament</th>
+                  <th class="p-4">IGN / UID</th>
+                  <th class="p-4">TXN ID</th>
+                  <th class="p-4">Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashRecentRegs" class="divide-y divide-bdr/30">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── USERS LOG PAGE ── -->
+      <section id="pUsers" class="page space-y-4 hidden">
+        <div class="flex flex-wrap gap-3 justify-between items-center">
+          <div class="flex gap-2">
+            <button class="ufb on px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="all">All</button>
+            <button class="ufb px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="premium">VIP Premium</button>
+            <button class="ufb px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="banned">Banned</button>
+          </div>
+          <div class="flex bg-card border border-bdr px-3 py-1.5 rounded-lg text-xs items-center gap-2">
+            <i class="fas fa-search text-t3"></i>
+            <input id="userSearchIn" type="text" placeholder="Search profile..." class="bg-transparent border-none outline-none text-white w-[180px]"/>
+          </div>
+        </div>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">Profile Info</th>
+                <th class="p-4">Coins Balance</th>
+                <th class="p-4">Status & Access</th>
+                <th class="p-4">Moderate Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── TOURNAMENTS EVENTS CONFIG ── -->
+      <section id="pTours" class="page space-y-4 hidden">
+        <div class="flex justify-between items-center">
+          <h4 class="font-display text-sm font-bold text-t2 uppercase tracking-wider">Manage Tournament Matches</h4>
+          <button id="bAddTour" class="px-4 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+            <i class="fas fa-plus"></i> Configure New Event
+          </button>
+        </div>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">Tournament Event / Timers</th>
+                <th class="p-4">In-Game Target</th>
+                <th class="p-4">Format / Max</th>
+                <th class="p-4">Filled Slots</th>
+                <th class="p-4">Prize Pool</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="toursTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── REGISTRATIONS PAGE ── -->
+      <section id="pRegistrations" class="page space-y-4 hidden">
+        <div class="flex gap-2">
+          <button class="rfb on px-3 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="pending">Pending Review</button>
+          <button class="rfb px-3 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="approved">Approved</button>
+          <button class="rfb px-3 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="rejected">Rejected</button>
+        </div>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">Applicant Detail</th>
+                <th class="p-4">Tournament Target</th>
+                <th class="p-4">In-game IGN / UID</th>
+                <th class="p-4">TXN Receipt</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Review Action</th>
+              </tr>
+            </thead>
+            <tbody id="regsTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── CHEAT REPORTS PAGE ── -->
+      <section id="pReports" class="page space-y-4 hidden">
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">Reporter</th>
+                <th class="p-4">Accused Cheater</th>
+                <th class="p-4">Match / Event</th>
+                <th class="p-4">Violation Details</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Moderation Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── SUPPORT TICKETS CHANNEL PAGE ── -->
+      <section id="pSupport" class="page space-y-4 hidden">
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">Customer User</th>
+                <th class="p-4">Last Logged message</th>
+                <th class="p-4">Last Update</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Action Channels</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ==================== ADD / EDIT TOURNAMENT EVENT MODAL ==================== -->
+<div id="mEditTour" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-trophy"></i></div>
+      <h3 id="tourModalTitle" class="font-display text-lg font-bold text-white">Configure Event Match</h3>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Tournament Event Name *</label>
+        <input id="tName" type="text" placeholder="e.g. Grand RP Pro Cup Sunday" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">In-Game Name Target *</label>
+        <input id="tGame" type="text" value="Grand RP Mobile" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Prize Pool *</label>
+          <input id="tPrize" type="text" placeholder="e.g. Rs 5,000" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Entry Fee Coins *</label>
+          <input id="tFee" type="text" value="Free" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Squad Layout / Format *</label>
+          <select id="tTeamType" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
+            <option value="Solo">Solo Match</option>
+            <option value="Duo (2 Players)">Duo (2 Players)</option>
+            <option value="Trio (3 Players)">Trio (3 Players)</option>
+            <option value="Squad (4 Players)">Squad (4 Players)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Max Slot limits *</label>
+          <input id="tMax" type="number" value="32" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Event Date *</label>
+          <input id="tDate" type="text" placeholder="e.g. Oct 25" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Event Time *</label>
+          <input id="tTime" type="text" placeholder="e.g. 09:00 PM" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">State Status *</label>
+        <select id="tStatus" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
+          <option value="upcoming">Upcoming Match</option>
+          <option value="live">🔴 Live Now</option>
+          <option value="ended">Ended Match</option>
+        </select>
       </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
-      <div class="topbar">
-        <h3 id="pageTitle">Dashboard</h3>
-        <span class="topbar-time" id="clockEl"></span>
-      </div>
-      <div class="content">
-
-        <!-- DASHBOARD -->
-        <div class="page on" id="pgDash">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(79,158,255,.12);color:var(--blue)"><i class="fas fa-users"></i></div>
-              <div class="stat-val" id="stUsers">0</div>
-              <div class="stat-lbl">Total Users</div>
-              <div class="stat-chg up" id="stUsersChg"></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(61,220,132,.12);color:var(--green)"><i class="fas fa-coins"></i></div>
-              <div class="stat-val" id="stDeposits">0</div>
-              <div class="stat-lbl">Total Deposits (AX)</div>
-              <div class="stat-chg up" id="stDepChg"></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:var(--g2);color:var(--gold)"><i class="fas fa-crown"></i></div>
-              <div class="stat-val" id="stPremium">0</div>
-              <div class="stat-lbl">Premium Users</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(232,64,74,.12);color:var(--red)"><i class="fas fa-clock"></i></div>
-              <div class="stat-val" id="stPending">0</div>
-              <div class="stat-lbl">Pending Payments</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(167,139,250,.12);color:var(--purple)"><i class="fas fa-trophy"></i></div>
-              <div class="stat-val" id="stTours">7</div>
-              <div class="stat-lbl">Tournaments</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(232,64,74,.12);color:var(--red)"><i class="fas fa-flag"></i></div>
-              <div class="stat-val" id="stReports">0</div>
-              <div class="stat-lbl">Open Reports</div>
-            </div>
-          </div>
-
-          <!-- Activity Chart -->
-          <div class="table-wrap" style="padding:16px;margin-bottom:20px">
-            <div style="font-family:var(--ff);font-size:16px;margin-bottom:4px">Deposits This Week</div>
-            <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Daily AX coin deposits</div>
-            <div class="bar-chart" id="barChart"></div>
-            <div style="display:flex;gap:6px" id="barLabels"></div>
-          </div>
-
-          <!-- Recent Payments -->
-          <div class="table-wrap">
-            <div class="table-head">
-              <h4>Recent Payments</h4>
-              <button class="ftab on" onclick="showPage('pgPayments')">View All →</button>
-            </div>
-            <table class="tbl" id="recentPayTbl">
-              <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody id="recentPayBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- USERS -->
-        <div class="page" id="pgUsers">
-          <div class="ftabs" id="userFilters">
-            <button class="ftab on" data-f="all">All Users</button>
-            <button class="ftab" data-f="premium">Premium</button>
-            <button class="ftab" data-f="banned">Banned</button>
-          </div>
-          <div class="table-wrap">
-            <div class="table-head">
-              <h4>Users</h4>
-              <input class="search-inp" placeholder="🔍 Search users..." id="userSearch" oninput="renderUsers()"/>
-            </div>
-            <table class="tbl">
-              <thead><tr><th>User</th><th>Balance</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
-              <tbody id="usersTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAYMENTS -->
-        <div class="page" id="pgPayments">
-          <div class="ftabs" id="payFilters">
-            <button class="ftab on" data-f="pending">Pending</button>
-            <button class="ftab" data-f="approved">Approved</button>
-            <button class="ftab" data-f="rejected">Rejected</button>
-            <button class="ftab" data-f="all">All</button>
-          </div>
-          <div class="table-wrap">
-            <div class="table-head">
-              <h4>Deposit Requests</h4>
-              <button class="act-btn approve" onclick="approveAllPending()"><i class="fas fa-check-double"></i> Approve All</button>
-            </div>
-            <table class="tbl">
-              <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="payTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- WITHDRAWALS -->
-        <div class="page" id="pgWithdraw">
-          <div class="table-wrap">
-            <div class="table-head"><h4>Withdrawal Requests</h4></div>
-            <table class="tbl">
-              <thead><tr><th>User</th><th>Amount</th><th>Account</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="withTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- TOURNAMENTS -->
-        <div class="page" id="pgTours">
-          <div class="table-wrap">
-            <div class="table-head">
-              <h4>Tournaments</h4>
-              <button class="act-btn prm" onclick="openAddTour()"><i class="fas fa-plus"></i> Add New</button>
-            </div>
-            <table class="tbl">
-              <thead><tr><th>Name / Date</th><th>Game</th><th>Players</th><th>Prize</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="toursTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- REGISTRATIONS -->
-        <div class="page" id="pgRegistrations">
-          <div class="ftabs" id="regFilters">
-            <button class="ftab on" data-f="pending">Pending</button>
-            <button class="ftab" data-f="approved">Approved</button>
-            <button class="ftab" data-f="rejected">Rejected</button>
-            <button class="ftab" data-f="all">All</button>
-          </div>
-          <div class="table-wrap">
-            <div class="table-head"><h4>Tournament Registrations</h4></div>
-            <table class="tbl">
-              <thead><tr><th>Player</th><th>Tournament</th><th>Game Name</th><th>UID</th><th>Txn ID</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="regTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- REPORTS -->
-        <div class="page" id="pgReports">
-          <div class="table-wrap">
-            <div class="table-head"><h4>Player Reports</h4></div>
-            <table class="tbl">
-              <thead><tr><th>Reporter</th><th>Reported</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="reportsTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- SUPPORT -->
-        <div class="page" id="pgSupport">
-          <div class="table-wrap">
-            <div class="table-head"><h4>Support Tickets</h4></div>
-            <table class="tbl">
-              <thead><tr><th>User</th><th>Message</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="supportTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-      </div><!-- end content -->
-    </div><!-- end main -->
-  </div>
-</div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
-    <h3 id="modalTitle">Action</h3>
-    <div id="modalBody"></div>
-    <div class="modal-btns">
-      <button class="modal-can" onclick="closeModal()">Cancel</button>
-      <button class="modal-ok" id="modalOkBtn">Confirm</button>
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseTourModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSaveTour" class="flex-1 py-2.5 bg-red text-white text-xs font-bold rounded-lg transition">Save Config</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<!-- ==================== STAFF MODERATE BAN / BLOCK MODAL ==================== -->
+<div id="mBan" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-ban"></i></div>
+      <div>
+        <h3 class="font-display text-lg font-bold text-white">Moderate Access Ban</h3>
+        <p id="banPlayerLabel" class="text-xs text-t2">Player Name</p>
+      </div>
+    </div>
 
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Ban Action Type *</label>
+        <select id="banType" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red font-medium">
+          <option value="full">Standard Full Account Ban (Lock ArenaX Entirely)</option>
+          <option value="tournament">Only Ban Participation in Tournaments (Block Register/Click)</option>
+        </select>
+        <p class="text-[9px] text-t3 mt-1">If tournament only, player gets blocked inside tournament clicks and registrations. Standard account ban blocks app entrance.</p>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Ban Duration Timeline *</label>
+        <select id="banDuration" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red font-medium">
+          <option value="1">24 Hours</option>
+          <option value="7">7 Days Match Block</option>
+          <option value="30">30 Days Match Block</option>
+          <option value="permanent">Permanent Lockout</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Detailed Violation Reason *</label>
+        <textarea id="banReason" rows="3" placeholder="Reason for ban (e.g., Verified aimbot cheating reported in Event Sunday Cup...)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseBanModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bProcessBan" class="flex-1 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Apply Block Penalty</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== STAFF SUPPORT LIVE CHAT MODAL ==================== -->
+<div id="mSupportChat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl w-full max-w-[480px] h-[520px] flex flex-col overflow-hidden shadow-2xl">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-card border-b border-bdr flex items-center justify-between">
+      <div>
+        <h4 id="supChatUser" class="text-xs font-bold text-white">Live Support Client</h4>
+        <span class="text-[9px] text-red uppercase font-bold tracking-wider">Staff Moderator Panel</span>
+      </div>
+      <button id="bCloseSupChat" class="text-t2 hover:text-red transition text-lg"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Live conversation messages logs -->
+    <div id="supChatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-bg/50">
+      <!-- Dynamically populated -->
+    </div>
+
+    <!-- Message responder -->
+    <div class="p-3 bg-card border-t border-bdr/40 flex gap-2">
+      <input id="supChatIn" type="text" placeholder="Type staff reply..." class="flex-1 bg-ele border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-red transition"/>
+      <button id="supChatSendBtn" class="w-9 h-9 bg-red hover:bg-[#cc3540] text-white rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase Modular SDK via CDN -->
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,collection,getDocs,doc,updateDoc,addDoc,deleteDoc,serverTimestamp,query,orderBy,limit,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
-
-// ── ADMIN UIDs — apna Firebase UID yahan daalo ──
-const ADMIN_UIDS=['xDa31jOrsoQC2HxjSheO3wBqyII2','lCNKrLAliFSvuML6Nwrr6YlNOtG3'];
-
-// ── DEMO DATA (jab tak Firestore mein data nahi) ──
-// Demo data for non-Firestore sections
-let DB={
-  payments:[],
-  withdrawals:[],
-  reports:[
-    {id:'r1',reporter:'Player',reported:'Unknown',reason:'Cheating in match',status:'open'},
-  ],
-  support:[],
+const firebaseConfig = {
+  apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
+  authDomain: "arenax-c1586.firebaseapp.com",
+  projectId: "arenax-c1586",
+  storageBucket: "arenax-c1586.firebasestorage.app",
+  messagingSenderId: "1069776825982",
+  appId: "1:1069776825982:web:f2d7f11cef4c206206b22f"
 };
 
-// ── USERS (Firestore Real-time) ──
-let _usersData=[];
-function loadUsers(){
-  const q=query(collection(db,'users'),orderBy('createdAt','desc'));
-  onSnapshot(q,snap=>{
-    _usersData=[];
-    snap.forEach(d=>_usersData.push({id:d.id,...d.data()}));
-    renderUsers();
-    $('stUsers').textContent=_usersData.length;
-    $('stPremium').textContent=_usersData.filter(u=>u.premium).length;
-  });
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// ── HELPERS ──
-const $=id=>document.getElementById(id);
-let currentFilter={users:'all',pay:'pending'};
+const ADMIN_UIDS = ['xDa31jOrsoQC2HxjSheO3wBqyII2', 'lCNKrLAliFSvuML6Nwrr6YlNOtG3'];
 
-function toast(msg,type='ok'){
-  const t=$('toast');
-  t.className='toast on '+(type==='ok'?'ok':'err');
-  t.innerHTML=(type==='ok'?'<i class="fas fa-check-circle"></i>':'<i class="fas fa-times-circle"></i>')+' '+msg;
-  setTimeout(()=>t.classList.remove('on'),3000);
-}
+// Local states
+let users = [];
+let tournaments = [];
+let registrations = [];
+let reports = [];
+let tickets = [];
 
-function closeModal(){$('modalOverlay').classList.remove('on')}
-window.closeModal=closeModal;
+let activePage = 'Dash';
+let banTargetUser = null;
+let editingTour = null;
 
-function openModal(title,body,onOk){
-  $('modalTitle').textContent=title;
-  $('modalBody').innerHTML=body;
-  $('modalOkBtn').onclick=()=>{onOk();closeModal()};
-  $('modalOverlay').classList.add('on');
-}
+const $ = (id) => document.getElementById(id);
 
-// ── CLOCK ──
-function updateClock(){$('clockEl').textContent=new Date().toLocaleString('en-PK',{weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-setInterval(updateClock,1000);updateClock();
+// Real-time PKR Clock
+setInterval(() => {
+  $('pkrClock').textContent = new Date().toLocaleString('en-PK', {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Karachi'
+  }) + ' (PKR)';
+}, 1000);
 
-// ── NAV ──
-window.showPage=function(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
-  $(id).classList.add('on');
-  const sbItem=document.querySelector(`.sb-item[data-page="${id}"]`);
-  if(sbItem)sbItem.classList.add('on');
-  const titles={pgDash:'Dashboard',pgUsers:'Users',pgPayments:'Deposit Payments',pgWithdraw:'Withdrawals',pgTours:'Tournaments',pgReports:'Player Reports',pgSupport:'Support Tickets',pgRegistrations:'Tournament Registrations'};
-  $('pageTitle').textContent=titles[id]||'Admin';
-  if(id==='pgUsers')loadUsers();
-  if(id==='pgPayments')renderPayments();
-  if(id==='pgWithdraw')renderWithdrawals();
-  if(id==='pgTours')loadTournaments();
-  if(id==='pgReports')loadReports();
-  if(id==='pgSupport')loadSupportTickets();
-  if(id==='pgRegistrations'){loadRegistrations();}
-}
-document.querySelectorAll('.sb-item[data-page]').forEach(item=>{
-  item.addEventListener('click',()=>showPage(item.dataset.page));
-});
+// Page routing switcher
+function switchPage(page) {
+  activePage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  $('p' + page).classList.remove('hidden');
 
-// ── DASHBOARD STATS ──
-function refreshDash(){
-  $('stUsers').textContent=DB.users.length;
-  $('stPremium').textContent=DB.users.filter(u=>u.premium).length;
-  $('stPending').textContent=DB.payments.filter(p=>p.status==='pending').length;
-  $('stReports').textContent=DB.reports.filter(r=>r.status==='open').length;
-  const totalDep=DB.payments.filter(p=>p.status==='approved').reduce((s,p)=>s+p.amount,0);
-  $('stDeposits').textContent=totalDep.toLocaleString();
-  renderBarChart();
-  renderRecentPay();
-}
-
-function renderBarChart(){
-  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const vals=[320,580,240,900,450,1200,680];
-  const max=Math.max(...vals);
-  $('barChart').innerHTML=vals.map((v,i)=>`<div class="bar" style="height:${(v/max*100)}%" title="${days[i]}: ${v} AX"></div>`).join('');
-  $('barLabels').innerHTML=days.map(d=>`<div class="bar-lbl" style="flex:1;text-align:center">${d}</div>`).join('');
-}
-
-function renderRecentPay(){
-  const recent=DB.payments.slice(0,4);
-  $('recentPayBody').innerHTML=recent.map(p=>`
-    <tr>
-      <td>${p.userName}</td>
-      <td><span class="badge ${p.method==='JazzCash'?'green':p.method==='EasyPaisa'?'gold':'blue'}">${p.method}</span></td>
-      <td style="font-family:var(--ff);color:var(--green)">+${p.amount} AX</td>
-      <td><span class="badge ${p.status==='pending'?'red':p.status==='approved'?'green':'gray'}">${p.status}</span></td>
-      <td>${p.status==='pending'?`<button class="act-btn approve" onclick="approvePayment('${p.id}')">Approve</button><button class="act-btn reject" onclick="rejectPayment('${p.id}')">Reject</button>`:'—'}</td>
-    </tr>`).join('');
-}
-
-// ── USERS ──
-window.renderUsers=function(){
-  const filter=currentFilter.users;
-  const search=$('userSearch').value.toLowerCase();
-  let list=_usersData.filter(u=>{
-    if(filter==='premium'&&!u.premium)return false;
-    if(filter==='banned'&&!u.banned)return false;
-    if(search&&!u.name.toLowerCase().includes(search)&&!u.handle.toLowerCase().includes(search))return false;
-    return true;
-  });
-  $('usersTbody').innerHTML=list.length?list.map(u=>`
-    <tr>
-      <td><div class="user-cell"><img class="avatar-sm" src="${u.av}"/><div><div class="uname">${u.name}</div><div class="uhandle">${u.handle}</div></div></div></td>
-      <td style="font-family:var(--ff);color:var(--gold)">${u.balance.toLocaleString()} AX</td>
-      <td>${u.banned?'<span class="badge red">Banned</span>':u.premium?'<span class="badge gold"><i class="fas fa-crown"></i> Premium</span>':'<span class="badge gray">Free</span>'}</td>
-      <td style="color:var(--t3)">${u.joined||'—'}</td>
-      <td>
-        <button class="act-btn view" onclick="viewUser('${u.id}')">View</button>
-        <button class="act-btn prm" onclick="togglePremium('${u.id}')">${u.premium?'Remove Premium':'Give Premium'}</button>
-        <button class="act-btn ${u.banned?'unban':'ban'}" onclick="toggleBan('${u.id}')">${u.banned?'Unban':'Ban'}</button>
-      </td>
-    </tr>`).join(''):`<tr class="empty-row"><td colspan="5"><i class="fas fa-users"></i> No users found</td></tr>`;
-}
-
-window.viewUser=function(id){
-  const u=_usersData.find(x=>x.id===id);if(!u)return;
-  openModal('User: '+u.name,`
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
-      <img src="${u.av}" style="width:50px;height:50px;border-radius:50%;border:2px solid var(--bdr)"/>
-      <div><div style="font-size:15px;font-weight:700">${u.name}</div><div style="font-size:11px;color:var(--t3)">${u.handle}</div><div style="font-size:11px;color:var(--t3)">${u.email||'—'}</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-      <div style="background:var(--card);border-radius:8px;padding:10px"><div style="color:var(--t3)">Balance</div><div style="font-family:var(--ff);font-size:18px;color:var(--gold)">${u.balance} AX</div></div>
-      <div style="background:var(--card);border-radius:8px;padding:10px"><div style="color:var(--t3)">Status</div><div style="font-family:var(--ff);font-size:16px">${u.banned?'Banned':u.premium?'Premium':'Free'}</div></div>
-    </div>
-    <div style="margin-top:12px">
-      <label style="font-size:11px;color:var(--t2);display:block;margin-bottom:5px">Adjust Balance (AX Coins)</label>
-      <input class="modal-inp" type="number" id="adjBal" placeholder="e.g. 500 (add) or -200 (remove)" value="0"/>
-    </div>`,
-  async ()=>{
-    const adj=+$('adjBal').value;
-    if(adj){
-      try{
-        await updateDoc(doc(db,'users',u.id),{balance:Math.max(0,(u.balance||0)+adj)});
-        toast(`Balance updated: ${adj>0?'+':''}${adj} AX for ${u.name||u.handle}`);
-      }catch(e){toast('Error: '+e.message,'err');}
+  document.querySelectorAll('.ni').forEach(btn => {
+    if (btn.dataset.p === page) {
+      btn.classList.add('text-red', 'bg-red/5', 'border-red');
+      btn.classList.remove('text-t2', 'border-transparent');
+    } else {
+      btn.classList.remove('text-red', 'bg-red/5', 'border-red');
+      btn.classList.add('text-t2', 'border-transparent');
     }
   });
-}
 
-window.togglePremium=async function(id){
-  const u=_usersData.find(x=>x.id===id);if(!u)return;
-  try{
-    await updateDoc(doc(db,'users',id),{premium:!u.premium});
-    toast(`${u.name||u.handle} — Premium ${!u.premium?'activated':'removed'}`);
-  }catch(e){toast('Error: '+e.message,'err');}
+  $('topBarTitle').textContent = page === 'Dash' ? 'Dashboard Overview' :
+                                 page === 'Users' ? 'Users Management Log' :
+                                 page === 'Tours' ? 'Active Events Match Config' :
+                                 page === 'Registrations' ? 'Verify Applications Slots' :
+                                 page === 'Reports' ? 'Violation Cheat Reports logs' : 'Customer Support Chat Channels';
 }
+window.switchPage = switchPage;
 
-window.toggleBan=async function(id){
-  const u=_usersData.find(x=>x.id===id);if(!u)return;
-  try{
-    await updateDoc(doc(db,'users',id),{banned:!u.banned});
-    toast(`${u.name||u.handle} ${!u.banned?'banned':'unbanned'}`,(!u.banned?'err':'ok'));
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-// Setup user filter tabs
-document.querySelectorAll('#userFilters .ftab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#userFilters .ftab').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
-    currentFilter.users=btn.dataset.f;
-    renderUsers();
-  });
+document.querySelectorAll('.ni').forEach(btn => {
+  btn.addEventListener('click', () => switchPage(btn.dataset.p));
 });
 
-// ── PAYMENTS ──
-window.renderPayments=function(){
-  const filter=document.querySelector('#payFilters .ftab.on')?.dataset.f||'pending';
-  const list=filter==='all'?DB.payments:DB.payments.filter(p=>p.status===filter);
-  $('payTbody').innerHTML=list.length?list.map(p=>`
-    <tr>
-      <td>${p.userName}</td>
-      <td><span class="badge ${p.method==='JazzCash'?'green':p.method==='EasyPaisa'?'gold':'blue'}">${p.method}</span></td>
-      <td style="font-family:var(--ff);font-size:15px;color:var(--green)">Rs ${p.amount}</td>
-      <td style="color:var(--t3)">${p.time}</td>
-      <td><span class="badge ${p.status==='pending'?'red':p.status==='approved'?'green':'gray'}">${p.status}</span></td>
-      <td>${p.status==='pending'?`<button class="act-btn approve" onclick="approvePayment('${p.id}')"><i class="fas fa-check"></i> Approve</button><button class="act-btn reject" onclick="rejectPayment('${p.id}')"><i class="fas fa-times"></i> Reject</button>`:'—'}</td>
-    </tr>`).join(''):`<tr class="empty-row"><td colspan="6"><i class="fas fa-check-circle"></i> No payments in this category</td></tr>`;
-}
-
-window.approvePayment=function(id){
-  const p=DB.payments.find(x=>x.id===id);if(!p)return;
-  p.status='approved';
-  // Add coins to user
-  const u=DB.users.find(x=>x.id===p.userId);
-  if(u)u.balance+=p.amount;
-  renderPayments();renderRecentPay();refreshDash();
-  toast(`✅ Rs ${p.amount} approved for ${p.userName} — ${p.amount} AX added`);
-}
-
-window.rejectPayment=function(id){
-  const p=DB.payments.find(x=>x.id===id);if(!p)return;
-  p.status='rejected';
-  renderPayments();renderRecentPay();refreshDash();
-  toast(`Payment rejected for ${p.userName}`,'err');
-}
-
-window.approveAllPending=function(){
-  const pending=DB.payments.filter(p=>p.status==='pending');
-  if(!pending.length){toast('No pending payments','err');return;}
-  pending.forEach(p=>{
-    p.status='approved';
-    const u=DB.users.find(x=>x.id===p.userId);
-    if(u)u.balance+=p.amount;
-  });
-  renderPayments();refreshDash();
-  toast(`✅ All ${pending.length} payments approved!`);
-}
-
-document.querySelectorAll('#payFilters .ftab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#payFilters .ftab').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
-    renderPayments();
-  });
+// Auth Listeners state
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    const isStaff = ADMIN_UIDS.includes(user.uid) || user.email === 'admin@arenax.com';
+    if (isStaff) {
+      $('sLogin').classList.add('hidden');
+      $('sDash').classList.remove('hidden');
+      loadRealtimeDatabase();
+      switchPage('Dash');
+    } else {
+      alert('Unauthorized! This page is reserved for ArenaX Staff administrators.');
+      signOut(auth);
+      goToLogin();
+    }
+  } else {
+    goToLogin();
+  }
 });
 
-// ── WITHDRAWALS ──
-function renderWithdrawals(){
-  $('withTbody').innerHTML=DB.withdrawals.length?DB.withdrawals.map(w=>`
-    <tr>
-      <td>${w.userName}</td>
-      <td style="font-family:var(--ff);color:var(--red)">-${w.amount} AX</td>
-      <td style="color:var(--t3)">${w.account}</td>
-      <td><span class="badge ${w.status==='pending'?'red':'green'}">${w.status}</span></td>
-      <td>${w.status==='pending'?`<button class="act-btn approve" onclick="approveWith('${w.id}')">Send Money</button><button class="act-btn reject" onclick="rejectWith('${w.id}')">Reject</button>`:'—'}</td>
-    </tr>`).join(''):`<tr class="empty-row"><td colspan="5">No withdrawal requests</td></tr>`;
+function goToLogin() {
+  $('sDash').classList.add('hidden');
+  $('sLogin').classList.remove('hidden');
 }
 
-window.approveWith=function(id){
-  const w=DB.withdrawals.find(x=>x.id===id);if(!w)return;
-  const u=DB.users.find(x=>x.id===w.userId);
-  if(u&&u.balance>=w.amount){u.balance-=w.amount;w.status='sent';renderWithdrawals();toast(`Rs ${w.amount} sent to ${w.userName} via ${w.account}`);}
-  else{toast('User has insufficient balance','err');}
-}
-window.rejectWith=function(id){
-  const w=DB.withdrawals.find(x=>x.id===id);if(!w)return;
-  w.status='rejected';renderWithdrawals();toast('Withdrawal rejected','err');
-}
+$('bLogin').addEventListener('click', async () => {
+  const em = $('iEmail').value.trim();
+  const pw = $('iPass').value.trim();
 
-// ── TOURNAMENTS ──
-// ── TOURNAMENTS (Firestore) ──
-let _toursUnsub=null;
-
-function loadTournaments(){
-  if(_toursUnsub){_toursUnsub();_toursUnsub=null;}
-  const q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
-  _toursUnsub=onSnapshot(q,snap=>{
-    const list=[];
-    snap.forEach(d=>list.push({id:d.id,...d.data()}));
-    renderTournaments(list);
-  });
-}
-
-function renderTournaments(list){
-  if(!list){return;}
-  if(!list.length){
-    $('toursTbody').innerHTML=`<tr class="empty-row"><td colspan="6">No tournaments yet — add one!</td></tr>`;
+  if (!em || !pw) {
+    $('loginErr').textContent = 'Please enter admin email and secure pass!';
+    $('loginErr').classList.remove('hidden');
     return;
   }
-  $('toursTbody').innerHTML=list.map(t=>`
-    <tr>
-      <td style="font-weight:600">${t.name}<div style="font-size:10px;color:var(--t3)">${t.date||'TBA'} · ${t.time||'TBA'}</div></td>
-      <td style="color:var(--t2)">${t.game||'Grand RP Mobile'}</td>
-      <td>${t.registered||0}/${t.maxPlayers||32}</td>
-      <td style="font-family:var(--ff);color:var(--gold)">${t.prize||'TBD'}</td>
-      <td style="color:var(--t3);font-size:11px">${t.entryFee||'Free'}</td>
-      <td><span class="badge ${t.status==='live'?'red':t.status==='upcoming'?'blue':'gray'}">${t.status==='live'?'🔴 Live':t.status==='upcoming'?'Upcoming':'Ended'}</span></td>
-      <td>
-        <button class="act-btn view" onclick="editTour('${t.id}','${t.name}','${t.prize||''}','${t.status}','${t.date||''}','${t.time||''}','${t.entryFee||''}')">Edit</button>
-        <button class="act-btn reject" onclick="deleteTour('${t.id}')">Delete</button>
-      </td>
-    </tr>`).join('');
-}
 
-window.openAddTour=function(){
-  openModal('Add Tournament',`
-    <input class="modal-inp" id="tName" placeholder="Tournament Name"/>
-    <input class="modal-inp" id="tGame" placeholder="Game Name" value="Grand RP Mobile"/>
-    <input class="modal-inp" id="tPrize" placeholder="Prize (e.g. 5,000 AX)"/>
-    <input class="modal-inp" id="tMax" placeholder="Max Players (e.g. 32)" type="number"/>
-    <input class="modal-inp" id="tDate" placeholder="Date (e.g. Jul 5, 2026)" type="text"/>
-    <input class="modal-inp" id="tTime" placeholder="Time (e.g. 8:00 PM PKT)" type="text"/>
-    <input class="modal-inp" id="tFee" placeholder="Entry Fee (e.g. Rs 100 or Free)" type="text"/>
-    <select class="modal-inp" id="tStat" style="background:var(--card);color:var(--t1)">
-      <option value="upcoming">Upcoming</option>
-      <option value="live">🔴 Live</option>
-      <option value="ended">Ended</option>
-    </select>`,
-  async ()=>{
-    const name=$('tName').value,game=$('tGame').value,prize=$('tPrize').value;
-    const max=+($('tMax').value)||32,status=$('tStat').value;
-    const date=$('tDate').value,time=$('tTime').value,fee=$('tFee').value;
-    if(!name){toast('Enter tournament name','err');return;}
-    try{
-      await addDoc(collection(db,'tournaments'),{
-        name,game:game||'Grand RP Mobile',prize:prize||'TBD',
-        maxPlayers:max,registered:0,status,
-        date:date||'TBA',time:time||'TBA',entryFee:fee||'Free',
-        createdAt:serverTimestamp()
-      });
-      toast('Tournament added: '+name);
-    }catch(e){toast('Error: '+e.message,'err');}
+  $('loginErr').classList.add('hidden');
+  try {
+    await signInWithEmailAndPassword(auth, em, pw);
+  } catch (err) {
+    $('loginErr').textContent = err.message;
+    $('loginErr').classList.remove('hidden');
+  }
+});
+
+$('bLogout').addEventListener('click', () => {
+  if (confirm('Sign out of Administrator control session?')) {
+    signOut(auth);
+  }
+});
+
+// Load Realtime Collections
+function loadRealtimeDatabase() {
+  // 1. Listen Users
+  onSnapshot(collection(db, 'users'), (snap) => {
+    users = [];
+    snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+    $('statUsers').textContent = users.length;
+    $('statPremium').textContent = users.filter(u => u.premium).length;
+    renderUsers();
   });
-}
 
-window.editTour=function(id,name,prize,status,date,time,fee){
-  openModal('Edit Tournament',`
-    <input class="modal-inp" id="eName" value="${name||''}"/>
-    <input class="modal-inp" id="ePrize" value="${prize||''}"/>
-    <input class="modal-inp" id="eDate" value="${date||''}" placeholder="Date (e.g. Jul 5, 2026)"/>
-    <input class="modal-inp" id="eTime" value="${time||''}" placeholder="Time (e.g. 8:00 PM PKT)"/>
-    <input class="modal-inp" id="eFee" value="${fee||''}" placeholder="Entry Fee (e.g. Rs 100 or Free)"/>
-    <select class="modal-inp" id="eStat" style="background:var(--card);color:var(--t1)">
-      <option value="live" ${status==='live'?'selected':''}>🔴 Live</option>
-      <option value="upcoming" ${status==='upcoming'?'selected':''}>Upcoming</option>
-      <option value="ended" ${status==='ended'?'selected':''}>Ended</option>
-    </select>`,
-  async ()=>{
-    try{
-      await updateDoc(doc(db,'tournaments',id),{
-        name:$('eName').value,prize:$('ePrize').value,status:$('eStat').value,
-        date:$('eDate').value,time:$('eTime').value,entryFee:$('eFee').value
-      });
-      toast('Tournament updated!');
-    }catch(e){toast('Error: '+e.message,'err');}
+  // 2. Listen Tournaments
+  const qTours = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+  onSnapshot(qTours, (snap) => {
+    tournaments = [];
+    snap.forEach(d => tournaments.push({ id: d.id, ...d.data() }));
+    renderTournaments();
   });
-}
 
-window.deleteTour=async function(id){
-  if(!confirm('Delete this tournament?'))return;
-  try{
-    await deleteDoc(doc(db,'tournaments',id));
-    toast('Tournament deleted','err');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
+  // 3. Listen Registrations
+  const qRegs = query(collection(db, 'tournament_registrations'), orderBy('submittedAt', 'desc'));
+  onSnapshot(qRegs, (snap) => {
+    registrations = [];
+    snap.forEach(d => registrations.push({ id: d.id, ...d.data() }));
+    
+    const pendings = registrations.filter(r => r.status === 'pending');
+    $('statRegs').textContent = pendings.length;
+    if (pendings.length > 0) {
+      $('regPendingCount').textContent = pendings.length;
+      $('regPendingCount').classList.remove('hidden');
+    } else {
+      $('regPendingCount').classList.add('hidden');
+    }
 
-// ── REGISTRATIONS ──
-let _regsData=[];
-function loadRegistrations(){
-  const filter=document.querySelector('#regFilters .ftab.on')?.dataset?.f||'pending';
-  const q=query(collection(db,'tournament_registrations'),orderBy('submittedAt','desc'));
-  onSnapshot(q,snap=>{
-    _regsData=[];
-    snap.forEach(d=>_regsData.push({id:d.id,...d.data()}));
+    renderRecentRegistrations();
     renderRegistrations();
   });
-}
-function renderRegistrations(){
-  const filter=document.querySelector('#regFilters .ftab.on')?.dataset?.f||'pending';
-  const list=filter==='all'?_regsData:_regsData.filter(r=>r.status===filter);
-  $('regTbody').innerHTML=list.length?list.map(r=>`
-    <tr>
-      <td><div style="font-weight:600">${r.realName||'—'}</div><div style="font-size:10px;color:var(--t3)">${r.userHandle||''}</div></td>
-      <td style="color:var(--gold);font-size:12px">${r.tournamentName||'—'}</td>
-      <td>${r.gameName||'—'}</td>
-      <td style="color:var(--t3);font-size:11px">${r.gameUID||'—'}</td>
-      <td style="color:var(--blue);font-size:11px">${r.txnId||'—'}</td>
-      <td><span class="badge ${r.status==='pending'?'red':r.status==='approved'?'green':'gray'}">${r.status}</span></td>
-      <td>
-        ${r.status==='pending'?`
-          <button class="act-btn approve" onclick="approveReg('${r.id}','${r.userId}','${r.tournamentName}')"><i class="fas fa-check"></i> Approve</button>
-          <button class="act-btn reject" onclick="rejectReg('${r.id}','${r.userId}','${r.tournamentName||''}')"><i class="fas fa-times"></i> Reject</button>
-        `:'—'}
-      </td>
-    </tr>`).join(''):`<tr class="empty-row"><td colspan="7">No registrations in this category</td></tr>`;
-}
 
-window.approveReg=async function(id,userId,tourName){
-  try{
-    await updateDoc(doc(db,'tournament_registrations',id),{status:'approved'});
-    await addDoc(collection(db,'notifications'),{
-      userId,
-      message:'🎉 Congratulations! Your registration for "'+tourName+'" has been APPROVED! Get ready to compete!',
-      type:'approved',read:false,createdAt:serverTimestamp()
-    });
-    toast('✅ Registration approved!');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
+  // 4. Listen Cheat Reports
+  const qReports = query(collection(db, 'tournament_reports'), orderBy('createdAt', 'desc'));
+  onSnapshot(qReports, (snap) => {
+    reports = [];
+    snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+    
+    const openReports = reports.filter(r => r.status === 'open');
+    $('statReports').textContent = openReports.length;
+    if (openReports.length > 0) {
+      $('repOpenCount').textContent = openReports.length;
+      $('repOpenCount').classList.remove('hidden');
+    } else {
+      $('repOpenCount').classList.add('hidden');
+    }
 
-window.rejectReg=async function(id,userId,tourName){
-  try{
-    await updateDoc(doc(db,'tournament_registrations',id),{status:'rejected'});
-    await addDoc(collection(db,'notifications'),{
-      userId,
-      message:'❌ Your registration for "'+tourName+'" was declined. Please contact support for more information.',
-      type:'rejected',read:false,createdAt:serverTimestamp()
-    });
-    toast('Registration rejected','err');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-document.querySelectorAll('#regFilters .ftab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#regFilters .ftab').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');renderRegistrations();
-  });
-});
-
-// ── REPORTS ──
-let _reportsData=[];
-function renderReports(){
-  if(!_reportsData.length){
-    $('reportsTbody').innerHTML='<tr class="empty-row"><td colspan="5">No reports yet</td></tr>';
-    return;
-  }
-  $('reportsTbody').innerHTML=_reportsData.map(r=>`
-    <tr>
-      <td style="font-weight:600">${r.reporterName||'Unknown'}</td>
-      <td style="color:var(--red)">${r.tournamentName||r.reported||'—'}</td>
-      <td style="color:var(--t2);max-width:200px">${r.reason||'—'}</td>
-      <td><span class="badge ${r.status==='open'?'red':'green'}">${r.status}</span></td>
-      <td>
-        ${r.status==='open'?`
-          <button class="act-btn approve" onclick="resolveReport('${r.id}')">Resolve</button>
-          <button class="act-btn ban" onclick="banReporter('${r.id}','${r.reporterId||''}')">Ban Player</button>
-        `:'—'}
-      </td>
-    </tr>`).join('');
-}
-
-function loadReports(){
-  const q=query(collection(db,'tournament_reports'),orderBy('createdAt','desc'));
-  onSnapshot(q,snap=>{
-    _reportsData=[];
-    snap.forEach(d=>_reportsData.push({id:d.id,...d.data()}));
     renderReports();
-    refreshDash();
+  });
+
+  // 5. Listen Support Tickets
+  const qTickets = query(collection(db, 'support_tickets'), orderBy('updatedAt', 'desc'));
+  onSnapshot(qTickets, (snap) => {
+    tickets = [];
+    snap.forEach(d => tickets.push({ id: d.id, ...d.data() }));
+    
+    const opens = tickets.filter(t => t.status === 'open');
+    if (opens.length > 0) {
+      $('tktOpenCount').textContent = opens.length;
+      $('tktOpenCount').classList.remove('hidden');
+    } else {
+      $('tktOpenCount').classList.add('hidden');
+    }
+
+    renderTickets();
   });
 }
 
-window.resolveReport=async function(id){
-  try{
-    await updateDoc(doc(db,'tournament_reports',id),{status:'resolved'});
-    toast('Report resolved');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-window.banReporter=async function(id,userId){
-  if(!userId){toast('No user ID','err');return;}
-  try{
-    await updateDoc(doc(db,'tournament_reports',id),{status:'resolved'});
-    await updateDoc(doc(db,'users',userId),{banned:true});
-    toast('Player banned!','err');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-// ── SUPPORT (Firestore Real-time) ──
-let _supportTickets=[];
-let _openChatTicketId=null;
-
-function loadSupportTickets(){
-  const q=query(collection(db,'support_tickets'),orderBy('updatedAt','desc'));
-  onSnapshot(q,snap=>{
-    _supportTickets=[];
-    snap.forEach(d=>_supportTickets.push({id:d.id,...d.data()}));
-    renderSupport();
-    // update dash count
-    const openCount=_supportTickets.filter(t=>t.status==='open').length;
-    $('stReports').textContent=openCount;
-  });
-}
-
-function renderSupport(){
-  const list=_supportTickets;
-  if(!list.length){
-    $('supportTbody').innerHTML=`<tr class="empty-row"><td colspan="5"><i class="fas fa-headset"></i> No support tickets yet</td></tr>`;
+// ── RENDER RECENT REGS DASHBOARD ──
+function renderRecentRegistrations() {
+  const container = $('dashRecentRegs');
+  container.innerHTML = '';
+  
+  const pendings = registrations.filter(r => r.status === 'pending').slice(0, 4);
+  if (pendings.length === 0) {
+    container.innerHTML = `<tr><td colSpan="5" class="p-4 text-center text-t3 font-medium">No pending registration slots check requested.</td></tr>`;
     return;
   }
-  $('supportTbody').innerHTML=list.map(s=>`
-    <tr>
-      <td style="font-weight:600">${s.userName||'Unknown'}<div style="font-size:10px;color:var(--t3)">${s.userHandle||''}</div></td>
-      <td style="color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.lastMsg||'—'}</td>
-      <td style="color:var(--t3);white-space:nowrap;font-size:11px">${s.updatedAt?.toDate?.()?.toLocaleString('en-PK')||'just now'}</td>
-      <td><span class="badge ${s.status==='open'?'red':'green'}">${s.status}</span></td>
-      <td>
-        <button class="act-btn view" onclick="openSupportChat('${s.ticketId}','${s.userName}')"><i class="fas fa-comments"></i> Reply</button>
-        ${s.status==='open'?`<button class="act-btn approve" onclick="resolveTicket('${s.id}','${s.ticketId}')">Resolve</button>`:''}
-      </td>
-    </tr>`).join('');
-}
 
-// Support Chat Modal
-window.openSupportChat=function openSupportChat(ticketId, userName){
-  _openChatTicketId=ticketId;
-  $('scModalName').textContent='Chat: '+userName;
-  $('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">Loading...</div>';
-  $('scModal').classList.add('on');
-  // Listen to messages
-  if(window._scUnsub)window._scUnsub();
-  const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
-  window._scUnsub=onSnapshot(q,snap=>{
-    if(snap.empty){$('scMsgs').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px">No messages yet</div>';return;}
-    $('scMsgs').innerHTML='';
-    snap.forEach(d=>{
-      const m=d.data();
-      const isAdmin=m.sender==='admin';
-      $('scMsgs').innerHTML+=`
-        <div style="display:flex;gap:8px;margin-bottom:10px;${isAdmin?'flex-direction:row-reverse':''}">
-          <div style="width:28px;height:28px;border-radius:50%;background:${isAdmin?'var(--red)':'var(--ele)'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">
-            <i class="fas fa-${isAdmin?'shield-alt':'user'}"></i>
-          </div>
-          <div style="max-width:75%">
-            <div style="font-size:10px;color:var(--t3);margin-bottom:3px;${isAdmin?'text-align:right':''}">${isAdmin?'Admin':m.senderName||'Player'}</div>
-            <div style="background:${isAdmin?'rgba(232,64,74,.15)':'var(--card)'};border:1px solid ${isAdmin?'rgba(232,64,74,.25)':'var(--bdr)'};border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5">${m.text}</div>
-          </div>
-        </div>`;
-    });
-    $('scMsgs').scrollTop=9999;
+  pendings.forEach(reg => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4 font-bold text-white">${reg.realName} <span class="text-[9px] text-t3 font-normal font-mono block">${reg.userHandle}</span></td>
+      <td class="p-4 text-gold font-bold">${reg.tournamentName}</td>
+      <td class="p-4 text-t2 font-mono">${reg.gameName}<div class="text-[9px] text-t3">UID: ${reg.gameUID}</div></td>
+      <td class="p-4 text-blue font-mono font-bold">${reg.txnId}</td>
+      <td class="p-4 space-x-1 flex">
+        <button class="b-app px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded text-[10px] font-bold" data-id="${reg.id}">Verify</button>
+        <button class="b-dec px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded text-[10px] font-bold" data-id="${reg.id}">Reject</button>
+      </td>
+    `;
+
+    tr.querySelector('.b-app').addEventListener('click', () => approveRegistration(reg));
+    tr.querySelector('.b-dec').addEventListener('click', () => rejectRegistration(reg));
+    container.appendChild(tr);
   });
 }
 
-window.sendAdminReply=async function(){
-  const txt=$('scInp').value.trim();
-  if(!txt||!_openChatTicketId)return;
-  $('scInp').value='';
-  try{
-    await addDoc(collection(db,'support',_openChatTicketId,'messages'),{
-      text:txt,sender:'admin',senderName:'Admin',createdAt:serverTimestamp()
+// ── RENDER USERS LOG ──
+let userFilter = 'all';
+$('userSearchIn').addEventListener('input', () => renderUsers());
+document.querySelectorAll('.ufb').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ufb').forEach(b => b.classList.remove('on', 'bg-gold', 'text-bg'));
+    btn.classList.add('on');
+    userFilter = btn.dataset.f;
+    renderUsers();
+  });
+});
+
+function renderUsers() {
+  const container = $('userTableBody');
+  container.innerHTML = '';
+
+  const q = $('userSearchIn').value.toLowerCase();
+  const filtered = users.filter(u => {
+    if (userFilter === 'premium' && !u.premium) return false;
+    if (userFilter === 'banned' && !u.banned) return false;
+    if (q) {
+      return u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q) || (u.email && u.email.toLowerCase().includes(q));
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-t3">No user profiles match search requirements.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(u => {
+    let tag = '<span class="px-2 py-0.5 bg-neutral-800 text-t3 border border-neutral-700 text-[9px] font-bold rounded uppercase">Free Account</span>';
+    if (u.banned) {
+      tag = u.banType === 'tournament' 
+        ? '<span class="px-2 py-0.5 bg-red/10 text-red border border-red/20 text-[9px] font-bold rounded uppercase">Tournament Banned</span>' 
+        : '<span class="px-2 py-0.5 bg-red/15 text-red border border-red/25 text-[9px] font-bold rounded uppercase">Banned Standard</span>';
+    } else if (u.premium) {
+      tag = '<span class="px-2 py-0.5 bg-purple/15 text-purple border border-purple/20 text-[9px] font-bold rounded uppercase">Premium VIP</span>';
+    }
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="flex items-center gap-3">
+          <img src="${u.av}" class="w-8 h-8 rounded-full border border-bdr flex-shrink-0"/>
+          <div>
+            <div class="font-bold text-white text-xs">${u.name}</div>
+            <div class="text-[9px] text-t3 font-mono">${u.handle}</div>
+          </div>
+        </div>
+      </td>
+      <td class="p-4 font-mono font-bold text-gold text-xs">${(u.balance || 0).toLocaleString()} AX</td>
+      <td class="p-4">${tag}</td>
+      <td class="p-4 space-x-1 text-xs font-semibold">
+        <button class="b-coins px-2 py-1 bg-ele border border-bdr hover:border-white text-white rounded hover:bg-card transition">Coins</button>
+        <button class="b-vip px-2 py-1 bg-purple/10 border border-purple/20 hover:bg-purple/20 text-purple rounded transition">${u.premium ? 'Revoke VIP' : 'Give VIP'}</button>
+        ${u.banned ? `
+          <button class="b-unban px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Lift Ban</button>
+        ` : `
+          <button class="b-ban px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Ban / Penalty</button>
+        `}
+      </td>
+    `;
+
+    tr.querySelector('.b-coins').addEventListener('click', () => adjustCoins(u));
+    tr.querySelector('.b-vip').addEventListener('click', () => togglePremium(u));
+    if (u.banned) {
+      tr.querySelector('.b-unban').addEventListener('click', () => liftBan(u));
+    } else {
+      tr.querySelector('.b-ban').addEventListener('click', () => openBanModal(u));
+    }
+
+    container.appendChild(tr);
+  });
+}
+
+// Coins Adjustment Action
+async function adjustCoins(u) {
+  const val = prompt(`Enter AX coins to adjust for ${u.name} (e.g. 500 to add, -200 to subtract):`);
+  if (!val) return;
+  const adj = parseFloat(val);
+  if (isNaN(adj) || adj === 0) {
+    alert('Invalid numeric amount adjustment.');
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, 'users', u.id), {
+      balance: increment(adj)
     });
-    // update ticket
-    const ticket=_supportTickets.find(t=>t.ticketId===_openChatTicketId);
-    if(ticket){
-      await updateDoc(doc(db,'support_tickets',ticket.id),{lastMsg:'[Admin]: '+txt,updatedAt:serverTimestamp()});
-    }
-    toast('Reply sent!');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-window.resolveTicket=async function(docId, ticketId){
-  try{
-    await updateDoc(doc(db,'support_tickets',docId),{status:'resolved'});
-    toast('Ticket resolved');
-  }catch(e){toast('Error: '+e.message,'err');}
-}
-
-window.adminTyping=function(){
-  if(!_openChatTicketId)return;
-  setDoc(doc(db,'typing','admin_'+_openChatTicketId),{typing:true,updatedAt:serverTimestamp()},{merge:true}).catch(()=>{});
-  clearTimeout(window._adminTypTimer);
-  window._adminTypTimer=setTimeout(()=>{
-    setDoc(doc(db,'typing','admin_'+_openChatTicketId),{typing:false},{merge:true}).catch(()=>{});
-  },2000);
-}
-window.closeSupportChat=function(){
-  $('scModal').classList.remove('on');
-  if(window._scUnsub){window._scUnsub();window._scUnsub=null;}
-}
-
-// ── AUTH ──
-window.doLogin=async function(){
-  const em=$('adminEmail').value.trim(),pw=$('adminPass').value;
-  const err=$('loginErr');
-  err.style.display='none';
-  if(!em||!pw){err.textContent='Enter email and password';err.style.display='block';return;}
-  try{
-    const cred=await signInWithEmailAndPassword(auth,em,pw);
-    // Check if admin
-    if(!ADMIN_UIDS.includes(cred.user.uid)){
-      await signOut(auth);
-      err.textContent='Access denied — not an admin account';err.style.display='block';return;
-    }
-    $('adminNameSb').textContent=cred.user.displayName||cred.user.email.split('@')[0];
-    $('loginScreen').style.display='none';
-    $('adminApp').style.display='block';
-    refreshDash();
-  }catch(e){
-    err.textContent=e.code==='auth/invalid-credential'?'Wrong email or password':e.code==='auth/user-not-found'?'Account not found':('Error: '+e.code);
-    err.style.display='block';
+    alert(`Coins balance modified by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
+  } catch (err) {
+    alert(err.message);
   }
 }
 
-window.doLogout=async function(){
-  await signOut(auth);
-  $('loginScreen').style.display='flex';
-  $('adminApp').style.display='none';
-  $('adminEmail').value='';$('adminPass').value='';
+// VIP toggle Premium status (Staff fix button works correctly)
+async function togglePremium(u) {
+  try {
+    await updateDoc(doc(db, 'users', u.id), {
+      premium: !u.premium
+    });
+    alert(`Premium VIP status updated successfully for ${u.name}! ✅`);
+  } catch (err) {
+    alert('Failed toggle: ' + err.message);
+  }
 }
 
-onAuthStateChanged(auth,user=>{
-  if(user&&ADMIN_UIDS.includes(user.uid)){
-    $('adminNameSb').textContent=user.displayName||user.email?.split('@')[0]||'Admin';
-    $('loginScreen').style.display='none';
-    $('adminApp').style.display='block';
-    refreshDash();
-    loadUsers();
-    loadSupportTickets();
-    loadTournaments();
-    loadReports();
+// ── STAFF ACCESS BAN FLOW ENHANCEMENTS ──
+function openBanModal(user) {
+  banTargetUser = user;
+  $('banPlayerLabel').textContent = `${user.name} (${user.handle})`;
+  $('banReason').value = '';
+  $('mBan').classList.remove('hidden');
+}
+
+$('bCloseBanModal').addEventListener('click', () => $('mBan').classList.add('hidden'));
+
+$('bProcessBan').addEventListener('click', async () => {
+  const reason = $('banReason').value.trim();
+  if (!reason) {
+    alert('You must type a ban violation reason!');
+    return;
+  }
+
+  const type = $('banType').value;
+  const dur = $('banDuration').value;
+  const expiry = dur === 'permanent' ? null : new Date(Date.now() + parseInt(dur) * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    await updateDoc(doc(db, 'users', banTargetUser.id), {
+      banned: true,
+      banType: type,
+      banReason: reason,
+      banUntil: expiry
+    });
+
+    $('mBan').classList.add('hidden');
+    alert(`Applied ${type === 'full' ? 'Standard entire account ban' : 'Tournament only match ban'} penalty for ${banTargetUser.name}!`);
+  } catch (err) {
+    alert('Ban failed: ' + err.message);
   }
 });
 
-// init
-refreshDash();
-</script>
+async function liftBan(u) {
+  if (confirm(`Lift ban/block access penalty for ${u.name}?`)) {
+    try {
+      await updateDoc(doc(db, 'users', u.id), {
+        banned: false,
+        banType: 'none',
+        banReason: '',
+        banUntil: null
+      });
+      alert(`Access penalty lifted for ${u.name}!`);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
 
-<!-- SUPPORT CHAT MODAL -->
-<div class="modal-overlay" id="scModal" style="z-index:600">
-  <div class="modal-box" style="max-width:500px;height:540px;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <h3 id="scModalName" style="margin:0">Support Chat</h3>
-      <button onclick="closeSupportChat()" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="scMsgs" style="flex:1;overflow-y:auto;padding:4px 2px;margin-bottom:12px"></div>
-    <div id="scTyping" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--t3);padding:4px 0"><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s infinite ease-in-out;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s .15s infinite ease-in-out;display:inline-block"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:typingBounce .8s .3s infinite ease-in-out;display:inline-block"></span><span style="margin-left:4px">User is typing...</span></div>
-    <div style="display:flex;gap:8px">
-      <input class="modal-inp" id="scInp" placeholder="Type admin reply..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendAdminReply()"/>
-      <button onclick="sendAdminReply()" style="padding:10px 16px;background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px"><i class="fas fa-paper-plane"></i></button>
-    </div>
-  </div>
-</div>
+// ── TOURNAMENTS EVENTS RENDER ──
+function renderTournaments() {
+  const container = $('toursTableBody');
+  container.innerHTML = '';
+
+  if (tournaments.length === 0) {
+    container.innerHTML = `<tr><td colSpan="7" class="p-8 text-center text-t3">No active tournaments configured. Create one now.</td></tr>`;
+    return;
+  }
+
+  tournaments.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="font-bold text-white text-xs">${t.name}</div>
+        <div class="text-[9px] text-t3">${t.date} · ${t.time}</div>
+      </td>
+      <td class="p-4 text-t2 font-medium">${t.game || 'Grand RP Mobile'}</td>
+      <td class="p-4 text-purple font-semibold font-mono">${t.teamType || 'Solo'}</td>
+      <td class="p-4 text-white font-bold">${t.registered || 0}/${t.maxPlayers || 32}</td>
+      <td class="p-4 text-gold font-bold">${t.prize || 'TBD'}</td>
+      <td class="p-4">
+        <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25 animate-pulse' : 'bg-blue/15 text-blue border border-blue/25'}">
+          ${t.status}
+        </span>
+      </td>
+      <td class="p-4 space-x-1.5 font-semibold text-xs">
+        <button class="b-edit px-2.5 py-1 bg-ele border border-bdr text-white hover:bg-card rounded transition">Edit</button>
+        <button class="b-del px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Delete</button>
+      </td>
+    `;
+
+    tr.querySelector('.b-edit').addEventListener('click', () => openTourModal(t));
+    tr.querySelector('.b-del').addEventListener('click', () => deleteTournament(t.id));
+    container.appendChild(tr);
+  });
+}
+
+function openTourModal(tour = null) {
+  editingTour = tour;
+  if (tour) {
+    $('tourModalTitle').textContent = 'Modify Tournament Event';
+    $('tName').value = tour.name;
+    $('tGame').value = tour.game || 'Grand RP Mobile';
+    $('tPrize').value = tour.prize;
+    $('tFee').value = tour.entryFee || 'Free';
+    $('tTeamType').value = tour.teamType || 'Solo';
+    $('tMax').value = tour.maxPlayers || 32;
+    $('tDate').value = tour.date;
+    $('tTime').value = tour.time;
+    $('tStatus').value = tour.status;
+  } else {
+    $('tourModalTitle').textContent = 'Configure New Event Match';
+    $('tName').value = '';
+    $('tGame').value = 'Grand RP Mobile';
+    $('tPrize').value = '';
+    $('tFee').value = 'Rs 100';
+    $('tTeamType').value = 'Solo';
+    $('tMax').value = '32';
+    $('tDate').value = '';
+    $('tTime').value = '';
+    $('tStatus').value = 'upcoming';
+  }
+  $('mEditTour').classList.remove('hidden');
+}
+
+$('bAddTour').addEventListener('click', () => openTourModal());
+$('bCloseTourModal').addEventListener('click', () => $('mEditTour').classList.add('hidden'));
+
+$('bSaveTour').addEventListener('click', async () => {
+  const name = $('tName').value.trim();
+  const prize = $('tPrize').value.trim();
+  const fee = $('tFee').value.trim();
+  const date = $('tDate').value.trim();
+  const time = $('tTime').value.trim();
+  const max = parseInt($('tMax').value);
+
+  if (!name || !prize || !date || !time || isNaN(max)) {
+    alert('Please complete all required fields (*)!');
+    return;
+  }
+
+  const data = {
+    name: name,
+    game: $('tGame').value,
+    prize: prize,
+    entryFee: fee,
+    teamType: $('tTeamType').value,
+    maxPlayers: max,
+    date: date,
+    time: time,
+    status: $('tStatus').value
+  };
+
+  try {
+    if (editingTour) {
+      await updateDoc(doc(db, 'tournaments', editingTour.id), data);
+      alert('Tournament match config updated successfully! ✅');
+    } else {
+      await addDoc(collection(db, 'tournaments'), {
+        ...data,
+        registered: 0,
+        createdAt: serverTimestamp()
+      });
+      alert('New tournament match created successfully! ✅');
+    }
+    $('mEditTour').classList.add('hidden');
+  } catch (err) {
+    alert('Failed saving event: ' + err.message);
+  }
+});
+
+async function deleteTournament(tid) {
+  if (confirm('Delete this tournament permanently from database? This yields slots data loss.')) {
+    try {
+      await deleteDoc(doc(db, 'tournaments', tid));
+      alert('Event deleted permanently.');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
+
+// ── REGISTRATIONS APPLICANTS RENDER ──
+let regsFilter = 'pending';
+document.querySelectorAll('.rfb').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.rfb').forEach(b => b.classList.remove('on', 'bg-gold', 'text-bg'));
+    btn.classList.add('on');
+    regsFilter = btn.dataset.f;
+    renderRegistrations();
+  });
+});
+
+function renderRegistrations() {
+  const container = $('regsTableBody');
+  container.innerHTML = '';
+
+  const filtered = registrations.filter(r => r.status === regsFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-t3">No registration logs in this criteria.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(reg => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="font-bold text-white text-xs">${reg.realName}</div>
+        <div class="text-[9px] text-t3">UID: ${reg.userId} · Age: ${reg.age}</div>
+      </td>
+      <td class="p-4 text-gold font-bold text-xs">${reg.tournamentName}</td>
+      <td class="p-4 text-t2 font-medium">
+        <div>${reg.gameName}</div>
+        <div class="text-[9px] text-t3 font-mono font-bold">UID: ${reg.gameUID}</div>
+      </td>
+      <td class="p-4 font-mono font-bold text-blue text-xs">
+        <div>${reg.txnId}</div>
+        ${reg.screenshot ? `<a href="${reg.screenshot}" target="_blank" class="text-[9px] text-t3 underline hover:text-gold block mt-0.5">Receipt Link</a>` : ''}
+      </td>
+      <td class="p-4">
+        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${reg.status === 'approved' ? 'bg-green/15 text-green' : reg.status === 'rejected' ? 'bg-red/15 text-red' : 'bg-gold/15 text-gold animate-pulse'}">
+          ${reg.status}
+        </span>
+      </td>
+      <td class="p-4 space-x-1 font-semibold text-xs">
+        ${reg.status === 'pending' ? `
+          <button class="b-app px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Approve</button>
+          <button class="b-dec px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Decline</button>
+        ` : `<span class="text-t3">-</span>`}
+      </td>
+    `;
+
+    if (reg.status === 'pending') {
+      tr.querySelector('.b-app').addEventListener('click', () => approveRegistration(reg));
+      tr.querySelector('.b-dec').addEventListener('click', () => rejectRegistration(reg));
+    }
+    container.appendChild(tr);
+  });
+}
+
+// Complete Slot verifications Approve workflow
+async function approveRegistration(reg) {
+  try {
+    // 1. Approve doc
+    await updateDoc(doc(db, 'tournament_registrations', reg.id), { status: 'approved' });
+
+    // 2. Increment Tournament slots atomically inside tournaments doc
+    await updateDoc(doc(db, 'tournaments', reg.tournamentId), {
+      registered: increment(1)
+    });
+
+    // 3. Dispatch user app-alert notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: reg.userId,
+      message: `🎉 Slots confirmed! Your registration entry for "${reg.tournamentName}" has been APPROVED. Good luck in the matches!`,
+      type: 'approved',
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    alert('Application slot APPROVED successfully! Slot count atomically updated inside event. ✅');
+  } catch (err) {
+    alert('Approve error: ' + err.message);
+  }
+}
+
+async function rejectRegistration(reg) {
+  if (confirm(`Decline and reject registration application for ${reg.realName}?`)) {
+    try {
+      await updateDoc(doc(db, 'tournament_registrations', reg.id), { status: 'rejected' });
+      
+      // Notification
+      await addDoc(collection(db, 'notifications'), {
+        userId: reg.userId,
+        message: `❌ Your registration application for "${reg.tournamentName}" was declined. Please verify your TXN details or contact support.`,
+        type: 'rejected',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
+      alert('Decline processed successfully.');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
+
+// ── CHEAT REPORTS LOG ──
+function renderReports() {
+  const container = $('reportsTableBody');
+  container.innerHTML = '';
+
+  if (reports.length === 0) {
+    container.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-t3">No cheat logs submitted. Clear match environment!</td></tr>`;
+    return;
+  }
+
+  reports.forEach(rep => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01] align-top';
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="font-bold text-white text-xs">${rep.reporterName}</div>
+        <div class="text-[9px] text-t3 font-mono">UID: ${rep.reporterId}</div>
+      </td>
+      <td class="p-4 text-red font-bold text-xs">
+        <div>${rep.reportedName}</div>
+        <div class="text-[9px] text-t3 font-mono font-bold block mt-0.5">UID: ${rep.reportedUID}</div>
+        <span class="mt-1 px-1.5 py-0.5 bg-red/10 text-red text-[9px] font-bold border border-red/20 rounded inline-block uppercase">${rep.hackType}</span>
+      </td>
+      <td class="p-4 text-gold font-bold text-xs">${rep.tournamentName}</td>
+      <td class="p-4 max-w-[200px] text-t2 leading-relaxed">
+        <p>${rep.reason}</p>
+        ${rep.videoUrl ? `<a href="${rep.videoUrl}" target="_blank" class="text-blue font-bold hover:underline text-[10px] block mt-1"><i class="fas fa-video mr-1"></i> Proof Evidence</a>` : ''}
+      </td>
+      <td class="p-4">
+        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${rep.status === 'open' ? 'bg-red/15 text-red border border-red/20' : 'bg-green/15 text-green border border-green/20'}">
+          ${rep.status}
+        </span>
+      </td>
+      <td class="p-4 space-y-1 block text-center font-semibold text-xs">
+        ${rep.status === 'open' ? `
+          <button class="b-res w-full px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded block">Resolve</button>
+          <button class="b-banHacker w-full px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded block">Ban Hacker</button>
+        ` : `
+          <button class="b-delReport w-full px-2 py-1 bg-ele border border-bdr text-t3 rounded block">Delete</button>
+        `}
+      </td>
+    `;
+
+    if (rep.status === 'open') {
+      tr.querySelector('.b-res').addEventListener('click', () => resolveReport(rep.id));
+      tr.querySelector('.b-banHacker').addEventListener('click', () => {
+        // Find user by accused reported UID
+        const uObj = users.find(x => x.uid === rep.reportedUID);
+        if (uObj) {
+          openBanModal(uObj);
+          $('banReason').value = `Verified hack/cheating reports in Match event: ${rep.tournamentName}`;
+        } else {
+          alert(`Reported hacker UID (${rep.reportedUID}) is not configured inside the user base index, but you can block them under tournament logs.`);
+        }
+      });
+    } else {
+      tr.querySelector('.b-delReport').addEventListener('click', () => deleteReport(rep.id));
+    }
+
+    container.appendChild(tr);
+  });
+}
+
+async function resolveReport(id) {
+  try {
+    await updateDoc(doc(db, 'tournament_reports', id), { status: 'resolved' });
+    alert('Report status resolved! ✅');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function deleteReport(id) {
+  if (confirm('Delete this cheat report permanently from logs?')) {
+    try {
+      await deleteDoc(doc(db, 'tournament_reports', id));
+      alert('Report removed.');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
+
+// ── CUSTOMER SUPPORT TICKET CHANNELS ──
+function renderTickets() {
+  const container = $('ticketsTableBody');
+  container.innerHTML = '';
+
+  if (tickets.length === 0) {
+    container.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-t3">No customer support ticket channels open. All quiet!</td></tr>`;
+    return;
+  }
+
+  tickets.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4 font-bold text-white text-xs">${t.userName} <span class="text-[9px] text-t3 font-normal font-mono block">${t.userHandle}</span></td>
+      <td class="p-4 text-t2 font-medium max-w-[220px] truncate">${t.lastMsg || 'No messages'}</td>
+      <td class="p-4 text-[10px] text-t3 font-mono">${t.updatedAt ? new Date(t.updatedAt.seconds * 1000).toLocaleString() : 'TBA'}</td>
+      <td class="p-4">
+        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.status === 'open' ? 'bg-red/15 text-red border border-red/25 animate-pulse' : 'bg-neutral-800 text-t3 border border-neutral-700'}">
+          ${t.status}
+        </span>
+      </td>
+      <td class="p-4 space-x-1.5 font-semibold text-xs">
+        <button class="b-rep px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Reply Chat</button>
+        <button class="b-delTicket px-2.5 py-1 bg-ele border border-bdr text-t3 hover:text-white rounded transition">Delete Chat</button>
+      </td>
+    `;
+
+    tr.querySelector('.b-rep').addEventListener('click', () => openSupportChatWindow(t));
+    tr.querySelector('.b-delTicket').addEventListener('click', () => deleteSupportTicket(t.ticketId));
+
+    container.appendChild(tr);
+  });
+}
+
+// Support chat deletion to clear database noise (Fix requested)
+async function deleteSupportTicket(ticketId) {
+  if (!confirm('Are you sure you want to delete this Support Ticket and message logs?\nThis will clear it permanently from active staff dashboard.')) return;
+  try {
+    await deleteDoc(doc(db, 'support_tickets', ticketId));
+    alert('Support Ticket deleted successfully! ✅');
+  } catch (err) {
+    alert('Failed to delete support chat: ' + err.message);
+  }
+}
+
+// Live Chat moderator replies
+let chatWindowUnsub = null;
+let activeTicketId = '';
+function openSupportChatWindow(t) {
+  activeTicketId = t.ticketId;
+  $('supChatUser').textContent = `${t.userName} (${t.userHandle})`;
+  $('supChatMsgs').innerHTML = '<div class="text-center text-xs text-t3 py-4 animate-pulse">Connecting client database...</div>';
+  $('mSupportChat').classList.remove('hidden');
+
+  if (chatWindowUnsub) {
+    chatWindowUnsub();
+    chatWindowUnsub = null;
+  }
+
+  // Real-time listen support chat messages (Now synchronized with automatic bot replies too!)
+  const q = query(collection(db, 'support', t.ticketId, 'messages'), orderBy('createdAt', 'asc'));
+  chatWindowUnsub = onSnapshot(q, (snap) => {
+    const listEl = $('supChatMsgs');
+    listEl.innerHTML = '';
+
+    snap.forEach(d => {
+      const m = d.data();
+      const isMe = m.sender === 'admin';
+      const isBot = m.sender === 'bot';
+      const isUser = m.sender === 'user';
+
+      let bgCls = 'bg-card border-bdr text-t1 rounded-tl-none';
+      let flexCls = '';
+      let label = m.senderName || 'Client';
+
+      if (isMe) {
+        bgCls = 'bg-red/15 border-red/25 text-red rounded-tr-none font-medium';
+        flexCls = 'flex-row-reverse';
+        label = 'You (Admin Staff)';
+      } else if (isBot) {
+        bgCls = 'bg-ele border-bdr text-t2 rounded-tl-none italic';
+        label = 'Support Bot Response';
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
+      bubble.innerHTML = `
+        <div class="min-w-0 flex-1">
+          <span class="text-[9px] text-t3 uppercase font-bold tracking-wider block mb-0.5 ${isMe ? 'text-right' : ''}">${label}</span>
+          <div class="p-2.5 border rounded-xl text-xs leading-relaxed break-words ${bgCls}">
+            ${m.text}
+          </div>
+        </div>
+      `;
+      listEl.appendChild(bubble);
+    });
+
+    listEl.scrollTop = listEl.scrollHeight;
+  });
+}
+
+$('bCloseSupChat').addEventListener('click', () => {
+  $('mSupportChat').classList.add('hidden');
+  if (chatWindowUnsub) {
+    chatWindowUnsub();
+    chatWindowUnsub = null;
+  }
+});
+
+// Admin typing responder
+$('supChatSendBtn').addEventListener('click', () => sendAdminReply());
+$('supChatIn').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendAdminReply();
+});
+
+async function sendAdminReply() {
+  const txt = $('supChatIn').value.trim();
+  if (!txt || !activeTicketId) return;
+  $('supChatIn').value = '';
+
+  try {
+    const colMsgs = collection(db, 'support', activeTicketId, 'messages');
+    await addDoc(colMsgs, {
+      text: txt,
+      sender: 'admin',
+      senderName: 'Staff Moderator',
+      createdAt: serverTimestamp()
+    });
+
+    // Update active support Ticket log in Firestore
+    await updateDoc(doc(db, 'support_tickets', activeTicketId), {
+      lastMsg: `[Admin]: ${txt}`,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+</script>
 </body>
 </html>
