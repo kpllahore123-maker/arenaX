@@ -25,6 +25,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .scr.on{display:block!important}
 #sLogin.on{display:flex!important;align-items:center;justify-content:center;min-height:100vh}
 
+/* CURSOR */
+#cur{position:fixed;width:9px;height:9px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(240,192,64,.9),0 0 22px rgba(240,192,64,.4);mix-blend-mode:screen;transition:transform .1s,background .15s}
+#curR{position:fixed;width:30px;height:30px;border:1.5px solid rgba(240,192,64,.5);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:left .1s ease,top .1s ease,width .2s,height .2s,border-color .2s}
+#cur.ck{transform:translate(-50%,-50%) scale(3);background:#fff}
+#curR.hv{width:44px;height:44px;border-color:var(--gold)}
+@keyframes ctrf{to{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
 
 /* LOGIN */
 .lglow{position:absolute;inset:0;pointer-events:none}
@@ -104,7 +110,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 .lsm span{color:var(--gold)}.lsm i{color:var(--gold);margin-right:3px}
 .tr{display:flex;align-items:center;gap:10px}
 .nbell{position:relative;width:34px;height:34px;background:var(--card);border:1px solid var(--bdr);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--t2)}
-.ndot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--gold);border-radius:50%;border:2px solid var(--panel)}
+.ndot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--panel)}
 .uav{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--gold)}
 .uav img{width:100%;height:100%;object-fit:cover}
 .gbanner{background:var(--g2);border-bottom:1px solid var(--g3);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#c0a030;flex-shrink:0}
@@ -266,85 +272,51 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 @keyframes sk{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
 
 /* PAYMENT MODAL */
-.pay-modal h3{color:var(--gold);margin-bottom:16px}
 .pay-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.pay-method{padding:14px 16px;border-radius:var(--r14);border:2px solid var(--bdr);background:var(--card);display:flex;align-items:center;gap:13px;transition:all .2s;cursor:pointer}
-.pay-method:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.pay-method.jc{border-color:rgba(0,160,80,.3);background:rgba(0,160,80,.06)}
-.pay-method.jc:hover{border-color:#00a050;background:rgba(0,160,80,.14)}
-.pay-method.ep{border-color:rgba(100,60,180,.3);background:rgba(100,60,180,.06)}
-.pay-method.ep:hover{border-color:#643cb4;background:rgba(100,60,180,.14)}
-.pay-method.cc{border-color:rgba(79,158,255,.3);background:rgba(79,158,255,.06)}
-.pay-method.cc:hover{border-color:var(--blue);background:rgba(79,158,255,.14)}
-.pay-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.jc .pay-logo{background:#00a050;color:#fff}
-.ep .pay-logo{background:#643cb4;color:#fff}
-.cc .pay-logo{background:var(--blue);color:#fff}
-.pay-name{font-size:13px;font-weight:700}
-.pay-sub{font-size:11px;color:var(--t3);margin-top:1px}
-.pay-arrow{margin-left:auto;color:var(--t3);font-size:12px}
+.pay-method{padding:14px 16px;border-radius:14px;border:2px solid var(--bdr);background:var(--card);display:flex;align-items:center;gap:13px;transition:all .2s;cursor:pointer}
+.pay-method:hover{transform:translateY(-2px)}
+.pay-method.jc{border-color:rgba(0,160,80,.3)}.pay-method.jc:hover{border-color:#00a050}
+.pay-method.ep{border-color:rgba(100,60,180,.3)}.pay-method.ep:hover{border-color:#643cb4}
+.pay-method.cc{border-color:rgba(79,158,255,.3)}.pay-method.cc:hover{border-color:var(--blue)}
+.pay-logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.jc .pay-logo{background:#00a050;color:#fff}.ep .pay-logo{background:#643cb4;color:#fff}.cc .pay-logo{background:var(--blue);color:#fff}
 .pay-amt-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.pay-amt-chip{padding:7px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);color:var(--t2);font-size:12px;font-weight:600;font-family:var(--fb);transition:all .2s;cursor:pointer}
+.pay-amt-chip{padding:7px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
 .pay-amt-chip.sel,.pay-amt-chip:hover{background:var(--g2);border-color:var(--gold);color:var(--gold)}
-.pay-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--ff);outline:none;margin-bottom:4px;font-weight:700}
+.pay-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:4px}
 .pay-inp:focus{border-color:var(--gold)}
 .pay-step{display:none}.pay-step.on{display:block}
-.pay-back{background:none;border:none;color:var(--t2);font-size:12px;padding:4px 0;font-family:var(--fb);margin-bottom:12px;display:flex;align-items:center;gap:5px;cursor:pointer}
-.pay-back:hover{color:var(--gold)}
-.pay-instr{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r8);padding:13px;font-size:12px;color:var(--t2);line-height:1.75;margin-bottom:13px}
-.pay-instr strong{color:var(--t1)}
-.pay-confirm{width:100%;padding:13px;border:none;border-radius:var(--r8);font-size:14px;font-weight:700;font-family:var(--fb);cursor:pointer;transition:all .2s}
-.jc-btn{background:#00a050;color:#fff}.jc-btn:hover{background:#008040}
-.ep-btn{background:#643cb4;color:#fff}.ep-btn:hover{background:#5030a0}
-.cc-btn{background:var(--blue);color:#fff}.cc-btn:hover{background:#3a8ff0}
-
+.pay-back{background:none;border:none;color:var(--t2);font-size:12px;padding:4px 0;font-family:var(--fb);margin-bottom:12px;cursor:pointer}
+.pay-instr{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:13px;font-size:12px;color:var(--t2);line-height:1.75;margin-bottom:13px}
+.pay-confirm{width:100%;padding:13px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.jc-btn{background:#00a050;color:#fff}.ep-btn{background:#643cb4;color:#fff}.cc-btn{background:var(--blue);color:#fff}
 /* FRIEND SYSTEM */
 .freq-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .freq-av{width:36px;height:36px;border-radius:50%;border:2px solid var(--bdr);flex-shrink:0}
-.freq-info{flex:1}
-.freq-name{font-size:13px;font-weight:700}
-.freq-handle{font-size:10px;color:var(--t3)}
+.freq-info{flex:1}.freq-name{font-size:13px;font-weight:700}.freq-handle{font-size:10px;color:var(--t3)}
 .freq-btns{display:flex;gap:6px}
-.freq-acc{padding:6px 12px;background:rgba(61,220,132,.15);border:1px solid rgba(61,220,132,.3);color:var(--green);border-radius:6px;font-size:11px;font-weight:700;border:none}
-.freq-dec{padding:6px 12px;background:rgba(232,64,74,.12);border:1px solid rgba(232,64,74,.25);color:var(--red);border-radius:6px;font-size:11px;font-weight:700;border:none}
+.freq-acc{padding:6px 12px;background:rgba(61,220,132,.15);color:var(--green);border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
+.freq-dec{padding:6px 12px;background:rgba(232,64,74,.12);color:var(--red);border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
 .dm-msg{max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
-.dm-msg.me{background:var(--gold);color:#0a0c12;align-self:flex-end;border-bottom-right-radius:3px}
-.dm-msg.them{background:var(--card);border:1px solid var(--bdr);color:var(--t1);align-self:flex-start;border-bottom-left-radius:3px}
-.notif-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:absolute;top:2px;right:2px}
-
-/* TOURNAMENT REGISTRATION */
-.treg-modal .mbox{max-width:440px;max-height:90vh;overflow-y:auto;padding:20px}
-.treg-section{margin-bottom:18px}
-.treg-section h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
-.treg-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:10px;transition:border-color .2s}
+.dm-msg.me{background:var(--gold);color:#0a0c12;align-self:flex-end}
+.dm-msg.them{background:var(--card);border:1px solid var(--bdr);color:var(--t1);align-self:flex-start}
+.typing-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin:0 2px;animation:typingBounce .8s infinite ease-in-out}
+.typing-dot:nth-child(2){animation-delay:.15s}.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+/* TOURNAMENT REG */
+.treg-inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:10px}
 .treg-inp:focus{border-color:var(--gold)}
-.treg-label{font-size:12px;color:var(--t2);margin-bottom:5px;display:block}
 .treg-check{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:12px;color:var(--t2);line-height:1.5}
-.treg-check input{margin-top:2px;accent-color:var(--gold);flex-shrink:0;width:16px;height:16px}
+.treg-check input{margin-top:2px;accent-color:var(--gold)}
 .treg-disclaimer{background:rgba(232,64,74,.08);border:1px solid rgba(232,64,74,.2);border-radius:8px;padding:12px;font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:14px}
-.treg-disclaimer strong{color:var(--red)}
+.treg-success{text-align:center;padding:20px 10px}
+.treg-success i{font-size:48px;color:var(--green);margin-bottom:14px;display:block}
 .tour-detail-banner{background:linear-gradient(135deg,var(--g2),rgba(79,158,255,.08));border:1px solid var(--bdr);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
 .tour-detail-name{font-family:var(--ff);font-size:22px;font-weight:700;margin-bottom:4px}
 .tour-detail-game{font-size:12px;color:var(--t3);margin-bottom:12px}
 .tour-detail-stats{display:flex;justify-content:center;gap:20px}
-.tour-detail-stat{text-align:center}
 .tour-detail-stat .val{font-family:var(--ff);font-size:18px;font-weight:700;color:var(--gold)}
 .tour-detail-stat .lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
-.treg-success{text-align:center;padding:20px 10px}
-.treg-success i{font-size:48px;color:var(--green);margin-bottom:14px;display:block}
-.treg-success h3{font-family:var(--ff);font-size:20px;margin-bottom:10px;color:var(--green)}
-.treg-success p{font-size:13px;color:var(--t2);line-height:1.6}
-
-/* TYPING INDICATOR & NOTIFICATIONS */
-.typing-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin:0 2px;animation:typingBounce .8s infinite ease-in-out}
-.typing-dot:nth-child(2){animation-delay:.15s}
-.typing-dot:nth-child(3){animation-delay:.3s}
-@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
-.typing-wrap{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;color:var(--t3)}
-.notif-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
-.bBell-wrap{position:relative;display:inline-flex}
-.pchat-unread-dot{width:9px;height:9px;background:var(--gold);border-radius:50%;flex-shrink:0;box-shadow:0 0 6px var(--gold)}
-.support-typing{padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3)}
 </style>
 </head>
 <body>
@@ -454,41 +426,26 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 
 <!-- PAYMENT MODAL -->
 <div id="mPayment" class="mov hide">
-  <div class="mbox pay-modal">
+  <div class="mbox">
     <div class="mica"><i class="fas fa-wallet"></i></div>
-    <h3 id="payTitle">Add Funds</h3>
+    <h3 id="payTitle" style="color:var(--gold);margin-bottom:16px">Add Funds</h3>
     <div class="pay-step on" id="payStep1">
-      <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px">Choose Payment Method</p>
       <div class="pay-methods">
-        <div class="pay-method jc" id="pmJC">
-          <div class="pay-logo"><i class="fas fa-mobile-alt"></i></div>
-          <div><div class="pay-name" style="color:#00c060">JazzCash</div><div class="pay-sub">Mobile wallet · Instant</div></div>
-          <i class="fas fa-chevron-right pay-arrow"></i>
-        </div>
-        <div class="pay-method ep" id="pmEP">
-          <div class="pay-logo"><i class="fas fa-wallet"></i></div>
-          <div><div class="pay-name" style="color:#9b6fe0">EasyPaisa</div><div class="pay-sub">Mobile account · Instant</div></div>
-          <i class="fas fa-chevron-right pay-arrow"></i>
-        </div>
-        <div class="pay-method cc" id="pmCC">
-          <div class="pay-logo"><i class="fas fa-credit-card"></i></div>
-          <div><div class="pay-name" style="color:var(--blue)">Card / Bank</div><div class="pay-sub">Visa · Mastercard · HBL</div></div>
-          <i class="fas fa-chevron-right pay-arrow"></i>
-        </div>
+        <div class="pay-method jc" id="pmJC"><div class="pay-logo"><i class="fas fa-mobile-alt"></i></div><div><div style="font-size:13px;font-weight:700;color:#00c060">JazzCash</div><div style="font-size:11px;color:var(--t3)">0302-4686897 · Instant</div></div><i class="fas fa-chevron-right" style="margin-left:auto;color:var(--t3)"></i></div>
+        <div class="pay-method ep" id="pmEP"><div class="pay-logo"><i class="fas fa-wallet"></i></div><div><div style="font-size:13px;font-weight:700;color:#9b6fe0">EasyPaisa</div><div style="font-size:11px;color:var(--t3)">0315-9876543 · Instant</div></div><i class="fas fa-chevron-right" style="margin-left:auto;color:var(--t3)"></i></div>
+        <div class="pay-method cc" id="pmCC"><div class="pay-logo"><i class="fas fa-credit-card"></i></div><div><div style="font-size:13px;font-weight:700;color:var(--blue)">Card / Bank</div><div style="font-size:11px;color:var(--t3)">HBL · Visa · Mastercard</div></div><i class="fas fa-chevron-right" style="margin-left:auto;color:var(--t3)"></i></div>
       </div>
       <div class="mac"><button class="mbtn mcan" id="bClosePayment">Cancel</button></div>
     </div>
     <div class="pay-step" id="payStep2">
       <button class="pay-back" id="payBackBtn"><i class="fas fa-arrow-left"></i> Back</button>
-      <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Select Amount</p>
       <div class="pay-amt-row">
         <button class="pay-amt-chip" data-v="100">Rs 100</button>
         <button class="pay-amt-chip" data-v="200">Rs 200</button>
         <button class="pay-amt-chip" data-v="500">Rs 500</button>
         <button class="pay-amt-chip" data-v="1000">Rs 1000</button>
       </div>
-      <input class="pay-inp" id="payAmtInp" type="number" placeholder="Or type custom amount (min Rs 50)" min="50"/>
-      <p style="font-size:10px;color:var(--t3);margin-bottom:12px">1 PKR = 1 AX Coin</p>
+      <input class="pay-inp" id="payAmtInp" type="number" placeholder="Custom amount (min Rs 50)" min="50"/>
       <div class="pay-instr" id="payInstr"></div>
       <button class="pay-confirm" id="payConfirmBtn">Confirm Payment</button>
       <div class="mac" style="margin-top:10px"><button class="mbtn mcan" id="bClosePayment2">Cancel</button></div>
@@ -496,10 +453,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
   </div>
 </div>
 
-<!-- TOURNAMENT DETAIL + REGISTRATION MODAL -->
-<div class="mov hide treg-modal" id="mTourDetail">
-  <div class="mbox">
-    <!-- Step 1: Details -->
+<!-- TOURNAMENT DETAIL MODAL -->
+<div class="mov hide" id="mTourDetail" style="z-index:400">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto">
     <div id="tregStep1">
       <div class="tour-detail-banner">
         <div id="tdetName" class="tour-detail-name"></div>
@@ -509,68 +465,86 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
           <div class="tour-detail-stat"><div class="val" id="tdetPrize"></div><div class="lbl">Prize</div></div>
           <div class="tour-detail-stat"><div class="val" id="tdetStatus"></div><div class="lbl">Status</div></div>
         </div>
+        <div id="tdetExtra" style="font-size:11px;color:var(--t3);margin-top:8px"></div>
       </div>
-      <div class="treg-disclaimer">
-        <strong>⚠️ Disclaimer:</strong> If any child activity, false information, cheating, or rule violation is detected, the entry fee will <strong>not be refunded</strong> and the account may be temporarily or permanently banned.
-      </div>
+      <div class="treg-disclaimer"><strong>⚠️ Disclaimer:</strong> If any child activity, false information, cheating, or rule violation is detected, the entry fee will <strong>not be refunded</strong> and the account may be temporarily or permanently banned.</div>
       <div class="mac" style="gap:10px">
         <button class="mbtn mcan" id="bCloseTourDetail">Close</button>
         <button class="mbtn" id="bParticipate" style="background:var(--gold);color:#0a0c12;font-weight:700"><i class="fas fa-gamepad"></i> Participate</button>
       </div>
     </div>
-    <!-- Step 2: Registration Form -->
     <div id="tregStep2" class="hide">
-      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px"><i class="fas fa-user-edit"></i> Registration Form</h3>
-      <div class="treg-section">
-        <h4>Player Information</h4>
-        <label class="treg-label">Real Name *</label>
-        <input class="treg-inp" id="tregRealName" placeholder="Your full name"/>
-        <label class="treg-label">In-Game Name *</label>
-        <input class="treg-inp" id="tregGameName" placeholder="Your in-game username"/>
-        <label class="treg-label">Game UID *</label>
-        <input class="treg-inp" id="tregUID" placeholder="Your game UID/ID"/>
-        <label class="treg-label">Age *</label>
-        <input class="treg-inp" id="tregAge" placeholder="Your age" type="number" min="10" max="99"/>
-      </div>
-      <div class="treg-section">
-        <h4>Rules Agreement</h4>
-        <label class="treg-check"><input type="checkbox" id="tregCheck1"/> I confirm that I will not use hacks, cheats, panels, or any illegal software.</label>
-        <label class="treg-check"><input type="checkbox" id="tregCheck2"/> I understand that the match will be monitored by administrators and any suspicious activity may result in a permanent ban and no refund.</label>
-      </div>
+      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px">Registration Form</h3>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">Real Name *</label>
+      <input class="treg-inp" id="tregRealName" placeholder="Your full name"/>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">In-Game Name *</label>
+      <input class="treg-inp" id="tregGameName" placeholder="Your in-game username"/>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">Game UID *</label>
+      <input class="treg-inp" id="tregUID" placeholder="Your game UID"/>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">Age *</label>
+      <input class="treg-inp" id="tregAge" placeholder="Your age" type="number"/>
+      <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px">Rules Agreement</h4>
+      <label class="treg-check"><input type="checkbox" id="tregCheck1"/> I will not use hacks, cheats, or any illegal software.</label>
+      <label class="treg-check"><input type="checkbox" id="tregCheck2"/> I understand matches are monitored and violations result in permanent ban.</label>
       <div class="mac" style="gap:10px">
-        <button class="mbtn" id="tregDecline" style="background:rgba(232,64,74,.15);color:var(--red);border:1px solid rgba(232,64,74,.25)"><i class="fas fa-times"></i> Decline</button>
-        <button class="mbtn" id="tregAgree" style="background:var(--gold);color:#0a0c12;font-weight:700"><i class="fas fa-check"></i> Agree & Continue</button>
+        <button class="mbtn mcan" id="tregDecline">Decline</button>
+        <button class="mbtn" id="tregAgree" style="background:var(--gold);color:#0a0c12;font-weight:700">Agree & Continue</button>
       </div>
     </div>
-    <!-- Step 3: Payment -->
     <div id="tregStep3" class="hide">
-      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px"><i class="fas fa-receipt"></i> Payment</h3>
-      <div class="treg-section">
-        <h4>Entry Fee Payment</h4>
-        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.7">
-          Send entry fee to:<br>
-          <strong style="color:var(--t1)">JazzCash: 0302-4686897</strong><br>
-          <strong style="color:var(--t1)">EasyPaisa: 0315-9876543</strong><br>
-          Reference: <strong style="color:var(--gold)" id="tregTourRef"></strong>
-        </div>
-        <label class="treg-label">Transaction ID / Token *</label>
-        <input class="treg-inp" id="tregTxnId" placeholder="e.g. TXN123456789"/>
-        <label class="treg-label">Payment Screenshot (optional)</label>
-        <input class="treg-inp" id="tregScreenshot" placeholder="Paste image URL or describe payment"/>
+      <h3 style="color:var(--gold);font-family:var(--ff);margin-bottom:16px">Payment</h3>
+      <div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.7">
+        JazzCash: <strong style="color:var(--t1)">0302-4686897</strong><br>
+        EasyPaisa: <strong style="color:var(--t1)">0315-9876543</strong><br>
+        Ref: <strong style="color:var(--gold)" id="tregTourRef"></strong>
       </div>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">Transaction ID *</label>
+      <input class="treg-inp" id="tregTxnId" placeholder="e.g. TXN123456789"/>
+      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px">Payment Screenshot (optional)</label>
+      <input class="treg-inp" id="tregScreenshot" placeholder="Image URL or description"/>
       <div class="mac" style="gap:10px">
         <button class="mbtn mcan" id="tregBack">Back</button>
-        <button class="mbtn" id="tregSubmit" style="background:var(--green);color:#0a0c12;font-weight:700"><i class="fas fa-paper-plane"></i> Submit Registration</button>
+        <button class="mbtn" id="tregSubmit" style="background:var(--green);color:#0a0c12;font-weight:700">Submit Registration</button>
       </div>
     </div>
-    <!-- Step 4: Success -->
     <div id="tregStep4" class="hide">
       <div class="treg-success">
         <i class="fas fa-check-circle"></i>
-        <h3>Registration Submitted!</h3>
-        <p>Please wait for an administrator to review your application.<br><br>You will receive a notification once your request is <strong>accepted</strong> or <strong>rejected</strong>.</p>
+        <h3 style="color:var(--green);font-family:var(--ff)">Registration Submitted!</h3>
+        <p style="font-size:13px;color:var(--t2);line-height:1.6">Please wait for an administrator to review your application. You will receive a notification once accepted or rejected.</p>
         <button class="mbtn" id="tregDone" style="background:var(--gold);color:#0a0c12;font-weight:700;margin-top:16px;width:100%">Done</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- FRIEND ADD MODAL -->
+<div class="mov hide" id="mAddFriend">
+  <div class="mbox">
+    <div class="mica"><i class="fas fa-user-plus"></i></div>
+    <h3 style="color:var(--gold);margin-bottom:14px">Add Friend</h3>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:12px">Enter the player handle (e.g. @username#1234)</p>
+    <input id="friendHandleInp" style="width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:12px" placeholder="@handle#1234"/>
+    <div id="friendSearchResult" style="margin-bottom:12px"></div>
+    <div class="mac">
+      <button class="mbtn mcan" id="bCloseAddFriend">Cancel</button>
+      <button class="mbtn" id="bSendFriendReq" style="background:var(--gold);color:#0a0c12">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- DM CHAT MODAL -->
+<div class="mov hide" id="mDMChat">
+  <div class="mbox" style="padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--panel)">
+      <img id="dmChatAv" src="" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--bdr)"/>
+      <div style="flex:1"><div id="dmChatName" style="font-weight:700;font-size:14px"></div><div id="dmTypingLabel" style="font-size:10px;color:var(--t3)">Online</div></div>
+      <button onclick="document.getElementById('mDMChat').classList.add('hide')" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="dmMsgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div>
+    <div style="padding:10px 14px;border-top:1px solid var(--bdr);display:flex;gap:8px;background:var(--panel)">
+      <input id="dmInp" style="flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none" placeholder="Type a message..."/>
+      <button id="dmSendBtn" style="width:40px;height:40px;background:var(--gold);border:none;border-radius:8px;color:#0a0c12;font-size:14px"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
@@ -580,7 +554,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
   <nav class="topbar">
     <div class="lsm"><i class="fas fa-trophy"></i>Arena<span>X</span></div>
     <div class="tr">
-      <div class="nbell" id="bBell"><i class="fas fa-bell"></i><span class="ndot" style="display:none"></span></div>
+      <div class="nbell" id="bBell"><i class="fas fa-bell"></i><span class="ndot"></span></div>
       <div class="uav"><img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax"/></div>
     </div>
   </nav>
@@ -670,43 +644,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
     <!-- PLAYER CHAT TAB -->
     <section id="tChat" class="tab">
       <div class="sh"><h2><i class="fas fa-comments"></i> Player Chat</h2>
-        <button id="btnAddFriend" style="background:var(--g2);border:1px solid var(--g3);color:var(--gold);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;font-family:var(--fb)"><i class="fas fa-user-plus"></i> Add Friend</button>
+        <button id="btnAddFriend" style="background:var(--g2);border:1px solid var(--g3);color:var(--gold);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;font-family:var(--fb);cursor:pointer"><i class="fas fa-user-plus"></i> Add Friend</button>
       </div>
-      <!-- Friend Requests -->
       <div id="friendReqsWrap" class="hide" style="margin-bottom:12px"></div>
-      <!-- Friends List -->
       <div id="chatListWrap">
         <div class="pchat-list" id="friendsList">
           <div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Add someone!</p></div>
-        </div>
-      </div>
-      <!-- Add Friend Modal -->
-      <div class="mov hide" id="mAddFriend">
-        <div class="mbox">
-          <div class="mica"><i class="fas fa-user-plus"></i></div>
-          <h3 style="color:var(--gold);margin-bottom:14px">Add Friend</h3>
-          <p style="font-size:12px;color:var(--t2);margin-bottom:12px">Enter the player's handle (e.g. @username#1234)</p>
-          <input id="friendHandleInp" style="width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--t1);font-family:var(--fb);outline:none;margin-bottom:12px" placeholder="@handle#1234"/>
-          <div id="friendSearchResult" style="margin-bottom:12px"></div>
-          <div class="mac">
-            <button class="mbtn mcan" id="bCloseAddFriend">Cancel</button>
-            <button class="mbtn" id="bSendFriendReq" style="background:var(--gold);color:#0a0c12">Send Request</button>
-          </div>
-        </div>
-      </div>
-      <!-- DM Chat Modal -->
-      <div class="mov hide" id="mDMChat">
-        <div class="mbox" style="padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--panel)">
-            <img id="dmChatAv" src="" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--bdr)"/>
-            <div style="flex:1"><div id="dmChatName" style="font-weight:700;font-size:14px"></div><div style="font-size:10px;color:var(--green)">● Online</div></div>
-            <button onclick="document.getElementById('mDMChat').classList.add('hide')" style="background:none;border:none;color:var(--t2);font-size:18px"><i class="fas fa-times"></i></button>
-          </div>
-          <div id="dmMsgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div><div id="dmTyping" class="typing-wrap hide"><span style="font-size:11px;color:var(--t3)" id="dmTypingName"></span><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
-          <div style="padding:10px 14px;border-top:1px solid var(--bdr);display:flex;gap:8px;background:var(--panel)">
-            <input id="dmInp" style="flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--t1);font-family:var(--fb);outline:none" placeholder="Type a message..."/>
-            <button id="dmSendBtn" style="width:40px;height:40px;background:var(--gold);border:none;border-radius:8px;color:#0a0c12;font-size:14px"><i class="fas fa-paper-plane"></i></button>
-          </div>
         </div>
       </div>
     </section>
@@ -741,7 +684,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
             </div>
           </div>
         </div>
-        <div id="supportTyping" class="support-typing hide"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span><span style="margin-left:4px">Admin is typing...</span></div>
         <div class="cir">
           <input class="ci" id="chatIn" placeholder="Type your message..."/>
           <button class="cs" id="chatSend"><i class="fas fa-paper-plane"></i></button>
@@ -763,17 +705,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fb)
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDocs,deleteDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig={apiKey:"AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",authDomain:"arenax-c1586.firebaseapp.com",projectId:"arenax-c1586",storageBucket:"arenax-c1586.firebasestorage.app",messagingSenderId:"1069776825982",appId:"1:1069776825982:web:f2d7f11cef4c206206b22f"};
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const gProvider=new GoogleAuthProvider();
 const db=getFirestore(app);
-let _chatUnsub=null;
 window._fbAuth=auth;
 window._fbDb=db;
-window._fsExtra={setDoc,doc};
 const $=id=>document.getElementById(id);
 const App={user:null,guest:false,premium:false,selectedPlan:'weekly'};
 const AVATAR_SEEDS=['ax1','ax2','ax3','ax4','bot1','bot2','bot3','bot4'];
@@ -788,287 +728,6 @@ function showErr(msg){
   e.textContent=msg;setTimeout(()=>{if(e)e.textContent=''},4000);
 }
 function shake(id){const el=$(id);if(!el)return;el.style.borderColor='#e8404a';el.style.animation='sk .4s ease';setTimeout(()=>{el.style.borderColor='';el.style.animation=''},500)}
-
-  // ── FRIEND SYSTEM ──
-  let _activeDMId=null, _dmUnsub=null, _friendsUnsub=null, _reqUnsub=null;
-
-  function loadFriends(){
-    if(!auth.currentUser||App.guest)return;
-    const uid=auth.currentUser.uid;
-    // Listen to friends list
-    if(_friendsUnsub)_friendsUnsub();
-    _friendsUnsub=onSnapshot(collection(db,'users',uid,'friends'),snap=>{
-      const list=$('friendsList');
-      if(snap.empty){list.innerHTML='<div class="es"><i class="fas fa-user-friends"></i><p>No friends yet. Tap Add Friend!</p></div>';return;}
-      list.innerHTML='';
-      snap.forEach(d=>{
-        const f=d.data();
-        const div=document.createElement('div');
-        div.className='pchat-item';
-        div.style.cursor='pointer';
-        div.innerHTML=`<div class="pchat-av"><img src="${f.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+f.uid}"/></div><div style="flex:1"><div class="pchat-name">${f.name}</div><div class="pchat-last">${f.handle}</div></div><i class="fas fa-chevron-right" style="color:var(--t3);font-size:11px"></i>`;
-        div.addEventListener('click',()=>openDM(f));
-        list.appendChild(div);
-      });
-    });
-    // Listen to incoming requests
-    if(_reqUnsub)_reqUnsub();
-    _reqUnsub=onSnapshot(collection(db,'users',uid,'friendRequests'),snap=>{
-      const wrap=$('friendReqsWrap');
-      if(snap.empty){wrap.classList.add('hide');wrap.innerHTML='';return;}
-      wrap.classList.remove('hide');
-      wrap.innerHTML='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Friend Requests</div>';
-      snap.forEach(d=>{
-        const r=d.data();
-        wrap.innerHTML+=`<div class="freq-card">
-          <img class="freq-av" src="${r.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+r.uid}"/>
-          <div class="freq-info"><div class="freq-name">${r.name}</div><div class="freq-handle">${r.handle}</div></div>
-          <div class="freq-btns">
-            <button class="freq-acc" onclick="acceptFriend('${d.id}','${r.uid}','${r.name}','${r.handle}','${r.av||''}')"><i class="fas fa-check"></i></button>
-            <button class="freq-dec" onclick="declineFriend('${d.id}')"><i class="fas fa-times"></i></button>
-          </div>
-        </div>`;
-      });
-    });
-  }
-
-  // Add Friend Modal
-  if($('btnAddFriend'))$('btnAddFriend').addEventListener('click',()=>{
-    if(App.guest){alert('Create an account first!');return;}
-    $('friendHandleInp').value='';$('friendSearchResult').innerHTML='';
-    $('mAddFriend').classList.remove('hide');
-  });
-  if($('bCloseAddFriend'))$('bCloseAddFriend').addEventListener('click',()=>$('mAddFriend').classList.add('hide'));
-  // Report tournament hack/cheat
-  function reportTour(tourId, tourName){
-    if(App.guest){alert('Login to report!');return;}
-    const reason=prompt('Describe the issue (e.g. player using hacks, cheating):');
-    if(!reason||!reason.trim())return;
-    addDoc(collection(db,'tournament_reports'),{
-      tournamentId:tourId,tournamentName:tourName,
-      reporterId:auth.currentUser?.uid,reporterName:App.user?.name||'',
-      reason:reason.trim(),status:'open',createdAt:serverTimestamp()
-    }).then(()=>alert('✅ Report submitted! Admin will review within 24 hours.'))
-      .catch(e=>alert('Error: '+e.message));
-  }
-  window.reportTour=reportTour;
-
-  if($('mAddFriend'))$('mAddFriend').addEventListener('click',e=>{if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide')});
-
-  // Search player by handle
-  let _searchTimer=null;
-  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',()=>{
-    clearTimeout(_searchTimer);
-    const h=$('friendHandleInp').value.trim().toLowerCase();
-    const res=$('friendSearchResult');
-    if(h.length<3){res.innerHTML='';return;}
-    res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
-    _searchTimer=setTimeout(async()=>{
-      try{
-        const snap=await getDocs(collection(db,'users'));
-        let found=null;
-        snap.forEach(d=>{
-          const u=d.data();
-          const handle=(u.handle||'').toLowerCase();
-          if(handle===h||handle.includes(h))found={id:d.id,...u};
-        });
-        if(!found||found.uid===auth.currentUser.uid){
-          res.innerHTML='<div style="font-size:12px;color:var(--red)">❌ Player not found. Check the handle.</div>';return;
-        }
-        res.innerHTML=`<div class="freq-card"><img class="freq-av" src="${found.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+(found.uid||'x')}"/><div class="freq-info"><div class="freq-name">${found.name||'Player'}</div><div class="freq-handle">${found.handle||''}</div></div><span style="color:var(--green);font-size:11px">✓ Found</span></div>`;
-        $('bSendFriendReq').dataset.targetId=found.uid||found.id;
-        $('bSendFriendReq').dataset.targetName=found.name||'Player';
-        $('bSendFriendReq').dataset.targetHandle=found.handle||'';
-        $('bSendFriendReq').dataset.targetAv=found.av||'';
-      }catch(e){
-        console.error('Search error:',e);
-        res.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>';
-      }
-    },500);
-  });
-
-  if($('bSendFriendReq'))$('bSendFriendReq').addEventListener('click',async()=>{
-    const tid=$('bSendFriendReq').dataset.targetId;
-    if(!tid){alert('Search for a player first!');return;}
-    const me=auth.currentUser;
-    const myData=App.user;
-    try{
-      await setDoc(doc(db,'users',tid,'friendRequests',me.uid),{
-        uid:me.uid,name:myData.name,handle:myData.handle,
-        av:myData.av||'',sentAt:serverTimestamp()
-      });
-      $('mAddFriend').classList.add('hide');
-      alert('Friend request sent! ✅');
-    }catch(e){alert('Error: '+e.message);}
-  });
-
-  window.acceptFriend=async function(reqId,fromUid,fromName,fromHandle,fromAv){
-    const me=auth.currentUser;
-    const myData=App.user;
-    try{
-      // Add to both users' friends
-      await setDoc(doc(db,'users',me.uid,'friends',fromUid),{uid:fromUid,name:fromName,handle:fromHandle,av:fromAv,addedAt:serverTimestamp()});
-      await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name,handle:myData.handle,av:myData.av||'',addedAt:serverTimestamp()});
-      // Remove request
-      await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
-      alert('✅ Friend added: '+fromName);
-    }catch(e){alert('Error: '+e.message);}
-  };
-
-  window.declineFriend=async function(reqId){
-    try{
-      await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));
-    }catch(e){}
-  };
-
-  // DM Chat
-  function openDM(friend){
-    _activeDMId=friend.uid;
-    $('dmChatName').textContent=friend.name;
-    $('dmChatAv').src=friend.av||'https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid;
-    $('dmMsgs').innerHTML='';
-    $('mDMChat').classList.remove('hide');
-    listenDMTyping(friend.uid,friend.name);
-    // Clear unread dot
-    document.querySelectorAll('.pchat-item').forEach(item=>{
-      if(item.querySelector('.pchat-name')?.textContent===friend.name){
-        item.querySelector('.pchat-unread-dot')?.remove();
-      }
-    });
-    if(_dmUnsub)_dmUnsub();
-    const chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
-    const q=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
-    _dmUnsub=onSnapshot(q,snap=>{
-      $('dmMsgs').innerHTML='';
-      snap.forEach(d=>{
-        const m=d.data();
-        const isMe=m.sender===auth.currentUser.uid;
-        const div=document.createElement('div');
-        div.className='dm-msg '+(isMe?'me':'them');
-        div.textContent=m.text;
-        $('dmMsgs').appendChild(div);
-      });
-      $('dmMsgs').scrollTop=9999;
-    });
-  }
-
-  if($('dmSendBtn'))$('dmSendBtn').addEventListener('click',sendDM);
-  if($('dmInp'))$('dmInp').addEventListener('keydown',e=>{if(e.key==='Enter')sendDM()});
-  async function sendDM(){
-    const txt=$('dmInp').value.trim();
-    if(!txt||!_activeDMId)return;
-    $('dmInp').value='';
-    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
-    try{
-      await addDoc(collection(db,'dms',chatId,'messages'),{
-        text:txt,sender:auth.currentUser.uid,
-        senderName:App.user.name,createdAt:serverTimestamp()
-      });
-    }catch(e){console.error('DM error:',e);}
-  }
-
-  if($('mDMChat'))$('mDMChat').addEventListener('click',e=>{
-    if(e.target===$('mDMChat')){
-      $('mDMChat').classList.add('hide');
-      if(_dmUnsub){_dmUnsub();_dmUnsub=null;}
-    }
-  });
-
-
-  // ── TYPING INDICATORS ──
-  let _dmTypingTimer=null;
-  let _supportTypingTimer=null;
-
-  // DM typing — send typing status to Firestore
-  if($('dmInp'))$('dmInp').addEventListener('input',()=>{
-    if(!_activeDMId||!auth.currentUser)return;
-    const chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
-    setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{
-      uid:auth.currentUser.uid,name:App.user?.name||'',
-      chatId,typing:true,updatedAt:serverTimestamp()
-    },{merge:true}).catch(()=>{});
-    clearTimeout(_dmTypingTimer);
-    _dmTypingTimer=setTimeout(()=>{
-      setDoc(doc(db,'typing',chatId+'_'+auth.currentUser.uid),{typing:false},{merge:true}).catch(()=>{});
-    },2000);
-  });
-
-  // Listen for other person typing in DM
-  function listenDMTyping(friendId,friendName){
-    if(!auth.currentUser)return;
-    const chatId=[auth.currentUser.uid,friendId].sort().join('_');
-    const typingDocId=chatId+'_'+friendId;
-    onSnapshot(doc(db,'typing',typingDocId),snap=>{
-      const data=snap.data();
-      const typingEl=$('dmTyping');
-      const nameEl=$('dmTypingName');
-      if(data?.typing&&typingEl){
-        nameEl.textContent=friendName+' is typing';
-        typingEl.classList.remove('hide');
-        $('dmMsgs').scrollTop=9999;
-      } else if(typingEl){
-        typingEl.classList.add('hide');
-      }
-    });
-  }
-
-  // Support typing for admin
-  if($('chatIn'))$('chatIn').addEventListener('input',()=>{
-    if(!auth.currentUser||App.guest)return;
-    const ticketId=auth.currentUser.uid+'_ticket';
-    setDoc(doc(db,'typing','support_'+ticketId),{
-      uid:auth.currentUser.uid,typing:true,updatedAt:serverTimestamp()
-    },{merge:true}).catch(()=>{});
-    clearTimeout(_supportTypingTimer);
-    _supportTypingTimer=setTimeout(()=>{
-      setDoc(doc(db,'typing','support_'+ticketId),{typing:false},{merge:true}).catch(()=>{});
-    },2000);
-  });
-
-  // ── UNREAD NOTIFICATIONS BADGE ──
-  function listenNotifications(){
-    if(!auth.currentUser||App.guest)return;
-    const uid=auth.currentUser.uid;
-    let firstLoad=true;
-    onSnapshot(collection(db,'notifications'),snap=>{
-      let unread=0;
-      let latestMsg=null;
-      let latestType=null;
-      snap.forEach(d=>{
-        const n=d.data();
-        if(n.userId===uid&&!n.read){
-          unread++;
-          if(!latestMsg){latestMsg=n.message;latestType=n.type;}
-        }
-      });
-      const ndot=$('bBell')?.parentElement?.querySelector('.ndot');
-      if(ndot)ndot.style.display=unread>0?'block':'none';
-      // Show popup for new notification (not on first load)
-      if(!firstLoad&&latestMsg){
-        showNotifPopup(latestMsg,latestType);
-      }
-      firstLoad=false;
-    });
-  }
-
-  function showNotifPopup(msg,type){
-    const existing=document.getElementById('notifPopup');
-    if(existing)existing.remove();
-    const div=document.createElement('div');
-    div.id='notifPopup';
-    div.style.cssText='position:fixed;top:70px;right:14px;max-width:280px;background:var(--panel);border:1px solid '+(type==='approved'?'var(--green)':type==='rejected'?'var(--red)':'var(--gold)')+';border-radius:12px;padding:14px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:13px;line-height:1.5;animation:fadeIn .3s';
-    div.innerHTML=msg+'<div style="margin-top:8px;font-size:11px;color:var(--t3)">Tap to dismiss</div>';
-    div.addEventListener('click',()=>div.remove());
-    document.body.appendChild(div);
-    setTimeout(()=>div?.remove(),6000);
-  }
-
-
-  // ── FRIEND UNREAD DOT ──
-  function listenFriendMessages(){
-    // Simple version - no nested listeners to avoid complexity
-  }
-
 
 // ── BOOT ──
 function boot(){
@@ -1098,115 +757,102 @@ function boot(){
   }
   // premium
   updatePremiumUI();
-  loadToursFromFirestore();
+  renderTours('all');
   switchTab('Profile');
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
   document.querySelector('.ni[data-t="Profile"]').classList.add('on');
   goTo('sDash');
   startChatListener();
-  try{listenNotifications();}catch(e){console.log('notif:',e);}
-  try{loadFriends();}catch(e){console.log('friends:',e);}
+  loadToursFromFirestore();
+  loadFriendsSystem();
+  listenNotifications();
 }
 
 function updatePremiumUI(){
   if(App.premium){
-    if($('bPrm'))$('bPrm').classList.remove('hide');
-    if($('prmBanner'))$('prmBanner').classList.remove('hide');
-    if($('prmPromo'))$('prmPromo').classList.add('hide');
-    if($('profileCard'))$('profileCard').classList.add('prm-glow');
+    $('bPrm').classList.remove('hide');
+    $('prmBanner').classList.remove('hide');
+    $('prmPromo').classList.add('hide');
+    $('profileCard').classList.add('prm-glow');
   } else {
-    if($('bPrm'))$('bPrm').classList.add('hide');
-    if($('prmBanner'))$('prmBanner').classList.add('hide');
-    if(!App.guest&&$('prmPromo'))$('prmPromo').classList.remove('hide');
-    if($('profileCard'))$('profileCard').classList.remove('prm-glow');
+    $('bPrm').classList.add('hide');
+    $('prmBanner').classList.add('hide');
+    if(!App.guest)$('prmPromo').classList.remove('hide');
+    $('profileCard').classList.remove('prm-glow');
   }
 }
 
 // ── TABS ──
-function switchTab(name){document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));$('t'+name).classList.add('on');if(name==='Chat'&&!App.guest){try{loadFriends();}catch(e){}}}
+function switchTab(name){document.querySelectorAll('.tab').forEach(function(s){s.classList.remove('on');});$('t'+name).classList.add('on');if(name==='Chat'&&!App.guest){try{loadFriendsSystem();}catch(e){}}}
 
 // ── TOURNAMENTS ──
 let _toursData=[];
+let _userRegs={};
+
 function renderTours(f){
-  const list=$('tList');
-  const data=f==='all'?_toursData:_toursData.filter(t=>(t.status||t.s)===f);
-  if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return}
-  const _uid=auth.currentUser?.uid||'';
+  const list=document.getElementById('tList');
+  const data=f==='all'?_toursData:_toursData.filter(function(t){return (t.status||t.s)===f;});
   list.innerHTML='';
+  if(!data.length){list.innerHTML='<div class="es"><i class="fas fa-calendar-times"></i><p>No tournaments here.</p></div>';return;}
   data.forEach(function(t){
     var reg=_userRegs[t.id];
     var rs=reg?reg.status:null;
     var div=document.createElement('div');
-    div.className='tcard';
-    div.dataset.id=t.id;
+    div.className='tcard';div.dataset.id=t.id;
     if(rs==='approved'){div.style.borderColor='var(--green)';div.style.background='rgba(61,220,132,.05)';}
     else if(rs==='rejected'){div.style.borderColor='var(--red)';div.style.background='rgba(232,64,74,.05)';}
     var status=t.status||t.s||'upcoming';
-    var statusClass=status==='live'?'slv':status==='upcoming'?'sup':'send';
-    var statusLabel=status==='live'?'Live':status==='upcoming'?'Upcoming':'Ended';
+    var sc=status==='live'?'slv':status==='upcoming'?'sup':'send';
+    var sl=status==='live'?'Live':status==='upcoming'?'Upcoming':'Ended';
     var tt=document.createElement('div');tt.className='tt';
-    var nameDiv=document.createElement('div');
-    var tnDiv=document.createElement('div');tnDiv.className='tn';tnDiv.textContent=t.name||t.n||'';
-    var tgDiv=document.createElement('div');tgDiv.className='tg';tgDiv.textContent=t.game||t.g||'Grand RP Mobile';
-    nameDiv.appendChild(tnDiv);nameDiv.appendChild(tgDiv);
-    var tsDiv=document.createElement('div');tsDiv.className='ts '+statusClass;tsDiv.textContent=statusLabel;
-    if(status==='live'){var dot=document.createElement('span');dot.textContent='🔴 ';tsDiv.insertBefore(dot,tsDiv.firstChild);}
-    tt.appendChild(nameDiv);tt.appendChild(tsDiv);
-    div.appendChild(tt);
+    var nd=document.createElement('div');
+    var tn=document.createElement('div');tn.className='tn';tn.textContent=t.name||t.n||'';
+    var tg=document.createElement('div');tg.className='tg';tg.textContent=t.game||t.g||'Grand RP Mobile';
+    nd.appendChild(tn);nd.appendChild(tg);
+    var ts=document.createElement('div');ts.className='ts '+sc;ts.textContent=(status==='live'?'🔴 ':'')+sl;
+    tt.appendChild(nd);tt.appendChild(ts);div.appendChild(tt);
     var dr=document.createElement('div');dr.className='tdrow';
     var pl=document.createElement('div');pl.className='tdi';pl.innerHTML='<i class="fas fa-users"></i> '+(t.registered||0)+'/'+(t.maxPlayers||t.p||32);
-    var pr=document.createElement('div');pr.className='tdi';pr.innerHTML='<i class="fas fa-coins"></i> '+(t.prize||t.pr||'TBD');
-    dr.appendChild(pl);dr.appendChild(pr);
+    var pr2=document.createElement('div');pr2.className='tdi';pr2.innerHTML='<i class="fas fa-coins"></i> '+(t.prize||t.pr||'TBD');
+    dr.appendChild(pl);dr.appendChild(pr2);
     if(t.date){var dd=document.createElement('div');dd.className='tdi';dd.innerHTML='<i class="fas fa-calendar"></i> '+t.date;dr.appendChild(dd);}
-    if(t.time){var td=document.createElement('div');td.className='tdi';td.innerHTML='<i class="fas fa-clock"></i> '+t.time;dr.appendChild(td);}
+    if(t.time){var td2=document.createElement('div');td2.className='tdi';td2.innerHTML='<i class="fas fa-clock"></i> '+t.time;dr.appendChild(td2);}
     div.appendChild(dr);
-    if(t.entryFee){var fee=document.createElement('div');fee.style.cssText='font-size:11px;color:var(--t3);margin-top:4px';fee.innerHTML='<i class="fas fa-ticket-alt"></i> Entry: '+t.entryFee;div.appendChild(fee);}
-    if(rs){var rb=document.createElement('div');rb.style.cssText='font-size:12px;font-weight:700;margin-top:6px';rb.style.color=rs==='approved'?'var(--green)':rs==='rejected'?'var(--red)':'var(--gold)';rb.textContent=rs==='approved'?'You are Registered!':rs==='rejected'?'Registration Declined':'Registration Pending...';div.appendChild(rb);}
-    var rBtn=document.createElement('button');rBtn.style.cssText='width:100%;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);color:var(--red);border-radius:8px;padding:6px;font-size:11px;font-weight:600;margin-top:8px';
+    if(t.entryFee){var fe=document.createElement('div');fe.style.cssText='font-size:11px;color:var(--t3);margin-top:4px';fe.innerHTML='<i class="fas fa-ticket-alt"></i> Entry: '+t.entryFee;div.appendChild(fe);}
+    if(rs){var rb=document.createElement('div');rb.style.cssText='font-size:12px;font-weight:700;margin-top:6px';rb.style.color=rs==='approved'?'var(--green)':rs==='rejected'?'var(--red)':'var(--gold)';rb.textContent=rs==='approved'?'You are Registered!':rs==='rejected'?'Registration Declined':'Pending...';div.appendChild(rb);}
+    var rBtn=document.createElement('button');rBtn.style.cssText='width:100%;background:rgba(232,64,74,.1);border:1px solid rgba(232,64,74,.2);color:var(--red);border-radius:8px;padding:6px;font-size:11px;font-weight:600;margin-top:8px;cursor:pointer';
     rBtn.innerHTML='<i class="fas fa-flag"></i> Report Hack/Cheat';
-    rBtn.addEventListener('click',function(e){e.stopPropagation();reportTour(t.id,t.name||t.n||'');});
+    rBtn.addEventListener('click',function(e){e.stopPropagation();reportHack(t.id,t.name||t.n||'');});
     div.appendChild(rBtn);
+    div.addEventListener('click',function(){openTourDetail(t);});
     list.appendChild(div);
   });
-  list.querySelectorAll('.tcard').forEach(c=>{
-    c.addEventListener('click',()=>{
-      const t=_toursData.find(x=>x.id==c.dataset.id);if(!t)return;
-      openTourDetail(t);
-    });
-  });
 }
-let _userRegs={};
+
 function loadToursFromFirestore(){
   try{
-    const q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
-    onSnapshot(q,snap=>{
+    var q=query(collection(db,'tournaments'),orderBy('createdAt','desc'));
+    onSnapshot(q,function(snap){
       if(snap.empty){
         _toursData=[
           {id:'d1',name:'Grand RP Open Cup',game:'Grand RP Mobile',status:'live',registered:48,maxPlayers:64,prize:'5,000 AX'},
           {id:'d2',name:'City Champions League',game:'Grand RP Mobile',status:'upcoming',registered:12,maxPlayers:32,prize:'10,000 AX'},
-          {id:'d3',name:'Spring Series Finals',game:'Grand RP Mobile',status:'ended',registered:64,maxPlayers:64,prize:'20,000 AX'},
         ];
       } else {
         _toursData=[];
-        snap.forEach(d=>_toursData.push({id:d.id,...d.data()}));
+        snap.forEach(function(d){_toursData.push(Object.assign({id:d.id},d.data()));});
       }
-      const activeFilter=document.querySelector('.fb.on')?.dataset?.f||'all';
-      renderTours(activeFilter);
-    });
-    // Listen to user's own registrations
-    if(auth.currentUser&&!App.guest){
-      const q2=query(collection(db,'tournament_registrations'));
-      onSnapshot(q2,snap=>{
-        _userRegs={};
-        snap.forEach(d=>{
-          const r=d.data();
-          if(r.userId===auth.currentUser?.uid)_userRegs[r.tournamentId]={status:r.status,id:d.id};
+      if(auth.currentUser){
+        onSnapshot(collection(db,'tournament_registrations'),function(s2){
+          _userRegs={};
+          s2.forEach(function(d){var r=d.data();if(r.userId===auth.currentUser.uid)_userRegs[r.tournamentId]={status:r.status};});
+          var af=document.querySelector('.fb.on');renderTours(af?af.dataset.f:'all');
         });
-        const f=document.querySelector('.fb.on')?.dataset?.f||'all';
-        renderTours(f);
-      });
-    }
-  }catch(e){console.error('Tours error:',e);}
+      } else {
+        var af=document.querySelector('.fb.on');renderTours(af?af.dataset.f:'all');
+      }
+    });
+  }catch(e){console.error('Tours:',e);}
 }
 // ── WALLET ──
 function addTx(type,amt){
@@ -1218,106 +864,79 @@ function addTx(type,amt){
   h.appendChild(r);
 }
 
-// ── CHAT BOT (Smart + Human Handoff) ──
-let _escalated=false;
-
-const _botRules=[
-  {keys:['jazzcash','jazz cash'],reply:'To deposit via JazzCash: Open JazzCash app → Send Money → 0302-4686897 (ArenaX) → enter amount → tap Confirm. Coins will be added instantly! ✅'},
-  {keys:['easypaisa','easy paisa'],reply:'To deposit via EasyPaisa: Open app → Send Money → 0315-9876543 (ArenaX) → enter amount → confirm. Coins credited within 5 minutes! ✅'},
-  {keys:['deposit','add coins','add money','recharge','fund'],reply:'Go to Wallet → tap Deposit → choose JazzCash or EasyPaisa → enter amount → confirm. Minimum deposit is Rs 50. 💰'},
-  {keys:['withdraw','withdrawal'],reply:'Go to Wallet → tap Withdraw → enter amount → confirm. Processing takes 24-48 hours. 📤'},
-  {keys:['balance','coins','wallet'],reply:'Check your balance in the Wallet section. Deposit and withdrawal history is also available there. 💎'},
-  {keys:['tournament','join','register','event'],reply:'Go to Events → choose a tournament → tap Register. Premium members get priority registration! 🏆'},
-  {keys:['premium','upgrade','vip'],reply:'Go to Profile → choose a Premium Plan. Premium users get exclusive tournaments, priority support, and special badges! 👑'},
-  {keys:['rules','rule','guidelines','policy'],reply:'Check the Rules section for all guidelines. Key rules: fair play, no cheating, no abusive language. Violations may result in a ban. 📋'},
-  {keys:['password','login','sign in','cant login','cannot login'],reply:'For login issues: double-check your email and password. Forgot password? Use Firebase password reset. You can also sign in with Google! 🔐'},
-  {keys:['profile','avatar','customize','name','bio'],reply:'Go to Profile → tap Customize → you can change your name, bio, and avatar! ✏️'},
-  {keys:['hello','hi','hey','sup','greetings'],reply:'Hello! 👋 I am the ArenaX Support Bot. Ask me anything about wallet, tournaments, deposits, or your account!'},
-  {keys:['thanks','thank you','ok done','got it','great'],reply:'Happy to help! Let me know if you need anything else. 😊'},
-  {keys:['report','cheat','cheating','hack','hacking'],reply:'To report a player: provide the match ID, player username, and describe the violation. Our team investigates within 48 hours. For urgent cases, type "agent". 🚨'},
-  {keys:['prize','prize pool','winning','reward'],reply:'Each tournament has a different prize — check the Events section. Prizes are awarded in AX Coins which you can withdraw! 💵'},
-  {keys:['ban','banned','suspend','suspended'],reply:'If your account is suspended, the reason is sent to your email. To appeal, type "agent" to connect with our support team. ⚠️'},
-  {keys:['match','result','score','game result'],reply:'For match result issues: note the match ID and timestamp, then type "agent" to connect with our team who can review it directly. 🎮'},
+// Bot handled by getBotReply
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+var _escalated=false;
+var _botRules=[
+  {keys:['jazzcash','jazz cash'],reply:'To deposit via JazzCash: Open app → Send Money → 0302-4686897 → enter amount → Confirm. Coins added instantly!'},
+  {keys:['easypaisa'],reply:'To deposit via EasyPaisa: Open app → Send Money → 0315-9876543 → enter amount → Confirm. Coins in 5 min!'},
+  {keys:['deposit','add coins','recharge'],reply:'Go to Wallet → Deposit → choose JazzCash or EasyPaisa → enter amount. Min Rs 50.'},
+  {keys:['withdraw'],reply:'Go to Wallet → Withdraw → enter amount. Processing takes 24-48 hours.'},
+  {keys:['tournament','join','register','event'],reply:'Go to Events → choose a tournament → tap it to see details and Participate!'},
+  {keys:['premium','upgrade'],reply:'Go to Profile → Premium Plans. Premium users get exclusive tournaments and priority support!'},
+  {keys:['rules','rule'],reply:'Check the Rules section for all guidelines. No cheating, no abuse. Violations may result in a ban.'},
+  {keys:['hello','hi','hey'],reply:'Hello! I am ArenaX Support Bot. Ask me about wallet, tournaments, deposits, or your account!'},
+  {keys:['thanks','thank you'],reply:'Happy to help! Let me know if you need anything else.'},
+  {keys:['report','cheat','hack'],reply:'To report a player: describe the issue and type "agent" to connect with our team.'},
+  {keys:['ban','banned'],reply:'If suspended, check your email for details. Type "agent" to appeal.'},
 ];
-
-const _humanTriggers=['agent','human','real person','real support','urgent','complaint','serious','not resolved','still not working','need help now','connect me'];
-
-function getBotReply(txt, msgs){
-  const l=txt.toLowerCase();
-  if(_humanTriggers.some(k=>l.includes(k))){
+function getBotReply(txt,msgs){
+  var l=txt.toLowerCase();
+  if(['agent','human','urgent','complaint','connect me'].some(function(k){return l.includes(k);})){
     _escalated=true;
-    setTimeout(()=>{
-      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav" style="background:rgba(232,64,74,.15)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl" style="border-color:rgba(232,64,74,.2)">🔴 <strong>Connecting to Human Agent...</strong><br>Your message has been escalated to our support team. An admin will reply here shortly. Please wait! ⏳</div></div>`;
-      msgs.scrollTop=9999;
-    },800);
-    return;
+    setTimeout(function(){
+      var d=document.createElement('div');d.className='msg bot';
+      d.innerHTML='<div class="mav bav" style="background:rgba(232,64,74,.15)"><i class="fas fa-headset" style="color:#e8404a"></i></div><div class="bbl">Connecting to Human Agent... Your message has been sent to admin. Please wait!</div>';
+      msgs.appendChild(d);msgs.scrollTop=9999;
+    },800);return;
   }
-  const matched=_botRules.find(r=>r.keys.some(k=>l.includes(k)));
-  setTimeout(()=>{
-    if(matched){
-      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 ${matched.reply}</div></div>`;
-    } else {
-      msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">🤖 I am not sure about that! Try rephrasing your question, or type <strong>"agent"</strong> to connect with a real support member. 😊</div></div>`;
-    }
-    msgs.scrollTop=9999;
+  var matched=_botRules.find(function(r){return r.keys.some(function(k){return l.includes(k);});});
+  setTimeout(function(){
+    var d=document.createElement('div');d.className='msg bot';
+    d.innerHTML='<div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">'+(matched?matched.reply:'I am not sure! Try rephrasing or type "agent" to connect with support.')+'</div>';
+    msgs.appendChild(d);msgs.scrollTop=9999;
   },700);
 }
-
-function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 async function sendMsg(txt){
   if(!txt.trim())return;
-  const msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
+  var msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
   $('chatIn').value='';
-  const fireUser=window._fbAuth?.currentUser||auth.currentUser;
-  if(!fireUser){
-    msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-    msgs.scrollTop=9999;
-    getBotReply(txt, msgs);
-    return;
-  }
-  const ticketId=fireUser.uid+'_ticket';
-  const uName=App.user?.name||fireUser.displayName||fireUser.email?.split('@')[0]||'Player';
-  const uHandle=App.user?.handle||'';
-  msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(txt)}</div></div>`;
-  msgs.scrollTop=9999;
+  var ud=document.createElement('div');ud.className='msg u';
+  ud.innerHTML='<div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">'+esc(txt)+'</div>';
+  msgs.appendChild(ud);msgs.scrollTop=9999;
+  var fireUser=auth.currentUser;
+  if(!fireUser){getBotReply(txt,msgs);return;}
   try{
-    await addDoc(collection(db,'support',ticketId,'messages'),{
-      text:txt,sender:'user',senderName:uName,
-      uid:fireUser.uid,createdAt:serverTimestamp()
-    });
-    await addDoc(collection(db,'support_tickets'),{
-      uid:fireUser.uid,userName:uName,userHandle:uHandle,
-      lastMsg:txt,status:'open',updatedAt:serverTimestamp(),ticketId
-    }).catch(()=>{});
-    // AI bot reply (only if not waiting for human)
-    if(!_escalated)getBotReply(txt, msgs);
-  }catch(e){
-    console.error('Firestore error:',e);
-    getBotReply(txt, msgs);
-  }
+    var ticketId=fireUser.uid+'_ticket';
+    var uName=App.user?App.user.name:fireUser.email||'Player';
+    await addDoc(collection(db,'support',ticketId,'messages'),{text:txt,sender:'user',senderName:uName,uid:fireUser.uid,createdAt:serverTimestamp()});
+    await addDoc(collection(db,'support_tickets'),{uid:fireUser.uid,userName:uName,userHandle:App.user?App.user.handle:'',lastMsg:txt,status:'open',updatedAt:serverTimestamp(),ticketId:ticketId}).catch(function(){});
+    if(!_escalated)getBotReply(txt,msgs);
+  }catch(e){getBotReply(txt,msgs);}
 }
+var _chatUnsub=null;
 function resetChat(){
   $('chatMsgs').innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
 }
 function startChatListener(){
-  const fireUser=window._fbAuth?.currentUser||auth.currentUser;
+  var fireUser=auth.currentUser;
   if(!fireUser)return;
   if(_chatUnsub){_chatUnsub();_chatUnsub=null;}
-  const ticketId=fireUser.uid+'_ticket';
-  const msgs=$('chatMsgs');
-  const q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
-  _chatUnsub=onSnapshot(q,snap=>{
+  var ticketId=fireUser.uid+'_ticket';
+  var msgs=$('chatMsgs');
+  var q=query(collection(db,'support',ticketId,'messages'),orderBy('createdAt','asc'));
+  _chatUnsub=onSnapshot(q,function(snap){
     msgs.innerHTML='';
-    snap.forEach(d=>{
-      const m=d.data();
-      if(m.sender==='user'){
-        msgs.innerHTML+=`<div class="msg u"><div class="mav uuav"><i class="fas fa-user"></i></div><div class="bbl">${esc(m.text)}</div></div>`;
-      } else {
-        msgs.innerHTML+=`<div class="msg bot"><div class="mav bav"><i class="fas fa-${m.sender==='admin'?'shield-alt':'robot'}"></i></div><div class="bbl">${esc(m.text)}</div></div>`;
-      }
+    snap.forEach(function(d){
+      var m=d.data();
+      var div=document.createElement('div');
+      div.className='msg '+(m.sender==='user'?'u':'bot');
+      div.innerHTML='<div class="mav '+(m.sender==='user'?'uuav':'bav')+'"><i class="fas fa-'+(m.sender==='admin'?'headset':m.sender==='user'?'user':'robot')+'"></i></div><div class="bbl">'+esc(m.text||'')+'</div>';
+      msgs.appendChild(div);
     });
-    if(snap.empty){msgs.innerHTML='<div class="msg bot"><div class="mav bav"><i class="fas fa-robot"></i></div><div class="bbl">👋 Hey! I\'m ArenaX Support. How can I help?<div class="qr" id="qReplies"><button class="qrb" data-m="I have an issue with my match result">Match Issue</button><button class="qrb" data-m="I need help with my wallet">Wallet Help</button><button class="qrb" data-m="I want to report a player">Report Player</button><button class="qrb" data-m="I have a general inquiry">General</button></div></div></div>';}
+    if(snap.empty){resetChat();}
     msgs.scrollTop=9999;
   });
 }
@@ -1338,14 +957,8 @@ onAuthStateChanged(auth,fireUser=>{
     const handle='@'+name.toLowerCase().replace(/\s+/g,'')+'#'+fireUser.uid.slice(-4);
     const av=fireUser.photoURL||`https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
     App.user={name,handle,av,uid:fireUser.uid};App.guest=false;
-    // Save/update user in Firestore
-    try{
-      setDoc(doc(db,'users',fireUser.uid),{
-        name,handle,av,email:fireUser.email||'',
-        uid:fireUser.uid,premium:false,banned:false,balance:0,
-        createdAt:new Date().toISOString()
-      },{merge:true}).catch(e=>console.log('Firestore:',e));
-    }catch(e){console.log('Firestore user save:',e);}
+    // Save to Firestore
+    try{setDoc(doc(db,'users',fireUser.uid),{name,handle,av,email:fireUser.email||'',uid:fireUser.uid,premium:false,banned:false,balance:0,createdAt:new Date().toISOString()},{merge:true}).catch(()=>{});}catch(e){}
     // reset btn states
     const eb=$('bEmail');if(eb){eb.innerHTML='<i class="fas fa-envelope"></i> Continue with Email';eb.disabled=false}
     const gb=$('bGoogle');if(gb){gb.innerHTML='<img src="https://www.google.com/favicon.ico" class="gico"/> Continue with Google';gb.disabled=false}
@@ -1438,78 +1051,42 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // WALLET
   // Payment Modal
-  let _payMethod='';
-  const _payInfo={
-    jc:{name:'JazzCash',cls:'jc-btn',icon:'fa-mobile-alt',instr:'<strong>JazzCash Steps:</strong><br>1. <a href="jazzcash://send?mobile=03024686897" style="color:#00c060;font-weight:700" onclick="window.open(\"https://www.jazzcash.com.pk\",\"_blank\")">👆 Open JazzCash App</a><br>2. Go to <strong>Send Money</strong><br>3. Number: <strong>0302-4686897</strong> (ArenaX)<br>4. Enter the amount and send<br>5. Reference: <strong>AX-DEPOSIT</strong><br>6. Click Confirm Payment below'},
-    ep:{name:'EasyPaisa',cls:'ep-btn',icon:'fa-wallet',instr:'<strong>EasyPaisa Steps:</strong><br>1. Open EasyPaisa app or dial <strong>*786#</strong><br>2. Go to <strong>Send Money</strong><br>3. Number: <strong>0315-9876543</strong> (ArenaX)<br>4. Enter the amount and send<br>5. Reference: <strong>AX-DEPOSIT</strong><br>6. Click Confirm Payment below'},
-    cc:{name:'Card/Bank',cls:'cc-btn',icon:'fa-credit-card',instr:'<strong>Bank Transfer Steps:</strong><br>1. Bank: <strong>HBL</strong><br>2. Account: <strong>1234-5678-0000</strong><br>3. Title: <strong>ArenaX Pvt Ltd</strong><br>4. Transfer the amount<br>5. Save your transaction ID<br>6. Click Confirm — coins credited in 5 min'}
+  var _payMethod='';
+  var _payInfo={
+    jc:{name:'JazzCash',cls:'jc-btn',instr:'<strong>JazzCash:</strong><br>1. Open JazzCash app<br>2. Send Money to <strong>0302-4686897</strong><br>3. Enter amount<br>4. Ref: <strong>AX-DEPOSIT</strong><br>5. Click Confirm below'},
+    ep:{name:'EasyPaisa',cls:'ep-btn',instr:'<strong>EasyPaisa:</strong><br>1. Open EasyPaisa app<br>2. Send Money to <strong>0315-9876543</strong><br>3. Enter amount<br>4. Ref: <strong>AX-DEPOSIT</strong><br>5. Click Confirm below'},
+    cc:{name:'Card/Bank',cls:'cc-btn',instr:'<strong>Bank Transfer:</strong><br>Bank: HBL<br>Account: <strong>1234-5678-0000</strong><br>Title: <strong>ArenaX Pvt Ltd</strong><br>Transfer and click Confirm'}
   };
   function openPayModal(){
-    if(App.guest){alert('Create a real account to use the wallet!');return}
+    if(App.guest){alert('Create an account to use the wallet!');return;}
     $('payStep1').classList.add('on');$('payStep2').classList.remove('on');
     $('payAmtInp').value='';$('payTitle').textContent='Add Funds';
-    document.querySelectorAll('.pay-amt-chip').forEach(c=>c.classList.remove('sel'));
+    document.querySelectorAll('.pay-amt-chip').forEach(function(c){c.classList.remove('sel');});
     $('mPayment').classList.remove('hide');
   }
-  $('bDep').addEventListener('click', openPayModal);
-  $('pmJC').addEventListener('click',()=>{
-    _payMethod='jc';
-    $('payTitle').textContent='Pay via JazzCash';
-    $('payInstr').innerHTML=_payInfo.jc.instr;
-    $('payConfirmBtn').className='pay-confirm jc-btn';
-    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm via JazzCash';
-    $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
-    // Try to open JazzCash app, fallback to website
-    setTimeout(()=>{
-      const a=document.createElement('a');
-      a.href='jazzcash://send?mobile=03024686897';
-      a.click();
-      setTimeout(()=>window.open('https://www.jazzcash.com.pk','_blank'),1500);
-    },300);
-  });
-  $('pmEP').addEventListener('click',()=>{
-    _payMethod='ep';
-    $('payTitle').textContent='Pay via EasyPaisa';
-    $('payInstr').innerHTML=_payInfo.ep.instr;
-    $('payConfirmBtn').className='pay-confirm ep-btn';
-    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm via EasyPaisa';
-    $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
-  });
-  $('pmCC').addEventListener('click',()=>{
-    _payMethod='cc';
-    $('payTitle').textContent='Card / Bank Transfer';
-    $('payInstr').innerHTML=_payInfo.cc.instr;
-    $('payConfirmBtn').className='pay-confirm cc-btn';
-    $('payConfirmBtn').innerHTML='<i class="fas fa-check-circle"></i> Confirm Transfer';
-    $('payStep1').classList.remove('on');$('payStep2').classList.add('on');
-  });
-  $('payBackBtn').addEventListener('click',()=>{
-    $('payStep1').classList.add('on');$('payStep2').classList.remove('on');$('payTitle').textContent='Add Funds';
-  });
-  document.querySelectorAll('.pay-amt-chip').forEach(c=>{
-    c.addEventListener('click',()=>{
-      document.querySelectorAll('.pay-amt-chip').forEach(x=>x.classList.remove('sel'));
-      c.classList.add('sel');$('payAmtInp').value=c.dataset.v;
-    });
-  });
-  $('payConfirmBtn').addEventListener('click',()=>{
-    const a=+$('payAmtInp').value;
-    if(!a||a<50){$('payAmtInp').style.borderColor='var(--red)';setTimeout(()=>$('payAmtInp').style.borderColor='',1200);alert('Minimum deposit is Rs 50!');return}
-    const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
+  $('bDep').addEventListener('click',openPayModal);
+  $('pmJC').addEventListener('click',function(){_payMethod='jc';$('payTitle').textContent='Pay via JazzCash';$('payInstr').innerHTML=_payInfo.jc.instr;$('payConfirmBtn').className='pay-confirm jc-btn';$('payConfirmBtn').textContent='Confirm via JazzCash';$('payStep1').classList.remove('on');$('payStep2').classList.add('on');});
+  $('pmEP').addEventListener('click',function(){_payMethod='ep';$('payTitle').textContent='Pay via EasyPaisa';$('payInstr').innerHTML=_payInfo.ep.instr;$('payConfirmBtn').className='pay-confirm ep-btn';$('payConfirmBtn').textContent='Confirm via EasyPaisa';$('payStep1').classList.remove('on');$('payStep2').classList.add('on');});
+  $('pmCC').addEventListener('click',function(){_payMethod='cc';$('payTitle').textContent='Card / Bank';$('payInstr').innerHTML=_payInfo.cc.instr;$('payConfirmBtn').className='pay-confirm cc-btn';$('payConfirmBtn').textContent='Confirm Transfer';$('payStep1').classList.remove('on');$('payStep2').classList.add('on');});
+  $('payBackBtn').addEventListener('click',function(){$('payStep1').classList.add('on');$('payStep2').classList.remove('on');$('payTitle').textContent='Add Funds';});
+  document.querySelectorAll('.pay-amt-chip').forEach(function(c){c.addEventListener('click',function(){document.querySelectorAll('.pay-amt-chip').forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');$('payAmtInp').value=c.dataset.v;});});
+  $('payConfirmBtn').addEventListener('click',function(){
+    var a=+$('payAmtInp').value;
+    if(!a||a<50){$('payAmtInp').style.borderColor='var(--red)';setTimeout(function(){$('payAmtInp').style.borderColor='';},1200);alert('Minimum Rs 50!');return;}
+    var cur=+(($('wBal').textContent||'0').replace(/,/g,''));
     $('wBal').textContent=(cur+a).toLocaleString();
-    addTx('deposit',a);
-    $('mPayment').classList.add('hide');
-    alert('✅ Rs '+a+' deposit confirmed via '+_payInfo[_payMethod].name+'!\n'+a+' AX Coins added.\n\n(Demo — no real charge)');
+    addTx('deposit',a);$('mPayment').classList.add('hide');
+    alert('Rs '+a+' deposited via '+(_payInfo[_payMethod]?_payInfo[_payMethod].name:'')+'! '+a+' AX Coins added.');
   });
-  $('bClosePayment').addEventListener('click',()=>$('mPayment').classList.add('hide'));
-  $('bClosePayment2').addEventListener('click',()=>$('mPayment').classList.add('hide'));
-  $('mPayment').addEventListener('click',e=>{if(e.target===$('mPayment'))$('mPayment').classList.add('hide')});
-  $('bWith').addEventListener('click',()=>{
-    if(App.guest){alert('Create a real account to use the wallet!');return}
-    const cur=+(($('wBal').textContent||'0').replace(/,/g,''));
-    if(!cur){alert('No balance to withdraw.');return}
-    const a=prompt('Withdraw how many AX Coins? (max '+cur+')');
-    if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur-+a).toLocaleString();addTx('withdraw',+a)}
+  $('bClosePayment').addEventListener('click',function(){$('mPayment').classList.add('hide');});
+  $('bClosePayment2').addEventListener('click',function(){$('mPayment').classList.add('hide');});
+  $('mPayment').addEventListener('click',function(e){if(e.target===$('mPayment'))$('mPayment').classList.add('hide');});
+  $('bWith').addEventListener('click',function(){
+    if(App.guest){alert('Create an account!');return;}
+    var cur=+(($('wBal').textContent||'0').replace(/,/g,''));
+    if(!cur){alert('No balance.');return;}
+    var a=prompt('Withdraw how many AX Coins? (max '+cur+')');
+    if(a&&+a>0&&+a<=cur){$('wBal').textContent=(cur-+a).toLocaleString();addTx('withdraw',+a);}
     else if(a&&+a>cur)alert('Not enough balance.');
   });
 
@@ -1519,23 +1096,20 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('click',e=>{if(e.target.classList.contains('qrb'))sendMsg(e.target.dataset.m)});
 
   // NOTIF
-  $('bBell').addEventListener('click',async()=>{
+  $('bBell').addEventListener('click',async function(){
     if(App.guest){alert('Login to see notifications!');return;}
     try{
-      const snap=await getDocs(collection(db,'notifications'));
-      let msgs=[];
-      const markRead=[];
-      snap.forEach(d=>{
-        const n=d.data();
-        if(n.userId===auth.currentUser?.uid){
-          msgs.push(n.message);
-          if(!n.read)markRead.push(d.id);
-        }
-      });
-      // Mark all as read
-      markRead.forEach(id=>updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{}));
-      alert(msgs.length?'🔔 Notifications\n\n'+msgs.map(m=>'• '+m).join('\n'):'🔔 No new notifications!');
-    }catch(e){alert('🔔 No notifications yet!');}
+      var snap=await getDocs(collection(db,'notifications'));
+      var msgs=[],toRead=[];
+      snap.forEach(function(d){var n=d.data();if(n.userId===auth.currentUser.uid){msgs.push(n.message);if(!n.read)toRead.push(d.id);}});
+      toRead.forEach(function(id){updateDoc(doc(db,'notifications',id),{read:true}).catch(function(){});});
+      var ndot=$('bBell').parentElement?$('bBell').parentElement.querySelector('.ndot'):null;
+      if(ndot)ndot.style.display='none';
+      alert(msgs.length?'Notifications:
+
+'+msgs.map(function(m){return '• '+m;}).join('
+'):'No new notifications!');
+    }catch(e){alert('No notifications yet!');}
   });
 
   // BANNERS
@@ -1550,20 +1124,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   // ── NOTIFICATIONS ──
-  $('btnNotif').addEventListener('click',async()=>{
-    if(App.guest){alert('Login to see notifications!');return;}
-    try{
-      const snap=await getDocs(collection(db,'notifications'));
-      let msgs=[];
-      const markRead=[];
-      snap.forEach(d=>{
-        const n=d.data();
-        if(n.userId===auth.currentUser?.uid){msgs.push(n.message);if(!n.read)markRead.push(d.id);}
-      });
-      markRead.forEach(id=>updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{}));
-      alert(msgs.length?'🔔 Notifications\n\n'+msgs.map(m=>'• '+m).join('\n'):'🔔 No new notifications!');
-    }catch(e){alert('🔔 No notifications yet!');}
-  });
+  $('btnNotif').addEventListener('click',()=>alert('🔔 Notification Preferences\n\nAll notifications are currently enabled.\nTournament alerts: ON\nMatch reminders: ON\nWallet alerts: ON'));
 
   // ── PREMIUM MODAL ──
   function openPremium(){if(App.guest){alert('Create a real account to get Premium!');return}$('mPremium').classList.remove('hide')}
@@ -1598,12 +1159,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 
   // ── PLAYER CHAT ──
-  $('btnPlayerChat').addEventListener('click',()=>{
-    if(App.guest){alert('Create an account to use Player Chat!');return}
+  $('btnPlayerChat').addEventListener('click',function(){
+    if(App.guest){alert('Create an account to use Player Chat!');return;}
     switchTab('Chat');
-    document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
-    document.querySelector('.ni[data-t="Chat"]').classList.add('on');
-    loadFriends();
+    document.querySelectorAll('.ni').forEach(function(b){b.classList.remove('on');});
+    var chatNi=document.querySelector('.ni[data-t="Chat"]');
+    if(chatNi)chatNi.classList.add('on');
+    loadFriendsSystem();
   });
 
   // ── CUSTOMIZE ──
@@ -1643,4 +1205,255 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.body.appendChild(t);setTimeout(()=>t.remove(),500);
   });
   (function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
-  document.addEventListener('mousedown',()=>{cur.classList.add('ck');for(let i=0;i<6;i++){const b=document.createElement('div'),a=(i/6)*Math.PI*2,d=14+Math.random()*12;b.className='ctr';b.style.cssText=`left:${mx}px
+  document.addEventListener('mousedown',()=>{cur.classList.add('ck');for(let i=0;i<6;i++){const b=document.createElement('div'),a=(i/6)*Math.PI*2,d=14+Math.random()*12;b.className='ctr';b.style.cssText=`left:${mx}px;top:${my}px;width:4px;height:4px;background:rgba(240,192,64,.7);transition:left .3s,top .3s,opacity .3s`;document.body.appendChild(b);requestAnimationFrame(()=>{b.style.left=(mx+Math.cos(a)*d)+'px';b.style.top=(my+Math.sin(a)*d)+'px';b.style.opacity='0'});setTimeout(()=>b.remove(),340)}});
+  document.addEventListener('mouseup',()=>cur.classList.remove('ck'));
+  document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.add('hv')});
+  document.addEventListener('mouseout',e=>{if(e.target.closest('button,a,.sr,.tcard,.ah,.ni,.qrb,.fb,.prm-plan,.pchat-item'))ring.classList.remove('hv')});
+
+
+  // ── TOURNAMENT DETAIL + REGISTRATION ──
+  var _activeTour=null;
+  function openTourDetail(t){
+    _activeTour=t;
+    $('tdetName').textContent=t.name||t.n||'';
+    $('tdetGame').textContent=t.game||t.g||'Grand RP Mobile';
+    $('tdetPlayers').textContent=(t.registered||0)+'/'+(t.maxPlayers||32);
+    $('tdetPrize').textContent=t.prize||t.pr||'TBD';
+    var s=t.status||t.s||'upcoming';
+    $('tdetStatus').textContent=s==='live'?'Live':s==='upcoming'?'Upcoming':'Ended';
+    var extra='';
+    if(t.date)extra+='Date: '+t.date+'  ';
+    if(t.time)extra+='Time: '+t.time+'  ';
+    if(t.entryFee)extra+='Entry: '+t.entryFee;
+    $('tdetExtra').textContent=extra;
+    $('tregTourRef').textContent='TOUR-'+(t.id||'').slice(-6).toUpperCase();
+    ['tregStep1','tregStep2','tregStep3','tregStep4'].forEach(function(id,i){$(id).classList.toggle('hide',i!==0);});
+    $('tregRealName').value='';$('tregGameName').value='';$('tregUID').value='';$('tregAge').value='';
+    $('tregTxnId').value='';$('tregScreenshot').value='';
+    if($('tregCheck1'))$('tregCheck1').checked=false;
+    if($('tregCheck2'))$('tregCheck2').checked=false;
+    $('mTourDetail').classList.remove('hide');
+  }
+  if($('bCloseTourDetail'))$('bCloseTourDetail').addEventListener('click',function(){$('mTourDetail').classList.add('hide');});
+  if($('mTourDetail'))$('mTourDetail').addEventListener('click',function(e){if(e.target===$('mTourDetail'))$('mTourDetail').classList.add('hide');});
+  if($('bParticipate'))$('bParticipate').addEventListener('click',function(){
+    if(App.guest){alert('Login to participate!');return;}
+    var s=_activeTour?(_activeTour.status||_activeTour.s):'';
+    if(s==='ended'){alert('This tournament has ended.');return;}
+    $('tregStep1').classList.add('hide');$('tregStep2').classList.remove('hide');
+  });
+  if($('tregDecline'))$('tregDecline').addEventListener('click',function(){$('mTourDetail').classList.add('hide');});
+  if($('tregAgree'))$('tregAgree').addEventListener('click',function(){
+    if(!$('tregRealName').value.trim()||!$('tregGameName').value.trim()||!$('tregUID').value.trim()||!$('tregAge').value.trim()){alert('Fill all required fields!');return;}
+    if(!$('tregCheck1').checked||!$('tregCheck2').checked){alert('Agree to both rules first!');return;}
+    $('tregStep2').classList.add('hide');$('tregStep3').classList.remove('hide');
+  });
+  if($('tregBack'))$('tregBack').addEventListener('click',function(){$('tregStep3').classList.add('hide');$('tregStep2').classList.remove('hide');});
+  if($('tregSubmit'))$('tregSubmit').addEventListener('click',async function(){
+    var txn=$('tregTxnId').value.trim();
+    if(!txn){alert('Enter Transaction ID!');return;}
+    var btn=$('tregSubmit');btn.textContent='Submitting...';btn.disabled=true;
+    try{
+      await addDoc(collection(db,'tournament_registrations'),{
+        tournamentId:_activeTour.id,tournamentName:_activeTour.name||_activeTour.n,
+        userId:auth.currentUser?auth.currentUser.uid:'guest',
+        userName:App.user?App.user.name:'',userHandle:App.user?App.user.handle:'',
+        realName:$('tregRealName').value.trim(),gameName:$('tregGameName').value.trim(),
+        gameUID:$('tregUID').value.trim(),age:$('tregAge').value.trim(),
+        txnId:txn,screenshot:$('tregScreenshot').value.trim(),
+        status:'pending',submittedAt:serverTimestamp()
+      });
+      $('tregStep3').classList.add('hide');$('tregStep4').classList.remove('hide');
+    }catch(e){alert('Error: '+e.message);}
+    btn.textContent='Submit Registration';btn.disabled=false;
+  });
+  if($('tregDone'))$('tregDone').addEventListener('click',function(){$('mTourDetail').classList.add('hide');});
+
+  function reportHack(tourId,tourName){
+    if(App.guest){alert('Login to report!');return;}
+    var reason=prompt('Describe the issue (hacks, cheating, etc):');
+    if(!reason||!reason.trim())return;
+    addDoc(collection(db,'tournament_reports'),{
+      tournamentId:tourId,tournamentName:tourName,
+      reporterId:auth.currentUser?auth.currentUser.uid:'',
+      reporterName:App.user?App.user.name:'',
+      reason:reason.trim(),status:'open',createdAt:serverTimestamp()
+    }).then(function(){alert('Report submitted! Admin will review within 24 hours.');}).catch(function(e){alert('Error: '+e.message);});
+  }
+
+  // ── FRIEND SYSTEM ──
+  var _activeDMId=null,_dmUnsub=null,_friendsUnsub=null,_reqUnsub=null;
+  function loadFriendsSystem(){
+    var fireUser=auth.currentUser;
+    if(!fireUser||App.guest)return;
+    var uid=fireUser.uid;
+    if(_friendsUnsub)_friendsUnsub();
+    _friendsUnsub=onSnapshot(collection(db,'users',uid,'friends'),function(snap){
+      var list=$('friendsList');list.innerHTML='';
+      if(snap.empty){list.innerHTML='<div class="es"><i class="fas fa-user-friends"></i><p>No friends yet!</p></div>';return;}
+      snap.forEach(function(d){
+        var f=d.data();
+        var div=document.createElement('div');div.className='pchat-item';div.style.cursor='pointer';
+        var avEl=document.createElement('div');avEl.className='pchat-av';
+        var img=document.createElement('img');img.src=f.av||('https://api.dicebear.com/7.x/bottts/svg?seed='+f.uid);
+        avEl.appendChild(img);div.appendChild(avEl);
+        var info=document.createElement('div');info.style.flex='1';
+        var nm=document.createElement('div');nm.className='pchat-name';nm.textContent=f.name||'';
+        var hd=document.createElement('div');hd.className='pchat-last';hd.textContent=f.handle||'';
+        info.appendChild(nm);info.appendChild(hd);div.appendChild(info);
+        div.addEventListener('click',function(){openDM(f);});
+        list.appendChild(div);
+      });
+    });
+    if(_reqUnsub)_reqUnsub();
+    _reqUnsub=onSnapshot(collection(db,'users',uid,'friendRequests'),function(snap){
+      var wrap=$('friendReqsWrap');wrap.innerHTML='';
+      if(snap.empty){wrap.classList.add('hide');return;}
+      wrap.classList.remove('hide');
+      var title=document.createElement('div');title.style.cssText='font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px';title.textContent='Friend Requests';
+      wrap.appendChild(title);
+      snap.forEach(function(d){
+        var r=d.data();
+        var fc=document.createElement('div');fc.className='freq-card';
+        var avImg=document.createElement('img');avImg.className='freq-av';avImg.src=r.av||('https://api.dicebear.com/7.x/bottts/svg?seed='+r.uid);
+        var info2=document.createElement('div');info2.className='freq-info';
+        var nm2=document.createElement('div');nm2.className='freq-name';nm2.textContent=r.name||'';
+        var hd2=document.createElement('div');hd2.className='freq-handle';hd2.textContent=r.handle||'';
+        info2.appendChild(nm2);info2.appendChild(hd2);
+        var btns=document.createElement('div');btns.className='freq-btns';
+        var acc=document.createElement('button');acc.className='freq-acc';acc.innerHTML='<i class="fas fa-check"></i>';
+        var dec=document.createElement('button');dec.className='freq-dec';dec.innerHTML='<i class="fas fa-times"></i>';
+        (function(did,ruid,rname,rhandle,rav){
+          acc.addEventListener('click',function(){acceptFriend(did,ruid,rname,rhandle,rav);});
+          dec.addEventListener('click',function(){declineFriend(did);});
+        })(d.id,r.uid,r.name,r.handle,r.av||'');
+        btns.appendChild(acc);btns.appendChild(dec);
+        fc.appendChild(avImg);fc.appendChild(info2);fc.appendChild(btns);
+        wrap.appendChild(fc);
+      });
+    });
+  }
+
+  if($('btnAddFriend'))$('btnAddFriend').addEventListener('click',function(){
+    if(App.guest){alert('Create an account first!');return;}
+    $('friendHandleInp').value='';$('friendSearchResult').innerHTML='';
+    $('mAddFriend').classList.remove('hide');
+  });
+  if($('bCloseAddFriend'))$('bCloseAddFriend').addEventListener('click',function(){$('mAddFriend').classList.add('hide');});
+  if($('mAddFriend'))$('mAddFriend').addEventListener('click',function(e){if(e.target===$('mAddFriend'))$('mAddFriend').classList.add('hide');});
+
+  var _searchTimer=null;
+  if($('friendHandleInp'))$('friendHandleInp').addEventListener('input',function(){
+    clearTimeout(_searchTimer);
+    var h=$('friendHandleInp').value.trim().toLowerCase();
+    var res=$('friendSearchResult');
+    if(h.length<3){res.innerHTML='';return;}
+    res.innerHTML='<div style="font-size:11px;color:var(--t3)">Searching...</div>';
+    _searchTimer=setTimeout(async function(){
+      try{
+        var snap=await getDocs(collection(db,'users'));
+        var found=null;
+        snap.forEach(function(d){
+          var u=d.data();
+          var handle=(u.handle||'').toLowerCase();
+          if(!found&&(handle===h||handle.includes(h))&&u.uid!==auth.currentUser.uid)found=Object.assign({id:d.id},u);
+        });
+        if(!found){res.innerHTML='<div style="font-size:12px;color:var(--red)">Player not found.</div>';return;}
+        res.innerHTML='';
+        var fc2=document.createElement('div');fc2.className='freq-card';
+        var img2=document.createElement('img');img2.className='freq-av';img2.src=found.av||('https://api.dicebear.com/7.x/bottts/svg?seed='+(found.uid||'x'));
+        var info3=document.createElement('div');info3.className='freq-info';
+        var nm3=document.createElement('div');nm3.className='freq-name';nm3.textContent=found.name||'Player';
+        var hd3=document.createElement('div');hd3.className='freq-handle';hd3.textContent=found.handle||'';
+        info3.appendChild(nm3);info3.appendChild(hd3);
+        var ok=document.createElement('span');ok.style.cssText='color:var(--green);font-size:11px';ok.textContent='Found';
+        fc2.appendChild(img2);fc2.appendChild(info3);fc2.appendChild(ok);
+        res.appendChild(fc2);
+        $('bSendFriendReq').dataset.tid=found.uid||found.id;
+        $('bSendFriendReq').dataset.tname=found.name||'Player';
+        $('bSendFriendReq').dataset.thandle=found.handle||'';
+        $('bSendFriendReq').dataset.tav=found.av||'';
+      }catch(e){res.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>';}
+    },500);
+  });
+
+  if($('bSendFriendReq'))$('bSendFriendReq').addEventListener('click',async function(){
+    var tid=$('bSendFriendReq').dataset.tid;
+    if(!tid){alert('Search for a player first!');return;}
+    var me=auth.currentUser;var myData=App.user||{};
+    try{
+      await setDoc(doc(db,'users',tid,'friendRequests',me.uid),{uid:me.uid,name:myData.name||'',handle:myData.handle||'',av:myData.av||'',sentAt:serverTimestamp()});
+      $('mAddFriend').classList.add('hide');alert('Friend request sent!');
+    }catch(e){alert('Error: '+e.message);}
+  });
+
+  window.acceptFriend=async function(reqId,fromUid,fromName,fromHandle,fromAv){
+    var me=auth.currentUser;var myData=App.user||{};
+    try{
+      await setDoc(doc(db,'users',me.uid,'friends',fromUid),{uid:fromUid,name:fromName,handle:fromHandle,av:fromAv,addedAt:serverTimestamp()});
+      await setDoc(doc(db,'users',fromUid,'friends',me.uid),{uid:me.uid,name:myData.name||'',handle:myData.handle||'',av:myData.av||'',addedAt:serverTimestamp()});
+      await deleteDoc(doc(db,'users',me.uid,'friendRequests',reqId));
+      alert('Friend added: '+fromName);
+    }catch(e){alert('Error: '+e.message);}
+  };
+  window.declineFriend=async function(reqId){
+    try{await deleteDoc(doc(db,'users',auth.currentUser.uid,'friendRequests',reqId));}catch(e){}
+  };
+
+  function openDM(friend){
+    _activeDMId=friend.uid;
+    $('dmChatName').textContent=friend.name||'';
+    $('dmChatAv').src=friend.av||('https://api.dicebear.com/7.x/bottts/svg?seed='+friend.uid);
+    $('dmMsgs').innerHTML='';
+    $('mDMChat').classList.remove('hide');
+    if(_dmUnsub)_dmUnsub();
+    var chatId=[auth.currentUser.uid,friend.uid].sort().join('_');
+    var q2=query(collection(db,'dms',chatId,'messages'),orderBy('createdAt','asc'));
+    _dmUnsub=onSnapshot(q2,function(snap){
+      $('dmMsgs').innerHTML='';
+      snap.forEach(function(d){
+        var m=d.data();var isMe=m.sender===auth.currentUser.uid;
+        var div=document.createElement('div');div.className='dm-msg '+(isMe?'me':'them');div.textContent=m.text||'';
+        $('dmMsgs').appendChild(div);
+      });
+      $('dmMsgs').scrollTop=9999;
+    });
+  }
+  if($('dmSendBtn'))$('dmSendBtn').addEventListener('click',sendDM);
+  if($('dmInp'))$('dmInp').addEventListener('keydown',function(e){if(e.key==='Enter')sendDM();});
+  async function sendDM(){
+    var txt=$('dmInp').value.trim();
+    if(!txt||!_activeDMId)return;
+    $('dmInp').value='';
+    var chatId=[auth.currentUser.uid,_activeDMId].sort().join('_');
+    try{await addDoc(collection(db,'dms',chatId,'messages'),{text:txt,sender:auth.currentUser.uid,senderName:App.user?App.user.name:'',createdAt:serverTimestamp()});}
+    catch(e){console.error('DM:',e);}
+  }
+  if($('mDMChat'))$('mDMChat').addEventListener('click',function(e){if(e.target===$('mDMChat')){$('mDMChat').classList.add('hide');if(_dmUnsub){_dmUnsub();_dmUnsub=null;}}});
+
+  // ── NOTIFICATIONS ──
+  function listenNotifications(){
+    if(!auth.currentUser||App.guest)return;
+    var uid=auth.currentUser.uid;
+    var firstLoad=true;
+    onSnapshot(collection(db,'notifications'),function(snap){
+      var unread=0,latestMsg=null,latestType=null;
+      snap.forEach(function(d){var n=d.data();if(n.userId===uid&&!n.read){unread++;if(!latestMsg){latestMsg=n.message;latestType=n.type;}}});
+      var ndot=$('bBell')?$('bBell').parentElement?$('bBell').parentElement.querySelector('.ndot'):null:null;
+      if(ndot)ndot.style.display=unread>0?'block':'none';
+      if(!firstLoad&&latestMsg){
+        var popup=document.createElement('div');popup.id='notifPop';
+        popup.style.cssText='position:fixed;top:70px;right:14px;max-width:280px;background:var(--panel);border:1px solid '+(latestType==='approved'?'var(--green)':latestType==='rejected'?'var(--red)':'var(--gold)')+';border-radius:12px;padding:14px;z-index:9999;font-size:13px;line-height:1.5;cursor:pointer';
+        popup.textContent=latestMsg;
+        popup.addEventListener('click',function(){popup.remove();});
+        var old=document.getElementById('notifPop');if(old)old.remove();
+        document.body.appendChild(popup);
+        setTimeout(function(){popup.remove();},6000);
+      }
+      firstLoad=false;
+    });
+  }
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>
