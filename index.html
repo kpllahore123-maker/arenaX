@@ -897,7 +897,6 @@ function getBotReply(txt,msgs){
     msgs.appendChild(d);msgs.scrollTop=9999;
   },700);
 }
-function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 async function sendMsg(txt){
   if(!txt.trim())return;
   var msgs=$('chatMsgs'),qr=$('qReplies');if(qr)qr.remove();
