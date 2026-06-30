@@ -736,20 +736,44 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     }
   };
 
-  // Buy premium demo
+  // Buy premium logic
   const handleBuyPremium = async () => {
     if (isGuest || !currentUser) {
       alert('Please connect a real account to purchase premium.');
       return;
     }
-    const price = premiumPlan === 'weekly' ? 'Rs 299' : 'Rs 799';
-    if (confirm(`Confirm Premium activation for ${price}?\n\n(Demo Mode - No real charges apply)`)) {
+    const costCoins = premiumPlan === 'weekly' ? 199 : 399;
+    const balance = currentUser.balance || 0;
+
+    if (balance < costCoins) {
+      alert('Insufficient coins! Please deposit more coins into your ArenaX wallet to purchase premium. ❌');
+      return;
+    }
+
+    if (confirm(`Confirm Premium activation? This will deduct ${costCoins} AX Coins from your ArenaX wallet immediately.`)) {
       try {
+        const newBal = balance - costCoins;
         await updateDoc(doc(db, 'users', currentUser.uid), {
-          premium: true
+          premium: true,
+          balance: newBal
         });
+
+        // Write to deposit_requests (for real-time transaction syncing)
+        await addDoc(collection(db, 'deposit_requests'), {
+          userId: currentUser.uid,
+          userName: currentUser.name,
+          userEmail: currentUser.email || '',
+          type: 'withdrawal',
+          method: premiumPlan === 'weekly' ? 'Weekly Sub' : 'Monthly Sub',
+          amountPKR: 0,
+          amountAX: costCoins,
+          txnId: 'PRM-' + Math.floor(100000 + Math.random() * 900000),
+          status: 'approved',
+          submittedAt: serverTimestamp()
+        });
+
         setShowPremiumModal(false);
-        alert('🎉 ArenaX Premium activated! Enjoy direct direct messaging, exclusive custom badges, and prioritized support!');
+        alert(`🎉 ArenaX Premium activated! ${costCoins} AX Coins successfully deducted. Enjoy direct messaging, exclusive custom badges, and prioritized support!`);
       } catch (err: any) {
         alert(err.message);
       }
@@ -801,13 +825,24 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       alert('You must accept the rules and guidelines to participate!');
       return;
     }
-    if (!tregTxnId.trim()) {
-      alert('Please enter your transaction ID (TXN ID) for payment verification!');
+
+    // Parse entry fee and verify balance
+    const feeString = selectedTournament.entryFee || '';
+    let feeAmount = 0;
+    if (feeString && !feeString.toLowerCase().includes('free')) {
+      const matches = feeString.match(/\d+/);
+      if (matches) feeAmount = parseInt(matches[0], 10);
+    }
+
+    const balance = currentUser.balance || 0;
+    if (balance < feeAmount) {
+      alert('Insufficient coins! Please deposit more coins into your ArenaX wallet to register for this tournament. ❌');
       return;
     }
 
     setTregSubmitting(true);
     try {
+      const autoTxnId = 'AX-WALLET-REG-' + Math.floor(100000 + Math.random() * 900000);
       await addDoc(collection(db, 'tournament_registrations'), {
         tournamentId: selectedTournament.id,
         tournamentName: selectedTournament.name,
@@ -818,8 +853,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         gameName: tregGameName.trim(),
         gameUID: tregUID.trim(),
         age: tregAge.trim(),
-        txnId: tregTxnId.trim(),
-        screenshot: tregScreenshot.trim(),
+        txnId: autoTxnId,
+        screenshot: 'Auto-verified ArenaX Wallet Hold',
         status: 'pending',
         submittedAt: serverTimestamp()
       });
@@ -1858,7 +1893,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <div className="font-semibold text-white text-sm">Weekly Pass</div>
                   <div className="text-[10px] text-[#8890b0]">7 days premium logs access</div>
                 </div>
-                <div className="ff-title text-lg font-black text-[#a78bfa]">Rs 299</div>
+                <div className="ff-title text-lg font-black text-[#a78bfa]">199 AX</div>
               </div>
               <div
                 onClick={() => setPremiumPlan('monthly')}
@@ -1868,7 +1903,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <div className="font-semibold text-white text-sm">Monthly Pass</div>
                   <div className="text-[10px] text-[#8890b0]">30 days premium + early ticket slots</div>
                 </div>
-                <div className="ff-title text-lg font-black text-[#a78bfa]">Rs 799</div>
+                <div className="ff-title text-lg font-black text-[#a78bfa]">399 AX</div>
               </div>
             </div>
 
@@ -1876,7 +1911,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               onClick={handleBuyPremium}
               className="w-full py-3 bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] text-white font-bold rounded-lg text-sm uppercase tracking-wide transition shadow-md"
             >
-              Get Premium — {premiumPlan === 'weekly' ? 'Rs 299' : 'Rs 799'}
+              Get Premium — {premiumPlan === 'weekly' ? '199 AX Coins' : '399 AX Coins'}
             </button>
             <button
               onClick={() => setShowPremiumModal(false)}
@@ -2321,57 +2356,68 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               </div>
             )}
 
-            {tregStep === 3 && (
-              <div className="space-y-3">
-                <h3 className="font-sans text-lg font-bold text-[#f0c040]">Verify Entry Fee Payment</h3>
-                
-                <div className="bg-[#171b2e] p-3 border border-[#252a45] rounded-xl text-xs space-y-1.5 leading-relaxed">
-                  <p>Send registration fee of <strong>{selectedTournament.entryFee}</strong> to:</p>
-                  <p>• JazzCash: <strong>0302-4686897</strong></p>
-                  <p>• EasyPaisa: <strong>0315-9876543</strong></p>
-                  <p className="text-[10px] text-[#8890b0] pt-1">Reference Tag: <strong className="text-[#f0c040]">TOUR-REG</strong></p>
-                </div>
+            {tregStep === 3 && (() => {
+              // Parse entry fee and balance
+              const feeString = selectedTournament.entryFee || '';
+              let feeAmount = 0;
+              if (feeString && !feeString.toLowerCase().includes('free')) {
+                const matches = feeString.match(/\d+/);
+                if (matches) feeAmount = parseInt(matches[0], 10);
+              }
+              const balance = currentUser?.balance || 0;
+              const hasEnough = balance >= feeAmount;
 
+              return (
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] text-[#8890b0] uppercase font-bold mb-1">Transaction ID (TXN ID) *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. MP832482348"
-                      value={tregTxnId}
-                      onChange={(e) => setTregTxnId(e.target.value)}
-                      className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                    />
+                  <h3 className="font-sans text-lg font-bold text-[#f0c040]">Confirm Wallet Registration</h3>
+                  
+                  <div className="bg-[#171b2e] p-4 border border-[#252a45] rounded-xl text-xs space-y-3 leading-relaxed">
+                    <div className="flex justify-between items-center border-b border-[#252a45]/50 pb-2">
+                      <span className="text-[#8890b0]">Tournament Fee</span>
+                      <strong className="text-white font-semibold">{feeAmount} AX Coins</strong>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-[#252a45]/50 pb-2">
+                      <span className="text-[#8890b0]">Your Current Balance</span>
+                      <strong className="text-white font-semibold">{balance} AX Coins</strong>
+                    </div>
+                    <div className="flex justify-between items-center pb-1">
+                      <span className="text-[#8890b0]">Balance After Approval</span>
+                      <strong className={`font-semibold ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>
+                        {hasEnough ? `${balance - feeAmount} AX Coins` : 'Insufficient Balance'}
+                      </strong>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] text-[#8890b0] uppercase font-bold mb-1">Screenshot Link / Note (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="URL of upload or transaction notes"
-                      value={tregScreenshot}
-                      onChange={(e) => setTregScreenshot(e.target.value)}
-                      className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                    />
-                  </div>
-                </div>
 
-                <div className="flex gap-3 pt-3">
-                  <button
-                    onClick={() => setTregStep(2)}
-                    className="flex-1 py-2 bg-[#1e2340] text-[#8890b0] font-semibold rounded-lg text-xs transition"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleRegisterSubmit}
-                    disabled={tregSubmitting}
-                    className="flex-1 py-2 bg-[#3ddc84] hover:bg-[#32b56c] text-[#0a0c12] font-bold rounded-lg text-xs transition"
-                  >
-                    {tregSubmitting ? 'Submitting...' : 'Register Entry'}
-                  </button>
+                  <div className="p-3.5 bg-[#171b2e]/60 border border-[#252a45] rounded-lg text-xs leading-relaxed">
+                    {hasEnough ? (
+                      <p className="text-[#8890b0]">
+                        <span className="text-green-400 font-semibold">✅ Coins Secured!</span> Your ArenaX wallet has sufficient balance. The entry fee of <strong className="text-white">{feeAmount} AX Coins</strong> will be deducted from your wallet automatically when the admin approves your registration.
+                      </p>
+                    ) : (
+                      <p className="text-red-400 font-semibold">
+                        ⚠️ Insufficient balance! You need {feeAmount} AX Coins to participate, but your current balance is only {balance} AX Coins. Please deposit coins to register.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      onClick={() => setTregStep(2)}
+                      className="flex-1 py-2 bg-[#1e2340] text-[#8890b0] font-semibold rounded-lg text-xs transition"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleRegisterSubmit}
+                      disabled={tregSubmitting || !hasEnough}
+                      className={`flex-1 py-2 font-bold rounded-lg text-xs transition ${hasEnough ? 'bg-[#3ddc84] hover:bg-[#32b56c] text-[#0a0c12]' : 'bg-[#252a45] text-[#8890b0] cursor-not-allowed'}`}
+                    >
+                      {tregSubmitting ? 'Submitting...' : hasEnough ? 'Confirm & Register' : 'Insufficient Coins'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {tregStep === 4 && (
               <div className="text-center py-6 space-y-4">
