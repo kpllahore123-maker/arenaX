@@ -481,6 +481,46 @@ tailwind.config = {
   </nav>
 </div>
 
+<!-- ==================== UNDER DEVELOPMENT POPUP MODAL ==================== -->
+<div id="mUnderDevPopup" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[300] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl max-w-[440px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
+    <!-- Close Cross Button -->
+    <button id="bCloseUnderDevCross" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-gold hover:text-bg text-white transition flex items-center justify-center cursor-pointer">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+
+    <!-- Top Graphic Banner -->
+    <div class="relative w-full h-48 bg-cover bg-center flex-shrink-0" style="background-image: url('./src/assets/images/website_under_dev_1782818353395.jpg');">
+      <!-- Gradient overlay to blend bottom -->
+      <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="p-6 space-y-4 text-center">
+      <div class="flex justify-center">
+        <span class="px-2.5 py-1 bg-gold/10 border border-gold/30 text-gold text-[10px] font-black uppercase rounded-full tracking-widest animate-pulse">
+          ⚠️ UNDER DEVELOPMENT
+        </span>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="font-display text-xl font-black text-white uppercase tracking-wide">
+          ArenaX Arena Under Construction
+        </h3>
+        <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto">
+          Welcome to the Arena! We are currently busy deploying secure match validation and real coin wallet sync.
+          <br><br>
+          Feel free to explore tournaments, join real chat channels, customize your player details, and experience simulated earnings.
+        </p>
+      </div>
+
+      <button id="bCloseUnderDev" class="w-full py-3 bg-gold hover:bg-gold/80 text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10">
+        Enter Arena
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== PREMIUM PLAN MODAL ==================== -->
 <div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
@@ -1009,6 +1049,7 @@ let friendList = [];
 let depositUnsub = null;
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
+let devPopupShownThisSession = false;
 
 // Helper selection
 const $ = (id) => document.getElementById(id);
@@ -1083,6 +1124,11 @@ function boot() {
   loadTournamentsList();
   loadLiveNotifications();
   goTo('sDash');
+
+  if (!devPopupShownThisSession) {
+    $('mUnderDevPopup').classList.remove('hidden');
+    devPopupShownThisSession = true;
+  }
 }
 
 // Navigation Tab controls
@@ -2570,6 +2616,14 @@ $('bClosePrivacy').addEventListener('click', () => $('mPrivacy').classList.add('
 // Trigger and launch support chat connection listener when support tab mounts
 document.querySelector('.ni[data-t="Support"]').addEventListener('click', () => {
   loadLiveSupportChat();
+});
+
+// Under Development Popup modal listeners
+$('bCloseUnderDev').addEventListener('click', () => {
+  $('mUnderDevPopup').classList.add('hidden');
+});
+$('bCloseUnderDevCross').addEventListener('click', () => {
+  $('mUnderDevPopup').classList.add('hidden');
 });
 
 // Initial bootstrapper loads
