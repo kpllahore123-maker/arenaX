@@ -498,17 +498,17 @@ tailwind.config = {
     <div class="grid grid-cols-2 gap-3">
       <button id="prmWeekly" class="p-3 bg-card border border-purple/30 rounded-xl text-center flex flex-col items-center gap-1">
         <span class="text-xs font-semibold text-white">Weekly Pass</span>
-        <span class="font-display text-lg font-bold text-purple">Rs 299</span>
+        <span class="font-display text-lg font-bold text-purple">199 AX</span>
         <span class="text-[9px] text-t3">7 Days VIP</span>
       </button>
       <button id="prmMonthly" class="p-3 bg-card border border-bdr rounded-xl text-center flex flex-col items-center gap-1">
         <span class="text-xs font-semibold text-white">Monthly Pass</span>
-        <span class="font-display text-lg font-bold text-purple">Rs 799</span>
+        <span class="font-display text-lg font-bold text-purple">399 AX</span>
         <span class="text-[9px] text-t3">Best Value (30 days)</span>
       </button>
     </div>
 
-    <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — Rs 299</button>
+    <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
     <button id="bClosePremium" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
   </div>
 </div>
@@ -829,24 +829,30 @@ tailwind.config = {
 
     <!-- Step 3: Transaction submit -->
     <div id="tregStep3" class="space-y-3.5 hidden">
-      <h3 class="font-display text-lg font-bold text-gold">Verify Fees Payment</h3>
-      <div class="p-3 bg-card border border-bdr rounded-xl text-xs text-t2 leading-relaxed space-y-1">
-        <div>JazzCash: <strong class="text-white font-semibold">0302-4686897</strong></div>
-        <div>EasyPaisa: <strong class="text-white font-semibold">0315-9876543</strong></div>
-        <div>Ref Key: <strong id="tregTourRef" class="text-gold font-bold">AX-TOUR</strong></div>
+      <h3 class="font-display text-lg font-bold text-gold">Confirm Wallet Registration</h3>
+      
+      <div class="p-4 bg-card border border-bdr rounded-xl text-xs space-y-3">
+        <div class="flex justify-between items-center border-b border-bdr/50 pb-2">
+          <span class="text-t3">Tournament Fee</span>
+          <strong id="tregFeeAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
+        <div class="flex justify-between items-center border-b border-bdr/50 pb-2">
+          <span class="text-t3">Your Current Balance</span>
+          <strong id="tregBalanceAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
+        <div class="flex justify-between items-center pb-1">
+          <span class="text-t3">Balance After Approval</span>
+          <strong id="tregBalanceAfterAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
       </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Transaction ID (TXN ID) *</label>
-        <input id="tregTxnId" type="text" placeholder="e.g. TXN94238492" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold font-mono"/>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Payment Screenshot Link (Optional)</label>
-        <input id="tregScreenshot" type="url" placeholder="Paste image screenshot URL" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+
+      <div id="tregStatusMsg" class="p-3 bg-card/60 border border-bdr rounded-lg text-xs leading-relaxed">
+        <!-- Dynamic Status Message -->
       </div>
 
       <div class="flex gap-3 pt-2">
         <button id="tregBack" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Back</button>
-        <button id="tregSubmit" class="flex-1 py-2.5 bg-green text-bg font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">Submit Application</button>
+        <button id="tregSubmit" class="flex-1 py-2.5 bg-green text-bg font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">Confirm & Submit Entry</button>
       </div>
     </div>
 
@@ -1436,7 +1442,6 @@ function openTournamentRegister(tour) {
   $('tdetPrize').textContent = tour.prize || 'TBD';
   $('tdetStatus').textContent = tour.status;
   $('tdetExtra').textContent = `Format: ${tour.teamType || 'Solo'} — Entry: ${tour.entryFee || 'Free'}`;
-  $('tregTourRef').textContent = `AX-TOUR-${tour.id.slice(-4).toUpperCase()}`;
 
   // Reset steps
   document.querySelectorAll('#tregStep1, #tregStep2, #tregStep3, #tregStep4').forEach(step => step.classList.add('hidden'));
@@ -1446,8 +1451,6 @@ function openTournamentRegister(tour) {
   $('tregGameName').value = '';
   $('tregUID').value = '';
   $('tregAge').value = '';
-  $('tregTxnId').value = '';
-  $('tregScreenshot').value = '';
   $('tregCheck1').checked = false;
   $('tregCheck2').checked = false;
 
@@ -1474,6 +1477,36 @@ $('tregAgree').addEventListener('click', () => {
     alert('You must accept the terms & anti-cheat guidelines!');
     return;
   }
+
+  // Parse the entry fee
+  const feeString = activeRegisterTour.entryFee || '';
+  let feeAmount = 0;
+  if (feeString && !feeString.toLowerCase().includes('free')) {
+    const matches = feeString.match(/\d+/);
+    if (matches) feeAmount = parseInt(matches[0], 10);
+  }
+
+  const balance = userProfile ? (userProfile.balance || 0) : 0;
+
+  $('tregFeeAX').textContent = `${feeAmount} AX Coins`;
+  $('tregBalanceAX').textContent = `${balance} AX Coins`;
+  
+  if (balance < feeAmount) {
+    $('tregBalanceAfterAX').textContent = `Insufficient Balance`;
+    $('tregBalanceAfterAX').className = 'font-bold text-red';
+    $('tregStatusMsg').innerHTML = `<p class="text-red font-semibold">⚠️ Insufficient coins! You need ${feeAmount} AX Coins to register but you only have ${balance} AX Coins. Please deposit coins first.</p>`;
+    $('tregSubmit').disabled = true;
+    $('tregSubmit').classList.add('opacity-50', 'cursor-not-allowed');
+    $('tregSubmit').textContent = 'Insufficient Balance';
+  } else {
+    $('tregBalanceAfterAX').textContent = `${balance - feeAmount} AX Coins`;
+    $('tregBalanceAfterAX').className = 'font-bold text-green';
+    $('tregStatusMsg').innerHTML = `<p class="text-t2 font-medium">✅ You have enough coins. ${feeAmount} AX Coins will be deducted from your ArenaX wallet automatically when the admin approves your registration slot.</p>`;
+    $('tregSubmit').disabled = false;
+    $('tregSubmit').classList.remove('opacity-50', 'cursor-not-allowed');
+    $('tregSubmit').textContent = 'Confirm & Submit Entry';
+  }
+
   $('tregStep2').classList.add('hidden');
   $('tregStep3').classList.remove('hidden');
 });
@@ -1484,9 +1517,17 @@ $('tregBack').addEventListener('click', () => {
 });
 
 $('tregSubmit').addEventListener('click', async () => {
-  const txn = $('tregTxnId').value.trim();
-  if (!txn) {
-    alert('Please enter your payment Transaction ID (TXN ID)!');
+  // Parse the entry fee again to double check
+  const feeString = activeRegisterTour.entryFee || '';
+  let feeAmount = 0;
+  if (feeString && !feeString.toLowerCase().includes('free')) {
+    const matches = feeString.match(/\d+/);
+    if (matches) feeAmount = parseInt(matches[0], 10);
+  }
+
+  const balance = userProfile ? (userProfile.balance || 0) : 0;
+  if (balance < feeAmount) {
+    alert('Insufficient coins! Please deposit more coins to register. ❌');
     return;
   }
 
@@ -1494,6 +1535,7 @@ $('tregSubmit').addEventListener('click', async () => {
   $('tregSubmit').textContent = 'Submitting...';
 
   try {
+    const autoTxnId = 'AX-WALLET-REG-' + Math.floor(100000 + Math.random() * 900000);
     await addDoc(collection(db, 'tournament_registrations'), {
       tournamentId: activeRegisterTour.id,
       tournamentName: activeRegisterTour.name,
@@ -1504,8 +1546,8 @@ $('tregSubmit').addEventListener('click', async () => {
       gameName: $('tregGameName').value.trim(),
       gameUID: $('tregUID').value.trim(),
       age: $('tregAge').value.trim(),
-      txnId: txn,
-      screenshot: $('tregScreenshot').value.trim(),
+      txnId: autoTxnId,
+      screenshot: 'Auto-verified ArenaX Wallet Hold',
       status: 'pending',
       submittedAt: serverTimestamp()
     });
@@ -1516,7 +1558,7 @@ $('tregSubmit').addEventListener('click', async () => {
     alert('Registration error: ' + err.message);
   } finally {
     $('tregSubmit').disabled = false;
-    $('tregSubmit').textContent = 'Submit Application';
+    $('tregSubmit').textContent = 'Confirm & Submit Entry';
   }
 });
 
@@ -1911,7 +1953,7 @@ $('prmWeekly').addEventListener('click', () => {
   $('prmWeekly').classList.remove('border-bdr');
   $('prmMonthly').classList.remove('border-purple');
   $('prmMonthly').classList.add('border-bdr');
-  $('bBuyPremium').textContent = 'Upgrade Weekly — Rs 299';
+  $('bBuyPremium').textContent = 'Upgrade Weekly — 199 AX Coins';
 });
 
 $('prmMonthly').addEventListener('click', () => {
@@ -1920,18 +1962,42 @@ $('prmMonthly').addEventListener('click', () => {
   $('prmMonthly').classList.remove('border-bdr');
   $('prmWeekly').classList.remove('border-purple');
   $('prmWeekly').classList.add('border-bdr');
-  $('bBuyPremium').textContent = 'Upgrade Monthly — Rs 799';
+  $('bBuyPremium').textContent = 'Upgrade Monthly — 399 AX Coins';
 });
 
 $('bBuyPremium').addEventListener('click', async () => {
-  const cost = premiumDuration === 'weekly' ? 'Rs 299' : 'Rs 799';
-  if (confirm(`Confirm activating Premium pass for ${cost}?\n\n(Demo checkout mode - no cash holds)`)) {
+  const costCoins = premiumDuration === 'weekly' ? 199 : 399;
+  const balance = userProfile.balance || 0;
+  
+  if (balance < costCoins) {
+    alert('Insufficient coins! Please deposit more coins into your ArenaX wallet to purchase premium. ❌');
+    return;
+  }
+  
+  if (confirm(`Confirm activating Premium pass? This will deduct ${costCoins} AX Coins from your ArenaX wallet immediately.`)) {
     try {
+      const newBal = balance - costCoins;
       await updateDoc(doc(db, 'users', userProfile.uid), {
-        premium: true
+        premium: true,
+        balance: newBal
       });
+      
+      // Log transaction history
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: userProfile.uid,
+        userName: userProfile.name,
+        userEmail: userProfile.email || '',
+        type: 'withdrawal',
+        method: premiumDuration === 'weekly' ? 'Weekly Sub' : 'Monthly Sub',
+        amountPKR: 0,
+        amountAX: costCoins,
+        txnId: 'PRM-' + Math.floor(100000 + Math.random() * 900000),
+        status: 'approved',
+        submittedAt: serverTimestamp()
+      });
+      
       $('mPremium').classList.add('hidden');
-      alert('Congratulations! ArenaX Premium VIP activated. Access all benefits now. ✅');
+      alert(`Congratulations! ArenaX Premium VIP activated. ${costCoins} AX Coins deducted. Access all benefits now! ✅`);
     } catch (err) {
       alert(err.message);
     }
