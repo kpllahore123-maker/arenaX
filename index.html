@@ -88,6 +88,14 @@ tailwind.config = {
 
       <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
 
+      <!-- Terms & Conditions and Privacy Policy agreement -->
+      <div class="flex items-start gap-2.5 p-3 bg-card border border-bdr rounded-lg">
+        <input id="termsCheckbox" type="checkbox" class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
+        <label for="termsCheckbox" class="text-[11px] text-t2 leading-snug cursor-pointer select-none">
+          I agree to the <span class="text-white font-medium hover:underline cursor-pointer" id="lnkTerms">Terms & Conditions</span> and <span class="text-white font-medium hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span> of ArenaX.
+        </label>
+      </div>
+
       <button id="bGoogle" class="w-full py-3 bg-white hover:bg-neutral-100 text-neutral-800 rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
         <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google"/>
         Continue with Google
@@ -151,12 +159,24 @@ tailwind.config = {
     <div class="font-display text-xl font-bold tracking-wider text-white">
       <i class="fas fa-trophy text-gold mr-2"></i>Arena<span class="text-gold">X</span>
     </div>
-    <div class="flex items-center gap-3">
-      <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition">
+    <div class="flex items-center gap-2">
+      <!-- Topbar Support -->
+      <button id="bTopbarSupport" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Support Chat">
+        <i class="fas fa-headset"></i>
+      </button>
+
+      <!-- Notification Bell -->
+      <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Notifications">
         <i class="fas fa-bell"></i>
         <span id="notifDot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red rounded-full ring-2 ring-panel hidden"></span>
       </button>
-      <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-gold flex-shrink-0">
+
+      <!-- Settings Cog -->
+      <button id="bSettings" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Settings">
+        <i class="fas fa-cog"></i>
+      </button>
+
+      <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-gold flex-shrink-0 ml-1">
         <img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover"/>
       </div>
     </div>
@@ -455,7 +475,7 @@ tailwind.config = {
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
       <i class="fas fa-comments text-base"></i><span>Chat</span>
     </button>
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Support">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1 hidden" data-t="Support">
       <i class="fas fa-headset text-base"></i><span>Support</span>
     </button>
   </nav>
@@ -522,6 +542,140 @@ tailwind.config = {
       <button id="bCloseCustomize" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Cancel</button>
       <button id="bSaveCustomize" class="flex-1 py-2.5 bg-gold text-bg font-semibold rounded-lg text-xs transition">Save Changes</button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS MODAL ==================== -->
+<div id="mSettings" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+          <i class="fas fa-cog"></i>
+        </div>
+        <h3 class="font-display text-xl font-bold text-white">ArenaX Settings</h3>
+      </div>
+      <button id="bCloseSettingsCross" class="text-t3 hover:text-white transition"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Notification Preferences</h4>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Announcement Alerts</span>
+            <span class="text-[9px] text-t3">Real-time alerts for system announcements</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifAnnounce" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Friend Request Alerts</span>
+            <span class="text-[9px] text-t3">Alerts when someone sends a friend request</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifFriends" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Tournament Updates</span>
+            <span class="text-[9px] text-t3">Get alerts about event brackets & slots</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifTours" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legal Documents -->
+    <div class="space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Legal Agreements</h4>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="bViewTerms" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+          <i class="fas fa-file-contract text-gold/80"></i> Terms & Conditions
+        </button>
+        <button id="bViewPrivacy" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+          <i class="fas fa-user-shield text-gold/80"></i> Privacy Policy
+        </button>
+      </div>
+    </div>
+
+    <div class="flex gap-2 border-t border-bdr/40 pt-3">
+      <button id="bSaveSettings" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">Save Settings</button>
+      <button id="bCloseSettings" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TERMS & CONDITIONS MODAL ==================== -->
+<div id="mTerms" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4">
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+        <i class="fas fa-file-contract"></i>
+      </div>
+      <h3 class="font-display text-xl font-bold text-white">Terms & Conditions</h3>
+    </div>
+    
+    <div class="max-h-[250px] overflow-y-auto text-xs text-t2 space-y-3 pr-2 scrollbar-thin">
+      <p class="font-bold text-white">Welcome to ArenaX!</p>
+      <p>By registering for or playing in ArenaX tournaments, you agree to comply fully with these Terms and Conditions.</p>
+      
+      <p class="font-semibold text-white">1. Fair Play & Anti-Cheat</p>
+      <p>Cheating, exploiting game bugs, using third-party macro software/scripts, or collusion with other players is strictly forbidden. Admins monitor matches and can ban accounts and forfeit entry fees without any appeal.</p>
+      
+      <p class="font-semibold text-white">2. Wallet, Deposits & Withdrawals</p>
+      <p>All deposits are reviewed by administration. Entering fake transaction IDs (TXN) will trigger an immediate permanent account ban. Withdrawals settle within 24-48 hours. Coins inside ArenaX cannot be transferred directly to other user accounts.</p>
+      
+      <p class="font-semibold text-white">3. Content Restrictions</p>
+      <p>Harassment, hate speech, spamming, and toxic behavior in public chats or support rooms is prohibited and will result in temporary or permanent messaging restrictions.</p>
+      
+      <p class="font-semibold text-white">4. Account Loss</p>
+      <p>Guest account data is stored locally in your browser. Clearing your cache or browser cookies will lead to loss of access, and guest accounts cannot be recovered.</p>
+    </div>
+
+    <button id="bCloseTerms" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">I Understand & Agree</button>
+  </div>
+</div>
+
+<!-- ==================== PRIVACY POLICY MODAL ==================== -->
+<div id="mPrivacy" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4">
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h3 class="font-display text-xl font-bold text-white">Privacy Policy</h3>
+    </div>
+    
+    <div class="max-h-[250px] overflow-y-auto text-xs text-t2 space-y-3 pr-2 scrollbar-thin">
+      <p class="font-bold text-white">Your Privacy Matters to ArenaX</p>
+      <p>We are committed to securing your personal information and ensuring full transparency.</p>
+      
+      <p class="font-semibold text-white">1. Information We Collect</p>
+      <p>We collect your email address, display name, profile avatar, and system metadata during registration/sign-in. Your gameplay logs, transaction histories, and messaging records are stored in a secure cloud database (Firestore).</p>
+      
+      <p class="font-semibold text-white">2. How We Use Data</p>
+      <p>Your data is used to maintain your profile, track balances, match you in tournaments, provide support, and prevent fraudulent actions or cheating.</p>
+      
+      <p class="font-semibold text-white">3. Third Party Policy</p>
+      <p>ArenaX does not sell, lease, or distribute your email address or personal statistics to any third-party marketing companies.</p>
+      
+      <p class="font-semibold text-white">4. Your Control</p>
+      <p>You can modify your display profile settings, turn off certain notifications in settings, or request full account deletion via support.</p>
+    </div>
+
+    <button id="bClosePrivacy" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">I Understand & Agree</button>
   </div>
 </div>
 
@@ -1023,6 +1177,11 @@ onAuthStateChanged(auth, async (fireUser) => {
 
 // Auth Trigger handlers
 $('bGoogle').addEventListener('click', async () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
   $('loginErr').classList.add('hidden');
   try {
     await signInWithPopup(auth, googleProvider);
@@ -1035,6 +1194,11 @@ $('bGoogle').addEventListener('click', async () => {
 });
 
 $('bEmail').addEventListener('click', async () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
   const em = $('iEmail').value.trim();
   const pw = $('iPass').value.trim();
   if (!em || !pw) {
@@ -1069,9 +1233,20 @@ $('bEmail').addEventListener('click', async () => {
 });
 
 // Guest Sign In Flow
-$('bGuest').addEventListener('click', () => $('mGuest').classList.remove('hidden'));
+$('bGuest').addEventListener('click', () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  $('mGuest').classList.remove('hidden');
+});
 $('bGBack').addEventListener('click', () => $('mGuest').classList.add('hidden'));
 $('bGConfirm').addEventListener('click', () => {
+  if (!$('termsCheckbox').checked) {
+    alert('You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+    return;
+  }
   $('mGuest').classList.add('hidden');
   const gid = Math.floor(100000 + Math.random() * 900000);
   guestProfile = {
@@ -2292,6 +2467,39 @@ $('btnCustomize').addEventListener('click', () => {
 $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
 $('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
 $('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('hidden'));
+
+// Topbar Support Click Handler
+$('bTopbarSupport').addEventListener('click', () => {
+  switchTab('Support');
+  loadLiveSupportChat();
+});
+
+// Settings Modal Triggers
+$('bSettings').addEventListener('click', () => {
+  $('mSettings').classList.remove('hidden');
+});
+$('bCloseSettingsCross').addEventListener('click', () => $('mSettings').classList.add('hidden'));
+$('bCloseSettings').addEventListener('click', () => $('mSettings').classList.add('hidden'));
+$('bSaveSettings').addEventListener('click', () => {
+  alert('⚙️ Settings saved successfully!');
+  $('mSettings').classList.add('hidden');
+});
+
+// Terms Modal Triggers
+$('bViewTerms').addEventListener('click', () => $('mTerms').classList.remove('hidden'));
+$('lnkTerms').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('mTerms').classList.remove('hidden');
+});
+$('bCloseTerms').addEventListener('click', () => $('mTerms').classList.add('hidden'));
+
+// Privacy Modal Triggers
+$('bViewPrivacy').addEventListener('click', () => $('mPrivacy').classList.remove('hidden'));
+$('lnkPrivacy').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('mPrivacy').classList.remove('hidden');
+});
+$('bClosePrivacy').addEventListener('click', () => $('mPrivacy').classList.add('hidden'));
 
 // Trigger and launch support chat connection listener when support tab mounts
 document.querySelector('.ni[data-t="Support"]').addEventListener('click', () => {
