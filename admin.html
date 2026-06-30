@@ -123,6 +123,12 @@ tailwind.config = {
       <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Support">
         <i class="fas fa-headset w-4 text-center"></i> Support Tickets <span id="tktOpenCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
       </button>
+
+      <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2 pt-4">Payments System</div>
+
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Deposits">
+        <i class="fas fa-money-bill-wave w-4 text-center"></i> Verify Deposits <span id="depPendingCount" class="bg-gold text-bg text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden font-black">0</span>
+      </button>
     </nav>
 
     <div class="p-4 border-t border-bdr space-y-3 bg-[#0a0d16]/50">
@@ -331,6 +337,35 @@ tailwind.config = {
         </div>
       </section>
 
+      <!-- ── DEPOSIT REQUESTS PAGE ── -->
+      <section id="pDeposits" class="page space-y-4 hidden">
+        <div class="flex gap-2">
+          <button class="dfb on px-4 py-1.5 bg-gold text-bg text-[10px] font-black rounded-full transition uppercase tracking-wider" data-f="pending">Pending Review</button>
+          <button class="dfb px-4 py-1.5 bg-card border border-bdr text-t2 text-[10px] font-bold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="approved">Approved</button>
+          <button class="dfb px-4 py-1.5 bg-card border border-bdr text-t2 text-[10px] font-bold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="rejected">Rejected</button>
+          <button class="dfb px-4 py-1.5 bg-card border border-bdr text-t2 text-[10px] font-bold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="all">All Logs</button>
+        </div>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-4">User Info</th>
+                <th class="p-4">Payment Method</th>
+                <th class="p-4">TXN ID</th>
+                <th class="p-4">Amount PKR</th>
+                <th class="p-4">Coins AX (+15% Bonus)</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="depositsTableBody" class="divide-y divide-bdr/30">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </div>
   </main>
 </div>
@@ -498,6 +533,8 @@ let tournaments = [];
 let registrations = [];
 let reports = [];
 let tickets = [];
+let deposits = [];
+let depositFilter = 'pending';
 
 let activePage = 'Dash';
 let banTargetUser = null;
@@ -536,7 +573,8 @@ function switchPage(page) {
                                  page === 'Users' ? 'Users Management Log' :
                                  page === 'Tours' ? 'Active Events Match Config' :
                                  page === 'Registrations' ? 'Verify Applications Slots' :
-                                 page === 'Reports' ? 'Violation Cheat Reports logs' : 'Customer Support Chat Channels';
+                                 page === 'Reports' ? 'Violation Cheat Reports logs' :
+                                 page === 'Deposits' ? 'Verify Deposits Queue' : 'Customer Support Chat Channels';
 }
 window.switchPage = switchPage;
 
@@ -665,6 +703,30 @@ function loadRealtimeDatabase() {
 
     renderTickets();
   });
+
+  // 6. Listen Deposit Requests
+  const qDeps = query(collection(db, 'deposit_requests'));
+  onSnapshot(qDeps, (snap) => {
+    deposits = [];
+    snap.forEach(d => deposits.push({ id: d.id, ...d.data() }));
+
+    // Sort in memory by submittedAt desc
+    deposits.sort((a, b) => {
+      const ta = a.submittedAt?.seconds || 0;
+      const tb = b.submittedAt?.seconds || 0;
+      return tb - ta;
+    });
+
+    const pendings = deposits.filter(d => d.status === 'pending');
+    if (pendings.length > 0) {
+      $('depPendingCount').textContent = pendings.length;
+      $('depPendingCount').classList.remove('hidden');
+    } else {
+      $('depPendingCount').classList.add('hidden');
+    }
+
+    renderDeposits();
+  });
 }
 
 // ── RENDER RECENT REGS DASHBOARD ──
@@ -697,6 +759,174 @@ function renderRecentRegistrations() {
     container.appendChild(tr);
   });
 }
+
+// ── RENDER DEPOSITS QUEUE ──
+function renderDeposits() {
+  const container = $('depositsTableBody');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const filtered = deposits.filter(d => {
+    if (depositFilter === 'all') return true;
+    return d.status === depositFilter;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<tr><td colSpan="7" class="p-6 text-center text-t3 font-medium">No transaction requests logged under "${depositFilter}" filter.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(dep => {
+    const isWithdrawal = dep.type === 'withdrawal';
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+
+    let typeBadge = isWithdrawal 
+      ? `<span class="px-1.5 py-0.5 rounded text-[9px] bg-red/10 text-red border border-red/20 font-black uppercase">Withdrawal</span>`
+      : `<span class="px-1.5 py-0.5 rounded text-[9px] bg-green/10 text-green border border-green/20 font-black uppercase">Deposit</span>`;
+
+    let statusBadge = '';
+    if (dep.status === 'pending') {
+      statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] bg-gold/10 text-gold border border-gold/20 font-black uppercase">Pending Review</span>`;
+    } else if (dep.status === 'approved') {
+      statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] bg-green/10 text-green border border-green/20 font-bold uppercase">Approved ✅</span>`;
+    } else {
+      statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] bg-red/10 text-red border border-red/20 font-bold uppercase" title="${dep.rejectionReason || ''}">Rejected ❌</span>`;
+    }
+
+    let actionsHtml = '';
+    if (dep.status === 'pending') {
+      actionsHtml = `
+        <button class="b-dep-app px-2.5 py-1.5 bg-green/15 border border-green/30 hover:bg-green/30 text-green rounded text-[10px] font-black transition cursor-pointer" data-id="${dep.id}">Approve</button>
+        <button class="b-dep-rej px-2.5 py-1.5 bg-red/15 border border-red/30 hover:bg-red/30 text-red rounded text-[10px] font-black transition cursor-pointer" data-id="${dep.id}">Reject</button>
+      `;
+    } else if (dep.status === 'rejected') {
+      actionsHtml = `<span class="text-[10px] text-t3 font-medium truncate max-w-[140px] block" title="${dep.rejectionReason || ''}">Reason: ${dep.rejectionReason || 'None'}</span>`;
+    } else {
+      actionsHtml = isWithdrawal 
+        ? `<span class="text-[10px] text-red font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Sent / Disbursed</span>`
+        : `<span class="text-[10px] text-green font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Wallet Credited</span>`;
+    }
+
+    const dateStr = dep.submittedAt ? new Date(dep.submittedAt.seconds * 1000).toLocaleString() : 'Just now';
+
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="font-bold text-white">${dep.userName || 'Unknown'}</div>
+        <div class="text-[9px] text-t3 font-mono">${dep.userHandle || ''}</div>
+        <div class="mt-1">${typeBadge}</div>
+      </td>
+      <td class="p-4 font-bold text-t2 uppercase">
+        ${dep.method || 'Unknown'}
+        ${isWithdrawal ? `<div class="text-[9px] text-t3 lowercase font-normal block max-w-[150px] truncate" title="${dep.accountDetails || ''}">${dep.accountDetails || ''}</div>` : ''}
+      </td>
+      <td class="p-4 font-mono font-bold text-blue select-all">${dep.txnId || ''}</td>
+      <td class="p-4 font-bold text-white font-mono">Rs ${dep.amountPKR ? dep.amountPKR.toLocaleString() : '0'}</td>
+      <td class="p-4 font-bold text-gold font-mono">${isWithdrawal ? '-' : '+'}${dep.amountAX ? dep.amountAX.toLocaleString() : '0'} AX</td>
+      <td class="p-4">${statusBadge}<div class="text-[8px] text-t3 mt-1 font-mono">${dateStr}</div></td>
+      <td class="p-4 flex items-center gap-1.5 h-full pt-5">${actionsHtml}</td>
+    `;
+
+    if (dep.status === 'pending') {
+      tr.querySelector('.b-dep-app').addEventListener('click', () => approveDeposit(dep));
+      tr.querySelector('.b-dep-rej').addEventListener('click', () => rejectDeposit(dep));
+    }
+
+    container.appendChild(tr);
+  });
+}
+
+async function approveDeposit(dep) {
+  const isWithdrawal = dep.type === 'withdrawal';
+  const actionText = isWithdrawal ? 'APPROVE this withdrawal (Mark as Paid/Disbursed)' : 'APPROVE this deposit';
+  if (!confirm(`Are you sure you want to ${actionText}?\n\nPlayer: ${dep.userName}\nAmount: ${dep.amountAX} AX\nDetails: ${dep.accountDetails || dep.method}\nTXN/WTH ID: ${dep.txnId}`)) return;
+
+  try {
+    if (!isWithdrawal) {
+      // For deposit: credit user's wallet
+      const userRef = doc(db, 'users', dep.userId);
+      await updateDoc(userRef, {
+        balance: increment(dep.amountAX)
+      });
+    }
+
+    // Mark request status as approved
+    const depRef = doc(db, 'deposit_requests', dep.id);
+    await updateDoc(depRef, {
+      status: 'approved',
+      approvedAt: serverTimestamp()
+    });
+
+    // Send real-time notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: dep.userId,
+      title: isWithdrawal ? 'Withdrawal Approved! 💰' : 'Deposit Approved! ✅',
+      body: isWithdrawal 
+        ? `Your withdrawal request for ${dep.amountAX} AX was approved. Rs ${dep.amountPKR} has been sent to your account: ${dep.accountDetails || ''}.`
+        : `Your deposit of Rs ${dep.amountPKR} via ${dep.method} was approved. Added ${dep.amountAX} AX Coins (including 15% bonus!) to your wallet.`,
+      createdAt: serverTimestamp(),
+      read: false
+    });
+
+    alert(isWithdrawal ? 'Withdrawal marked as successfully approved!' : `Successfully approved and credited ${dep.amountAX} AX Coins to ${dep.userName}!`);
+  } catch (err) {
+    alert('Failed to approve request: ' + err.message);
+  }
+}
+
+async function rejectDeposit(dep) {
+  const isWithdrawal = dep.type === 'withdrawal';
+  const reason = prompt(`Enter rejection reason for ${dep.userName}'s ${isWithdrawal ? 'withdrawal' : 'deposit'} request (${dep.amountAX} AX):`, 'Invalid details provided.');
+  if (reason === null) return;
+
+  try {
+    if (isWithdrawal) {
+      // Refund user's wallet
+      const userRef = doc(db, 'users', dep.userId);
+      await updateDoc(userRef, {
+        balance: increment(dep.amountAX)
+      });
+    }
+
+    // Mark request status as rejected
+    const depRef = doc(db, 'deposit_requests', dep.id);
+    await updateDoc(depRef, {
+      status: 'rejected',
+      rejectionReason: reason.trim() || 'Invalid details provided.',
+      rejectedAt: serverTimestamp()
+    });
+
+    // Send real-time notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: dep.userId,
+      title: isWithdrawal ? 'Withdrawal Rejected ❌' : 'Deposit Rejected ❌',
+      body: isWithdrawal 
+        ? `Your withdrawal request of ${dep.amountAX} AX has been rejected. Reason: ${reason.trim()}. Your coins have been fully refunded.`
+        : `Your deposit request of Rs ${dep.amountPKR} has been rejected. Reason: ${reason.trim() || 'Invalid details.'}`,
+      createdAt: serverTimestamp(),
+      read: false
+    });
+
+    alert(isWithdrawal ? 'Withdrawal rejected and coins refunded successfully!' : 'Deposit request rejected.');
+  } catch (err) {
+    alert('Failed to reject request: ' + err.message);
+  }
+}
+
+// Hook up deposit filters (.dfb buttons)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.dfb');
+  if (btn) {
+    document.querySelectorAll('.dfb').forEach(b => {
+      b.classList.remove('on', 'bg-gold', 'text-bg');
+      b.classList.add('bg-card', 'border', 'border-bdr', 'text-t2');
+    });
+    btn.classList.add('on', 'bg-gold', 'text-bg');
+    btn.classList.remove('bg-card', 'border', 'border-bdr', 'text-t2');
+    depositFilter = btn.dataset.f;
+    renderDeposits();
+  }
+});
 
 // ── RENDER USERS LOG ──
 let userFilter = 'all';
