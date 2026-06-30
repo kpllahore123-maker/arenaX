@@ -566,13 +566,30 @@ tailwind.config = {
         <button class="amt-chip flex-1 py-1.5 bg-card border border-bdr rounded-full text-xs font-semibold hover:border-gold hover:text-gold transition" data-v="1000">Rs 1000</button>
       </div>
 
-      <input id="payAmtInp" type="number" placeholder="Custom PKR Amount (Min Rs 50)" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2 text-sm outline-none focus:border-gold transition text-white"/>
+      <div>
+        <label class="block text-[10px] uppercase font-black text-t3 mb-1 tracking-wider">Deposit PKR Cash *</label>
+        <input id="payAmtInp" type="number" placeholder="Custom PKR Amount (Min Rs 50)" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold transition text-white font-mono"/>
+      </div>
+
+      <div class="p-3 bg-gold/5 border border-gold/15 rounded-lg flex flex-col gap-0.5">
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] font-bold text-t2 uppercase tracking-wide">AX Coins To Receive</span>
+          <span id="payEstimatedAX" class="text-gold font-black font-display text-sm">0 AX</span>
+        </div>
+        <p id="payEstimatedAXLabel" class="text-[9px] text-green font-medium text-right">Get <strong class="text-green">15% bonus</strong> AX coins on every deposit!</p>
+      </div>
       
       <div id="payInstr" class="bg-card p-3 rounded-xl border border-bdr text-[11px] text-t2 leading-relaxed font-medium">
         <!-- Instructions populated dynamically -->
       </div>
 
-      <button id="payConfirmBtn" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-sm font-bold rounded-lg transition">Confirm Deposit</button>
+      <div>
+        <label class="block text-[10px] uppercase font-black text-t3 mb-1 tracking-wider">Enter payment Transaction ID *</label>
+        <input id="payTxnId" type="text" placeholder="Transaction ID (TXN ID / TID) *" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold transition text-white font-mono uppercase"/>
+        <p class="text-[8px] text-t3 mt-1 leading-normal">Enter the precise 11-12 digit Transaction ID from your EasyPaisa/JazzCash receipt to submit the deposit check.</p>
+      </div>
+
+      <button id="payConfirmBtn" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black rounded-lg uppercase tracking-wider transition">Submit Deposit Request</button>
       <button id="bClosePayment2" class="w-full py-2 bg-ele text-t2 text-xs font-semibold border border-bdr rounded-lg transition">Cancel</button>
     </div>
   </div>
@@ -802,7 +819,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDocs, deleteDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDocs, deleteDoc, updateDoc, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Setup credentials
 const firebaseConfig = {
@@ -829,6 +846,7 @@ let activeDMOrientationUid = null;
 let toursData = [];
 let userRegs = {};
 let friendList = [];
+let depositUnsub = null;
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 
@@ -868,6 +886,7 @@ function boot() {
   $('pHandle').textContent = profile.handle;
   $('pAv').src = profile.av;
   $('avImg').src = profile.av;
+  $('wBal').textContent = (profile.balance || 0).toLocaleString();
 
   if (guestProfile) {
     $('gBanner').classList.remove('hidden');
@@ -929,7 +948,29 @@ document.querySelectorAll('.ni').forEach(btn => {
 
 // Setup Auth State listener
 onAuthStateChanged(auth, async (fireUser) => {
+  if (depositUnsub) {
+    depositUnsub();
+    depositUnsub = null;
+  }
   if (fireUser && !guestProfile) {
+    // Start real-time deposit listener for user
+    const qDeposits = query(
+      collection(db, 'deposit_requests'),
+      where('userId', '==', fireUser.uid)
+    );
+    depositUnsub = onSnapshot(qDeposits, (dSnap) => {
+      let list = [];
+      dSnap.forEach(dDoc => {
+        list.push({ id: dDoc.id, ...dDoc.data() });
+      });
+      list.sort((a, b) => {
+        const ta = a.submittedAt?.seconds || 0;
+        const tb = b.submittedAt?.seconds || 0;
+        return tb - ta;
+      });
+      renderUserDeposits(list);
+    });
+
     // Read and listen to Firestore User Profile in real time!
     onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
       if (snap.exists()) {
@@ -1070,13 +1111,15 @@ function loadTournamentsList() {
     // Listen to user registrations
     const profile = userProfile || guestProfile;
     if (profile && !guestProfile) {
-      onSnapshot(collection(db, 'tournament_registrations'), (regSnap) => {
+      const qRegs = query(
+        collection(db, 'tournament_registrations'),
+        where('userId', '==', profile.uid)
+      );
+      onSnapshot(qRegs, (regSnap) => {
         userRegs = {};
         regSnap.forEach(rd => {
           const r = rd.data();
-          if (r.userId === profile.uid) {
-            userRegs[r.tournamentId] = { id: rd.id, ...r };
-          }
+          userRegs[r.tournamentId] = { id: rd.id, ...r };
         });
         renderTournaments();
       });
@@ -1421,67 +1464,176 @@ document.querySelectorAll('.amt-chip').forEach(chip => {
     document.querySelectorAll('.amt-chip').forEach(c => c.classList.remove('border-gold', 'text-gold'));
     chip.classList.add('border-gold', 'text-gold');
     $('payAmtInp').value = chip.dataset.v;
+    $('payAmtInp').dispatchEvent(new Event('input'));
   });
 });
 
+// Estimated Coins Live update listener
+$('payAmtInp').addEventListener('input', () => {
+  const amt = parseFloat($('payAmtInp').value) || 0;
+  if (amt > 0) {
+    const bonusAX = Math.floor(amt * 1.15);
+    $('payEstimatedAX').textContent = `${bonusAX.toLocaleString()} AX`;
+    $('payEstimatedAXLabel').innerHTML = `Includes <strong class="text-green">15% bonus</strong> coins!`;
+  } else {
+    $('payEstimatedAX').textContent = `0 AX`;
+    $('payEstimatedAXLabel').innerHTML = `Get <strong class="text-green">15% bonus</strong> AX coins on every deposit!`;
+  }
+});
+
 $('payConfirmBtn').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert('Connect a full account to deposit real money.');
+    return;
+  }
   const amt = parseFloat($('payAmtInp').value);
   if (!amt || amt < 50) {
     alert('Minimum deposit is Rs 50!');
     return;
   }
+  const txnId = $('payTxnId').value.trim();
+  if (!txnId) {
+    alert('Please enter your payment Transaction ID (TXN ID / TID) to claim coins!');
+    return;
+  }
 
-  // Claim process
   try {
-    const newBal = (userProfile.balance || 0) + amt;
-    await updateDoc(doc(db, 'users', userProfile.uid), {
-      balance: newBal
+    const finalAX = Math.floor(amt * 1.15);
+    const methodStr = selectedDepMethod === 'jc' ? 'JazzCash' : 'EasyPaisa';
+
+    // Submit to Firestore deposit_requests collection
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      amountPKR: amt,
+      amountAX: finalAX,
+      method: methodStr,
+      txnId: txnId,
+      status: 'pending',
+      rejectionReason: '',
+      submittedAt: serverTimestamp()
     });
 
-    const txnId = `TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const txLog = {
-      id: txnId,
-      type: 'deposit',
-      amount: amt,
-      status: 'approved',
-      account: selectedDepMethod === 'jc' ? 'JazzCash' : 'EasyPaisa',
-      timestamp: new Date().toLocaleString()
-    };
-
-    // Add locally to table view
-    addTxRow(txLog);
-
     $('mPayment').classList.add('hidden');
-    alert(`Rs ${amt} deposited successfully via ${txLog.account}! ${amt} AX Coins added. ✅`);
+    $('payAmtInp').value = '';
+    $('payTxnId').value = '';
+    $('payEstimatedAX').textContent = '0 AX';
+
+    alert(`Deposit request submitted successfully! ⏳\n\nYour transaction ID: ${txnId}\nPKR Amount: Rs ${amt}\nAX Coins: ${finalAX} AX\n\nPlease wait for administration to review your request. We are verifying your payment.`);
   } catch (err) {
-    alert(err.message);
+    alert('Error submitting deposit request: ' + err.message);
   }
 });
 
-function addTxRow(tx) {
+function renderUserDeposits(list) {
   const histEl = $('wHist');
-  if (histEl.querySelector('.fa-receipt')) histEl.innerHTML = '';
+  if (!histEl) return;
+  
+  if (list.length === 0) {
+    histEl.innerHTML = `
+      <div class="p-6 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+        <i class="fas fa-receipt text-2xl mb-1.5"></i>
+        <p>No recorded transactions yet.</p>
+      </div>
+    `;
+    return;
+  }
 
-  const item = document.createElement('div');
-  item.className = 'p-3 bg-card border border-bdr rounded-xl flex items-center justify-between text-xs font-medium';
-  item.innerHTML = `
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-full bg-green/10 border border-green/20 text-green flex items-center justify-center">
-        <i class="fas ${tx.type === 'deposit' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+  histEl.innerHTML = '';
+  list.forEach(tx => {
+    const isWithdrawal = tx.type === 'withdrawal';
+    const item = document.createElement('div');
+    item.className = 'p-3.5 bg-card border border-bdr rounded-xl flex flex-col gap-2.5';
+
+    let statusHtml = '';
+    let statusClass = '';
+    let bgIconClass = '';
+    let textAmtClass = '';
+
+    if (tx.status === 'pending') {
+      statusClass = 'text-gold bg-gold/10 border border-gold/20';
+      bgIconClass = 'bg-gold/10 border border-gold/20 text-gold';
+      textAmtClass = 'text-gold';
+      statusHtml = isWithdrawal ? `
+        <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+          <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+          Withdrawal Pending Review
+        </div>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to process your withdrawal request... Will be credited in 24-48 hours.</p>
+      ` : `
+        <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+          <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+          Pending Administration Review
+        </div>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to review your request... We are checking your TXN ID.</p>
+      `;
+    } else if (tx.status === 'approved') {
+      statusClass = 'text-green bg-green/10 border border-green/20';
+      bgIconClass = isWithdrawal ? 'bg-red/10 border border-red/20 text-red' : 'bg-green/10 border border-green/20 text-green';
+      textAmtClass = isWithdrawal ? 'text-red' : 'text-green';
+      statusHtml = isWithdrawal ? `
+        <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+          <i class="fas fa-arrow-up"></i> Successful Withdrawal
+        </div>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! Rs ${tx.amountPKR} sent to ${tx.method}.</p>
+      ` : `
+        <div class="flex items-center gap-1 text-[10px] font-bold text-green uppercase">
+          <i class="fas fa-check-circle"></i> Successful deposit
+        </div>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! ${tx.amountAX} AX Coins credited to wallet.</p>
+      `;
+    } else {
+      statusClass = 'text-red bg-red/10 border border-red/20';
+      bgIconClass = 'bg-red/10 border border-red/20 text-red';
+      textAmtClass = 'text-red';
+      statusHtml = `
+        <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+          <i class="fas fa-times-circle"></i> Rejected ${isWithdrawal ? 'Withdrawal' : 'Deposit'}
+        </div>
+        <p class="text-[9px] text-red/80 font-semibold leading-normal mt-0.5">Reason: ${tx.rejectionReason || 'Invalid details.'}</p>
+      `;
+    }
+
+    const dateStr = tx.submittedAt ? new Date(tx.submittedAt.seconds * 1000).toLocaleString() : 'Just now';
+
+    item.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
+            <i class="fas ${isWithdrawal ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+          </div>
+          <div>
+            <div class="text-white font-bold uppercase text-[10px]">${isWithdrawal ? 'Withdrawal' : 'Deposit'} (${tx.method})</div>
+            <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-display font-black text-sm ${textAmtClass}">
+            ${isWithdrawal ? '-' : '+'}${tx.amountAX} AX
+          </div>
+          <div class="text-[9px] text-t3 font-mono">Rs ${tx.amountPKR}</div>
+        </div>
       </div>
-      <div>
-        <div class="text-white font-bold uppercase">${tx.type} (${tx.account})</div>
-        <div class="text-[9px] text-t3 font-mono mt-0.5">${tx.timestamp}</div>
+      
+      <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
+        <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
+          <span class="text-t3 uppercase">ID: ${tx.txnId}</span>
+          <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">${tx.status}</span>
+        </div>
+        ${statusHtml}
       </div>
-    </div>
-    <div class="font-display font-black text-sm ${tx.type === 'deposit' ? 'text-green' : 'text-red'}">
-      ${tx.type === 'deposit' ? '+' : '-'}${tx.amount} AX
-    </div>
-  `;
-  histEl.insertBefore(item, histEl.firstChild);
+    `;
+
+    histEl.appendChild(item);
+  });
 }
 
-$('bWith').addEventListener('click', () => {
+$('bWith').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert('Connect a full account to request withdrawals.');
+    return;
+  }
   const curBal = userProfile.balance || 0;
   if (curBal <= 0) {
     alert('No balance available to withdraw!');
@@ -1494,7 +1646,7 @@ $('bWith').addEventListener('click', () => {
     alert('Invalid withdrawal amount!');
     return;
   }
-  const account = prompt('Enter your Payment Number / Account Type to receive PKR:');
+  const account = prompt('Enter your EasyPaisa / JazzCash Account Number and Name to receive PKR:');
   if (!account || !account.trim()) {
     alert('Withdrawal account details are required!');
     return;
@@ -1502,22 +1654,32 @@ $('bWith').addEventListener('click', () => {
 
   try {
     const newBal = curBal - amt;
-    updateDoc(doc(db, 'users', userProfile.uid), {
+    // Deduct immediately to prevent double spending
+    await updateDoc(doc(db, 'users', userProfile.uid), {
       balance: newBal
     });
 
-    const txLog = {
-      id: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-      type: 'withdraw',
-      amount: amt,
+    const txnId = `WTH-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Save as a withdrawal type under deposit_requests collection
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      amountPKR: amt, // For withdrawals, coin-to-PKR is 1:1
+      amountAX: amt,
+      method: 'EasyPaisa/JazzCash',
+      txnId: txnId,
       status: 'pending',
-      account: account,
-      timestamp: new Date().toLocaleString()
-    };
-    addTxRow(txLog);
-    alert('Withdrawal request submitted! Processing holds 24-48 verification hours.');
+      type: 'withdrawal',
+      accountDetails: account.trim(),
+      rejectionReason: '',
+      submittedAt: serverTimestamp()
+    });
+
+    alert(`Withdrawal request submitted successfully! ⏳\n\nCoins Deducted: ${amt} AX\nTransaction ID: ${txnId}\n\nOur team will review and verify your request within 24-48 hours. PKR will be sent to:\n${account}`);
   } catch (err) {
-    alert(err.message);
+    alert('Failed to submit withdrawal: ' + err.message);
   }
 });
 
@@ -1739,12 +1901,12 @@ $('btnSearchFriend').addEventListener('click', async () => {
   $('bSendFriendReq').classList.add('hidden');
 
   try {
-    const snap = await getDocs(collection(db, 'users'));
+    const qUser = query(collection(db, 'users'), where('handle', '==', handle));
+    const snap = await getDocs(qUser);
     let found = null;
     snap.forEach(d => {
       const u = d.data();
-      const uHandle = (u.handle || '').toLowerCase();
-      if (!found && uHandle === handle && u.uid !== userProfile.uid) {
+      if (!found && u.uid !== userProfile.uid) {
         found = { id: d.id, ...u };
       }
     });
@@ -2044,15 +2206,17 @@ function loadLiveNotifications() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
-  onSnapshot(collection(db, 'notifications'), (snap) => {
+  const qNotifs = query(
+    collection(db, 'notifications'),
+    where('userId', '==', profile.uid)
+  );
+  onSnapshot(qNotifs, (snap) => {
     let unreadCount = 0;
     const items = [];
     snap.forEach(d => {
       const n = d.data();
-      if (n.userId === profile.uid) {
-        items.push({ id: d.id, ...n });
-        if (!n.read) unreadCount++;
-      }
+      items.push({ id: d.id, ...n });
+      if (!n.read) unreadCount++;
     });
 
     const dot = $('notifDot');
@@ -2071,16 +2235,16 @@ $('bBell').addEventListener('click', async () => {
   }
 
   try {
-    const snap = await getDocs(collection(db, 'notifications'));
+    const qNotifs = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
+    const snap = await getDocs(qNotifs);
     const unread = [];
     const msgs = [];
     
     snap.forEach(d => {
       const n = d.data();
-      if (n.userId === userProfile.uid) {
-        msgs.push(n.message);
-        if (!n.read) unread.push(d.id);
-      }
+      const msgText = n.message || (n.title ? `${n.title}\n${n.body}` : n.body) || 'New Notification';
+      msgs.push(msgText);
+      if (!n.read) unread.push(d.id);
     });
 
     // Mark as read in Firestore
