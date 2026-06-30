@@ -212,10 +212,14 @@ tailwind.config = {
       <!-- ── USERS LOG PAGE ── -->
       <section id="pUsers" class="page space-y-4 hidden">
         <div class="flex flex-wrap gap-3 justify-between items-center">
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2 items-center">
             <button class="ufb on px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="all">All</button>
             <button class="ufb px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="premium">VIP Premium</button>
             <button class="ufb px-3 py-1 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition uppercase tracking-wider" data-f="banned">Banned</button>
+            <span class="w-[1px] h-4 bg-bdr/50 mx-1"></span>
+            <button id="btnBroadcastNotif" class="px-3 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-full hover:bg-blue-500/20 transition uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-bullhorn"></i> Broadcast to All
+            </button>
           </div>
           <div class="flex bg-card border border-bdr px-3 py-1.5 rounded-lg text-xs items-center gap-2">
             <i class="fas fa-search text-t3"></i>
@@ -477,6 +481,35 @@ tailwind.config = {
     <div class="flex gap-3 pt-2">
       <button id="bCloseBanModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
       <button id="bProcessBan" class="flex-1 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Apply Block Penalty</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== STAFF NOTIFICATION MODAL ==================== -->
+<div id="mNotif" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-lg"><i class="fas fa-bell"></i></div>
+      <div>
+        <h3 id="notifModalTitle" class="font-display text-lg font-bold text-white">Send Notification</h3>
+        <p id="notifModalSubtitle" class="text-xs text-t2">Recipients description</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Notification Title *</label>
+        <input id="notifTitle" type="text" placeholder="e.g. Announcement, Tournament Alert..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-blue-500 font-semibold"/>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Message Body *</label>
+        <textarea id="notifBody" rows="4" placeholder="Type your custom notification message here..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-blue-500 resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseNotifModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSendNotif" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition">Send Notification</button>
     </div>
   </div>
 </div>
@@ -983,9 +1016,10 @@ function renderUsers() {
       </td>
       <td class="p-4 font-mono font-bold text-gold text-xs">${(u.balance || 0).toLocaleString()} AX</td>
       <td class="p-4">${tag}</td>
-      <td class="p-4 space-x-1 text-xs font-semibold">
+      <td class="p-4 space-x-1 text-xs font-semibold font-sans">
         <button class="b-coins px-2 py-1 bg-ele border border-bdr hover:border-white text-white rounded hover:bg-card transition">Coins</button>
         <button class="b-vip px-2 py-1 bg-purple/10 border border-purple/20 hover:bg-purple/20 text-purple rounded transition">${u.premium ? 'Revoke VIP' : 'Give VIP'}</button>
+        <button class="b-notify px-2 py-1 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 rounded transition"><i class="fas fa-bell"></i> Notify</button>
         ${u.banned ? `
           <button class="b-unban px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Lift Ban</button>
         ` : `
@@ -996,6 +1030,7 @@ function renderUsers() {
 
     tr.querySelector('.b-coins').addEventListener('click', () => adjustCoins(u));
     tr.querySelector('.b-vip').addEventListener('click', () => togglePremium(u));
+    tr.querySelector('.b-notify').addEventListener('click', () => openNotifModal('single', u));
     if (u.banned) {
       tr.querySelector('.b-unban').addEventListener('click', () => liftBan(u));
     } else {
@@ -1089,6 +1124,90 @@ async function liftBan(u) {
     }
   }
 }
+
+// ── CUSTOM NOTIFICATION EVENT LISTENERS & LOGIC ──
+let notifTargetType = 'single';
+let notifTargetUser = null;
+
+function openNotifModal(type, user = null) {
+  notifTargetType = type;
+  notifTargetUser = user;
+  $('notifTitle').value = '';
+  $('notifBody').value = '';
+
+  if (type === 'all') {
+    $('notifModalTitle').textContent = 'Broadcast Notification';
+    $('notifModalSubtitle').textContent = 'This message will be sent to ALL registered players simultaneously.';
+  } else {
+    $('notifModalTitle').textContent = 'Send Player Notification';
+    $('notifModalSubtitle').textContent = `To: ${user.name} (${user.handle})`;
+  }
+
+  $('mNotif').classList.remove('hidden');
+}
+
+$('btnBroadcastNotif').addEventListener('click', () => {
+  openNotifModal('all');
+});
+
+$('bCloseNotifModal').addEventListener('click', () => {
+  $('mNotif').classList.add('hidden');
+});
+
+$('bSendNotif').addEventListener('click', async () => {
+  const title = $('notifTitle').value.trim();
+  const body = $('notifBody').value.trim();
+
+  if (!title || !body) {
+    alert('Please enter both a Title and a Message Body!');
+    return;
+  }
+
+  $('bSendNotif').disabled = true;
+  $('bSendNotif').textContent = 'Sending...';
+
+  try {
+    if (notifTargetType === 'all') {
+      if (users.length === 0) {
+        alert('No users found to broadcast to!');
+        return;
+      }
+
+      const promises = users.map(u => {
+        return addDoc(collection(db, 'notifications'), {
+          userId: u.id,
+          message: `${title}: ${body}`,
+          title: title,
+          body: body,
+          type: 'broadcast',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      });
+
+      await Promise.all(promises);
+      alert(`Broadcast notification sent successfully to all ${users.length} players! 📢`);
+    } else {
+      await addDoc(collection(db, 'notifications'), {
+        userId: notifTargetUser.id,
+        message: `${title}: ${body}`,
+        title: title,
+        body: body,
+        type: 'custom',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+      alert(`Notification sent successfully to ${notifTargetUser.name}! ✅`);
+    }
+
+    $('mNotif').classList.add('hidden');
+  } catch (err) {
+    alert('Failed to send notification: ' + err.message);
+  } finally {
+    $('bSendNotif').disabled = false;
+    $('bSendNotif').textContent = 'Send Notification';
+  }
+});
 
 // ── TOURNAMENTS EVENTS RENDER ──
 function renderTournaments() {
