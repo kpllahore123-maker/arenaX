@@ -510,7 +510,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
@@ -1276,6 +1276,38 @@ function renderRegistrations() {
 // Complete Slot verifications Approve workflow
 async function approveRegistration(reg) {
   try {
+    // Fetch tournament to find entry fee
+    const tourDoc = await getDoc(doc(db, 'tournaments', reg.tournamentId));
+    let feeAmount = 0;
+    if (tourDoc.exists()) {
+      const feeString = tourDoc.data().entryFee || '';
+      if (feeString && !feeString.toLowerCase().includes('free')) {
+        const matches = feeString.match(/\d+/);
+        if (matches) feeAmount = parseInt(matches[0], 10);
+      }
+    }
+
+    // Deduct fee atomically from user balance
+    if (feeAmount > 0) {
+      await updateDoc(doc(db, 'users', reg.userId), {
+        balance: increment(-feeAmount)
+      });
+
+      // Write transaction history log
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: reg.userId,
+        userName: reg.userName || '',
+        userEmail: '',
+        type: 'withdrawal',
+        method: 'Tournament Fee',
+        amountPKR: 0,
+        amountAX: feeAmount,
+        txnId: 'REG-' + Math.floor(100000 + Math.random() * 900000),
+        status: 'approved',
+        submittedAt: serverTimestamp()
+      });
+    }
+
     // 1. Approve doc
     await updateDoc(doc(db, 'tournament_registrations', reg.id), { status: 'approved' });
 
@@ -1287,13 +1319,13 @@ async function approveRegistration(reg) {
     // 3. Dispatch user app-alert notification
     await addDoc(collection(db, 'notifications'), {
       userId: reg.userId,
-      message: `🎉 Slots confirmed! Your registration entry for "${reg.tournamentName}" has been APPROVED. Good luck in the matches!`,
+      message: `🎉 Slots confirmed! Your registration entry for "${reg.tournamentName}" has been APPROVED. Good luck in the matches! ${feeAmount > 0 ? `${feeAmount} AX Coins have been deducted from your wallet.` : ''}`,
       type: 'approved',
       read: false,
       createdAt: serverTimestamp()
     });
 
-    alert('Application slot APPROVED successfully! Slot count atomically updated inside event. ✅');
+    alert(`Application slot APPROVED successfully! ${feeAmount > 0 ? `${feeAmount} AX Coins deducted.` : ''} Slot count atomically updated. ✅`);
   } catch (err) {
     alert('Approve error: ' + err.message);
   }
