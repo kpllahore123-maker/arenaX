@@ -118,6 +118,15 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Premium plans modal
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  // Settings & Terms/Privacy Modals
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [notifAnnounce, setNotifAnnounce] = useState(true);
+  const [notifFriends, setNotifFriends] = useState(true);
+  const [notifTours, setNotifTours] = useState(true);
   const [premiumPlan, setPremiumPlan] = useState<'weekly' | 'monthly'>('weekly');
 
   // Listen to Auth & Firestore profile
@@ -340,6 +349,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Google Login
   const handleGoogleLogin = async () => {
+    if (!agreedToTerms) {
+      setAuthError('⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+      return;
+    }
     setAuthLoading(true);
     setAuthError('');
     try {
@@ -356,6 +369,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Email Sign In or Create
   const handleEmailAuth = async () => {
+    if (!agreedToTerms) {
+      setAuthError('⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+      return;
+    }
     if (!email || !password) {
       setAuthError('Please enter email and password.');
       return;
@@ -391,6 +408,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Guest Account login
   const handleGuestConfirm = () => {
+    if (!agreedToTerms) {
+      alert('You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+      return;
+    }
     const gid = Math.floor(100000 + Math.random() * 900000);
     setGuestId(gid);
     setIsGuest(true);
@@ -905,6 +926,28 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               </div>
             )}
 
+            {/* Terms & Conditions / Privacy Policy Agreement Checkbox */}
+            <div className="flex items-start gap-2.5 p-3 bg-[#171b2e] border border-[#252a45] rounded-lg">
+              <input
+                id="reactTermsCheckbox"
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-[#f0c040] rounded border-[#252a45] bg-[#0a0c12] cursor-pointer"
+              />
+              <label htmlFor="reactTermsCheckbox" className="text-[11px] text-[#8890b0] leading-snug cursor-pointer select-none">
+                I agree to the{' '}
+                <span onClick={() => setShowTermsModal(true)} className="text-white font-medium hover:underline cursor-pointer">
+                  Terms & Conditions
+                </span>{' '}
+                and{' '}
+                <span onClick={() => setShowPrivacyModal(true)} className="text-white font-medium hover:underline cursor-pointer">
+                  Privacy Policy
+                </span>{' '}
+                of ArenaX.
+              </label>
+            </div>
+
             <button
               onClick={handleGoogleLogin}
               disabled={authLoading}
@@ -1020,7 +1063,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         <div className="ff-title text-xl font-bold tracking-wider text-white">
           <i className="fas fa-trophy text-[#f0c040] mr-2"></i>Arena<span className="text-[#f0c040]">X</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Admin panel switch option for staff */}
           {(isAdminUID || currentUser.email === 'admin@arenax.com') && (
             <button
@@ -1031,16 +1074,37 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             </button>
           )}
 
+          {/* Topbar Support Chat */}
+          <button
+            onClick={() => setActiveTab('Support')}
+            className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            title="Support Chat"
+          >
+            <i className="fas fa-headset"></i>
+          </button>
+
+          {/* Notification Bell */}
           <button
             onClick={handleOpenNotifications}
             className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            title="Notifications"
           >
             <i className="fas fa-bell"></i>
             {unreadNotifsCount > 0 && (
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#e8404a] rounded-full ring-2 ring-[#111420]"></span>
             )}
           </button>
-          <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[#f0c040] flex-shrink-0">
+
+          {/* Settings Cog */}
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            title="Settings"
+          >
+            <i className="fas fa-cog"></i>
+          </button>
+
+          <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[#f0c040] flex-shrink-0 ml-1">
             <img src={currentUser.av} alt="Avatar" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -1689,8 +1753,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           { tab: 'Rules', label: 'Rules', icon: 'fa-book-open' },
           { tab: 'Wallet', label: 'Wallet', icon: 'fa-wallet' },
           { tab: 'Chat', label: 'Chat', icon: 'fa-comments' },
-          { tab: 'Tour', label: 'Events', icon: 'fa-trophy' },
-          { tab: 'Support', label: 'Support', icon: 'fa-headset' }
+          { tab: 'Tour', label: 'Events', icon: 'fa-trophy' }
         ].map((item) => (
           <button
             key={item.tab}
@@ -1820,6 +1883,192 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               className="w-full text-center text-xs text-[#8890b0] hover:text-white transition py-1"
             >
               Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SETTINGS MODAL */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4">
+            <div className="flex items-center justify-between border-b border-[#252a45]/50 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#f0c040]/10 border border-[#f0c040]/20 rounded-full flex items-center justify-center text-[#f0c040] text-lg">
+                  <i className="fas fa-cog"></i>
+                </div>
+                <h3 className="font-sans text-xl font-bold text-white">ArenaX Settings</h3>
+              </div>
+              <button onClick={() => setShowSettingsModal(false)} className="text-[#8890b0] hover:text-white transition">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* Notification Settings */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] uppercase tracking-wider text-[#8890b0] font-bold">Notification Preferences</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-[#171b2e] border border-[#252a45] rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-white">Announcement Alerts</span>
+                    <span className="text-[9px] text-[#8890b0]">Real-time alerts for system announcements</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifAnnounce}
+                      onChange={(e) => setNotifAnnounce(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f0c040]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-[#171b2e] border border-[#252a45] rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-white">Friend Request Alerts</span>
+                    <span className="text-[9px] text-[#8890b0]">Alerts when someone sends a friend request</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifFriends}
+                      onChange={(e) => setNotifFriends(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f0c040]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-[#171b2e] border border-[#252a45] rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-white">Tournament Updates</span>
+                    <span className="text-[9px] text-[#8890b0]">Get alerts about event brackets & slots</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifTours}
+                      onChange={(e) => setNotifTours(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f0c040]"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Legal Documents */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] uppercase tracking-wider text-[#8890b0] font-bold">Legal Agreements</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setShowTermsModal(true)}
+                  className="py-2.5 bg-[#171b2e] hover:bg-[#171b2e]/80 border border-[#252a45] text-[#8890b0] hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                >
+                  <i className="fas fa-file-contract text-[#f0c040]/80"></i> Terms & Conditions
+                </button>
+                <button
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="py-2.5 bg-[#171b2e] hover:bg-[#171b2e]/80 border border-[#252a45] text-[#8890b0] hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                >
+                  <i className="fas fa-user-shield text-[#f0c040]/80"></i> Privacy Policy
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 border-t border-[#252a45]/50 pt-3">
+              <button
+                onClick={() => {
+                  alert('⚙️ Settings saved successfully!');
+                  setShowSettingsModal(false);
+                }}
+                className="flex-1 py-2.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-lg transition"
+              >
+                Save Settings
+              </button>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="flex-1 py-2.5 bg-[#1e2340] hover:bg-[#171b2e] border border-[#252a45] text-[#8890b0] text-xs font-semibold rounded-lg transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS & CONDITIONS MODAL */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[460px] w-full space-y-4 animate-fade-in">
+            <div className="flex items-center gap-3 border-b border-[#252a45]/50 pb-3">
+              <div className="w-10 h-10 bg-[#f0c040]/10 border border-[#f0c040]/20 rounded-full flex items-center justify-center text-[#f0c040] text-lg">
+                <i className="fas fa-file-contract"></i>
+              </div>
+              <h3 className="font-sans text-xl font-bold text-white">Terms & Conditions</h3>
+            </div>
+
+            <div className="max-h-[250px] overflow-y-auto text-xs text-[#8890b0] space-y-3 pr-2">
+              <p className="font-bold text-white">Welcome to ArenaX!</p>
+              <p>By registering for or playing in ArenaX tournaments, you agree to comply fully with these Terms and Conditions.</p>
+
+              <p className="font-semibold text-white">1. Fair Play & Anti-Cheat</p>
+              <p>Cheating, exploiting game bugs, using third-party macro software/scripts, or collusion with other players is strictly forbidden. Admins monitor matches and can ban accounts and forfeit entry fees without any appeal.</p>
+
+              <p className="font-semibold text-white">2. Wallet, Deposits & Withdrawals</p>
+              <p>All deposits are reviewed by administration. Entering fake transaction IDs (TXN) will trigger an immediate permanent account ban. Withdrawals settle within 24-48 hours. Coins inside ArenaX cannot be transferred directly to other user accounts.</p>
+
+              <p className="font-semibold text-white">3. Content Restrictions</p>
+              <p>Harassment, hate speech, spamming, and toxic behavior in public chats or support rooms is prohibited and will result in temporary or permanent messaging restrictions.</p>
+
+              <p className="font-semibold text-white">4. Account Loss</p>
+              <p>Guest account data is stored locally in your browser. Clearing your cache or browser cookies will lead to loss of access, and guest accounts cannot be recovered.</p>
+            </div>
+
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="w-full py-2.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-lg transition"
+            >
+              I Understand & Agree
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PRIVACY POLICY MODAL */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[460px] w-full space-y-4 animate-fade-in">
+            <div className="flex items-center gap-3 border-b border-[#252a45]/50 pb-3">
+              <div className="w-10 h-10 bg-[#f0c040]/10 border border-[#f0c040]/20 rounded-full flex items-center justify-center text-[#f0c040] text-lg">
+                <i className="fas fa-user-shield"></i>
+              </div>
+              <h3 className="font-sans text-xl font-bold text-white">Privacy Policy</h3>
+            </div>
+
+            <div className="max-h-[250px] overflow-y-auto text-xs text-[#8890b0] space-y-3 pr-2">
+              <p className="font-bold text-white">Your Privacy Matters to ArenaX</p>
+              <p>We are committed to securing your personal information and ensuring full transparency.</p>
+
+              <p className="font-semibold text-white">1. Information We Collect</p>
+              <p>We collect your email address, display name, profile avatar, and system metadata during registration/sign-in. Your gameplay logs, transaction histories, and messaging records are stored in a secure cloud database (Firestore).</p>
+
+              <p className="font-semibold text-white">2. How We Use Data</p>
+              <p>Your data is used to maintain your profile, track balances, match you in tournaments, provide support, and prevent fraudulent actions or cheating.</p>
+
+              <p className="font-semibold text-white">3. Third Party Policy</p>
+              <p>ArenaX does not sell, lease, or distribute your email address or personal statistics to any third-party marketing companies.</p>
+
+              <p className="font-semibold text-white">4. Your Control</p>
+              <p>You can modify your display profile settings, turn off certain notifications in settings, or request full account deletion via support.</p>
+            </div>
+
+            <button
+              onClick={() => setShowPrivacyModal(false)}
+              className="w-full py-2.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-lg transition"
+            >
+              I Understand & Agree
             </button>
           </div>
         </div>
