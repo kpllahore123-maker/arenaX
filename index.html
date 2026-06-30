@@ -220,6 +220,9 @@ tailwind.config = {
             </span>
             <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded border border-neutral-700 uppercase hidden">Guest</span>
             <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-purple/20 text-purple rounded border border-purple/30 uppercase hidden"><i class="fas fa-crown mr-1"></i> Premium</span>
+            <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 uppercase hidden">
+              <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
+            </span>
           </div>
         </div>
       </div>
@@ -255,6 +258,40 @@ tailwind.config = {
         <div class="p-3 bg-card border border-bdr rounded-xl text-center">
           <div id="statB" class="font-display text-2xl font-bold text-gold">—</div>
           <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Best Finish</div>
+        </div>
+      </div>
+      
+      <!-- EXTRA DETAILS -->
+      <div id="pDetailsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-3 hidden">
+        <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1.5 flex items-center gap-1.5">
+          <i class="fas fa-id-card"></i> Game Info & Socials
+        </h4>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-left">
+          <div id="pDetailCountryContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Country / Region</span>
+            <span id="pDetailCountry" class="text-white font-bold flex items-center gap-1.5 mt-0.5">🌍 Other</span>
+          </div>
+          <div id="pDetailFavGameContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Favorite Game</span>
+            <span id="pDetailFavGame" class="text-white font-bold mt-0.5">None</span>
+          </div>
+          <div id="pDetailGameUIDContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Game UID / IGN</span>
+            <span id="pDetailGameUID" class="text-gold font-mono font-extrabold mt-0.5">None</span>
+          </div>
+        </div>
+        
+        <!-- Social badges -->
+        <div id="pDetailSocials" class="flex flex-wrap gap-2 pt-2 border-t border-bdr/20 hidden">
+          <a id="pSocialDiscord" href="#" target="_blank" class="px-2.5 py-1 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-discord"></i> <span id="pSocialDiscordText">username</span>
+          </a>
+          <a id="pSocialInstagram" href="#" target="_blank" class="px-2.5 py-1 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] border border-[#E1306C]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-instagram"></i> <span id="pSocialInstagramText">handle</span>
+          </a>
+          <a id="pSocialYoutube" href="#" target="_blank" class="px-2.5 py-1 bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000] border border-[#FF0000]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-youtube"></i> YouTube
+          </a>
         </div>
       </div>
 
@@ -556,32 +593,173 @@ tailwind.config = {
 
 <!-- ==================== CUSTOMIZE PROFILE MODAL ==================== -->
 <div id="mCustomize" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-palette"></i></div>
-      <h3 class="font-display text-xl font-bold text-white">Customize Profile</h3>
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-palette"></i></div>
+        <h3 class="font-display text-lg font-bold text-white">Customize Profile</h3>
+      </div>
+      <button id="bCloseCustomizeCross" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
     </div>
     
-    <div class="space-y-3">
-      <div>
-        <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Display Name</label>
-        <input id="custName" type="text" placeholder="Enter display name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-sm text-t1 outline-none focus:border-gold"/>
+    <div class="flex-1 overflow-y-auto space-y-4 text-left pr-1.5 scrollbar-thin">
+      <!-- BASIC INFO (FOR ALL USERS) -->
+      <div class="border-b border-bdr/20 pb-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
+          <i class="fas fa-info-circle"></i> Basic Info
+        </h4>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Display Name</label>
+            <input id="custName" type="text" placeholder="Enter display name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Country / Region</label>
+              <select id="custCountry" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
+                <option value="">Select Country</option>
+                <option value="PK">🇵🇰 Pakistan</option>
+                <option value="IN">🇮🇳 India</option>
+                <option value="BD">🇧🇩 Bangladesh</option>
+                <option value="SA">🇸🇦 Saudi Arabia</option>
+                <option value="AE">🇦🇪 UAE</option>
+                <option value="US">🇺🇸 USA</option>
+                <option value="GB">🇬🇧 UK</option>
+                <option value="Other">🌍 Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Favorite Game</label>
+              <select id="custFavGame" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
+                <option value="">Select Game</option>
+                <option value="Grand RP Mobile">Grand RP Mobile</option>
+                <option value="PUBG Mobile">PUBG Mobile</option>
+                <option value="Free Fire">Free Fire</option>
+                <option value="COD Mobile">COD Mobile</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Game UID / IGN</label>
+            <input id="custGameUID" type="text" placeholder="e.g. 52410291" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Title / Badge Display (Read-Only)</label>
+            <div class="w-full bg-card/50 border border-bdr/60 rounded-lg px-3 py-2 text-xs text-t2 flex items-center justify-between">
+              <span id="custBadgeVal" class="font-semibold text-white">No badge awarded yet</span>
+              <span class="text-[9px] text-t3 italic">Awarded by admins</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Bio Description</label>
-        <input id="custBio" type="text" placeholder="Tell something about you..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-sm text-t1 outline-none focus:border-gold"/>
+
+      <!-- SOCIAL LINKS (FOR ALL USERS) -->
+      <div class="border-b border-bdr/20 pb-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
+          <i class="fas fa-share-alt"></i> Social Connections
+        </h4>
+        <div class="space-y-2">
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-discord text-blue-400 text-sm w-4 text-center"></i>
+              <input id="custDiscord" type="text" placeholder="Discord username" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-instagram text-pink-400 text-sm w-4 text-center"></i>
+              <input id="custInstagram" type="text" placeholder="Instagram handle" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-youtube text-red-500 text-sm w-4 text-center"></i>
+              <input id="custYoutube" type="text" placeholder="YouTube channel URL" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-2">Avatar Seed Style</label>
-        <div id="custAvatars" class="grid grid-cols-4 gap-2">
-          <!-- Populated dynamically -->
+
+      <!-- PREMIUM VISUALS (FOR PREMIUM ONLY) -->
+      <div class="space-y-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-purple font-bold flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><i class="fas fa-crown"></i> Premium Customization</span>
+          <span id="custPrmBadge" class="text-[8px] bg-purple/20 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium Only</span>
+        </h4>
+        
+        <!-- Custom Avatar Upload -->
+        <div class="p-3 bg-purple/5 border border-purple/10 rounded-xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Custom Profile Photo</label>
+            <span class="text-[8px] text-t3 italic">Max 3MB</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-card border border-bdr rounded-full overflow-hidden flex-shrink-0">
+              <img id="custAvPreview" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="w-full h-full object-cover" alt="Preview"/>
+            </div>
+            <div class="flex-1">
+              <input id="fileAvatar" type="file" accept="image/*" class="hidden" />
+              <button id="btnBrowseAvatar" class="px-2.5 py-1 bg-ele hover:bg-card border border-bdr text-t1 hover:text-white rounded text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-upload text-purple"></i> Upload Photo
+              </button>
+              <p class="text-[8px] text-t3 mt-1">Accepts PNG, JPG, or WEBP images up to 3MB.</p>
+            </div>
+          </div>
+          <div id="uploadStatus" class="text-[9px] font-semibold hidden"></div>
+        </div>
+
+        <!-- Avatar Seed Styles (Dicebear fallback) -->
+        <div class="space-y-1.5">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Or Select Animated Seed Avatar</label>
+          <div id="custAvatars" class="grid grid-cols-4 gap-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Avatar Border/Glow selection -->
+        <div class="space-y-1.5">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Avatar Border Frame / Glow Effect</label>
+          <select id="custAvatarFrame" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple">
+            <option value="none">None (Standard Border)</option>
+            <option value="gold">⭐ Gold Glow</option>
+            <option value="fire">🔥 Fire Glow</option>
+            <option value="ice">❄️ Ice Glow</option>
+            <option value="royal">👑 Royal Purple Glow</option>
+          </select>
+        </div>
+
+        <!-- Username color swatches -->
+        <div class="space-y-2">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Username Color Swatch</label>
+          <div class="grid grid-cols-8 gap-2" id="custNameColors">
+            <!-- Swatches -->
+          </div>
+        </div>
+
+        <!-- Banner Theme gradients selection -->
+        <div class="space-y-2">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Profile Card Background Theme</label>
+          <div class="grid grid-cols-4 gap-2" id="custBannerThemes">
+            <!-- Theme cards -->
+          </div>
+        </div>
+
+        <!-- Bio Description -->
+        <div>
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold mb-1">Bio Description</label>
+          <input id="custBio" type="text" placeholder="Tell something about you..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple"/>
         </div>
       </div>
     </div>
 
-    <div class="flex gap-3 pt-2">
-      <button id="bCloseCustomize" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Cancel</button>
-      <button id="bSaveCustomize" class="flex-1 py-2.5 bg-gold text-bg font-semibold rounded-lg text-xs transition">Save Changes</button>
+    <div class="flex gap-3 pt-2 flex-shrink-0">
+      <button id="bCloseCustomize" class="flex-1 py-2 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition cursor-pointer">Cancel</button>
+      <button id="bSaveCustomize" class="flex-1 py-2 bg-gold text-bg font-bold rounded-lg text-xs transition cursor-pointer">Save Changes</button>
     </div>
   </div>
 </div>
@@ -1021,6 +1199,7 @@ tailwind.config = {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDocs, deleteDoc, updateDoc, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Setup credentials
 const firebaseConfig = {
@@ -1035,6 +1214,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Staff Access logic
@@ -1051,6 +1231,12 @@ let depositUnsub = null;
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
+
+// Customization States
+let selectedBannerTheme = 'dark';
+let selectedAvatarFrame = 'none';
+let selectedNameColor = '#ffffff';
+let selectedCustomAvatarUrl = null;
 
 // Helper selection
 const $ = (id) => document.getElementById(id);
@@ -1089,6 +1275,141 @@ function boot() {
   $('pAv').src = profile.av;
   $('avImg').src = profile.av;
   $('wBal').textContent = (profile.balance || 0).toLocaleString();
+
+  // 1. Profile Banner Theme (Premium only)
+  const card = $('profileCard');
+  if (profile.premium && profile.bannerTheme) {
+    const gradients = {
+      red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+      gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
+      blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+      purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+      green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+      sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+      ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+      dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+    };
+    card.style.background = gradients[profile.bannerTheme] || '';
+  } else {
+    card.style.background = '';
+  }
+
+  // 2. Username Color (Premium only)
+  if (profile.premium && profile.nameColor) {
+    $('pName').style.color = profile.nameColor;
+  } else {
+    $('pName').style.color = '';
+  }
+
+  // 3. Avatar Frame / Border Glow (Premium only)
+  const avImg = $('pAv');
+  if (profile.premium && profile.avatarFrame && profile.avatarFrame !== 'none') {
+    const frameColors = {
+      gold: '#c0a030',
+      fire: '#ff4500',
+      ice: '#00bfff',
+      royal: '#8b5cf6'
+    };
+    const color = frameColors[profile.avatarFrame];
+    avImg.style.boxShadow = `0 0 12px ${color}`;
+    avImg.style.borderColor = color;
+  } else {
+    avImg.style.boxShadow = '';
+    avImg.style.borderColor = '';
+  }
+
+  // 4. Custom Badge Display (Read-only)
+  if (profile.badge) {
+    $('pBadgeText').textContent = profile.badge;
+    $('pBadge').classList.remove('hidden');
+  } else {
+    $('pBadge').classList.add('hidden');
+  }
+
+  // 5. Bio Description
+  if (profile.bio) {
+    $('pBio').textContent = profile.bio;
+    $('pBio').classList.remove('hidden');
+  } else {
+    $('pBio').classList.add('hidden');
+  }
+
+  // 6. Game Info & Socials Details Card
+  let hasDetails = false;
+  
+  if (profile.country) {
+    const countryNames = {
+      PK: '🇵🇰 Pakistan',
+      IN: '🇮🇳 India',
+      BD: '🇧🇩 Bangladesh',
+      SA: '🇸🇦 Saudi Arabia',
+      AE: '🇦🇪 UAE',
+      US: '🇺🇸 USA',
+      GB: '🇬🇧 UK',
+      Other: '🌍 Other'
+    };
+    $('pDetailCountry').textContent = countryNames[profile.country] || profile.country;
+    $('pDetailCountryContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailCountryContainer').classList.add('hidden');
+  }
+
+  if (profile.favoriteGame) {
+    $('pDetailFavGame').textContent = profile.favoriteGame;
+    $('pDetailFavGameContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailFavGameContainer').classList.add('hidden');
+  }
+
+  if (profile.gameUID) {
+    $('pDetailGameUID').textContent = profile.gameUID;
+    $('pDetailGameUIDContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailGameUIDContainer').classList.add('hidden');
+  }
+
+  let hasSocials = false;
+  if (profile.socialDiscord) {
+    $('pSocialDiscordText').textContent = profile.socialDiscord;
+    $('pSocialDiscord').href = `https://discord.com/users/${profile.socialDiscord}`;
+    $('pSocialDiscord').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialDiscord').classList.add('hidden');
+  }
+
+  if (profile.socialInstagram) {
+    $('pSocialInstagramText').textContent = profile.socialInstagram;
+    $('pSocialInstagram').href = `https://instagram.com/${profile.socialInstagram.replace('@', '')}`;
+    $('pSocialInstagram').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialInstagram').classList.add('hidden');
+  }
+
+  if (profile.socialYoutube) {
+    $('pSocialYoutube').href = profile.socialYoutube.startsWith('http') ? profile.socialYoutube : `https://youtube.com/${profile.socialYoutube}`;
+    $('pSocialYoutube').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialYoutube').classList.add('hidden');
+  }
+
+  if (hasSocials) {
+    $('pDetailSocials').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailSocials').classList.add('hidden');
+  }
+
+  if (hasDetails) {
+    $('pDetailsCard').classList.remove('hidden');
+  } else {
+    $('pDetailsCard').classList.add('hidden');
+  }
 
   if (guestProfile) {
     $('gBanner').classList.remove('hidden');
@@ -1496,7 +1817,7 @@ function openTournamentRegister(tour) {
 
   $('tregRealName').value = '';
   $('tregGameName').value = '';
-  $('tregUID').value = '';
+  $('tregUID').value = (userProfile && userProfile.gameUID) ? userProfile.gameUID : '';
   $('tregAge').value = '';
   $('tregCheck1').checked = false;
   $('tregCheck2').checked = false;
@@ -1951,40 +2272,193 @@ $('bClosePayment').addEventListener('click', () => $('mPayment').classList.add('
 $('bClosePayment2').addEventListener('click', () => $('mPayment').classList.add('hidden'));
 
 // ── CUSTOMIZE PROFILE MODAL ──
-function loadAvatarPickerGrid() {
-  const grid = $('custAvatars');
-  grid.innerHTML = AVATAR_SEEDS.map((s, i) => `
-    <button class="cav-opt bg-ele border border-bdr rounded-xl p-1.5 transition overflow-hidden relative ${i === 0 ? 'border-gold scale-105' : ''}" data-seed="${s}">
-      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${s}" class="w-full h-auto object-cover rounded-lg" alt=""/>
+const bannerGradients = {
+  red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+  gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
+  blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+  purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+  green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+  sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+  ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+  dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+};
+
+const nameColors = {
+  white: '#ffffff',
+  gold: '#c0a030',
+  red: '#ff4d4d',
+  blue: '#3b82f6',
+  green: '#10b981',
+  purple: '#8b5cf6',
+  orange: '#f97316',
+  cyan: '#06b6d4'
+};
+
+function loadBannerThemeSelector() {
+  const container = $('custBannerThemes');
+  container.innerHTML = Object.keys(bannerGradients).map(theme => `
+    <button type="button" class="theme-opt h-10 rounded-lg border border-bdr relative transition flex items-center justify-center cursor-pointer ${userProfile.premium ? '' : 'opacity-60'}" data-theme="${theme}" style="background: ${bannerGradients[theme]}">
+      <span class="text-[9px] font-bold uppercase tracking-wider text-white/90 bg-black/40 px-1.5 py-0.5 rounded">${theme}</span>
+      <div class="theme-check absolute inset-0 border border-gold rounded-lg ${selectedBannerTheme === theme ? '' : 'hidden'} flex items-center justify-center bg-black/25">
+        <i class="fas fa-check text-gold text-xs"></i>
+      </div>
     </button>
   `).join('');
 
-  grid.querySelectorAll('.cav-opt').forEach(opt => {
+  container.querySelectorAll('.theme-opt').forEach(opt => {
     opt.addEventListener('click', () => {
-      grid.querySelectorAll('.cav-opt').forEach(o => o.classList.remove('border-gold', 'scale-105'));
-      opt.classList.add('border-gold', 'scale-105');
-      selectedAvatarSeed = opt.dataset.seed;
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Profile Banner Theme is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      container.querySelectorAll('.theme-opt .theme-check').forEach(c => c.classList.add('hidden'));
+      opt.querySelector('.theme-check').classList.remove('hidden');
+      selectedBannerTheme = opt.dataset.theme;
     });
   });
 }
 
+function loadNameColorSelector() {
+  const container = $('custNameColors');
+  container.innerHTML = Object.keys(nameColors).map(colorKey => `
+    <button type="button" class="color-opt w-full aspect-square rounded-full border border-bdr relative transition flex items-center justify-center cursor-pointer ${userProfile.premium ? '' : 'opacity-60'}" data-color="${nameColors[colorKey]}" style="background-color: ${nameColors[colorKey]}">
+      <div class="color-check absolute inset-0 border border-white rounded-full ${selectedNameColor.toLowerCase() === nameColors[colorKey].toLowerCase() ? '' : 'hidden'} flex items-center justify-center bg-black/20">
+        <i class="fas fa-check text-white text-[9px]"></i>
+      </div>
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.color-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Username Color is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      container.querySelectorAll('.color-opt .color-check').forEach(c => c.classList.add('hidden'));
+      opt.querySelector('.color-check').classList.remove('hidden');
+      selectedNameColor = opt.dataset.color;
+    });
+  });
+}
+
+function loadAvatarPickerGrid() {
+  const grid = $('custAvatars');
+  const userSeed = userProfile.av && userProfile.av.includes('seed=') ? userProfile.av.split('seed=')[1] : null;
+  
+  grid.innerHTML = AVATAR_SEEDS.map((s, i) => {
+    const isSelected = userSeed === s || (!userSeed && i === 0);
+    return `
+      <button class="cav-opt bg-ele border border-bdr rounded-xl p-1.5 transition overflow-hidden relative ${userProfile.premium ? '' : 'opacity-60'} ${isSelected ? 'border-gold scale-105' : ''}" data-seed="${s}">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${s}" class="w-full h-auto object-cover rounded-lg" alt=""/>
+      </button>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.cav-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Avatar seed picker is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      grid.querySelectorAll('.cav-opt').forEach(o => o.classList.remove('border-gold', 'scale-105'));
+      opt.classList.add('border-gold', 'scale-105');
+      selectedAvatarSeed = opt.dataset.seed;
+      selectedCustomAvatarUrl = null; // Clear custom upload if user picks a seed
+      $('custAvPreview').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAvatarSeed}`;
+    });
+  });
+}
+
+// Custom Avatar File Browse and Upload
+$('btnBrowseAvatar').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (userProfile && !userProfile.premium) {
+    alert('🔒 Custom Avatar Upload is a Premium feature!\n\nUpgrade to VIP Premium Pass to upload your own custom photo!');
+    return;
+  }
+  $('fileAvatar').click();
+});
+
+$('fileAvatar').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    alert('❌ Invalid file type! Please upload an image file.');
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    alert('❌ File is too large! Maximum size allowed is 3MB.');
+    return;
+  }
+
+  const statusEl = $('uploadStatus');
+  statusEl.classList.remove('hidden');
+  statusEl.innerHTML = `<span class="text-purple"><i class="fas fa-spinner fa-spin mr-1"></i> Uploading ${file.name}...</span>`;
+
+  try {
+    const timestamp = Date.now();
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+    const storagePath = `avatars/${userProfile.uid}_${timestamp}_${cleanFileName}`;
+    const storageRef = ref(storage, storagePath);
+
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    $('custAvPreview').src = downloadURL;
+    selectedCustomAvatarUrl = downloadURL;
+
+    statusEl.innerHTML = `<span class="text-green-400 font-semibold"><i class="fas fa-check mr-1"></i> Uploaded successfully!</span>`;
+  } catch (err) {
+    console.error('File upload failed:', err);
+    statusEl.innerHTML = `<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> Upload failed: ${err.message}</span>`;
+  }
+});
+
 $('bCloseCustomize').addEventListener('click', () => $('mCustomize').classList.add('hidden'));
+$('bCloseCustomizeCross').addEventListener('click', () => $('mCustomize').classList.add('hidden'));
+
 $('bSaveCustomize').addEventListener('click', async () => {
   const name = $('custName').value.trim();
-  const bio = $('custBio').value.trim();
-  const avUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAvatarSeed}`;
+  const country = $('custCountry').value;
+  const favoriteGame = $('custFavGame').value;
+  const gameUID = $('custGameUID').value.trim();
+  const socialDiscord = $('custDiscord').value.trim();
+  const socialInstagram = $('custInstagram').value.trim();
+  const socialYoutube = $('custYoutube').value.trim();
 
   if (!name) {
     alert('Display Name is required!');
     return;
   }
 
+  // Common updates for all users
+  const updateData = {
+    name,
+    country,
+    favoriteGame,
+    gameUID,
+    socialDiscord,
+    socialInstagram,
+    socialYoutube
+  };
+
+  // Premium updates (Only applied if premium)
+  if (userProfile.premium) {
+    updateData.bio = $('custBio').value.trim();
+    updateData.bannerTheme = selectedBannerTheme;
+    updateData.avatarFrame = $('custAvatarFrame').value;
+    updateData.nameColor = selectedNameColor;
+
+    if (selectedCustomAvatarUrl) {
+      updateData.av = selectedCustomAvatarUrl;
+    } else if (selectedAvatarSeed) {
+      updateData.av = `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAvatarSeed}`;
+    }
+  }
+
   try {
-    await updateDoc(doc(db, 'users', userProfile.uid), {
-      name: name,
-      av: avUrl,
-      bio: bio
-    });
+    await updateDoc(doc(db, 'users', userProfile.uid), updateData);
     $('mCustomize').classList.add('hidden');
     alert('Profile customizations saved successfully! ✅');
   } catch (err) {
@@ -2567,13 +3041,63 @@ $('btnEditProfile').addEventListener('click', () => {
 
 // Trigger customise modal
 $('btnCustomize').addEventListener('click', () => {
-  if (userProfile && !userProfile.premium) {
-    alert('🔒 Premium Customize Blocked!\n\nProfile customizations (Avatars & Bios) are exclusive to VIP Premium Passes.\n\nGo to profile settings and upgrade to Premium to customize your profile!');
-    return;
-  }
-  $('custName').value = userProfile.name;
+  if (!userProfile) return;
+
+  // Basic Info Values
+  $('custName').value = userProfile.name || '';
+  $('custCountry').value = userProfile.country || '';
+  $('custFavGame').value = userProfile.favoriteGame || '';
+  $('custGameUID').value = userProfile.gameUID || '';
+  $('custBadgeVal').textContent = userProfile.badge || 'No badge awarded yet';
+
+  // Social Connections
+  $('custDiscord').value = userProfile.socialDiscord || '';
+  $('custInstagram').value = userProfile.socialInstagram || '';
+  $('custYoutube').value = userProfile.socialYoutube || '';
+
+  // Premium Values
   $('custBio').value = userProfile.bio || '';
+  $('custAvPreview').src = userProfile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile.uid}`;
+  selectedCustomAvatarUrl = null; // reset upload state
+  $('uploadStatus').classList.add('hidden');
+  $('uploadStatus').innerHTML = '';
+
+  selectedBannerTheme = userProfile.bannerTheme || 'dark';
+  selectedAvatarFrame = userProfile.avatarFrame || 'none';
+  selectedNameColor = userProfile.nameColor || '#ffffff';
+
+  // Lock premium visual controls if not premium
+  if (userProfile.premium) {
+    $('custPrmBadge').textContent = 'Premium Active';
+    $('custPrmBadge').classList.remove('bg-purple/20', 'text-purple');
+    $('custPrmBadge').classList.add('bg-green-500/20', 'text-green-400');
+    
+    // Enable fields
+    $('custAvatarFrame').disabled = false;
+    $('custAvatarFrame').classList.remove('opacity-60', 'pointer-events-none');
+    $('custBio').disabled = false;
+    $('custBio').classList.remove('opacity-60', 'pointer-events-none');
+    $('btnBrowseAvatar').disabled = false;
+    $('btnBrowseAvatar').classList.remove('opacity-60', 'pointer-events-none');
+  } else {
+    $('custPrmBadge').textContent = 'Premium Only';
+    $('custPrmBadge').classList.add('bg-purple/20', 'text-purple');
+    $('custPrmBadge').classList.remove('bg-green-500/20', 'text-green-400');
+    
+    // Disable fields
+    $('custAvatarFrame').disabled = true;
+    $('custAvatarFrame').classList.add('opacity-60', 'pointer-events-none');
+    $('custBio').disabled = true;
+    $('custBio').classList.add('opacity-60', 'pointer-events-none');
+    $('btnBrowseAvatar').disabled = true;
+    $('btnBrowseAvatar').classList.add('opacity-60', 'pointer-events-none');
+  }
+
+  // Load select grids/swatches
   loadAvatarPickerGrid();
+  loadBannerThemeSelector();
+  loadNameColorSelector();
+
   $('mCustomize').classList.remove('hidden');
 });
 
