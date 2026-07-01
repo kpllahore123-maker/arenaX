@@ -434,12 +434,130 @@ tailwind.config = {
           <option value="ended">Ended Match</option>
         </select>
       </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Live Custom Notice / Announcement (Optional)</label>
+        <input id="tLiveMessage" type="text" placeholder="e.g. Admins are checking for verified players" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">YouTube Live Stream Link (Optional)</label>
+        <input id="tYoutubeLink" type="url" placeholder="e.g. https://www.youtube.com/watch?v=..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Card Accent Theme (Color Customize)</label>
+        <select id="tAccentTheme" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
+          <option value="default">Default Dark Slate</option>
+          <option value="crimson">Crimson Flame (Red)</option>
+          <option value="gold">Radiant Gold (Gold)</option>
+          <option value="royal">Midnight Royal (Purple)</option>
+          <option value="mint">Emerald Mint (Green)</option>
+          <option value="ice">Oceanic Ice (Blue)</option>
+        </select>
+      </div>
     </div>
 
     <div class="flex gap-3 pt-2">
       <button id="bCloseTourModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
       <button id="bSaveTour" class="flex-1 py-2.5 bg-red text-white text-xs font-bold rounded-lg transition">Save Config</button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== MANAGE TOURNAMENT LEADERBOARD MODAL ==================== -->
+<div id="mManageLeaderboard" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[640px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-3 border-b border-bdr flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-list-ol"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white">Manage Match Leaderboard</h3>
+          <p id="mLeadTourName" class="text-xs text-t2">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseLeadModal" class="text-t3 hover:text-white transition p-1"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-5 overflow-y-auto pr-1 flex-1">
+      
+      <!-- Left side: Entry Form -->
+      <div class="md:col-span-2 space-y-3 bg-card/40 p-3.5 border border-bdr/50 rounded-xl text-xs h-fit">
+        <h4 class="font-bold text-white uppercase tracking-wider text-[10px] border-b border-bdr/40 pb-1.5 flex justify-between items-center">
+          <span>Add Rank Entry</span>
+          <button id="bClearLeadForm" class="text-[9px] text-t3 hover:text-gold uppercase font-bold">Reset</button>
+        </h4>
+        
+        <!-- Quick Autofill Dropdown -->
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Quick Autofill (Approved Slot)</label>
+          <select id="leadAutofillSelect" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold">
+            <option value="">-- Choose Approved Player --</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Rank *</label>
+            <input id="leadRank" type="number" min="1" placeholder="1" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold font-mono font-bold"/>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Score / Stats *</label>
+            <input id="leadScore" type="text" placeholder="e.g. 150 pts" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold font-bold"/>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Display Name *</label>
+          <input id="leadPlayerName" type="text" placeholder="e.g. AlphaGamer" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold"/>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Handle / IGN (Optional)</label>
+          <input id="leadPlayerHandle" type="text" placeholder="e.g. @alpha#1234" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold"/>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Linked Account UID (Optional)</label>
+          <input id="leadUserId" type="text" placeholder="User Auth ID" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold font-mono"/>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Avatar Frame URL (Optional)</label>
+          <input id="leadAvatar" type="url" placeholder="https://..." class="w-full bg-card border border-bdr rounded-lg px-2.5 py-1.5 text-t1 outline-none focus:border-gold font-mono text-[10px]"/>
+        </div>
+
+        <button id="bSaveLeadEntry" class="w-full py-2 bg-gold hover:bg-[#d4a82c] text-bg font-bold rounded-lg transition active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5">
+          <i class="fas fa-plus"></i> Save Rank Entry
+        </button>
+      </div>
+
+      <!-- Right side: Entries Table -->
+      <div class="md:col-span-3 flex flex-col space-y-2">
+        <h4 class="font-bold text-t2 uppercase tracking-wider text-[10px]">Leaderboard Rankings</h4>
+        <div class="border border-bdr rounded-xl overflow-hidden bg-card/20 flex-1 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-panel/60 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                <th class="p-3">Rank / Player</th>
+                <th class="p-3">Score</th>
+                <th class="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="leadTableBody" class="divide-y divide-bdr/30 font-semibold">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Status -->
+    <div class="pt-2 border-t border-bdr flex justify-between items-center text-[10px] text-t3 font-bold uppercase tracking-wider flex-shrink-0">
+      <span>Auto-saves to 'leaderboards' collection</span>
+      <span id="leadTotalCount">0 Ranks</span>
+    </div>
+
   </div>
 </div>
 
@@ -1236,13 +1354,15 @@ function renderTournaments() {
           ${t.status}
         </span>
       </td>
-      <td class="p-4 space-x-1.5 font-semibold text-xs">
-        <button class="b-edit px-2.5 py-1 bg-ele border border-bdr text-white hover:bg-card rounded transition">Edit</button>
-        <button class="b-del px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Delete</button>
+      <td class="p-4 space-x-1 font-semibold text-xs flex items-center">
+        <button class="b-edit px-2 py-1 bg-ele border border-bdr text-white hover:bg-card rounded transition">Edit</button>
+        <button class="b-leaderboard px-2 py-1 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded transition">Leaderboard</button>
+        <button class="b-del px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Delete</button>
       </td>
     `;
 
     tr.querySelector('.b-edit').addEventListener('click', () => openTourModal(t));
+    tr.querySelector('.b-leaderboard').addEventListener('click', () => openManageLeaderboard(t));
     tr.querySelector('.b-del').addEventListener('click', () => deleteTournament(t.id));
     container.appendChild(tr);
   });
@@ -1261,6 +1381,9 @@ function openTourModal(tour = null) {
     $('tDate').value = tour.date;
     $('tTime').value = tour.time;
     $('tStatus').value = tour.status;
+    $('tLiveMessage').value = tour.liveMessage || '';
+    $('tYoutubeLink').value = tour.youtubeLink || '';
+    $('tAccentTheme').value = tour.accentTheme || 'default';
   } else {
     $('tourModalTitle').textContent = 'Configure New Event Match';
     $('tName').value = '';
@@ -1272,6 +1395,9 @@ function openTourModal(tour = null) {
     $('tDate').value = '';
     $('tTime').value = '';
     $('tStatus').value = 'upcoming';
+    $('tLiveMessage').value = '';
+    $('tYoutubeLink').value = '';
+    $('tAccentTheme').value = 'default';
   }
   $('mEditTour').classList.remove('hidden');
 }
@@ -1301,7 +1427,10 @@ $('bSaveTour').addEventListener('click', async () => {
     maxPlayers: max,
     date: date,
     time: time,
-    status: $('tStatus').value
+    status: $('tStatus').value,
+    liveMessage: $('tLiveMessage').value.trim(),
+    youtubeLink: $('tYoutubeLink').value.trim(),
+    accentTheme: $('tAccentTheme').value
   };
 
   try {
@@ -1693,6 +1822,235 @@ async function sendAdminReply() {
     console.error(err);
   }
 }
+
+// ── LEADERBOARDS CONFIGURATION ENGINE ──
+let activeLeadTour = null;
+let editingLeadEntryId = null;
+
+// Open management panel
+async function openManageLeaderboard(tour) {
+  activeLeadTour = tour;
+  editingLeadEntryId = null;
+  $('mLeadTourName').textContent = tour.name;
+  
+  // Reset form
+  resetLeadForm();
+  
+  // Show modal
+  $('mManageLeaderboard').classList.remove('hidden');
+
+  // Load autofill dropdown options from approved registrants
+  await loadLeadAutofillOptions(tour.id);
+
+  // Load rankings list
+  await loadLeaderboardRankings(tour.id);
+}
+window.openManageLeaderboard = openManageLeaderboard;
+
+function resetLeadForm() {
+  editingLeadEntryId = null;
+  $('leadAutofillSelect').value = '';
+  $('leadRank').value = '';
+  $('leadScore').value = '';
+  $('leadPlayerName').value = '';
+  $('leadPlayerHandle').value = '';
+  $('leadUserId').value = '';
+  $('leadAvatar').value = '';
+  $('bSaveLeadEntry').innerHTML = `<i class="fas fa-plus"></i> Save Rank Entry`;
+}
+
+// Fetch approved applicants to populate autofill
+async function loadLeadAutofillOptions(tourId) {
+  const select = $('leadAutofillSelect');
+  select.innerHTML = `<option value="">-- Loading Approved Players... --</option>`;
+  
+  try {
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', tourId),
+      where('status', '==', 'approved')
+    );
+    const snap = await getDocs(q);
+    
+    select.innerHTML = `<option value="">-- Choose Approved Player --</option>`;
+    
+    if (snap.empty) {
+      select.innerHTML = `<option value="">No approved players in this event</option>`;
+      return;
+    }
+
+    snap.forEach(docSnap => {
+      const reg = docSnap.data();
+      const pId = reg.userId;
+      const name = reg.userName || 'Anonymous';
+      const ign = reg.gameName || name;
+      const handle = reg.userHandle || '@player';
+
+      const opt = document.createElement('option');
+      opt.value = pId;
+      opt.dataset.name = name;
+      opt.dataset.ign = ign;
+      opt.dataset.handle = handle;
+      opt.textContent = `${name} (IGN: ${ign})`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Error loading autofill: ', err);
+    select.innerHTML = `<option value="">Error loading approved players</option>`;
+  }
+}
+
+// Autofill select change handler
+$('leadAutofillSelect').addEventListener('change', (e) => {
+  const opt = e.target.options[e.target.selectedIndex];
+  if (!opt || !opt.value) return;
+
+  $('leadPlayerName').value = opt.dataset.ign || opt.dataset.name;
+  $('leadPlayerHandle').value = opt.dataset.handle;
+  $('leadUserId').value = opt.value;
+  $('leadAvatar').value = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(opt.value)}`;
+});
+
+// Load the ranked entries list
+async function loadLeaderboardRankings(tourId) {
+  const container = $('leadTableBody');
+  container.innerHTML = `<tr><td colSpan="3" class="p-6 text-center text-t3"><i class="fas fa-circle-notch animate-spin text-xl text-gold"></i> Loading rankings...</td></tr>`;
+  
+  try {
+    const q = query(
+      collection(db, 'leaderboards'),
+      where('tournamentId', '==', tourId),
+      orderBy('rank', 'asc')
+    );
+    const snap = await getDocs(q);
+    container.innerHTML = '';
+    
+    if (snap.empty) {
+      container.innerHTML = `<tr><td colSpan="3" class="p-8 text-center text-t3">No rankings specified yet. Use the left panel form to add top player records!</td></tr>`;
+      $('leadTotalCount').textContent = '0 Ranks';
+      return;
+    }
+
+    $('leadTotalCount').textContent = `${snap.size} Rank(s)`;
+
+    // Map & Sort explicitly just in case index is creating delays
+    const entries = [];
+    snap.forEach(d => {
+      entries.push({ id: d.id, ...d.data() });
+    });
+    entries.sort((a, b) => Number(a.rank) - Number(b.rank));
+
+    entries.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-white/[0.01] border-b border-bdr/20';
+      
+      const rankBadge = Number(e.rank) === 1 ? 'bg-gold/10 text-gold border-gold/30' :
+                       Number(e.rank) === 2 ? 'bg-slate-300/10 text-slate-300 border-slate-500/20' :
+                       Number(e.rank) === 3 ? 'bg-amber-700/15 text-amber-500 border-amber-800/20' :
+                       'bg-[#1e2440] text-t2 border-bdr/60';
+
+      tr.innerHTML = `
+        <td class="p-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-5 h-5 rounded-full border flex items-center justify-center font-mono font-bold text-[10px] ${rankBadge}">${e.rank}</span>
+            <div>
+              <div class="font-bold text-white text-xs">${e.playerName}</div>
+              ${e.playerHandle ? `<div class="text-[9px] text-t3 font-medium">${e.playerHandle}</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="p-3 text-gold font-mono font-bold text-xs">${e.score || 'Ranked'}</td>
+        <td class="p-3 text-right space-x-1">
+          <button class="b-lead-edit px-2 py-0.5 bg-ele border border-bdr text-t1 hover:bg-card rounded text-[10px] transition">Edit</button>
+          <button class="b-lead-del px-2 py-0.5 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded text-[10px] transition">Delete</button>
+        </td>
+      `;
+
+      // Attach event listeners
+      tr.querySelector('.b-lead-edit').addEventListener('click', () => {
+        editingLeadEntryId = e.id;
+        $('leadRank').value = e.rank;
+        $('leadScore').value = e.score;
+        $('leadPlayerName').value = e.playerName;
+        $('leadPlayerHandle').value = e.playerHandle || '';
+        $('leadUserId').value = e.userId || '';
+        $('leadAvatar').value = e.avatar || '';
+        $('bSaveLeadEntry').innerHTML = `<i class="fas fa-save"></i> Save Changes`;
+      });
+
+      tr.querySelector('.b-lead-del').addEventListener('click', async () => {
+        if (confirm(`Remove rank #${e.rank} player from the leaderboard?`)) {
+          try {
+            await deleteDoc(doc(db, 'leaderboards', e.id));
+            alert('Rank deleted successfully! ✅');
+            await loadLeaderboardRankings(tourId);
+          } catch (err) {
+            alert('Delete failed: ' + err.message);
+          }
+        }
+      });
+
+      container.appendChild(tr);
+    });
+
+  } catch (err) {
+    container.innerHTML = `<tr><td colSpan="3" class="p-6 text-center text-red">Error loading rankings: ${err.message}</td></tr>`;
+  }
+}
+
+// Form reset
+$('bClearLeadForm').addEventListener('click', (e) => {
+  e.preventDefault();
+  resetLeadForm();
+});
+
+// Close modal
+$('bCloseLeadModal').addEventListener('click', () => {
+  $('mManageLeaderboard').classList.add('hidden');
+});
+
+// Save Rank Entry Callback
+$('bSaveLeadEntry').addEventListener('click', async () => {
+  const rank = parseInt($('leadRank').value);
+  const score = $('leadScore').value.trim();
+  const name = $('leadPlayerName').value.trim();
+  const handle = $('leadPlayerHandle').value.trim();
+  const uid = $('leadUserId').value.trim();
+  const avatar = $('leadAvatar').value.trim();
+
+  if (isNaN(rank) || !score || !name) {
+    alert('Please enter Rank, Score and Display Name! (*) Fields are mandatory.');
+    return;
+  }
+
+  const data = {
+    tournamentId: activeLeadTour.id,
+    rank: rank,
+    score: score,
+    playerName: name,
+    playerHandle: handle,
+    userId: uid,
+    avatar: avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
+    updatedAt: serverTimestamp()
+  };
+
+  try {
+    $('bSaveLeadEntry').disabled = true;
+    if (editingLeadEntryId) {
+      await updateDoc(doc(db, 'leaderboards', editingLeadEntryId), data);
+      alert('Rank record updated successfully! ✅');
+    } else {
+      await addDoc(collection(db, 'leaderboards'), data);
+      alert('New rank record added successfully! ✅');
+    }
+    resetLeadForm();
+    await loadLeaderboardRankings(activeLeadTour.id);
+  } catch (err) {
+    alert('Failed to save rank record: ' + err.message);
+  } finally {
+    $('bSaveLeadEntry').disabled = false;
+  }
+});
 
 </script>
 </body>
