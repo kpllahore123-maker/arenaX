@@ -1194,6 +1194,97 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== TOURNAMENT PARTICIPATION MODAL ==================== -->
+<div id="mTournamentParticipation" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[440px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-users"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white leading-tight">Verified Participants</h3>
+          <p id="partTourName" class="text-[10px] text-t3 font-medium">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseParticipation" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Participants List Container -->
+    <div id="participantsContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+      <!-- Loading state / dynamic players -->
+    </div>
+
+    <div class="flex-shrink-0 pt-2 border-t border-bdr/20 text-center">
+      <p id="participationCountText" class="text-[10px] text-t3 font-bold uppercase tracking-wider">0 Approved Slot(s)</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW PARTICIPANT PROFILE MODAL ==================== -->
+<div id="mViewParticipantProfile" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[440px] w-full space-y-4 shadow-2xl relative overflow-hidden">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0 relative z-10">
+      <h3 class="font-display text-base font-bold text-t2 uppercase tracking-widest flex items-center gap-1.5">
+        <i class="fas fa-id-card text-gold"></i> Player Card
+      </h3>
+      <button id="bCloseParticipantProfile" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- The actual profile card card wrapper with custom background gradient -->
+    <div id="vPartCard" class="p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center">
+      <!-- Avatar Section -->
+      <div class="relative">
+        <img id="vPartAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-20 h-20 rounded-full border-2 border-bdr object-cover"/>
+      </div>
+
+      <!-- Identity -->
+      <div class="space-y-1">
+        <h4 id="vPartName" class="font-display text-2xl font-black text-white tracking-tight flex items-center justify-center gap-2">Player Display Name</h4>
+        <p id="vPartHandle" class="text-xs text-t3 font-medium">@username#0000</p>
+        <p id="vPartBio" class="text-xs text-t2 italic max-w-sm px-4">This is the bio description of this tournament participant.</p>
+      </div>
+
+      <!-- Badges -->
+      <div class="flex flex-wrap justify-center gap-1.5" id="vPartBadges">
+        <span class="px-2.5 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase"><i class="fas fa-star mr-1"></i> Unranked</span>
+        <span id="vPartBadgePremium" class="px-2.5 py-0.5 text-[9px] font-bold bg-purple/15 text-purple rounded border border-purple/20 uppercase"><i class="fas fa-crown mr-1"></i> Premium</span>
+        <span id="vPartBadgeSpecial" class="px-2.5 py-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 rounded border border-blue-500/20 uppercase"><i class="fas fa-award mr-1"></i> Champion</span>
+      </div>
+    </div>
+
+    <!-- Detailed Game Info Table -->
+    <div class="p-4 bg-card border border-bdr rounded-xl space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1.5 flex items-center gap-1.5">
+        <i class="fas fa-gamepad"></i> Game Details
+      </h4>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-left">
+        <div>
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Country / Region</span>
+          <span id="vPartCountry" class="text-white font-bold flex items-center gap-1.5 mt-0.5">🌍 Other</span>
+        </div>
+        <div>
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Favorite Game</span>
+          <span id="vPartFavGame" class="text-white font-bold mt-0.5">None</span>
+        </div>
+        <div class="col-span-2">
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Game UID / IGN</span>
+          <span id="vPartGameUID" class="text-gold font-mono font-extrabold mt-0.5">None</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social connections details -->
+    <div id="vPartSocialsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-2.5 hidden">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1 flex items-center gap-1.5">
+        <i class="fas fa-share-alt"></i> Social Connections
+      </h4>
+      <div id="vPartSocialsList" class="flex flex-wrap gap-2 pt-1">
+        <!-- Social buttons dynamic -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -1740,21 +1831,47 @@ function renderTournaments() {
         </div>
       ` : ''}
 
-      <div class="pt-2 flex gap-2">
-        <button class="b-report flex-1 py-1.5 bg-red/10 border border-red/20 hover:bg-red/20 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+      ${t.status === 'live' && t.liveMessage ? `
+        <div class="p-2.5 bg-red/5 border border-red/20 rounded-lg text-[11px] text-red/90 font-medium flex gap-2 items-start leading-normal">
+          <i class="fas fa-bullhorn text-xs mt-0.5 animate-bounce text-red"></i>
+          <div>
+            <span class="font-bold text-red uppercase text-[9px] block mb-0.5 tracking-wider">🔴 Live Notice</span>
+            ${t.liveMessage}
+          </div>
+        </div>
+      ` : ''}
+
+      ${t.status === 'live' && t.youtubeLink ? `
+        <div class="pt-1">
+          <a href="${t.youtubeLink}" target="_blank" rel="noopener noreferrer" class="b-live-stream flex items-center justify-center gap-2 w-full py-1.5 bg-red hover:bg-[#cc3540] text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-red/20">
+            <i class="fab fa-youtube text-sm"></i> Watch Live YouTube Stream
+          </a>
+        </div>
+      ` : ''}
+
+      <div class="pt-2 flex gap-2 flex-wrap">
+        <button class="b-part flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-users mr-1.5"></i> Check Participation
+        </button>
+        <button class="b-report flex-1 min-w-[120px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
           <i class="fas fa-flag mr-1.5"></i> Report Hack / Cheat
         </button>
       </div>
     `;
 
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.b-report')) return;
+      if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-live-stream')) return;
       handleTourCardClick(t);
     });
 
     card.querySelector('.b-report').addEventListener('click', (e) => {
       e.stopPropagation();
       openReportCheat(t.id, t.name);
+    });
+
+    card.querySelector('.b-part').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTournamentParticipation(t);
     });
 
     listEl.appendChild(card);
@@ -1990,6 +2107,248 @@ $('bSubmitReportCheat').addEventListener('click', async () => {
     $('bSubmitReportCheat').textContent = 'Submit Report';
   }
 });
+
+// ── TOURNAMENTS PARTICIPATION & PROFILE PREVIEWS ──
+window.openTournamentParticipation = async function(tour) {
+  $('partTourName').textContent = tour.name;
+  const container = $('participantsContainer');
+  container.innerHTML = `
+    <div class="p-8 text-center text-t3 text-xs">
+      <i class="fas fa-circle-notch animate-spin text-2xl text-gold mb-2"></i>
+      <p>Loading verified registrations...</p>
+    </div>
+  `;
+  $('participationCountText').textContent = 'Loading...';
+  $('mTournamentParticipation').classList.remove('hidden');
+
+  try {
+    const qParts = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', tour.id),
+      where('status', '==', 'approved')
+    );
+    const snap = await getDocs(qParts);
+    container.innerHTML = '';
+    
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-t3 text-xs border border-dashed border-bdr/40 rounded-xl bg-card/40">
+          <i class="fas fa-user-slash text-2xl mb-2"></i>
+          <p>No verified participants yet for this event.</p>
+        </div>
+      `;
+      $('participationCountText').textContent = '0 Approved Slots';
+      return;
+    }
+
+    $('participationCountText').textContent = `${snap.size} Approved Slot(s)`;
+
+    // Fetch and display each approved user
+    snap.forEach(docSnap => {
+      const reg = docSnap.data();
+      const pId = reg.userId;
+      const pName = reg.userName || 'Anonymous Player';
+      const pGameName = reg.gameName || pName;
+      const pGameUID = reg.gameUID || 'No Game ID';
+
+      // Use unique avatar seed based on player name/ID to show instantly
+      const seed = pId || pName;
+      const tempAv = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-card/60 border border-bdr/60 hover:border-gold/40 hover:bg-card rounded-xl flex items-center justify-between gap-3 transition duration-200 cursor-pointer';
+      item.innerHTML = `
+        <div class="flex items-center gap-3">
+          <img class="w-10 h-10 rounded-full border border-bdr object-cover" src="${tempAv}" alt="Avatar" id="part-av-${pId}"/>
+          <div>
+            <div class="font-display font-bold text-sm text-white flex items-center gap-1">
+              ${pName}
+              <i class="fas fa-check-circle text-green text-[10px]" title="Slot Verified"></i>
+            </div>
+            <div class="text-[10px] text-t3 font-medium">IGN: <span class="text-gold font-mono">${pGameName}</span></div>
+          </div>
+        </div>
+        <div class="text-right flex flex-col items-end gap-1">
+          <span class="px-2 py-0.5 text-[8px] font-bold bg-green/10 text-green rounded border border-green/20 uppercase tracking-wider">Slot OK</span>
+          <span class="text-[9px] text-t3 font-mono">UID: ${pGameUID}</span>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        openParticipantProfileCard(pId, reg);
+      });
+
+      // Try to load user's customized avatar and details if exists
+      getDoc(doc(db, 'users', pId)).then(uSnap => {
+        if (uSnap.exists()) {
+          const u = uSnap.data();
+          if (u.av) {
+            const imgEl = item.querySelector(`#part-av-${pId}`);
+            if (imgEl) imgEl.src = u.av;
+          }
+        }
+      }).catch(e => console.error('Error fetching participant avatar seed: ', e));
+
+      container.appendChild(item);
+    });
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="p-6 bg-red/10 border border-red/20 rounded-xl text-center text-xs text-red">
+        <i class="fas fa-exclamation-triangle text-xl mb-1.5"></i>
+        <p>Failed loading players: ${err.message}</p>
+      </div>
+    `;
+    $('participationCountText').textContent = 'Error';
+  }
+};
+
+$('bCloseParticipation').addEventListener('click', () => $('mTournamentParticipation').classList.add('hidden'));
+
+// ── DETAILED PLAYER CARD MODAL DISPLAY ──
+window.openParticipantProfileCard = async function(pId, registrationData) {
+  // Reset fields to default loading state
+  $('vPartName').textContent = registrationData.userName || 'Player';
+  $('vPartHandle').textContent = registrationData.userHandle || '@player#0000';
+  $('vPartBio').textContent = 'Loading customized bio...';
+  $('vPartCountry').textContent = '🌍 Loading...';
+  $('vPartFavGame').textContent = 'Loading...';
+  $('vPartGameUID').textContent = registrationData.gameUID || 'None';
+  $('vPartAv').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(pId)}`;
+  
+  // Reset badges
+  $('vPartBadges').innerHTML = `
+    <span class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-t3 rounded border border-neutral-700 uppercase">Unranked</span>
+  `;
+
+  // Hide socials by default
+  $('vPartSocialsCard').classList.add('hidden');
+  $('vPartSocialsList').innerHTML = '';
+
+  // Apply default border / gradient
+  $('vPartCard').className = 'p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-card to-card/40';
+
+  // Open the view modal
+  $('mViewParticipantProfile').classList.remove('hidden');
+
+  try {
+    const uSnap = await getDoc(doc(db, 'users', pId));
+    if (uSnap.exists()) {
+      const u = uSnap.data();
+      
+      // Avatar
+      if (u.av) $('vPartAv').src = u.av;
+
+      // Name & bio
+      $('vPartName').textContent = u.name || registrationData.userName;
+      $('vPartHandle').textContent = u.handle || registrationData.userHandle || `@player#${pId.slice(0, 4)}`;
+      $('vPartBio').textContent = u.bio || 'This player has not written a custom bio yet.';
+
+      // Details
+      $('vPartCountry').textContent = u.country ? `🌍 ${u.country}` : '🌍 Other';
+      $('vPartFavGame').textContent = u.favoriteGame || 'None Selected';
+      $('vPartGameUID').textContent = u.gameUID || registrationData.gameUID || 'None';
+
+      // Customized color name if premium
+      if (u.premium && u.nameColor) {
+        $('vPartName').style.color = u.nameColor;
+      } else {
+        $('vPartName').style.color = '';
+      }
+
+      // Banner themes / Avatar frame glow styling if premium
+      if (u.premium) {
+        // Banner background custom style
+        if (u.bannerTheme) {
+          if (u.bannerTheme === 'gold') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-gold/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#f0c040]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'cosmic') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-purple/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#a78bfa]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'cyber') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-blue/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#4f9eff]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'crimson') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-red/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#e8404a]/10 to-[#141828]';
+          }
+        }
+
+        // Avatar glow frame matching u.avatarFrame
+        if (u.avatarFrame) {
+          if (u.avatarFrame === 'gold') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-gold shadow-[0_0_15px_rgba(240,192,64,0.4)] object-cover';
+          } else if (u.avatarFrame === 'fire') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-red shadow-[0_0_15px_rgba(232,64,74,0.4)] object-cover';
+          } else if (u.avatarFrame === 'ice') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-blue shadow-[0_0_15px_rgba(79,158,255,0.4)] object-cover';
+          } else if (u.avatarFrame === 'royal') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-purple shadow-[0_0_15px_rgba(167,139,250,0.4)] object-cover';
+          }
+        } else {
+          $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
+        }
+      } else {
+        $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
+      }
+
+      // Render Badges
+      let badgesHTML = '';
+      if (u.rank) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase"><i class="fas fa-star mr-1"></i> ${u.rank}</span>`;
+      } else {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-neutral-800 text-t2 rounded border border-neutral-700 uppercase">Unranked</span>`;
+      }
+
+      if (u.premium) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-purple/15 text-purple rounded border border-purple/20 uppercase"><i class="fas fa-crown mr-1"></i> Premium</span>`;
+      }
+
+      if (u.specialBadge) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 rounded border border-blue-500/20 uppercase"><i class="fas fa-award mr-1"></i> ${u.specialBadge}</span>`;
+      }
+      $('vPartBadges').innerHTML = badgesHTML;
+
+      // Social Links
+      let socialButtonsHTML = '';
+      if (u.socials) {
+        if (u.socials.discord) {
+          socialButtonsHTML += `
+            <span class="px-3 py-1.5 bg-[#5865F2]/10 border border-[#5865F2]/30 text-[#5865F2] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#5865F2]/20 transition">
+              <i class="fab fa-discord"></i> ${u.socials.discord}
+            </span>
+          `;
+        }
+        if (u.socials.instagram) {
+          socialButtonsHTML += `
+            <a href="https://instagram.com/${u.socials.instagram}" target="_blank" class="px-3 py-1.5 bg-[#E1306C]/10 border border-[#E1306C]/30 text-[#E1306C] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#E1306C]/20 transition">
+              <i class="fab fa-instagram"></i> @${u.socials.instagram}
+            </a>
+          `;
+        }
+        if (u.socials.youtube) {
+          socialButtonsHTML += `
+            <a href="${u.socials.youtube}" target="_blank" class="px-3 py-1.5 bg-[#FF0000]/10 border border-[#FF0000]/30 text-[#FF0000] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#FF0000]/20 transition">
+              <i class="fab fa-youtube"></i> YouTube
+            </a>
+          `;
+        }
+      }
+
+      if (socialButtonsHTML) {
+        $('vPartSocialsList').innerHTML = socialButtonsHTML;
+        $('vPartSocialsCard').classList.remove('hidden');
+      }
+
+    } else {
+      $('vPartBio').textContent = 'This player has not customized their profile.';
+      $('vPartCountry').textContent = '🌍 Other';
+      $('vPartFavGame').textContent = 'None';
+    }
+  } catch (err) {
+    console.error('Failed loading profile details:', err);
+    $('vPartBio').textContent = 'Failed loading player customizations.';
+  }
+};
+
+$('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));
 
 // ── ACCORDION INTERACTIVITY ──
 window.toggleAccordion = (index) => {
@@ -2296,8 +2655,9 @@ const nameColors = {
 
 function loadBannerThemeSelector() {
   const container = $('custBannerThemes');
+  const isPremium = userProfile ? userProfile.premium : false;
   container.innerHTML = Object.keys(bannerGradients).map(theme => `
-    <button type="button" class="theme-opt h-10 rounded-lg border border-bdr relative transition flex items-center justify-center cursor-pointer ${userProfile.premium ? '' : 'opacity-60'}" data-theme="${theme}" style="background: ${bannerGradients[theme]}">
+    <button type="button" class="theme-opt h-10 rounded-lg border border-bdr relative transition flex items-center justify-center cursor-pointer ${isPremium ? '' : 'opacity-60'}" data-theme="${theme}" style="background: ${bannerGradients[theme]}">
       <span class="text-[9px] font-bold uppercase tracking-wider text-white/90 bg-black/40 px-1.5 py-0.5 rounded">${theme}</span>
       <div class="theme-check absolute inset-0 border border-gold rounded-lg ${selectedBannerTheme === theme ? '' : 'hidden'} flex items-center justify-center bg-black/25">
         <i class="fas fa-check text-gold text-xs"></i>
@@ -2320,8 +2680,9 @@ function loadBannerThemeSelector() {
 
 function loadNameColorSelector() {
   const container = $('custNameColors');
+  const isPremium = userProfile ? userProfile.premium : false;
   container.innerHTML = Object.keys(nameColors).map(colorKey => `
-    <button type="button" class="color-opt w-full aspect-square rounded-full border border-bdr relative transition flex items-center justify-center cursor-pointer ${userProfile.premium ? '' : 'opacity-60'}" data-color="${nameColors[colorKey]}" style="background-color: ${nameColors[colorKey]}">
+    <button type="button" class="color-opt w-full aspect-square rounded-full border border-bdr relative transition flex items-center justify-center cursor-pointer ${isPremium ? '' : 'opacity-60'}" data-color="${nameColors[colorKey]}" style="background-color: ${nameColors[colorKey]}">
       <div class="color-check absolute inset-0 border border-white rounded-full ${selectedNameColor.toLowerCase() === nameColors[colorKey].toLowerCase() ? '' : 'hidden'} flex items-center justify-center bg-black/20">
         <i class="fas fa-check text-white text-[9px]"></i>
       </div>
@@ -2343,12 +2704,13 @@ function loadNameColorSelector() {
 
 function loadAvatarPickerGrid() {
   const grid = $('custAvatars');
-  const userSeed = userProfile.av && userProfile.av.includes('seed=') ? userProfile.av.split('seed=')[1] : null;
+  const userSeed = (userProfile && userProfile.av && userProfile.av.includes('seed=')) ? userProfile.av.split('seed=')[1] : null;
+  const isPremium = userProfile ? userProfile.premium : false;
   
   grid.innerHTML = AVATAR_SEEDS.map((s, i) => {
     const isSelected = userSeed === s || (!userSeed && i === 0);
     return `
-      <button class="cav-opt bg-ele border border-bdr rounded-xl p-1.5 transition overflow-hidden relative ${userProfile.premium ? '' : 'opacity-60'} ${isSelected ? 'border-gold scale-105' : ''}" data-seed="${s}">
+      <button class="cav-opt bg-ele border border-bdr rounded-xl p-1.5 transition overflow-hidden relative ${isPremium ? '' : 'opacity-60'} ${isSelected ? 'border-gold scale-105' : ''}" data-seed="${s}">
         <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${s}" class="w-full h-auto object-cover rounded-lg" alt=""/>
       </button>
     `;
