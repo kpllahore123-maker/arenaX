@@ -416,6 +416,27 @@ tailwind.config = {
         <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile via email or Google to activate wallet.')">Link Account</button>
       </div>
 
+      <!-- Refer & Earn Bonus Offer -->
+      <div id="referCard" class="p-4 bg-gradient-to-br from-[#1a2040]/70 to-[#252b4a]/70 border border-gold/20 rounded-xl space-y-3 relative overflow-hidden">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center text-lg text-gold border border-gold/20 flex-shrink-0">
+            <i class="fas fa-gift"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-gold text-sm flex items-center gap-1.5">
+              Refer & Earn 50 AX Coins! <span class="text-[9px] bg-red text-white px-1.5 py-0.5 rounded-full font-bold uppercase animate-pulse">Offer</span>
+            </h4>
+            <p class="text-[11px] text-t2 leading-relaxed">Invite a friend! When they register through your referral link, you receive <strong class="text-gold">50 AX Coins</strong> instantly credited to your wallet!</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input id="referralLinkInput" type="text" readonly class="flex-1 bg-bg border border-bdr rounded-lg px-3 py-2 text-xs text-t2 font-mono select-all outline-none focus:border-gold transition" value="Loading referral link..."/>
+          <button id="bCopyReferral" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition flex items-center gap-1 active:scale-[0.98]">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </div>
+      </div>
+
       <!-- Transaction History -->
       <div class="space-y-2.5">
         <div class="text-[10px] text-t3 font-bold uppercase tracking-wider">Transaction Logs</div>
@@ -1395,6 +1416,13 @@ let selectedCustomAvatarUrl = null;
 // Helper selection
 const $ = (id) => document.getElementById(id);
 
+// Capture referral parameter and store it in localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const referrerParam = urlParams.get('ref') || urlParams.get('referrer');
+if (referrerParam) {
+  localStorage.setItem('arenaX_ref', referrerParam);
+}
+
 // Custom Interactive Cursor Logic
 const cur = $('cur');
 const curR = $('curR');
@@ -1597,6 +1625,13 @@ function boot() {
     }
   }
 
+  // Set referral link for logged-in users
+  if (userProfile) {
+    $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
+  } else {
+    $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
+  }
+
   loadTournamentsList();
   loadLiveNotifications();
   goTo('sDash');
@@ -1674,6 +1709,7 @@ onAuthStateChanged(auth, async (fireUser) => {
         const defaultHandle = '@' + defaultName.toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4);
         const defaultAv = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
 
+        const refId = localStorage.getItem('arenaX_ref');
         const newProfile = {
           uid: fireUser.uid,
           name: defaultName,
@@ -1689,9 +1725,58 @@ onAuthStateChanged(auth, async (fireUser) => {
           createdAt: new Date().toISOString()
         };
 
+        if (refId && refId !== fireUser.uid) {
+          newProfile.referredBy = refId;
+        }
+
         setDoc(doc(db, 'users', fireUser.uid), newProfile)
-          .then(() => {
+          .then(async () => {
             userProfile = { id: fireUser.uid, ...newProfile };
+
+            // If user has been referred, credit the referrer
+            if (refId && refId !== fireUser.uid) {
+              localStorage.removeItem('arenaX_ref');
+              try {
+                const refUserDocRef = doc(db, 'users', refId);
+                const refSnap = await getDoc(refUserDocRef);
+                if (refSnap.exists()) {
+                  const referrerData = refSnap.data();
+
+                  // Award 50 AX Coins to the referrer
+                  await updateDoc(refUserDocRef, {
+                    balance: increment(50)
+                  });
+
+                  // Log as an approved deposit in transaction logs
+                  const txnId = 'REF-BONUS-' + Math.floor(100000 + Math.random() * 900000);
+                  await addDoc(collection(db, 'deposit_requests'), {
+                    userId: refId,
+                    userName: referrerData.name,
+                    userHandle: referrerData.handle,
+                    amountPKR: 0,
+                    amountAX: 50,
+                    method: 'Referral Bonus',
+                    txnId: txnId,
+                    status: 'approved',
+                    type: 'deposit',
+                    notes: `Referred new player: ${defaultName}`,
+                    submittedAt: serverTimestamp()
+                  });
+
+                  // Add notification for referrer
+                  await addDoc(collection(db, 'notifications'), {
+                    userId: refId,
+                    title: 'Referral Reward Credited! 🎁',
+                    body: `Your friend ${defaultName} joined ArenaX! You have been rewarded 50 AX Coins.`,
+                    createdAt: serverTimestamp(),
+                    read: false
+                  });
+                }
+              } catch (refErr) {
+                console.error('Failed to reward referrer:', refErr);
+              }
+            }
+
             boot();
           })
           .catch(err => console.error('Bootstrap profile error: ', err));
@@ -2916,6 +3001,39 @@ $('bWith').addEventListener('click', async () => {
 
 $('bClosePayment').addEventListener('click', () => $('mPayment').classList.add('hidden'));
 $('bClosePayment2').addEventListener('click', () => $('mPayment').classList.add('hidden'));
+
+// Copy Referral Link Event
+$('bCopyReferral').addEventListener('click', () => {
+  if (!userProfile) {
+    alert('Please register and login to get a unique referral link.');
+    return;
+  }
+  const input = $('referralLinkInput');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = $('bCopyReferral');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      btn.classList.add('bg-green-500', 'text-white');
+      btn.classList.remove('bg-gold', 'text-bg');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('bg-green-500', 'text-white');
+        btn.classList.add('bg-gold', 'text-bg');
+      }, 2000);
+    }).catch(err => {
+      console.error('Copy failed: ', err);
+      input.select();
+    });
+  } else {
+    input.select();
+    document.execCommand('copy');
+    const btn = $('bCopyReferral');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+  }
+});
 
 // ── CUSTOMIZE PROFILE MODAL ──
 const bannerGradients = {
