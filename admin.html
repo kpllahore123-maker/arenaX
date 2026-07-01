@@ -138,10 +138,10 @@ tailwind.config = {
 
     <div class="p-4 border-t border-bdr space-y-3 bg-[#0a0d16]/50">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-full bg-red text-white flex items-center justify-center text-xs font-bold uppercase">AD</div>
+        <div id="adminInitials" class="w-8 h-8 rounded-full bg-red text-white flex items-center justify-center text-xs font-bold uppercase">AD</div>
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-white truncate">Administrator</div>
-          <div class="text-[9px] uppercase tracking-wider text-red font-bold">Full Access</div>
+          <div id="adminEmail" class="text-xs font-bold text-white truncate">Administrator</div>
+          <div id="adminRole" class="text-[9px] uppercase tracking-wider text-red font-bold">Full Access</div>
         </div>
       </div>
       <button id="bLogout" class="w-full py-2 bg-ele hover:bg-card text-xs font-semibold rounded-lg text-t2 hover:text-white transition flex items-center justify-center gap-1.5">
@@ -779,7 +779,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
@@ -879,8 +879,23 @@ onAuthStateChanged(auth, (user) => {
       $('sLogin').classList.add('hidden');
       $('sDash').classList.remove('hidden');
       
+      const isSuper = user.uid === 'xDa31jOrsoQC2HxjSheO3wBqyII2' || (user.email && user.email.includes('kpllahore'));
+      
+      // Update dynamic user info in sidebar
+      $('adminEmail').textContent = user.email || 'Administrator';
+      $('adminInitials').textContent = user.email ? user.email.substring(0, 2).toUpperCase() : 'AD';
+      if (isSuper) {
+        $('adminRole').textContent = 'Super Admin';
+        $('adminRole').className = 'text-[9px] uppercase tracking-wider text-gold font-bold';
+        $('adminInitials').className = 'w-8 h-8 rounded-full bg-gold text-bg flex items-center justify-center text-xs font-black uppercase';
+      } else {
+        $('adminRole').textContent = 'Full Access';
+        $('adminRole').className = 'text-[9px] uppercase tracking-wider text-red font-bold';
+        $('adminInitials').className = 'w-8 h-8 rounded-full bg-red text-white flex items-center justify-center text-xs font-bold uppercase';
+      }
+
       // Control Super Admin sidebar link visibility based on UID/email
-      if (user.uid === 'xDa31jOrsoQC2HxjSheO3wBqyII2' || (user.email && user.email.includes('kpllahore'))) {
+      if (isSuper) {
         $('navSuper').classList.remove('hidden');
       } else {
         $('navSuper').classList.add('hidden');
@@ -1553,9 +1568,25 @@ async function adjustCoins(u) {
     return;
   }
 
+  const msg = prompt(`Enter custom message for this transaction (optional):`, adj > 0 ? 'Admin Credit' : 'Admin Cut');
+  const colorStr = prompt(`Enter text color ('green', 'red', 'golden', 'blue' or leave empty for default):`, adj > 0 ? 'green' : 'red');
+
+  // Create transaction object
+  const newTx = {
+    id: `tx_${Math.floor(100000 + Math.random() * 900000)}`,
+    type: 'adjustment',
+    amount: Math.abs(adj),
+    status: 'approved',
+    account: adj > 0 ? 'Admin Add' : 'Admin Cut',
+    timestamp: new Date().toLocaleString(),
+    message: msg || (adj > 0 ? 'Admin Coins Added' : 'Admin Coins Deducted'),
+    color: colorStr ? colorStr.toLowerCase().trim() : (adj > 0 ? 'green' : 'red')
+  };
+
   try {
     await updateDoc(doc(db, 'users', u.id), {
-      balance: increment(adj)
+      balance: increment(adj),
+      transactions: arrayUnion(newTx)
     });
     alert(`Coins balance modified by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
   } catch (err) {
