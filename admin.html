@@ -100,6 +100,11 @@ tailwind.config = {
         <i class="fas fa-chart-line w-4 text-center"></i> Dashboard
       </button>
 
+      <!-- Super Admin Monitor button (Initially hidden, shown dynamically for Super Admin) -->
+      <button id="navSuper" class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent hidden" data-p="Super">
+        <i class="fas fa-user-shield w-4 text-center text-red"></i> Super Admin Panel
+      </button>
+
       <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Users">
         <i class="fas fa-users w-4 text-center"></i> Users Log
       </button>
@@ -367,6 +372,119 @@ tailwind.config = {
               <!-- Populated dynamically -->
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- ── SUPER ADMIN LOGS & MONITORING PAGE ── -->
+      <section id="pSuper" class="page space-y-6 hidden">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Total Admin Actions</div>
+            <div id="statSuperActions" class="font-display text-3xl font-black text-red mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Logs recorded in database</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Active Admins</div>
+            <div id="statSuperAdmins" class="font-display text-3xl font-black text-gold mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Unique staff identifiers</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Applications Handled</div>
+            <div id="statSuperApps" class="font-display text-3xl font-black text-green mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Approved or Declined Slots</p>
+          </div>
+          <div class="p-4 bg-card border border-bdr rounded-xl">
+            <div class="text-[10px] text-t2 uppercase font-bold tracking-wider">Sanctions Applied</div>
+            <div id="statSuperBans" class="font-display text-3xl font-black text-purple mt-1">0</div>
+            <p class="text-[9px] text-t3 mt-0.5">Access restrictions / bans</p>
+          </div>
+        </div>
+
+        <!-- Admin Leaderboard / Activity Stats Grid -->
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-bdr bg-panel/30">
+            <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fas fa-users-cog text-red"></i> Staff Productivity & Performance Monitor
+            </h4>
+            <p class="text-[10px] text-t2 mt-1">Real-time statistics of report resolution, slot verifications, and financial verifications per moderator</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Admin Moderator</th>
+                  <th class="p-4 text-center">Total Actions</th>
+                  <th class="p-4 text-center text-green">Slots Approved</th>
+                  <th class="p-4 text-center text-red">Slots Declined</th>
+                  <th class="p-4 text-center text-blue">Transactions Handled</th>
+                  <th class="p-4 text-center text-purple">Player Bans</th>
+                  <th class="p-4 text-center text-gold">Other Activities</th>
+                </tr>
+              </thead>
+              <tbody id="superAdminPerformanceBody" class="divide-y divide-bdr/30">
+                <!-- Dynamically populated admin list and metrics -->
+                <tr><td colspan="7" class="p-8 text-center text-t3">Loading staff records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Filter controls -->
+        <div class="flex flex-wrap gap-3 justify-between items-center bg-card/50 p-4 border border-bdr rounded-xl">
+          <div class="flex flex-wrap gap-3 items-center text-xs">
+            <div>
+              <label class="block text-[9px] uppercase font-bold text-t3 mb-1">Filter by Admin Email</label>
+              <select id="superFilterAdmin" class="bg-card border border-bdr rounded-lg px-3 py-1.5 text-t1 outline-none focus:border-red">
+                <option value="all">All Admins</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[9px] uppercase font-bold text-t3 mb-1">Filter by Action Category</label>
+              <select id="superFilterAction" class="bg-card border border-bdr rounded-lg px-3 py-1.5 text-t1 outline-none focus:border-red font-semibold">
+                <option value="all">All Categories</option>
+                <option value="Slot">Slot Registration</option>
+                <option value="Deposit">Deposit Verifications</option>
+                <option value="Withdrawal">Withdrawal Verifications</option>
+                <option value="Ban">Bans / Block Penalties</option>
+                <option value="Report">Cheat Reports</option>
+                <option value="Ticket">Support Tickets</option>
+                <option value="Tournament">Tournament Match Config</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <button id="bPurgeLogs" class="px-3 py-1.5 bg-red/10 border border-red/20 text-red text-xs font-bold rounded-lg hover:bg-red/20 transition uppercase tracking-wider flex items-center gap-1.5 font-black">
+              <i class="fas fa-trash-alt"></i> Clear Activity Log Noise
+            </button>
+          </div>
+        </div>
+
+        <!-- Activity History logs list -->
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-bdr bg-panel/30 flex justify-between items-center">
+            <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fas fa-history text-gold"></i> Live Audit Activity Logs
+            </h4>
+            <span id="superLogsCount" class="text-[10px] font-mono text-t2 font-bold uppercase">0 Logs</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Timestamp</th>
+                  <th class="p-4">Admin Moderator</th>
+                  <th class="p-4">Action Event</th>
+                  <th class="p-4">Subject/Target</th>
+                  <th class="p-4">Audit Log Details</th>
+                </tr>
+              </thead>
+              <tbody id="superLogsTableBody" class="divide-y divide-bdr/30 font-semibold">
+                <!-- Log documents displayed here -->
+                <tr><td colspan="5" class="p-8 text-center text-t3">No admin activity logs registered yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -686,12 +804,31 @@ let reports = [];
 let tickets = [];
 let deposits = [];
 let depositFilter = 'pending';
+let adminLogs = [];
 
 let activePage = 'Dash';
 let banTargetUser = null;
 let editingTour = null;
 
 const $ = (id) => document.getElementById(id);
+
+// Admin Activity Logging System (Persistent Audit Trail)
+async function logAdminActivity(action, target, details = '') {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    await addDoc(collection(db, 'admin_logs'), {
+      adminUid: user.uid,
+      adminEmail: user.email || 'admin@arenax.com',
+      action: action,
+      target: target,
+      details: details,
+      timestamp: serverTimestamp()
+    });
+  } catch (err) {
+    console.error('Failed to log admin activity:', err);
+  }
+}
 
 // Real-time PKR Clock
 setInterval(() => {
@@ -725,7 +862,8 @@ function switchPage(page) {
                                  page === 'Tours' ? 'Active Events Match Config' :
                                  page === 'Registrations' ? 'Verify Applications Slots' :
                                  page === 'Reports' ? 'Violation Cheat Reports logs' :
-                                 page === 'Deposits' ? 'Verify Deposits Queue' : 'Customer Support Chat Channels';
+                                 page === 'Deposits' ? 'Verify Deposits Queue' :
+                                 page === 'Super' ? 'Super Admin Audit Control' : 'Customer Support Chat Channels';
 }
 window.switchPage = switchPage;
 
@@ -736,10 +874,18 @@ document.querySelectorAll('.ni').forEach(btn => {
 // Auth Listeners state
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    const isStaff = ADMIN_UIDS.includes(user.uid) || user.email === 'admin@arenax.com';
+    const isStaff = ADMIN_UIDS.includes(user.uid) || user.email === 'admin@arenax.com' || (user.email && user.email.includes('kpllahore'));
     if (isStaff) {
       $('sLogin').classList.add('hidden');
       $('sDash').classList.remove('hidden');
+      
+      // Control Super Admin sidebar link visibility based on UID/email
+      if (user.uid === 'xDa31jOrsoQC2HxjSheO3wBqyII2' || (user.email && user.email.includes('kpllahore'))) {
+        $('navSuper').classList.remove('hidden');
+      } else {
+        $('navSuper').classList.add('hidden');
+      }
+
       loadRealtimeDatabase();
       switchPage('Dash');
     } else {
@@ -791,6 +937,8 @@ function loadRealtimeDatabase() {
     $('statUsers').textContent = users.length;
     $('statPremium').textContent = users.filter(u => u.premium).length;
     renderUsers();
+  }, (err) => {
+    console.warn("Failed to listen to users:", err);
   });
 
   // 2. Listen Tournaments
@@ -799,6 +947,8 @@ function loadRealtimeDatabase() {
     tournaments = [];
     snap.forEach(d => tournaments.push({ id: d.id, ...d.data() }));
     renderTournaments();
+  }, (err) => {
+    console.warn("Failed to listen to tournaments:", err);
   });
 
   // 3. Listen Registrations
@@ -818,6 +968,8 @@ function loadRealtimeDatabase() {
 
     renderRecentRegistrations();
     renderRegistrations();
+  }, (err) => {
+    console.warn("Failed to listen to registrations:", err);
   });
 
   // 4. Listen Cheat Reports
@@ -836,6 +988,8 @@ function loadRealtimeDatabase() {
     }
 
     renderReports();
+  }, (err) => {
+    console.warn("Failed to listen to reports:", err);
   });
 
   // 5. Listen Support Tickets
@@ -853,6 +1007,8 @@ function loadRealtimeDatabase() {
     }
 
     renderTickets();
+  }, (err) => {
+    console.warn("Failed to listen to tickets:", err);
   });
 
   // 6. Listen Deposit Requests
@@ -877,8 +1033,232 @@ function loadRealtimeDatabase() {
     }
 
     renderDeposits();
+  }, (err) => {
+    console.warn("Failed to listen to deposits:", err);
+  });
+
+  // 7. Listen Admin Logs (For Super Admin audit)
+  if (auth.currentUser && (auth.currentUser.uid === 'xDa31jOrsoQC2HxjSheO3wBqyII2' || (auth.currentUser.email && auth.currentUser.email.includes('kpllahore')))) {
+    onSnapshot(query(collection(db, 'admin_logs'), orderBy('timestamp', 'desc')), (snap) => {
+      adminLogs = [];
+      snap.forEach(d => adminLogs.push({ id: d.id, ...d.data() }));
+      renderSuperAdminView();
+    }, (err) => {
+      console.warn("Failed to listen to admin logs:", err);
+      const logsBody = $('superLogsTableBody');
+      if (logsBody) {
+        logsBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-t3 text-xs">Administrative audit logs are currently restricted or database rules need synchronization.</td></tr>`;
+      }
+    });
+  }
+}
+
+// ── SUPER ADMIN DASHBOARD LOGIC ──
+function renderSuperAdminView() {
+  const perfBody = $('superAdminPerformanceBody');
+  const logsBody = $('superLogsTableBody');
+  if (!perfBody || !logsBody) return;
+
+  // Update Top Stats
+  $('statSuperActions').textContent = adminLogs.length;
+
+  // Find unique admin emails
+  const adminsSet = new Set(adminLogs.map(l => l.adminEmail || 'Unknown'));
+  $('statSuperAdmins').textContent = adminsSet.size;
+
+  // Applications handled count (Approves + Declines)
+  const appLogs = adminLogs.filter(l => l.action && (l.action.includes('Slot') || l.action.includes('Registration')));
+  $('statSuperApps').textContent = appLogs.length;
+
+  // Bans applied count
+  const banLogs = adminLogs.filter(l => l.action && l.action.includes('Ban'));
+  $('statSuperBans').textContent = banLogs.length;
+
+  // Populate filter dropdown with unique admins
+  const filterSelect = $('superFilterAdmin');
+  if (filterSelect) {
+    const prevSelected = filterSelect.value;
+    filterSelect.innerHTML = '<option value="all">All Admins</option>';
+    adminsSet.forEach(email => {
+      const opt = document.createElement('option');
+      opt.value = email;
+      opt.textContent = email;
+      filterSelect.appendChild(opt);
+    });
+    if (Array.from(adminsSet).includes(prevSelected)) {
+      filterSelect.value = prevSelected;
+    } else {
+      filterSelect.value = 'all';
+    }
+  }
+
+  // Calculate Admin Performance statistics
+  const adminStatsMap = {};
+  
+  // Initialize stats for known ADMIN_UIDS and general staff defaults
+  ADMIN_UIDS.forEach(uid => {
+    const email = uid === 'xDa31jOrsoQC2HxjSheO3wBqyII2' ? 'superadmin@arenax.com' : 'admin@arenax.com'; 
+    adminStatsMap[email] = {
+      total: 0,
+      approvedSlots: 0,
+      declinedSlots: 0,
+      transactions: 0,
+      bans: 0,
+      others: 0
+    };
+  });
+
+  // Process logs to compute detailed performance metrics
+  adminLogs.forEach(log => {
+    const email = log.adminEmail || 'Unknown';
+    if (!adminStatsMap[email]) {
+      adminStatsMap[email] = {
+        total: 0,
+        approvedSlots: 0,
+        declinedSlots: 0,
+        transactions: 0,
+        bans: 0,
+        others: 0
+      };
+    }
+
+    const s = adminStatsMap[email];
+    s.total++;
+
+    const actionLower = (log.action || '').toLowerCase();
+    if (actionLower.includes('approve slot') || actionLower.includes('approve registration')) {
+      s.approvedSlots++;
+    } else if (actionLower.includes('decline slot') || actionLower.includes('reject slot') || actionLower.includes('decline registration') || actionLower.includes('reject registration')) {
+      s.declinedSlots++;
+    } else if (actionLower.includes('deposit') || actionLower.includes('withdrawal')) {
+      s.transactions++;
+    } else if (actionLower.includes('ban')) {
+      s.bans++;
+    } else {
+      s.others++;
+    }
+  });
+
+  // Render Admin Performance stats table
+  perfBody.innerHTML = '';
+  Object.keys(adminStatsMap).forEach(email => {
+    const stats = adminStatsMap[email];
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-4">
+        <div class="font-bold text-white text-xs">${email}</div>
+        <div class="text-[9px] text-t3 uppercase font-extrabold tracking-widest mt-0.5">${email.startsWith('superadmin') || email.includes('kpllahore') || email.includes('xDa31') ? 'Super Admin' : 'Staff Moderator'}</div>
+      </td>
+      <td class="p-4 text-center font-display text-sm font-extrabold text-white">${stats.total}</td>
+      <td class="p-4 text-center font-bold text-green">${stats.approvedSlots}</td>
+      <td class="p-4 text-center font-bold text-red">${stats.declinedSlots}</td>
+      <td class="p-4 text-center font-bold text-blue">${stats.transactions}</td>
+      <td class="p-4 text-center font-bold text-purple">${stats.bans}</td>
+      <td class="p-4 text-center font-bold text-gold">${stats.others}</td>
+    `;
+    perfBody.appendChild(tr);
+  });
+
+  // Render Log list matching active filters
+  const selAdmin = $('superFilterAdmin') ? $('superFilterAdmin').value : 'all';
+  const selAction = $('superFilterAction') ? $('superFilterAction').value : 'all';
+
+  const filteredLogs = adminLogs.filter(log => {
+    if (selAdmin !== 'all' && log.adminEmail !== selAdmin) return false;
+    if (selAction !== 'all') {
+      const act = (log.action || '').toLowerCase();
+      const cat = selAction.toLowerCase();
+      if (cat === 'slot') return act.includes('slot') || act.includes('registration');
+      if (cat === 'deposit') return act.includes('deposit');
+      if (cat === 'withdrawal') return act.includes('withdrawal');
+      if (cat === 'ban') return act.includes('ban');
+      if (cat === 'report') return act.includes('report');
+      if (cat === 'ticket') return act.includes('ticket') || act.includes('chat') || act.includes('reply');
+      if (cat === 'tournament') return act.includes('tournament') || act.includes('match');
+      return false;
+    }
+    return true;
+  });
+
+  $('superLogsCount').textContent = `${filteredLogs.length} Log(s)`;
+
+  logsBody.innerHTML = '';
+  if (filteredLogs.length === 0) {
+    logsBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-t3">No activities found matching active filters.</td></tr>`;
+    return;
+  }
+
+  filteredLogs.forEach(log => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01] text-xs border-b border-bdr/10';
+
+    const dateStr = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now';
+    
+    let actionBadge = '';
+    const act = log.action || '';
+    if (act.toLowerCase().includes('approve')) {
+      actionBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-green/10 text-green border border-green/20 uppercase">${act}</span>`;
+    } else if (act.toLowerCase().includes('decline') || act.toLowerCase().includes('reject') || act.toLowerCase().includes('ban')) {
+      actionBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-red/10 text-red border border-red/20 uppercase">${act}</span>`;
+    } else if (act.toLowerCase().includes('create') || act.toLowerCase().includes('update')) {
+      actionBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-gold/10 text-gold border border-gold/20 uppercase">${act}</span>`;
+    } else {
+      actionBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-blue/10 text-blue border border-blue/20 uppercase">${act}</span>`;
+    }
+
+    tr.innerHTML = `
+      <td class="p-4 text-t3 font-mono font-medium">${dateStr}</td>
+      <td class="p-4 text-white text-xs">${log.adminEmail || 'Unknown'}</td>
+      <td class="p-4">${actionBadge}</td>
+      <td class="p-4 text-gold font-bold text-xs">${log.target || '-'}</td>
+      <td class="p-4 text-t2 font-medium max-w-[280px] truncate" title="${log.details || ''}">${log.details || ''}</td>
+    `;
+    logsBody.appendChild(tr);
   });
 }
+
+// Hook up filter and action controls once loaded
+document.addEventListener('DOMContentLoaded', () => {
+  const adminFilter = $('superFilterAdmin');
+  const actionFilter = $('superFilterAction');
+  const purgeBtn = $('bPurgeLogs');
+
+  if (adminFilter) adminFilter.addEventListener('change', () => renderSuperAdminView());
+  if (actionFilter) actionFilter.addEventListener('change', () => renderSuperAdminView());
+  
+  if (purgeBtn) {
+    purgeBtn.addEventListener('click', async () => {
+      if (!confirm('⚠️ WARNING: This will permanently delete ALL administrative activity audit logs from the Firestore database. Only a Super Admin is authorized to do this.\n\nProceed?')) return;
+      
+      try {
+        const q = query(collection(db, 'admin_logs'));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          alert('Activity log database is already empty.');
+          return;
+        }
+
+        const promises = snap.docs.map(docSnap => deleteDoc(doc(db, 'admin_logs', docSnap.id)));
+        await Promise.all(promises);
+
+        // Log the purge action itself
+        await addDoc(collection(db, 'admin_logs'), {
+          adminUid: auth.currentUser.uid,
+          adminEmail: auth.currentUser.email || 'superadmin@arenax.com',
+          action: 'Purge Logs',
+          target: 'Audit Logs Database',
+          details: 'All prior administrative audit logs purged successfully.',
+          timestamp: serverTimestamp()
+        });
+
+        alert('Activity logs database purged successfully! ✅');
+      } catch (err) {
+        alert('Failed to purge logs: ' + err.message);
+      }
+    });
+  }
+});
 
 // ── RENDER RECENT REGS DASHBOARD ──
 function renderRecentRegistrations() {
@@ -1019,6 +1399,8 @@ async function approveDeposit(dep) {
       read: false
     });
 
+    const typeLabel = isWithdrawal ? 'Withdrawal' : 'Deposit';
+    await logAdminActivity(`Approve ${typeLabel}`, dep.userName, `Approved ${dep.amountAX} AX (Rs ${dep.amountPKR}) via ${dep.method}. Txn: ${dep.txnId}`);
     alert(isWithdrawal ? 'Withdrawal marked as successfully approved!' : `Successfully approved and credited ${dep.amountAX} AX Coins to ${dep.userName}!`);
   } catch (err) {
     alert('Failed to approve request: ' + err.message);
@@ -1058,6 +1440,8 @@ async function rejectDeposit(dep) {
       read: false
     });
 
+    const typeLabel = isWithdrawal ? 'Withdrawal' : 'Deposit';
+    await logAdminActivity(`Reject ${typeLabel}`, dep.userName, `Rejected request of ${dep.amountAX} AX (Rs ${dep.amountPKR}). Reason: ${reason.trim()}`);
     alert(isWithdrawal ? 'Withdrawal rejected and coins refunded successfully!' : 'Deposit request rejected.');
   } catch (err) {
     alert('Failed to reject request: ' + err.message);
@@ -1436,6 +1820,7 @@ $('bSaveTour').addEventListener('click', async () => {
   try {
     if (editingTour) {
       await updateDoc(doc(db, 'tournaments', editingTour.id), data);
+      await logAdminActivity('Update Tournament', name, `Updated event match config: Prize ${prize}, entryFee ${fee}, date ${date}`);
       alert('Tournament match config updated successfully! ✅');
     } else {
       await addDoc(collection(db, 'tournaments'), {
@@ -1443,6 +1828,7 @@ $('bSaveTour').addEventListener('click', async () => {
         registered: 0,
         createdAt: serverTimestamp()
       });
+      await logAdminActivity('Create Tournament', name, `Created new event match: Prize ${prize}, entryFee ${fee}, date ${date}`);
       alert('New tournament match created successfully! ✅');
     }
     $('mEditTour').classList.add('hidden');
@@ -1454,7 +1840,10 @@ $('bSaveTour').addEventListener('click', async () => {
 async function deleteTournament(tid) {
   if (confirm('Delete this tournament permanently from database? This yields slots data loss.')) {
     try {
+      const t = tournaments.find(x => x.id === tid);
+      const tName = t ? t.name : tid;
       await deleteDoc(doc(db, 'tournaments', tid));
+      await logAdminActivity('Delete Tournament', tName, `Deleted tournament ID: ${tid}`);
       alert('Event deleted permanently.');
     } catch (err) {
       alert(err.message);
@@ -1612,6 +2001,7 @@ async function approveRegistration(reg) {
       console.error('Error auto-adding to leaderboard:', leadErr);
     }
 
+    await logAdminActivity('Approve Slot', reg.realName, `Approved registration slot for event "${reg.tournamentName}". User UID: ${reg.userId}`);
     alert(`Application slot APPROVED successfully! ${feeAmount > 0 ? `${feeAmount} AX Coins deducted.` : ''} Slot count and leaderboard dynamically updated. ✅`);
   } catch (err) {
     alert('Approve error: ' + err.message);
@@ -1632,6 +2022,7 @@ async function rejectRegistration(reg) {
         createdAt: serverTimestamp()
       });
 
+      await logAdminActivity('Decline Slot', reg.realName, `Declined registration slot for event "${reg.tournamentName}". User UID: ${reg.userId}`);
       alert('Decline processed successfully.');
     } catch (err) {
       alert(err.message);
@@ -1862,6 +2253,8 @@ function openSupportChatWindow(t) {
     });
 
     listEl.scrollTop = listEl.scrollHeight;
+  }, (err) => {
+    console.warn("Failed to listen to chat messages:", err);
   });
 }
 
