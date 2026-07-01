@@ -12,7 +12,8 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  increment
+  increment,
+  arrayUnion
 } from 'firebase/firestore';
 import {
   UserProfile,
@@ -282,7 +283,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
   };
 
   // Adjust User balance
-  const handleAdjustBalance = (user: UserProfile) => {
+  const handleAdjustBalance = async (user: UserProfile) => {
     const amtStr = prompt(`Enter amount to adjust for ${user.name} (e.g. 500 to add, -200 to subtract):`);
     if (!amtStr) return;
     const adj = parseFloat(amtStr);
@@ -291,11 +292,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
       return;
     }
 
+    const msg = prompt(`Enter custom message for this transaction (optional):`, adj > 0 ? 'Admin Credit' : 'Admin Cut');
+    const colorStr = prompt(`Enter text color ('green', 'red', 'golden', 'blue' or leave empty for default):`, adj > 0 ? 'green' : 'red');
+
+    // Create transaction object
+    const newTx = {
+      id: `tx_${Math.floor(100000 + Math.random() * 900000)}`,
+      type: 'adjustment',
+      amount: Math.abs(adj),
+      status: 'approved',
+      account: adj > 0 ? 'Admin Add' : 'Admin Cut',
+      timestamp: new Date().toLocaleString(),
+      message: msg || (adj > 0 ? 'Admin Coins Added' : 'Admin Coins Deducted'),
+      color: colorStr ? colorStr.toLowerCase().trim() : (adj > 0 ? 'green' : 'red')
+    };
+
     try {
-      updateDoc(doc(db, 'users', user.id), {
-        balance: increment(adj)
+      await updateDoc(doc(db, 'users', user.id), {
+        balance: increment(adj),
+        transactions: arrayUnion(newTx)
       });
-      alert(`Balance adjusted by ${adj>0?'+':''}${adj} AX Coins!`);
+      alert(`Balance adjusted by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
     } catch (err: any) {
       alert(err.message);
     }
