@@ -1919,8 +1919,7 @@ async function loadLeaderboardRankings(tourId) {
   try {
     const q = query(
       collection(db, 'leaderboards'),
-      where('tournamentId', '==', tourId),
-      orderBy('rank', 'asc')
+      where('tournamentId', '==', tourId)
     );
     const snap = await getDocs(q);
     container.innerHTML = '';
