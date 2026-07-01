@@ -661,7 +661,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
@@ -1509,6 +1509,10 @@ function renderRegistrations() {
         ${reg.status === 'pending' ? `
           <button class="b-app px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Approve</button>
           <button class="b-dec px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Decline</button>
+        ` : reg.status === 'approved' ? `
+          <button class="b-add-lead px-2.5 py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded text-[10px] transition flex items-center gap-1 font-bold">
+            <i class="fas fa-trophy text-[9px]"></i> Add to Leaderboard
+          </button>
         ` : `<span class="text-t3">-</span>`}
       </td>
     `;
@@ -1516,6 +1520,8 @@ function renderRegistrations() {
     if (reg.status === 'pending') {
       tr.querySelector('.b-app').addEventListener('click', () => approveRegistration(reg));
       tr.querySelector('.b-dec').addEventListener('click', () => rejectRegistration(reg));
+    } else if (reg.status === 'approved') {
+      tr.querySelector('.b-add-lead').addEventListener('click', () => manuallyAddToLeaderboard(reg));
     }
     container.appendChild(tr);
   });
@@ -1573,7 +1579,40 @@ async function approveRegistration(reg) {
       createdAt: serverTimestamp()
     });
 
-    alert(`Application slot APPROVED successfully! ${feeAmount > 0 ? `${feeAmount} AX Coins deducted.` : ''} Slot count atomically updated. ✅`);
+    // 4. Automatically add to Leaderboards collection
+    try {
+      const leadQuery = query(
+        collection(db, 'leaderboards'),
+        where('tournamentId', '==', reg.tournamentId),
+        where('userId', '==', reg.userId)
+      );
+      const leadSnap = await getDocs(leadQuery);
+      if (leadSnap.empty) {
+        // Find existing leaderboards to count and put at the end
+        const allLeadsQuery = query(
+          collection(db, 'leaderboards'),
+          where('tournamentId', '==', reg.tournamentId)
+        );
+        const allLeadsSnap = await getDocs(allLeadsQuery);
+        const nextRank = allLeadsSnap.size + 1;
+
+        const displayName = reg.gameName || reg.userName || 'Anonymous';
+        await addDoc(collection(db, 'leaderboards'), {
+          tournamentId: reg.tournamentId,
+          rank: nextRank,
+          score: '0 pts',
+          playerName: displayName,
+          playerHandle: reg.userHandle || '@player',
+          userId: reg.userId,
+          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(reg.userId)}`,
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (leadErr) {
+      console.error('Error auto-adding to leaderboard:', leadErr);
+    }
+
+    alert(`Application slot APPROVED successfully! ${feeAmount > 0 ? `${feeAmount} AX Coins deducted.` : ''} Slot count and leaderboard dynamically updated. ✅`);
   } catch (err) {
     alert('Approve error: ' + err.message);
   }
@@ -1599,6 +1638,47 @@ async function rejectRegistration(reg) {
     }
   }
 }
+
+async function manuallyAddToLeaderboard(reg) {
+  try {
+    // Check if they are already in the leaderboard
+    const leadQuery = query(
+      collection(db, 'leaderboards'),
+      where('tournamentId', '==', reg.tournamentId),
+      where('userId', '==', reg.userId)
+    );
+    const leadSnap = await getDocs(leadQuery);
+    if (!leadSnap.empty) {
+      alert(`Player "${reg.gameName || reg.userName}" is already in the leaderboard for this tournament! 🏆`);
+      return;
+    }
+
+    // Find existing leaderboards size to append at the end
+    const allLeadsQuery = query(
+      collection(db, 'leaderboards'),
+      where('tournamentId', '==', reg.tournamentId)
+    );
+    const allLeadsSnap = await getDocs(allLeadsQuery);
+    const nextRank = allLeadsSnap.size + 1;
+
+    const displayName = reg.gameName || reg.userName || 'Anonymous';
+    await addDoc(collection(db, 'leaderboards'), {
+      tournamentId: reg.tournamentId,
+      rank: nextRank,
+      score: '0 pts',
+      playerName: displayName,
+      playerHandle: reg.userHandle || '@player',
+      userId: reg.userId,
+      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(reg.userId)}`,
+      updatedAt: serverTimestamp()
+    });
+
+    alert(`Successfully added "${displayName}" to the leaderboard at rank #${nextRank}! 🏆✅`);
+  } catch (err) {
+    alert('Failed to add player to leaderboard: ' + err.message);
+  }
+}
+window.manuallyAddToLeaderboard = manuallyAddToLeaderboard;
 
 // ── CHEAT REPORTS LOG ──
 function renderReports() {
