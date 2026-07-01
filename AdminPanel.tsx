@@ -111,6 +111,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         list.push({ id: d.id, ...d.data() } as UserProfile);
       });
       setUsers(list);
+    }, (err) => {
+      console.warn("Failed to listen to users:", err);
     });
   }, []);
 
@@ -123,6 +125,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         list.push({ id: d.id, ...d.data() } as Tournament);
       });
       setTournaments(list);
+    }, (err) => {
+      console.warn("Failed to listen to tournaments:", err);
     });
   }, []);
 
@@ -135,6 +139,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         list.push({ id: d.id, ...d.data() } as Registration);
       });
       setRegistrations(list);
+    }, (err) => {
+      console.warn("Failed to listen to registrations:", err);
     });
   }, []);
 
@@ -147,6 +153,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         list.push({ id: d.id, ...d.data() } as CheatReport);
       });
       setReports(list);
+    }, (err) => {
+      console.warn("Failed to listen to reports:", err);
     });
   }, []);
 
@@ -159,6 +167,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         list.push({ id: d.id, ...d.data() } as SupportTicket);
       });
       setTickets(list);
+    }, (err) => {
+      console.warn("Failed to listen to tickets:", err);
     });
   }, []);
 
@@ -176,6 +186,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
       });
       setSupportMessages(msgs);
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }, (err) => {
+      console.warn("Failed to listen to chat messages:", err);
     });
     return () => unsub();
   }, [activeTicket, showSupportModal]);
