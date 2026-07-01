@@ -1285,6 +1285,69 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== TOURNAMENT LEADERBOARD MODAL ==================== -->
+<div id="mTournamentLeaderboard" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
+    
+    <!-- Title / Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-trophy"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white leading-tight">Match Leaderboard</h3>
+          <p id="leadTourName" class="text-[10px] text-t3 font-medium">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseLeaderboard" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Podium Visual Section (Optional but looks insanely polished) -->
+    <div id="leaderboardPodium" class="flex justify-center items-end gap-3 px-2 py-4 bg-card/40 rounded-xl border border-bdr/40 flex-shrink-0 hidden">
+      <!-- 2nd Place -->
+      <div class="flex flex-col items-center w-[110px] text-center">
+        <div class="relative mb-1">
+          <img id="podium2Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p2"/>
+          <div class="absolute -top-1.5 -right-1 bg-slate-400 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">2</div>
+        </div>
+        <div id="podium2Name" class="text-[10px] font-bold text-white truncate w-full">Player 2</div>
+        <div id="podium2Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
+      </div>
+      
+      <!-- 1st Place -->
+      <div class="flex flex-col items-center w-[120px] text-center -translate-y-1">
+        <div class="relative mb-1">
+          <img id="podium1Av" class="w-14 h-14 rounded-full border-2 border-gold object-cover shadow-[0_0_12px_rgba(240,192,64,0.3)]" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1"/>
+          <div class="absolute -top-2.5 -right-1.5 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center"><i class="fas fa-crown text-[7px]"></i></div>
+        </div>
+        <div id="podium1Name" class="text-xs font-bold text-white truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
+        <div id="podium1Score" class="text-[10px] text-gold font-mono font-black mt-0.5">Stats</div>
+      </div>
+
+      <!-- 3rd Place -->
+      <div class="flex flex-col items-center w-[110px] text-center">
+        <div class="relative mb-1">
+          <img id="podium3Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p3"/>
+          <div class="absolute -top-1.5 -right-1 bg-amber-700 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">3</div>
+        </div>
+        <div id="podium3Name" class="text-[10px] font-bold text-white truncate w-full">Player 3</div>
+        <div id="podium3Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
+      </div>
+    </div>
+
+    <!-- Scrollable Ranks List -->
+    <div id="leaderboardListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+      <!-- Ranks table/list elements dynamically populated -->
+    </div>
+
+    <!-- Footer / Custom notice -->
+    <div class="flex-shrink-0 pt-2 border-t border-bdr/20 text-center flex items-center justify-between text-[10px] text-t3 font-bold uppercase tracking-wider">
+      <span>RANKINGS UPDATED LIVE</span>
+      <span id="leadTotalEntries">0 ENTRANT(S)</span>
+    </div>
+
+  </div>
+</div>
+
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -1788,8 +1851,21 @@ function renderTournaments() {
     const reg = userRegs[t.id];
     const borderCls = reg && reg.status === 'approved' ? 'border-green bg-green/5' : reg && reg.status === 'rejected' ? 'border-red/40 bg-red/5' : 'border-bdr';
 
+    let dynamicCardClasses = `p-4 bg-card border ${borderCls} rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer`;
+    if (t.accentTheme === 'crimson') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-red/10 to-card/95 border border-red/40 rounded-xl space-y-3 relative transition hover:border-red duration-200 cursor-pointer shadow-[0_0_12px_rgba(232,64,74,0.05)]`;
+    } else if (t.accentTheme === 'gold') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-gold/10 to-card/95 border border-gold/40 rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer shadow-[0_0_12px_rgba(240,192,64,0.05)]`;
+    } else if (t.accentTheme === 'royal') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-purple/10 to-card/95 border border-purple/40 rounded-xl space-y-3 relative transition hover:border-purple duration-200 cursor-pointer shadow-[0_0_12px_rgba(167,139,250,0.05)]`;
+    } else if (t.accentTheme === 'mint') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-green/10 to-card/95 border border-green/40 rounded-xl space-y-3 relative transition hover:border-green duration-200 cursor-pointer shadow-[0_0_12px_rgba(61,220,132,0.05)]`;
+    } else if (t.accentTheme === 'ice') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-blue/10 to-card/95 border border-blue/40 rounded-xl space-y-3 relative transition hover:border-blue duration-200 cursor-pointer shadow-[0_0_12px_rgba(79,158,255,0.05)]`;
+    }
+
     const card = document.createElement('div');
-    card.className = `p-4 bg-card border ${borderCls} rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer`;
+    card.className = dynamicCardClasses;
     card.innerHTML = `
       <div class="flex justify-between items-start gap-3">
         <div>
@@ -1850,17 +1926,20 @@ function renderTournaments() {
       ` : ''}
 
       <div class="pt-2 flex gap-2 flex-wrap">
-        <button class="b-part flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-          <i class="fas fa-users mr-1.5"></i> Check Participation
+        <button class="b-part flex-1 min-w-[100px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-users mr-1"></i> Slots
         </button>
-        <button class="b-report flex-1 min-w-[120px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-          <i class="fas fa-flag mr-1.5"></i> Report Hack / Cheat
+        <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-list-ol mr-1"></i> Leaderboard
+        </button>
+        <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-flag mr-1"></i> Report
         </button>
       </div>
     `;
 
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-live-stream')) return;
+      if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
       handleTourCardClick(t);
     });
 
@@ -1872,6 +1951,11 @@ function renderTournaments() {
     card.querySelector('.b-part').addEventListener('click', (e) => {
       e.stopPropagation();
       openTournamentParticipation(t);
+    });
+
+    card.querySelector('.b-leaderboard').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTournamentLeaderboard(t);
     });
 
     listEl.appendChild(card);
@@ -2399,7 +2483,160 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
   }
 };
 
-$('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));
+$('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));CustomizationListener:
+
+// ── TOURNAMENT LEADERBOARD DISPLAY ──
+window.openTournamentLeaderboard = async function(tour) {
+  $('leadTourName').textContent = tour.name;
+  const container = $('leaderboardListContainer');
+  const podium = $('leaderboardPodium');
+  
+  // Reset
+  podium.classList.add('hidden');
+  container.innerHTML = `
+    <div class="p-8 text-center text-t3 text-xs">
+      <i class="fas fa-circle-notch animate-spin text-2xl text-gold mb-2"></i>
+      <p>Fetching leaderboard statistics...</p>
+    </div>
+  `;
+  $('leadTotalEntries').textContent = 'Loading...';
+  $('mTournamentLeaderboard').classList.remove('hidden');
+
+  try {
+    const q = query(
+      collection(db, 'leaderboards'),
+      where('tournamentId', '==', tour.id),
+      orderBy('rank', 'asc')
+    );
+    const snap = await getDocs(q);
+    container.innerHTML = '';
+
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-t3 text-xs border border-dashed border-bdr/40 rounded-xl bg-card/40">
+          <i class="fas fa-trophy text-2xl mb-2 text-t3"></i>
+          <p>No leaderboard records found for this tournament yet.</p>
+          <p class="text-[10px] text-t3/80 mt-1">Staff will update rankings as matches finalize.</p>
+        </div>
+      `;
+      $('leadTotalEntries').textContent = '0 Entries';
+      return;
+    }
+
+    $('leadTotalEntries').textContent = `${snap.size} ENTRANT(S)`;
+
+    // Map entries
+    const entries = [];
+    snap.forEach(docSnap => {
+      entries.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    // Sort by rank explicitly just in case index is creating delays
+    entries.sort((a, b) => Number(a.rank) - Number(b.rank));
+
+    // Podium Setup (Ranks 1, 2, 3)
+    const first = entries.find(e => Number(e.rank) === 1);
+    const second = entries.find(e => Number(e.rank) === 2);
+    const third = entries.find(e => Number(e.rank) === 3);
+
+    if (first || second || third) {
+      podium.classList.remove('hidden');
+      
+      // Rank 1
+      if (first) {
+        $('podium1Name').textContent = first.playerName;
+        $('podium1Score').textContent = first.score || 'Champion';
+        $('podium1Av').src = first.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(first.playerName)}`;
+      } else {
+        $('podium1Name').textContent = 'TBA';
+        $('podium1Score').textContent = '-';
+        $('podium1Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba1';
+      }
+
+      // Rank 2
+      if (second) {
+        $('podium2Name').textContent = second.playerName;
+        $('podium2Score').textContent = second.score || 'Runner-up';
+        $('podium2Av').src = second.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(second.playerName)}`;
+      } else {
+        $('podium2Name').textContent = 'TBA';
+        $('podium2Score').textContent = '-';
+        $('podium2Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba2';
+      }
+
+      // Rank 3
+      if (third) {
+        $('podium3Name').textContent = third.playerName;
+        $('podium3Score').textContent = third.score || '3rd Place';
+        $('podium3Av').src = third.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(third.playerName)}`;
+      } else {
+        $('podium3Name').textContent = 'TBA';
+        $('podium3Score').textContent = '-';
+        $('podium3Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba3';
+      }
+    }
+
+    // List Container
+    entries.forEach(e => {
+      const rankBg = Number(e.rank) === 1 ? 'bg-gold/15 text-gold border-gold/30' :
+                     Number(e.rank) === 2 ? 'bg-slate-400/10 text-slate-300 border-slate-500/20' :
+                     Number(e.rank) === 3 ? 'bg-amber-700/15 text-amber-500 border-amber-800/20' :
+                     'bg-[#1e2440] text-t2 border-bdr/60';
+
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-card/60 border border-bdr/50 rounded-xl flex items-center justify-between gap-3 transition hover:bg-card';
+      item.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-6 h-6 rounded-full border flex items-center justify-center font-mono font-bold text-xs ${rankBg}">
+            ${e.rank}
+          </div>
+          <img class="w-8 h-8 rounded-full border border-bdr object-cover" src="${e.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(e.playerName)}"/>
+          <div>
+            <div class="font-bold text-sm text-white flex items-center gap-1.5">
+              ${e.playerName}
+              ${e.userId ? `<span class="text-[8px] bg-gold/10 text-gold px-1.5 py-0.2 rounded border border-gold/20 flex items-center gap-0.5"><i class="fas fa-check-circle text-[7px]"></i> Verified</span>` : ''}
+            </div>
+            ${e.playerHandle ? `<div class="text-[9px] text-t3 font-medium">${e.playerHandle}</div>` : ''}
+          </div>
+        </div>
+        <div class="text-right flex flex-col items-end gap-0.5">
+          <span class="text-xs font-bold font-mono text-gold">${e.score || 'Completed'}</span>
+          ${e.userId ? `
+            <button class="b-view-p-card text-[9px] text-blue-400 hover:text-white hover:underline font-bold" data-uid="${e.userId}">
+              View Profile <i class="fas fa-chevron-right text-[7px]"></i>
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      if (e.userId) {
+        item.querySelector('.b-view-p-card').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          // Fetch registration data placeholder to reuse the profile display modal
+          const dummyReg = {
+            userName: e.playerName,
+            userHandle: e.playerHandle || '@player#0000',
+            gameUID: 'Linked Profile'
+          };
+          openParticipantProfileCard(e.userId, dummyReg);
+        });
+      }
+
+      container.appendChild(item);
+    });
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="p-6 bg-red/10 border border-red/20 rounded-xl text-center text-xs text-red">
+        <i class="fas fa-exclamation-triangle text-xl mb-1.5"></i>
+        <p>Failed loading leaderboard: ${err.message}</p>
+      </div>
+    `;
+    $('leadTotalEntries').textContent = 'Error';
+  }
+};
+
+$('bCloseLeaderboard').addEventListener('click', () => $('mTournamentLeaderboard').classList.add('hidden'));
 
 // ── ACCORDION INTERACTIVITY ──
 window.toggleAccordion = (index) => {
