@@ -1289,7 +1289,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDocs, deleteDoc, updateDoc, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Setup credentials
@@ -2147,28 +2147,36 @@ window.openTournamentParticipation = async function(tour) {
     snap.forEach(docSnap => {
       const reg = docSnap.data();
       const pId = reg.userId;
-      const pName = reg.userName || 'Anonymous Player';
-      const pGameName = reg.gameName || pName;
+      const defaultName = reg.userName || 'Anonymous Player';
+      const pGameName = reg.gameName || defaultName;
       const pGameUID = reg.gameUID || 'No Game ID';
 
       // Use unique avatar seed based on player name/ID to show instantly
-      const seed = pId || pName;
+      const seed = pId || defaultName;
       const tempAv = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
 
       const item = document.createElement('div');
       item.className = 'p-3 bg-card/60 border border-bdr/60 hover:border-gold/40 hover:bg-card rounded-xl flex items-center justify-between gap-3 transition duration-200 cursor-pointer';
+      
+      // We will define unique IDs to dynamically inject custom state when fetched
+      const avId = `part-av-${pId}-${docSnap.id}`;
+      const nameId = `part-name-${pId}-${docSnap.id}`;
+      const badgesContainerId = `part-badges-${pId}-${docSnap.id}`;
+      const rightSecId = `part-right-${pId}-${docSnap.id}`;
+
       item.innerHTML = `
         <div class="flex items-center gap-3">
-          <img class="w-10 h-10 rounded-full border border-bdr object-cover" src="${tempAv}" alt="Avatar" id="part-av-${pId}"/>
+          <img class="w-10 h-10 rounded-full border border-bdr object-cover transition" src="${tempAv}" alt="Avatar" id="${avId}"/>
           <div>
-            <div class="font-display font-bold text-sm text-white flex items-center gap-1">
-              ${pName}
+            <div class="font-display font-bold text-sm text-white flex flex-wrap items-center gap-1" id="${nameId}">
+              <span>${defaultName}</span>
               <i class="fas fa-check-circle text-green text-[10px]" title="Slot Verified"></i>
             </div>
             <div class="text-[10px] text-t3 font-medium">IGN: <span class="text-gold font-mono">${pGameName}</span></div>
+            <div class="flex gap-1 mt-0.5" id="${badgesContainerId}"></div>
           </div>
         </div>
-        <div class="text-right flex flex-col items-end gap-1">
+        <div class="text-right flex flex-col items-end gap-1" id="${rightSecId}">
           <span class="px-2 py-0.5 text-[8px] font-bold bg-green/10 text-green rounded border border-green/20 uppercase tracking-wider">Slot OK</span>
           <span class="text-[9px] text-t3 font-mono">UID: ${pGameUID}</span>
         </div>
@@ -2182,12 +2190,55 @@ window.openTournamentParticipation = async function(tour) {
       getDoc(doc(db, 'users', pId)).then(uSnap => {
         if (uSnap.exists()) {
           const u = uSnap.data();
+          
+          // 1. Customized Avatar
           if (u.av) {
-            const imgEl = item.querySelector(`#part-av-${pId}`);
+            const imgEl = item.querySelector(`#${avId}`);
             if (imgEl) imgEl.src = u.av;
           }
+
+          // 2. Custom Frame if Premium
+          if (u.premium && u.avatarFrame) {
+            const imgEl = item.querySelector(`#${avId}`);
+            if (imgEl) {
+              if (u.avatarFrame === 'gold') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-gold shadow-[0_0_8px_rgba(240,192,64,0.3)] object-cover';
+              } else if (u.avatarFrame === 'fire') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-red shadow-[0_0_8px_rgba(232,64,74,0.3)] object-cover';
+              } else if (u.avatarFrame === 'ice') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-blue shadow-[0_0_8px_rgba(79,158,255,0.3)] object-cover';
+              } else if (u.avatarFrame === 'royal') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-purple shadow-[0_0_8px_rgba(167,139,250,0.3)] object-cover';
+              }
+            }
+          }
+
+          // 3. Customized Display Name & Color
+          const nameContainer = item.querySelector(`#${nameId}`);
+          if (nameContainer) {
+            const nameSpan = nameContainer.querySelector('span');
+            if (nameSpan) {
+              nameSpan.textContent = u.name || defaultName;
+              if (u.premium && u.nameColor) {
+                nameSpan.style.color = u.nameColor;
+              }
+            }
+          }
+
+          // 4. Badges (Premium, Rank)
+          const badgesContainer = item.querySelector(`#${badgesContainerId}`);
+          if (badgesContainer) {
+            let badgesHTML = '';
+            if (u.premium) {
+              badgesHTML += `<span class="px-1.5 py-0.2 text-[7px] font-bold bg-purple/10 text-purple rounded border border-purple/20 uppercase flex items-center gap-0.5"><i class="fas fa-crown text-[6px]"></i> Premium</span>`;
+            }
+            if (u.rank) {
+              badgesHTML += `<span class="px-1.5 py-0.2 text-[7px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase">${u.rank}</span>`;
+            }
+            badgesContainer.innerHTML = badgesHTML;
+          }
         }
-      }).catch(e => console.error('Error fetching participant avatar seed: ', e));
+      }).catch(e => console.error('Error fetching participant details in check participation list: ', e));
 
       container.appendChild(item);
     });
