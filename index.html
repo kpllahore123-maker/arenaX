@@ -2505,8 +2505,7 @@ window.openTournamentLeaderboard = async function(tour) {
   try {
     const q = query(
       collection(db, 'leaderboards'),
-      where('tournamentId', '==', tour.id),
-      orderBy('rank', 'asc')
+      where('tournamentId', '==', tour.id)
     );
     const snap = await getDocs(q);
     container.innerHTML = '';
