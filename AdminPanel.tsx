@@ -13,7 +13,8 @@ import {
   orderBy,
   serverTimestamp,
   increment,
-  arrayUnion
+  arrayUnion,
+  limit
 } from 'firebase/firestore';
 import {
   UserProfile,
@@ -30,7 +31,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminEmail }) => {
-  const [activePage, setActivePage] = useState<'pgDash' | 'pgUsers' | 'pgPayments' | 'pgTours' | 'pgReports' | 'pgRegistrations' | 'pgSupport'>('pgDash');
+  const [activePage, setActivePage] = useState<'pgDash' | 'pgUsers' | 'pgPayments' | 'pgTours' | 'pgReports' | 'pgRegistrations' | 'pgSupport' | 'pgGlobalChat'>('pgDash');
   const [clockStr, setClockEl] = useState('');
 
   // Firestore collections states
@@ -39,6 +40,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [reports, setReports] = useState<CheatReport[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [globalMessages, setGlobalMessages] = useState<any[]>([]);
+  const [chatReports, setChatReports] = useState<any[]>([]);
 
   // Filters & Searches
   const [userFilter, setUserFilter] = useState<'all' | 'premium' | 'banned'>('all');
@@ -170,6 +173,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
       setTickets(list);
     }, (err) => {
       console.warn("Failed to listen to tickets:", err);
+    });
+  }, []);
+
+  // Listen to Global Chat Room messages for Admin Spectator
+  useEffect(() => {
+    const q = query(collection(db, 'global_chat'), orderBy('createdAt', 'desc'), limit(100));
+    return onSnapshot(q, (snap) => {
+      const list: any[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() });
+      });
+      setGlobalMessages(list);
+    }, (err) => {
+      console.warn("Failed to listen to global chat:", err);
+    });
+  }, []);
+
+  // Listen to Abusive Chat Reports for Admin
+  useEffect(() => {
+    const q = query(collection(db, 'chat_reports'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snap) => {
+      const list: any[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() });
+      });
+      setChatReports(list);
+    }, (err) => {
+      console.warn("Failed to listen to chat reports:", err);
     });
   }, []);
 
@@ -654,6 +685,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
               <i className="fas fa-headset w-4 text-center text-xs"></i>
               Support Tickets ({tickets.filter(t => t.status === 'open').length})
             </button>
+
+            <button
+              onClick={() => setActivePage('pgGlobalChat')}
+              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgGlobalChat' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
+            >
+              <i className="fas fa-comments w-4 text-center text-xs"></i>
+              Global Chat Spectator
+            </button>
           </nav>
 
           <div className="p-4 border-t border-[#1e2440] space-y-3">
@@ -688,6 +727,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
               {activePage === 'pgRegistrations' && 'Slots Verification'}
               {activePage === 'pgReports' && 'Hack cheat Reports'}
               {activePage === 'pgSupport' && 'Live Support Channels'}
+              {activePage === 'pgGlobalChat' && 'Global Chat Room Spectator'}
             </h3>
             <span className="text-xs text-[#4a5070] font-mono tracking-wide">{clockStr}</span>
           </div>
@@ -1219,6 +1259,169 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── GLOBAL CHAT SPECTATOR & REPORTS PAGE ── */}
+            {activePage === 'pgGlobalChat' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-160px)]">
+                {/* Left: Chat Spectator */}
+                <div className="bg-[#141828] border border-[#1e2440] rounded-xl flex flex-col min-h-0 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30 flex justify-between items-center shrink-0">
+                    <div>
+                      <h4 className="ff-title text-base font-bold text-white flex items-center gap-2">
+                        <i className="fas fa-eye text-[#3ddc84]"></i> Live Global Chat Spectator
+                      </h4>
+                      <p className="text-[10px] text-[#8890b0] mt-0.5">Real-time monitor of players' conversations.</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[#3ddc84]/10 text-[#3ddc84] border border-[#3ddc84]/20 text-[9px] font-bold rounded-full uppercase tracking-wider animate-pulse">
+                      Live
+                    </span>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {globalMessages.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-[#4a5070] text-xs">
+                        No chat messages to display.
+                      </div>
+                    ) : (
+                      globalMessages.map((msg) => (
+                        <div key={msg.id} className="bg-[#171b2e]/50 border border-[#252a45]/40 p-3 rounded-lg flex items-start justify-between gap-4">
+                          <div className="flex gap-2.5 min-w-0">
+                            <img src={msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45] shrink-0" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-white">{msg.userName || 'Anonymous'}</span>
+                                <span className="text-[8px] text-[#4a5070] font-mono">UID: {msg.userId?.slice(-6)}</span>
+                                {msg.isAbusive && (
+                                  <span className="px-1.5 py-0.5 bg-[#e8404a]/10 text-[#e8404a] text-[8px] font-bold rounded uppercase">Flagged</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#8890b0] mt-1 break-all whitespace-pre-wrap">{msg.text}</p>
+                              {msg.originalText && msg.originalText !== msg.text && (
+                                <p className="text-[9px] text-[#e8404a]/80 mt-1 font-mono italic">Original: "{msg.originalText}"</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to delete this message?')) {
+                                  try {
+                                    await deleteDoc(doc(db, 'global_chat', msg.id));
+                                    alert('Message deleted successfully! 🗑️');
+                                  } catch (e: any) {
+                                    alert('Error deleting: ' + e.message);
+                                  }
+                                }
+                              }}
+                              className="p-1.5 bg-[#e8404a]/10 hover:bg-[#e8404a]/20 text-[#e8404a] rounded border border-[#e8404a]/20 transition"
+                              title="Delete Message"
+                            >
+                              <i className="fas fa-trash text-xs"></i>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const foundUser = users.find(u => u.id === msg.userId);
+                                if (foundUser) {
+                                  setBanUser(foundUser);
+                                  setBanReason(`Abusive behavior in Global Chat ("${msg.text}")`);
+                                  setShowBanModal(true);
+                                } else {
+                                  alert(`Player ID ${msg.userId} not found in user management.`);
+                                }
+                              }}
+                              className="p-1.5 bg-[#ff4500]/10 hover:bg-[#ff4500]/20 text-[#ff4500] rounded border border-[#ff4500]/20 transition"
+                              title="Ban Player"
+                            >
+                              <i className="fas fa-ban text-xs"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Abusive Reports */}
+                <div className="bg-[#141828] border border-[#1e2440] rounded-xl flex flex-col min-h-0 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30 flex justify-between items-center shrink-0">
+                    <div>
+                      <h4 className="ff-title text-base font-bold text-[#e8404a] flex items-center gap-2">
+                        <i className="fas fa-exclamation-triangle"></i> Automated Abusive Chat Reports
+                      </h4>
+                      <p className="text-[10px] text-[#8890b0] mt-0.5">Logs of automatically reported system flags.</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[#e8404a]/10 text-[#e8404a] border border-[#e8404a]/20 text-[9px] font-bold rounded-full uppercase tracking-wider">
+                      {chatReports.filter(r => r.status === 'open').length} Open
+                    </span>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {chatReports.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-[#4a5070] text-xs">
+                        No abusive chat reports logged.
+                      </div>
+                    ) : (
+                      chatReports.map((rep) => (
+                        <div key={rep.id} className={`p-4 rounded-lg flex flex-col gap-3 border ${rep.status === 'open' ? 'bg-[#e8404a]/5 border-[#e8404a]/20' : 'bg-[#171b2e]/30 border-[#252a45]/30'}`}>
+                          <div className="flex justify-between items-start gap-4">
+                            <div>
+                              <div className="font-bold text-white text-xs">{rep.userName || 'Anonymous'}</div>
+                              <div className="text-[9px] text-[#8890b0] font-mono mt-0.5">{rep.userEmail} | UID: {rep.userId?.slice(-6)}</div>
+                            </div>
+                            <span className={`px-2 py-0.5 text-[8px] font-bold uppercase rounded-full border ${rep.status === 'open' ? 'bg-[#e8404a]/10 text-[#e8404a] border-[#e8404a]/20' : 'bg-[#3ddc84]/10 text-[#3ddc84] border-[#3ddc84]/20'}`}>
+                              {rep.status}
+                            </span>
+                          </div>
+
+                          <div className="p-2.5 bg-[#0a0d16]/80 rounded-lg border border-[#252a45]/60">
+                            <div className="text-[8px] uppercase tracking-wider text-[#e8404a] font-bold mb-1">Flagged Text:</div>
+                            <p className="text-xs text-[#8890b0] font-mono select-all font-semibold italic">"{rep.messageText}"</p>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[10px] text-[#4a5070] mt-1 border-t border-[#252a45]/40 pt-2.5">
+                            <span>{rep.createdAt ? new Date(rep.createdAt.seconds * 1000).toLocaleString() : 'Just now'}</span>
+                            {rep.status === 'open' && (
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await updateDoc(doc(db, 'chat_reports', rep.id), { status: 'dismissed' });
+                                      alert('Report dismissed successfully! ✅');
+                                    } catch (e: any) {
+                                      alert('Error: ' + e.message);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-[#4a5070]/20 hover:bg-[#4a5070]/30 border border-[#4a5070]/30 text-[#8890b0] rounded text-xs font-bold transition"
+                                >
+                                  Dismiss
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const foundUser = users.find(u => u.id === rep.userId);
+                                    if (foundUser) {
+                                      setBanUser(foundUser);
+                                      setBanReason(`Abusive behavior in Global Chat ("${rep.messageText}")`);
+                                      setShowBanModal(true);
+                                      updateDoc(doc(db, 'chat_reports', rep.id), { status: 'resolved_banned' }).catch(console.warn);
+                                    } else {
+                                      alert(`Player ID ${rep.userId} not found in database.`);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-[#ff4500] hover:bg-[#e03d00] text-white rounded text-xs font-bold transition"
+                                >
+                                  Ban Player
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
