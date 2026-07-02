@@ -3635,8 +3635,57 @@ function renderGlobalMessages(list) {
   }
 
   list.forEach((msg) => {
-    const isMe = msg.userId === currentUid;
     const msgDiv = document.createElement('div');
+
+    // 1. Check for Public Admin Deletion
+    if (msg.isDeletedByAdmin) {
+      msgDiv.className = 'flex justify-center w-full my-2 px-4';
+      msgDiv.innerHTML = `
+        <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/25 px-4 py-2 rounded-xl text-[11px] text-red-400 font-bold uppercase tracking-wider font-sans">
+          <i class="fas fa-shield-halved text-xs animate-pulse"></i> This message was deleted by administration.
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 2. Check for System Announcement
+    if (msg.isSystemAnnouncement) {
+      msgDiv.className = 'flex justify-center w-full my-3 px-4';
+      msgDiv.innerHTML = `
+        <div class="flex flex-col items-center text-center bg-amber-500/15 border border-amber-500/25 px-5 py-3 rounded-2xl max-w-[90%] text-xs text-amber-400 font-bold shadow-lg shadow-amber-500/5">
+          <div class="flex items-center gap-2 text-[10px] uppercase tracking-wider font-extrabold mb-1.5 text-amber-400">
+            <i class="fas fa-bullhorn text-xs"></i> Official Announcement
+          </div>
+          <p class="font-medium text-white leading-relaxed select-text">${msg.text || ''}</p>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 3. Check for Admin Message
+    if (msg.isAdminMessage) {
+      msgDiv.className = 'flex gap-2.5 max-w-[85%] mr-auto';
+      msgDiv.innerHTML = `
+        <div class="w-7 h-7 rounded-full bg-red-500/15 border border-red-500/35 flex items-center justify-center shrink-0 shadow-md">
+          <i class="fas fa-shield-alt text-red-500 text-xs"></i>
+        </div>
+        <div>
+          <div class="text-[9px] text-red-400 font-extrabold mb-0.5 tracking-wider uppercase flex items-center gap-1.5">
+            ${msg.userName || 'System Admin'} <span class="bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase leading-none">Staff</span>
+          </div>
+          <div class="p-3 rounded-xl text-xs leading-relaxed bg-[#1b1216] border border-red-500/30 text-white rounded-tl-none font-semibold shadow-lg shadow-red-500/5">
+            ${msg.text || ''}
+          </div>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 4. Regular Chat Message
+    const isMe = msg.userId === currentUid;
     msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
     
     msgDiv.innerHTML = `
