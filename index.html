@@ -450,28 +450,71 @@ tailwind.config = {
       </div>
     </section>
 
-    <!-- ── PLAYER CHAT TAB (DMs) ── -->
-    <section id="tChat" class="tab space-y-4 hidden">
-      <div class="flex justify-between items-center">
-        <div class="font-display text-xl font-bold flex items-center gap-2">
-          <i class="fas fa-comments text-gold"></i> Direct Messages
+    <!-- ── PLAYER CHAT TAB (DMs / Global Chat) ── -->
+    <section id="tChat" class="tab space-y-4 hidden flex flex-col h-[calc(100vh-140px)]">
+      <!-- Chat Sub-Tabs -->
+      <div class="flex items-center justify-between border-b border-bdr pb-2 shrink-0">
+        <div class="flex gap-4">
+          <button id="btnSubGlobal" class="pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer">
+            Global Chat
+            <span id="subGlobalIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold"></span>
+            <span id="subGlobalDot" class="absolute top-0 right-[-10px] w-1.5 h-1.5 rounded-full bg-gold animate-pulse hidden"></span>
+          </button>
+          <button id="btnSubDM" class="pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer">
+            Direct Messages
+            <span id="subDMIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold hidden"></span>
+          </button>
         </div>
-        <button id="btnAddFriend" class="px-3 py-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-xs font-bold rounded-lg border border-gold/20 transition flex items-center gap-1.5">
+        <button id="btnAddFriend" class="px-2.5 py-1 bg-gold/10 hover:bg-gold/20 text-gold text-[10px] font-bold rounded-lg border border-gold/20 transition flex items-center gap-1.5 hidden cursor-pointer">
           <i class="fas fa-user-plus"></i> Add Friend
         </button>
       </div>
 
-      <!-- Pending Requests -->
-      <div id="friendReqsWrap" class="p-3 bg-card border border-bdr rounded-xl space-y-3 hidden">
-        <div class="text-[10px] text-t3 uppercase tracking-wider font-bold">Friend Requests</div>
-        <div id="friendReqsList" class="space-y-2"></div>
+      <!-- Global Chat Room Window -->
+      <div id="globalChatWindow" class="flex-1 flex flex-col min-h-0 bg-panel border border-bdr rounded-xl overflow-hidden">
+        <!-- Chat messages list -->
+        <div id="globalChatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6 animate-pulse">
+            <i class="fas fa-globe text-3xl mb-1"></i>
+            <p class="text-xs">Connecting to Global Chat...</p>
+          </div>
+        </div>
+
+        <!-- Typing indicators and form -->
+        <div class="p-3 bg-panel/80 border-t border-bdr shrink-0">
+          <!-- Typing users text -->
+          <div id="globalTypingIndicator" class="flex items-center gap-2 text-[10px] text-gold px-1 pb-2 hidden">
+            <div class="flex gap-1 items-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 0ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 150ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 300ms"></span>
+            </div>
+            <span id="globalTypingText" class="italic">Someone is typing...</span>
+          </div>
+
+          <form id="globalChatForm" class="flex gap-2">
+            <input id="globalChatInput" type="text" placeholder="Type a message to ArenaX players..." class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-xs outline-none focus:border-gold transition text-white">
+            <button type="submit" class="w-8 h-8 bg-red hover:bg-red/80 text-white rounded-lg flex items-center justify-center text-xs transition shrink-0 cursor-pointer">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
       </div>
 
-      <!-- Friends Chat List -->
-      <div id="friendsList" class="space-y-2">
-        <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
-          <i class="fas fa-user-friends text-2xl mb-2"></i>
-          <p>No active friends yet. Click "Add Friend" to start chatting!</p>
+      <!-- Direct Messages Container (old tChat view) -->
+      <div id="dmChatContainer" class="space-y-4 flex-1 overflow-y-auto hidden">
+        <!-- Pending Requests -->
+        <div id="friendReqsWrap" class="p-3 bg-card border border-bdr rounded-xl space-y-3 hidden">
+          <div class="text-[10px] text-t3 uppercase tracking-wider font-bold">Friend Requests</div>
+          <div id="friendReqsList" class="space-y-2"></div>
+        </div>
+
+        <!-- Friends Chat List -->
+        <div id="friendsList" class="space-y-2">
+          <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>No active friends yet. Click "Add Friend" to start chatting!</p>
+          </div>
         </div>
       </div>
     </section>
@@ -533,6 +576,7 @@ tailwind.config = {
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
       <i class="fas fa-comments text-base"></i><span>Chat</span>
+      <span id="chatDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-gold hidden"></span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1 hidden" data-t="Support">
       <i class="fas fa-headset text-base"></i><span>Support</span>
@@ -1374,7 +1418,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Setup credentials
@@ -1399,6 +1443,12 @@ const ADMIN_UIDS = ['xDa31jOrsoQC2HxjSheO3wBqyII2', 'lCNKrLAliFSvuML6Nwrr6YlNOtG
 // Local states
 let userProfile = null;
 let guestProfile = null;
+let activeChatSubTab = 'global';
+let unreadGlobal = false;
+let globalChatUnsub = null;
+let globalChatTypingUnsub = null;
+let globalTypingTimeout = null;
+let activeMainTab = 'Profile';
 let activeDMOrientationUid = null;
 let toursData = [];
 let userRegs = {};
@@ -1637,6 +1687,7 @@ function boot() {
 
   loadTournamentsList();
   loadLiveNotifications();
+  initGlobalChat();
   goTo('sDash');
 
   if (!devPopupShownThisSession) {
@@ -1647,6 +1698,7 @@ function boot() {
 
 // Navigation Tab controls
 function switchTab(tabId) {
+  activeMainTab = tabId;
   document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
   $('t' + tabId).classList.remove('hidden');
   document.querySelectorAll('.ni').forEach(btn => {
@@ -1659,7 +1711,14 @@ function switchTab(tabId) {
     }
   });
 
-  if (tabId === 'Chat') loadFriendSystem();
+  if (tabId === 'Chat') {
+    loadFriendSystem();
+    if (activeChatSubTab === 'global') {
+      unreadGlobal = false;
+      updateChatUnreadDot();
+      updateSubGlobalDot();
+    }
+  }
 }
 
 document.querySelectorAll('.ni').forEach(btn => {
@@ -3490,6 +3549,253 @@ $('btnAddFriend').addEventListener('click', () => {
 });
 
 $('bCloseAddFriend').addEventListener('click', () => $('mAddFriend').classList.add('hidden'));
+
+// ── GLOBAL CHAT SYSTEM LOGIC ──
+
+function initGlobalChat() {
+  if (globalChatUnsub) globalChatUnsub();
+  if (globalChatTypingUnsub) globalChatTypingUnsub();
+
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+
+  const qGlobal = query(
+    collection(db, 'global_chat'),
+    orderBy('createdAt', 'desc'),
+    limit(60)
+  );
+
+  globalChatUnsub = onSnapshot(qGlobal, (snap) => {
+    const list = [];
+    snap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    // Reverse to show oldest first at top, newest at bottom
+    list.reverse();
+
+    // Trigger unread indicator if chat is not open or not on global subtab
+    if (activeMainTab !== 'Chat' || activeChatSubTab !== 'global') {
+      unreadGlobal = true;
+      updateChatUnreadDot();
+      updateSubGlobalDot();
+    }
+
+    renderGlobalMessages(list);
+  }, (err) => {
+    console.warn("Global chat listen error:", err);
+  });
+
+  // Listen for typing users
+  const qTyping = query(
+    collection(db, 'global_chat_typing'),
+    where('typing', '==', true)
+  );
+
+  globalChatTypingUnsub = onSnapshot(qTyping, (snap) => {
+    const typingNames = [];
+    const now = Date.now();
+    snap.forEach((d) => {
+      const data = d.data();
+      const currentUid = (userProfile || guestProfile)?.uid;
+      // Skip ourselves, and skip older than 6 seconds
+      if (d.id !== currentUid && (now - (data.timestamp || 0)) < 6000) {
+        typingNames.push(data.name || 'Anonymous');
+      }
+    });
+
+    const indicator = $('globalTypingIndicator');
+    const textEl = $('globalTypingText');
+    if (indicator && textEl) {
+      if (typingNames.length > 0) {
+        textEl.textContent = `${typingNames.join(', ')} ${typingNames.length === 1 ? 'is' : 'are'} typing...`;
+        indicator.classList.remove('hidden');
+      } else {
+        indicator.classList.add('hidden');
+      }
+    }
+  });
+}
+
+function renderGlobalMessages(list) {
+  const container = $('globalChatMsgs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const currentUid = (userProfile || guestProfile)?.uid;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6">
+        <i class="fas fa-globe text-3xl mb-1"></i>
+        <p class="text-xs">No messages in Global Chat yet.</p>
+        <p class="text-[10px]">Be the first to say hello!</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.forEach((msg) => {
+    const isMe = msg.userId === currentUid;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
+    
+    msgDiv.innerHTML = `
+      <img
+        src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
+        alt="Avatar"
+        class="w-7 h-7 rounded-full border border-bdr bg-panel shrink-0"
+      />
+      <div>
+        <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''}">
+          ${msg.userName || 'Anonymous'}
+        </div>
+        <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
+          ${msg.text || ''}
+        </div>
+      </div>
+    `;
+    container.appendChild(msgDiv);
+  });
+
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateChatUnreadDot() {
+  const dot = $('chatDot');
+  if (!dot) return;
+  if (unreadGlobal) {
+    dot.classList.remove('hidden');
+    dot.classList.add('bg-gold');
+  } else {
+    dot.classList.add('hidden');
+  }
+}
+
+function updateSubGlobalDot() {
+  const dot = $('subGlobalDot');
+  if (!dot) return;
+  if (unreadGlobal && activeChatSubTab !== 'global') {
+    dot.classList.remove('hidden');
+  } else {
+    dot.classList.add('hidden');
+  }
+}
+
+async function setGlobalTypingState(isTyping) {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+  try {
+    await setDoc(doc(db, 'global_chat_typing', profile.uid), {
+      name: profile.name || 'Anonymous Player',
+      typing: isTyping,
+      timestamp: Date.now()
+    }, { merge: true });
+  } catch (e) {
+    console.warn("Typing update error:", e);
+  }
+}
+
+function handleGlobalInputKeyPress() {
+  setGlobalTypingState(true);
+  if (globalTypingTimeout) clearTimeout(globalTypingTimeout);
+  globalTypingTimeout = setTimeout(() => {
+    setGlobalTypingState(false);
+  }, 2500);
+}
+
+// Global Chat & Sub-tabs events
+$('btnSubGlobal').addEventListener('click', () => {
+  activeChatSubTab = 'global';
+  $('btnSubGlobal').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer';
+  $('btnSubDM').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer';
+  $('subGlobalIndicator').classList.remove('hidden');
+  $('subDMIndicator').classList.add('hidden');
+  $('globalChatWindow').classList.remove('hidden');
+  $('dmChatContainer').classList.add('hidden');
+  $('btnAddFriend').classList.add('hidden');
+
+  unreadGlobal = false;
+  updateChatUnreadDot();
+  updateSubGlobalDot();
+  
+  const container = $('globalChatMsgs');
+  if (container) container.scrollTop = container.scrollHeight;
+});
+
+$('btnSubDM').addEventListener('click', () => {
+  activeChatSubTab = 'dm';
+  $('btnSubDM').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer';
+  $('btnSubGlobal').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer';
+  $('subDMIndicator').classList.remove('hidden');
+  $('subGlobalIndicator').classList.add('hidden');
+  $('dmChatContainer').classList.remove('hidden');
+  $('globalChatWindow').classList.add('hidden');
+  if (!guestProfile) {
+    $('btnAddFriend').classList.remove('hidden');
+  }
+});
+
+$('globalChatInput').addEventListener('input', () => {
+  handleGlobalInputKeyPress();
+});
+
+$('globalChatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (guestProfile) {
+    alert('Create an account to participate in Global Chat!');
+    return;
+  }
+  const input = $('globalChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  // Cancel typing status immediately
+  setGlobalTypingState(false);
+  if (globalTypingTimeout) clearTimeout(globalTypingTimeout);
+
+  const profile = userProfile || guestProfile;
+  const BAD_WORDS = ["bkl", "mc", "bc", "chutiya", "gand", "gandi", "gali", "fuck", "bitch", "asshole", "shitty", "randi", "loda", "lunde", "kutta", "saala", "saale", "madarchod", "behenchod", "harami", "bhonsri"];
+  
+  let filtered = text;
+  let isAbusive = false;
+  const lower = text.toLowerCase();
+  
+  BAD_WORDS.forEach((word) => {
+    const regex = new RegExp(word, 'gi');
+    if (regex.test(lower)) {
+      isAbusive = true;
+      filtered = filtered.replace(regex, '***');
+    }
+  });
+
+  try {
+    const msgRef = await addDoc(collection(db, 'global_chat'), {
+      userId: profile.uid,
+      userName: profile.name,
+      userAvatar: profile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1',
+      text: filtered,
+      originalText: text,
+      isAbusive: isAbusive,
+      createdAt: serverTimestamp()
+    });
+
+    if (isAbusive) {
+      await addDoc(collection(db, 'chat_reports'), {
+        userId: profile.uid,
+        userName: profile.name,
+        userEmail: profile.email || '',
+        messageId: msgRef.id,
+        messageText: text,
+        createdAt: serverTimestamp(),
+        status: 'open'
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to send message:", err);
+  }
+});
 
 let searchFriendTarget = null;
 $('btnSearchFriend').addEventListener('click', async () => {
