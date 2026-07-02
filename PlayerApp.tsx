@@ -72,19 +72,50 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [payStep, setPayStep] = useState<1 | 2>(1);
   const [payMethod, setPayMethod] = useState<'jc' | 'ep' | 'cc'>('jc');
   const [payAmount, setPayAmount] = useState<string>('');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [depositRequests, setDepositRequests] = useState<any[]>([]);
 
   useEffect(() => {
-    if (currentUser?.transactions) {
-      // Sort newest first by timestamp or id
-      const sorted = [...currentUser.transactions].sort((a, b) => {
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() || b.id.localeCompare(a.id);
-      });
-      setTransactions(sorted);
-    } else {
-      setTransactions([]);
+    if (!currentUser || isGuest) {
+      setDepositRequests([]);
+      return;
     }
-  }, [currentUser?.transactions]);
+    const qDeposits = query(
+      collection(db, 'deposit_requests'),
+      where('userId', '==', currentUser.uid)
+    );
+    const unsub = onSnapshot(qDeposits, (snap) => {
+      const list: any[] = [];
+      snap.forEach((dDoc) => {
+        list.push({ id: dDoc.id, ...dDoc.data() });
+      });
+      setDepositRequests(list);
+    }, (err) => {
+      console.warn("Failed to listen to deposit requests:", err);
+    });
+    return () => unsub();
+  }, [currentUser, isGuest]);
+
+  useEffect(() => {
+    const profileTxs = currentUser?.transactions || [];
+    const normalizedDeposits = depositRequests.map(d => ({
+      id: d.id || d.txnId,
+      type: d.type || 'deposit',
+      amount: d.amountAX || 0,
+      status: d.status || 'pending',
+      account: d.method || 'Deposit',
+      timestamp: d.submittedAt ? (d.submittedAt.seconds ? new Date(d.submittedAt.seconds * 1000).toLocaleString() : new Date(d.submittedAt).toLocaleString()) : 'Just now',
+      message: d.rejectionReason ? `Rejected: ${d.rejectionReason}` : (d.status === 'approved' ? (d.type === 'withdrawal' ? 'Withdrawal successful' : 'Deposit successful') : 'Pending review'),
+      color: d.status === 'approved' ? 'green' : (d.status === 'rejected' ? 'red' : 'gold')
+    }));
+
+    const combined = [...profileTxs, ...normalizedDeposits];
+    combined.sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() || b.id.localeCompare(a.id);
+    });
+
+    setTransactions(combined);
+  }, [currentUser?.transactions, depositRequests]);
 
   // Tournament Registration & Details Modal
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
