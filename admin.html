@@ -511,6 +511,39 @@ tailwind.config = {
                 <p class="text-xs">Connecting to live chat stream...</p>
               </div>
             </div>
+
+            <!-- Admin Chat Input Form -->
+            <div class="p-4 border-t border-bdr bg-panel/20 shrink-0">
+              <form id="adminChatForm" class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <!-- Message Type Selector -->
+                  <div class="flex items-center gap-2 bg-card border border-bdr px-2.5 py-1.5 rounded-lg">
+                    <label class="text-[10px] uppercase font-bold text-t3 select-none">Send As:</label>
+                    <select id="adminChatType" class="bg-transparent border-none text-xs text-white font-bold outline-none cursor-pointer focus:ring-0">
+                      <option value="admin" class="bg-panel text-red font-bold">🔴 Staff Message</option>
+                      <option value="announcement" class="bg-panel text-gold font-bold">📢 Official Announcement</option>
+                    </select>
+                  </div>
+                  <!-- Admin Profile Display Name -->
+                  <span class="text-[10px] text-t3 font-mono">Posting as: <strong id="adminSenderName" class="text-white">Admin Staff</strong></span>
+                </div>
+                <div class="flex gap-2">
+                  <input 
+                    type="text" 
+                    id="adminChatInput" 
+                    placeholder="Type official staff message or announcement here..." 
+                    class="flex-1 bg-card border border-bdr rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-red"
+                    required
+                  />
+                  <button 
+                    type="submit" 
+                    class="bg-red hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+                  >
+                    <i class="fas fa-paper-plane"></i> Publish
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <!-- Right: Flagged/Abusive Reports & Mutes (5 cols) -->
@@ -980,6 +1013,9 @@ onAuthStateChanged(auth, (user) => {
       // Update dynamic user info in sidebar
       $('adminEmail').textContent = user.email || 'Administrator';
       $('adminInitials').textContent = user.email ? user.email.substring(0, 2).toUpperCase() : 'AD';
+      if ($('adminSenderName')) {
+        $('adminSenderName').textContent = user.email ? user.email.split('@')[0].toUpperCase() : 'ADMIN';
+      }
       if (isSuper) {
         $('adminRole').textContent = 'Super Admin';
         $('adminRole').className = 'text-[9px] uppercase tracking-wider text-gold font-bold';
@@ -1734,8 +1770,96 @@ function renderAdminChat() {
     const timeStr = getSafeDateString(msg.createdAt);
     const avatarUrl = msg.userAvatar || sender?.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.userId || 'placeholder'}`;
     
+    // 1. Check for Public Admin Deletion
+    if (msg.isDeletedByAdmin) {
+      html += `
+        <div class="flex items-start gap-3 bg-red-500/5 border border-red-500/20 p-3 rounded-lg opacity-60">
+          <div class="w-8 h-8 rounded-full bg-card flex-shrink-0 flex items-center justify-center overflow-hidden border border-red-500/25 text-red-400">
+            <i class="fas fa-trash-can text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-red-400 truncate max-w-[120px]">${senderName}</span>
+              <span class="text-[9px] text-t3 font-mono">${timeStr}</span>
+              <span class="bg-red-500/20 text-red-400 border border-red-500/30 text-[8px] px-1 rounded-sm uppercase tracking-wide font-black">Publicly Deleted</span>
+            </div>
+            <p class="text-xs text-t3 mt-1 italic line-through font-serif">${msg.text || ''}</p>
+            ${msg.originalText && msg.originalText !== msg.text ? `<p class="text-[10px] text-t2 font-mono mt-1 bg-black/30 p-1.5 rounded border border-bdr/10">Original text before delete: <span class="text-white select-text font-bold font-sans">"${msg.originalText}"</span></p>` : ''}
+          </div>
+          
+          <!-- Staff Quick Actions to Silent Delete a publicly deleted message if desired -->
+          <div class="flex items-center gap-1 shrink-0 ml-2 font-bold font-sans">
+            <button 
+              onclick="deleteMessageSilent('${msg.id}')"
+              class="p-1.5 rounded border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition"
+              title="Silent Delete Completely (Purge document)"
+            >
+              <i class="fas fa-eraser text-[10px]"></i>
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // 2. Check for System Announcement
+    if (msg.isSystemAnnouncement) {
+      html += `
+        <div class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/35 p-3 rounded-lg">
+          <div class="w-8 h-8 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center overflow-hidden border border-amber-500/40 text-amber-400">
+            <i class="fas fa-bullhorn text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-amber-400 truncate">Official Announcement</span>
+              <span class="text-[9px] text-t3 font-mono">${timeStr}</span>
+              <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[8px] px-1 rounded-sm uppercase tracking-wide font-black">Global System</span>
+            </div>
+            <p class="text-xs text-white mt-1 font-semibold select-text">${msg.text || ''}</p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0 ml-2 font-bold font-sans">
+            <button 
+              onclick="deleteMessageSilent('${msg.id}')"
+              class="p-1.5 rounded border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition"
+              title="Silent Delete Announcement"
+            >
+              <i class="fas fa-eraser text-[10px]"></i>
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // 3. Check for Admin Message
+    if (msg.isAdminMessage) {
+      html += `
+        <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/35 p-3 rounded-lg">
+          <div class="w-8 h-8 rounded-full bg-red-500/20 flex-shrink-0 flex items-center justify-center overflow-hidden border border-red-500 text-white">
+            <i class="fas fa-shield-alt text-xs text-red-400"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-red-400 truncate">${senderName}</span>
+              <span class="text-[9px] text-t3 font-mono">${timeStr}</span>
+              <span class="bg-red-500/25 text-red-400 border border-red-500/30 text-[8px] px-1.5 py-0.5 rounded uppercase tracking-wide font-black leading-none">Staff Message</span>
+            </div>
+            <p class="text-xs text-white mt-1 font-medium select-text">${msg.text || ''}</p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0 ml-2 font-bold font-sans">
+            <button 
+              onclick="deleteMessageSilent('${msg.id}')"
+              class="p-1.5 rounded border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition"
+              title="Silent Delete Admin Message"
+            >
+              <i class="fas fa-eraser text-[10px]"></i>
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // 4. Regular User Message
     html += `
-      <div class="flex items-start gap-3 bg-panel/30 border border-bdr/20 p-3 rounded-lg hover:bg-panel/50 transition">
+      <div class="flex items-start gap-3 bg-panel/30 border border-bdr/20 p-3 rounded-lg hover:bg-panel/50 transition animate-fadeIn">
         <!-- Avatar -->
         <div class="w-8 h-8 rounded-full bg-card flex-shrink-0 flex items-center justify-center overflow-hidden border border-bdr">
           <img src="${avatarUrl}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
@@ -1754,6 +1878,20 @@ function renderAdminChat() {
 
         <!-- Staff Quick Actions -->
         <div class="flex items-center gap-1 shrink-0 ml-2 font-bold font-sans">
+          <button 
+            onclick="deleteMessageSilent('${msg.id}')"
+            class="p-1.5 rounded border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition"
+            title="Silent Delete (Erase completely)"
+          >
+            <i class="fas fa-eraser text-[10px]"></i>
+          </button>
+          <button 
+            onclick="deleteMessagePublic('${msg.id}')"
+            class="p-1.5 rounded border border-red-500/25 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
+            title="Public Delete (Show 'Deleted by Admin')"
+          >
+            <i class="fas fa-trash-alt text-[10px]"></i>
+          </button>
           <button 
             onclick="triggerMuteAction('${msg.userId}')"
             class="p-1.5 rounded border ${isMuted ? 'border-amber-500/40 bg-amber-500/20 text-amber-300' : 'border-amber-500/20 bg-amber-500/10 text-amber-400'} hover:bg-amber-500/25 transition"
@@ -2098,6 +2236,82 @@ $('bProcessMute').addEventListener('click', async () => {
     alert('Failed to mute user: ' + err.message);
   }
 });
+
+// ── GLOBAL CHAT MODERATION DELETES & ADMIN BROADCASTS ──
+async function deleteMessageSilent(msgId) {
+  if (confirm('Are you sure you want to SILENTLY delete this message? It will be completely removed from the chat history and no notifications will be posted.')) {
+    try {
+      await deleteDoc(doc(db, 'global_chat', msgId));
+      logAdminActivity('Silent Delete Chat Message', msgId, 'Silently purged message from database');
+      alert('Message silently deleted!');
+    } catch (err) {
+      alert('Failed to silently delete message: ' + err.message);
+    }
+  }
+}
+window.deleteMessageSilent = deleteMessageSilent;
+
+async function deleteMessagePublic(msgId) {
+  if (confirm('Are you sure you want to PUBLICLY delete this message? The message text will be replaced with: "This message was deleted by administration."')) {
+    try {
+      // Fetch the current text for logging/originalText field auditing
+      const ref = doc(db, 'global_chat', msgId);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
+      const origText = data.originalText || data.text || '';
+
+      await updateDoc(ref, {
+        isDeletedByAdmin: true,
+        text: 'This message was deleted by administration.',
+        originalText: origText
+      });
+      logAdminActivity('Public Delete Chat Message', msgId, 'Replaced message with administration deletion notice');
+      alert('Message publicly deleted!');
+    } catch (err) {
+      alert('Failed to publicly delete message: ' + err.message);
+    }
+  }
+}
+window.deleteMessagePublic = deleteMessagePublic;
+
+// Event Listener for Admin Chat submission Form
+const adminChatForm = $('adminChatForm');
+if (adminChatForm) {
+  adminChatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('adminChatInput');
+    const text = input.value.trim();
+    const type = $('adminChatType').value;
+    if (!text) return;
+
+    try {
+      const staffEmail = auth.currentUser ? auth.currentUser.email : 'admin@arenax.com';
+      const staffName = staffEmail.split('@')[0].toUpperCase();
+
+      const payload = {
+        userId: 'admin_staff',
+        userName: staffName,
+        userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin_staff',
+        text: text,
+        originalText: text,
+        createdAt: serverTimestamp()
+      };
+
+      if (type === 'announcement') {
+        payload.isSystemAnnouncement = true;
+      } else {
+        payload.isAdminMessage = true;
+      }
+
+      await addDoc(collection(db, 'global_chat'), payload);
+      logAdminActivity('Admin Chat Broadcast', type, text);
+      input.value = '';
+      alert('Published to Global Chat successfully!');
+    } catch (err) {
+      alert('Failed to publish message: ' + err.message);
+    }
+  });
+}
 
 // ── CUSTOM NOTIFICATION EVENT LISTENERS & LOGIC ──
 let notifTargetType = 'single';
