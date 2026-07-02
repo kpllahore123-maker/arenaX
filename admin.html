@@ -1404,12 +1404,17 @@ async function approveDeposit(dep) {
     });
 
     // Send real-time notification
+    const notificationMsg = isWithdrawal 
+      ? `Your withdrawal request for ${dep.amountAX} AX was approved. Rs ${dep.amountPKR} has been sent to your account.`
+      : `Your deposit of Rs ${dep.amountPKR} was approved. Added ${dep.amountAX} AX Coins to your wallet.`;
+
     await addDoc(collection(db, 'notifications'), {
       userId: dep.userId,
       title: isWithdrawal ? 'Withdrawal Approved! 💰' : 'Deposit Approved! ✅',
       body: isWithdrawal 
         ? `Your withdrawal request for ${dep.amountAX} AX was approved. Rs ${dep.amountPKR} has been sent to your account: ${dep.accountDetails || ''}.`
         : `Your deposit of Rs ${dep.amountPKR} via ${dep.method} was approved. Added ${dep.amountAX} AX Coins (including 15% bonus!) to your wallet.`,
+      message: notificationMsg,
       createdAt: serverTimestamp(),
       read: false
     });
@@ -1445,12 +1450,17 @@ async function rejectDeposit(dep) {
     });
 
     // Send real-time notification
+    const rejectionMsg = isWithdrawal 
+      ? `Your withdrawal request of ${dep.amountAX} AX was rejected. Reason: ${reason.trim()}.`
+      : `Your deposit request of Rs ${dep.amountPKR} was rejected. Reason: ${reason.trim() || 'Invalid details.'}`;
+
     await addDoc(collection(db, 'notifications'), {
       userId: dep.userId,
       title: isWithdrawal ? 'Withdrawal Rejected ❌' : 'Deposit Rejected ❌',
       body: isWithdrawal 
         ? `Your withdrawal request of ${dep.amountAX} AX has been rejected. Reason: ${reason.trim()}. Your coins have been fully refunded.`
         : `Your deposit request of Rs ${dep.amountPKR} has been rejected. Reason: ${reason.trim() || 'Invalid details.'}`,
+      message: rejectionMsg,
       createdAt: serverTimestamp(),
       read: false
     });
@@ -1575,7 +1585,7 @@ async function adjustCoins(u) {
   const newTx = {
     id: `tx_${Math.floor(100000 + Math.random() * 900000)}`,
     type: 'adjustment',
-    amount: Math.abs(adj),
+    amount: adj,
     status: 'approved',
     account: adj > 0 ? 'Admin Add' : 'Admin Cut',
     timestamp: new Date().toLocaleString(),
@@ -1588,6 +1598,18 @@ async function adjustCoins(u) {
       balance: increment(adj),
       transactions: arrayUnion(newTx)
     });
+
+    // Send real-time notification to user
+    await addDoc(collection(db, 'notifications'), {
+      userId: u.id,
+      title: adj > 0 ? 'Coins Added! 🪙' : 'Coins Deducted! ⚠️',
+      message: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
+      body: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
+      type: 'wallet',
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
     alert(`Coins balance modified by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
   } catch (err) {
     alert(err.message);
