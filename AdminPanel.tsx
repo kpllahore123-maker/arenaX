@@ -1,2179 +1,4463 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../firebase';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  addDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp,
-  increment,
-  arrayUnion,
-  limit
-} from 'firebase/firestore';
-import {
-  UserProfile,
-  Tournament,
-  Registration,
-  CheatReport,
-  SupportTicket,
-  SupportMessage
-} from '../types';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ArenaX — Play & Dominate</title>
+<!-- Google Fonts (Rajdhani & Inter) -->
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0a0c12',
+        panel: '#111420',
+        card: '#171b2e',
+        ele: '#1e2340',
+        gold: '#f0c040',
+        red: '#e8404a',
+        blue: '#4f9eff',
+        green: '#3ddc84',
+        purple: '#a78bfa',
+        t1: '#f0f2ff',
+        t2: '#8890b0',
+        t3: '#4a5070',
+        bdr: '#252a45',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        display: ['Rajdhani', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0a0c12; }
+::-webkit-scrollbar-thumb { background: #252a45; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #f0c040; }
 
-interface AdminPanelProps {
-  onSwitchToPlayer: () => void;
-  adminEmail: string;
+/* Glowing neon active states */
+.glow-active {
+  box-shadow: 0 0 15px rgba(240, 192, 64, 0.2);
+  border-color: #f0c040;
+}
+.prm-glow {
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.15);
+  border-color: #a78bfa;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminEmail }) => {
-  const [activePage, setActivePage] = useState<'pgDash' | 'pgUsers' | 'pgPayments' | 'pgTours' | 'pgReports' | 'pgRegistrations' | 'pgSupport' | 'pgGlobalChat'>('pgDash');
-  const [clockStr, setClockEl] = useState('');
+/* Custom Cursor styling */
+#cur { position: fixed; width: 9px; height: 9px; background: #f0c040; border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: transform 0.1s, background 0.15s; }
+#curR { position: fixed; width: 30px; height: 30px; border: 1.5px solid rgba(240, 192, 64, 0.5); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: left 0.1s ease, top 0.1s ease, width 0.2s, height 0.2s, border-color 0.2s; }
+.hv-hover #curR { width: 44px; height: 44px; border-color: #f0c040; }
+</style>
 
-  // Firestore collections states
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [reports, setReports] = useState<CheatReport[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [globalMessages, setGlobalMessages] = useState<any[]>([]);
-  const [chatReports, setChatReports] = useState<any[]>([]);
+</head>
+<body class="bg-bg text-t1 font-sans min-h-screen relative overflow-hidden pb-[64px] select-none">
 
-  // Filters & Searches
-  const [userFilter, setUserFilter] = useState<'all' | 'premium' | 'banned'>('all');
-  const [userSearch, setUserSearch] = useState('');
-  const [payFilter, setPayFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
-  const [regFilter, setRegFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+<!-- Custom Cursor Elements -->
+<div id="cur" class="hidden md:block"></div>
+<div id="curR" class="hidden md:block"></div>
 
-  // Support Chat Modal state
-  const [showSupportModal, setShowSupportModal] = useState(false);
-  const [activeTicket, setActiveTicket] = useState<SupportTicket | null>(null);
-  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
-  const [replyText, setReplyText] = useState('');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+<!-- ==================== SIGN IN SCREEN ==================== -->
+<div id="sLogin" class="fixed inset-0 bg-bg z-[100] flex items-center justify-center p-4">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-b from-gold/10 to-transparent rounded-full filter blur-[120px]"></div>
+  </div>
+  <div class="relative w-full max-w-[420px] space-y-6">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-gradient-to-br from-gold to-[#e8a820] rounded-2xl flex items-center justify-center text-3xl text-bg mx-auto shadow-[0_0_32px_rgba(240,192,64,0.4)]">
+        <i class="fas fa-trophy"></i>
+      </div>
+      <h1 class="font-display text-4xl font-extrabold tracking-wider mt-4">Arena<span class="text-gold">X</span></h1>
+      <p class="text-[11px] text-t2 tracking-[3px] uppercase mt-1">Compete · Rise · Dominate</p>
+    </div>
 
-  // General Action Modal state
-  const [showGeneralModal, setShowGeneralModal] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalBody, setModalBody] = useState<React.ReactNode | null>(null);
-  const [modalConfirmAction, setModalConfirmAction] = useState<(() => void) | null>(null);
+    <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-5">
+      <div>
+        <h2 class="font-display text-xl font-bold">Enter the Arena</h2>
+        <p class="text-xs text-t2">Choose how you want to continue</p>
+      </div>
 
-  // Ban Modal state
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [banUser, setBanUser] = useState<UserProfile | null>(null);
-  const [banType, setBanType] = useState<'full' | 'tournament'>('full');
-  const [banDuration, setBanDuration] = useState<string>('30'); // in days, or 'permanent'
-  const [banReason, setBanReason] = useState<string>('');
+      <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
 
-  // Admin Global Chat broadcasts
-  const [adminChatText, setAdminChatText] = useState('');
-  const [adminChatType, setAdminChatType] = useState<'admin' | 'announcement'>('admin');
+      <!-- Terms & Conditions and Privacy Policy agreement -->
+      <div class="flex items-start gap-2.5 p-3 bg-card border border-bdr rounded-lg">
+        <input id="termsCheckbox" type="checkbox" class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
+        <label for="termsCheckbox" class="text-[11px] text-t2 leading-snug cursor-pointer select-none">
+          I agree to the <span class="text-white font-medium hover:underline cursor-pointer" id="lnkTerms">Terms & Conditions</span> and <span class="text-white font-medium hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span> of ArenaX.
+        </label>
+      </div>
 
-  // Mute Modal state
-  const [showMuteModal, setShowMuteModal] = useState(false);
-  const [muteUser, setMuteUser] = useState<UserProfile | null>(null);
-  const [muteDuration, setMuteDuration] = useState<string>('1'); // in hours, or 'permanent'
-  const [muteReason, setMuteReason] = useState<string>('');
+      <button id="bGoogle" class="w-full py-3 bg-white hover:bg-neutral-100 text-neutral-800 rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
+        <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google"/>
+        Continue with Google
+      </button>
 
-  // Custom Notifications states
-  const [showNotifModal, setShowNotifModal] = useState(false);
-  const [notifTargetType, setNotifTargetType] = useState<'single' | 'all'>('single');
-  const [notifTargetUser, setNotifTargetUser] = useState<UserProfile | null>(null);
-  const [notifTitle, setNotifTitle] = useState('');
-  const [notifBody, setNotifBody] = useState('');
-  const [notifSending, setNotifSending] = useState(false);
+      <div class="flex items-center gap-3 text-xs text-t3">
+        <div class="flex-1 h-[1px] bg-bdr"></div>
+        <span>or</span>
+        <div class="flex-1 h-[1px] bg-bdr"></div>
+      </div>
 
-  // Add Tournament inputs
-  const [showTourModal, setShowTourModal] = useState(false);
-  const [editingTour, setEditingTour] = useState<Tournament | null>(null);
-  const [tName, setTName] = useState('');
-  const [tGame, setTGame] = useState('Grand RP Mobile');
-  const [tPrize, setTPrize] = useState('');
-  const [tMax, setTMax] = useState('32');
-  const [tDate, setTDate] = useState('');
-  const [tTime, setTTime] = useState('');
-  const [tFee, setTFee] = useState('Free');
-  const [tTeamType, setTTeamType] = useState<'Solo' | 'Duo (2 Players)' | 'Trio (3 Players)' | 'Squad (4 Players)'>('Solo');
-  const [tStatus, setTStat] = useState<'upcoming' | 'live' | 'ended'>('upcoming');
+      <div class="space-y-3">
+        <input type="email" id="iEmail" placeholder="Email address" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-gold transition text-white"/>
+        <input type="password" id="iPass" placeholder="Password (min 6 chars)" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-gold transition text-white"/>
+        <button id="bEmail" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
+          <i class="fas fa-envelope"></i> Continue with Email
+        </button>
+      </div>
 
-  // Update PKR Clock
-  useEffect(() => {
-    const updateTime = () => {
-      const pkr = new Date().toLocaleString('en-PK', {
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZone: 'Asia/Karachi'
-      });
-      setClockEl(pkr);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+      <div class="flex items-center gap-3 text-xs text-t3">
+        <div class="flex-1 h-[1px] bg-bdr"></div>
+        <span>or</span>
+        <div class="flex-1 h-[1px] bg-bdr"></div>
+      </div>
 
-  // Listen to Users
-  useEffect(() => {
-    return onSnapshot(collection(db, 'users'), (snap) => {
-      const list: UserProfile[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as UserProfile);
-      });
-      setUsers(list);
-    }, (err) => {
-      console.warn("Failed to listen to users:", err);
-    });
-  }, []);
+      <button id="bGuest" class="w-full py-3 bg-transparent hover:border-gold hover:text-gold border border-bdr text-t2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition">
+        <i class="fas fa-user-secret"></i> Continue as Guest
+      </button>
+    </div>
+  </div>
+</div>
 
-  // Listen to Tournaments
-  useEffect(() => {
-    const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      const list: Tournament[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as Tournament);
-      });
-      setTournaments(list);
-    }, (err) => {
-      console.warn("Failed to listen to tournaments:", err);
-    });
-  }, []);
+<!-- ==================== GUEST ACCOUNT WARNING ==================== -->
+<div id="mGuest" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full text-center space-y-4">
+    <div class="w-14 h-14 bg-red/10 text-red rounded-full flex items-center justify-center text-2xl border border-red/25 mx-auto">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h3 class="font-display text-xl font-bold text-red">Guest Account Warning</h3>
+    <p class="text-xs text-t2 leading-relaxed">
+      Your guest account <strong>cannot be recovered</strong> under any condition if you clear your browser cache.
+    </p>
+    <ul class="text-left text-xs text-t2 space-y-2 bg-card p-4 rounded-xl border border-bdr">
+      <li class="flex items-center gap-2"><i class="fas fa-times-circle text-red"></i> No account recovery or password resets</li>
+      <li class="flex items-center gap-2"><i class="fas fa-times-circle text-red"></i> Wallet AX balance is strictly non-transferable</li>
+      <li class="flex items-center gap-2"><i class="fas fa-times-circle text-red"></i> Profile customizations are restricted</li>
+      <li class="flex items-center gap-2"><i class="fas fa-times-circle text-red"></i> Support tickets and group match chats are limited</li>
+    </ul>
+    <div class="flex gap-3 pt-2">
+      <button id="bGBack" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Go Back</button>
+      <button id="bGConfirm" class="flex-1 py-2.5 bg-red hover:bg-[#cc3540] text-white font-semibold rounded-lg text-xs transition">I Understand</button>
+    </div>
+  </div>
+</div>
 
-  // Listen to Registrations
-  useEffect(() => {
-    const q = query(collection(db, 'tournament_registrations'), orderBy('submittedAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      const list: Registration[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as Registration);
-      });
-      setRegistrations(list);
-    }, (err) => {
-      console.warn("Failed to listen to registrations:", err);
-    });
-  }, []);
+<!-- ==================== MAIN DASHBOARD SCREEN ==================== -->
+<div id="sDash" class="hidden flex flex-col h-screen overflow-hidden">
+  
+  <!-- TOPBAR -->
+  <nav class="h-[56px] bg-panel border-b border-bdr flex items-center justify-between px-4 flex-shrink-0 z-50">
+    <div class="font-display text-xl font-bold tracking-wider text-white">
+      <i class="fas fa-trophy text-gold mr-2"></i>Arena<span class="text-gold">X</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Topbar Support -->
+      <button id="bTopbarSupport" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Support Chat">
+        <i class="fas fa-headset"></i>
+      </button>
 
-  // Listen to Cheat Reports
-  useEffect(() => {
-    const q = query(collection(db, 'tournament_reports'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      const list: CheatReport[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as CheatReport);
-      });
-      setReports(list);
-    }, (err) => {
-      console.warn("Failed to listen to reports:", err);
-    });
-  }, []);
+      <!-- Notification Bell -->
+      <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Notifications">
+        <i class="fas fa-bell"></i>
+        <span id="notifDot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red rounded-full ring-2 ring-panel hidden"></span>
+      </button>
 
-  // Listen to Support Tickets
-  useEffect(() => {
-    const q = query(collection(db, 'support_tickets'), orderBy('updatedAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      const list: SupportTicket[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as SupportTicket);
-      });
-      setTickets(list);
-    }, (err) => {
-      console.warn("Failed to listen to tickets:", err);
-    });
-  }, []);
+      <!-- Settings Cog -->
+      <button id="bSettings" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Settings">
+        <i class="fas fa-cog"></i>
+      </button>
 
-  // Listen to Global Chat Room messages for Admin Spectator
-  useEffect(() => {
-    const q = query(collection(db, 'global_chat'), orderBy('createdAt', 'desc'), limit(100));
-    return onSnapshot(q, (snap) => {
-      const list: any[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() });
-      });
-      setGlobalMessages(list);
-    }, (err) => {
-      console.warn("Failed to listen to global chat:", err);
-    });
-  }, []);
+      <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-gold flex-shrink-0 ml-1">
+        <img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover"/>
+      </div>
+    </div>
+  </nav>
 
-  // Listen to Abusive Chat Reports for Admin
-  useEffect(() => {
-    const q = query(collection(db, 'chat_reports'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snap) => {
-      const list: any[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() });
-      });
-      setChatReports(list);
-    }, (err) => {
-      console.warn("Failed to listen to chat reports:", err);
-    });
-  }, []);
+  <!-- GUEST & PREMIUM WARNING BANNERS -->
+  <div id="gBanner" class="bg-gold/10 border-b border-gold/20 px-4 py-2 flex items-center gap-2 text-xs text-[#c0a030] flex-shrink-0 hidden">
+    <i class="fas fa-exclamation-circle text-sm"></i>
+    <span>Guest Account — certain wallet & support features are restricted.</span>
+    <button id="gUpgradeBtn" class="ml-auto bg-gold text-bg font-bold px-2.5 py-0.5 rounded text-[10px]">Upgrade</button>
+  </div>
+  <div id="prmBanner" class="bg-purple/10 border-b border-purple/20 px-4 py-2 flex items-center gap-2 text-xs text-purple flex-shrink-0 hidden">
+    <i class="fas fa-crown text-sm"></i>
+    <span><strong>Premium Active</strong> — Direct DM messaging and visual customization are unlocked!</span>
+  </div>
 
-  // Listen to specific active Ticket support messages
-  useEffect(() => {
-    if (!activeTicket || !showSupportModal) {
-      setSupportMessages([]);
-      return;
-    }
-    const q = query(collection(db, 'support', activeTicket.ticketId, 'messages'), orderBy('createdAt', 'asc'));
-    const unsub = onSnapshot(q, (snap) => {
-      const msgs: SupportMessage[] = [];
-      snap.forEach((d) => {
-        msgs.push(d.data() as SupportMessage);
-      });
-      setSupportMessages(msgs);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    }, (err) => {
-      console.warn("Failed to listen to chat messages:", err);
-    });
-    return () => unsub();
-  }, [activeTicket, showSupportModal]);
+  <!-- MAIN SCROLLABLE CONTAINER -->
+  <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-[80px]">
 
-  // Support DM Chat send response
-  const handleSendAdminReply = async () => {
-    if (!replyText.trim() || !activeTicket) return;
-    const txt = replyText.trim();
-    setReplyText('');
-    try {
-      await addDoc(collection(db, 'support', activeTicket.ticketId, 'messages'), {
-        text: txt,
-        sender: 'admin',
-        senderName: 'Staff Admin',
-        createdAt: serverTimestamp()
-      });
-      // Update ticket last state
-      await updateDoc(doc(db, 'support_tickets', activeTicket.id), {
-        lastMsg: `[Admin]: ${txt}`,
-        updatedAt: serverTimestamp()
-      });
-    } catch (error: any) {
-      alert('Error replying: ' + error.message);
-    }
-  };
+    <!-- ── PROFILE TAB ── -->
+    <section id="tProfile" class="tab space-y-4">
+      <div class="font-display text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-user-circle text-gold"></i> My Profile
+      </div>
 
-  // Support ticket Delete / Clean logs
-  const handleDeleteTicket = async (ticketId: string) => {
-    if (!confirm('Are you sure you want to delete this Support Chat ticket?\nThis will clear it from active logs.')) return;
-    try {
-      await deleteDoc(doc(db, 'support_tickets', ticketId));
-      alert('Support ticket deleted successfully! ✅');
-    } catch (e: any) {
-      alert('Error deleting ticket: ' + e.message);
-    }
-  };
+      <div id="profileCard" class="p-4 bg-card border border-bdr rounded-xl flex items-center gap-4 relative overflow-hidden">
+        <div class="relative flex-shrink-0">
+          <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-16 h-16 rounded-full border-2 border-gold"/>
+          <button id="btnChangeAv" class="absolute -bottom-1 -right-1 w-6 h-6 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-[10px] transition">
+            <i class="fas fa-camera"></i>
+          </button>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 id="pName" class="font-display text-lg font-bold text-white leading-tight flex items-center gap-2">Player</h3>
+          <p id="pHandle" class="text-xs text-t2 mb-1">@player#0000</p>
+          <p id="pBio" class="text-[11px] text-t2 italic mb-2 hidden"></p>
+          
+          <div class="flex flex-wrap gap-1.5">
+            <span class="px-2 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase">
+              <i class="fas fa-star mr-1"></i> Unranked
+            </span>
+            <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded border border-neutral-700 uppercase hidden">Guest</span>
+            <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-purple/20 text-purple rounded border border-purple/30 uppercase hidden"><i class="fas fa-crown mr-1"></i> Premium</span>
+            <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 uppercase hidden">
+              <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
+            </span>
+          </div>
+        </div>
+      </div>
 
-  // Give / Remove user Premium status
-  const handleTogglePremium = async (user: UserProfile) => {
-    try {
-      await updateDoc(doc(db, 'users', user.id), {
-        premium: !user.premium
-      });
-      alert(`Premium status updated for ${user.name}! ✅`);
-    } catch (error: any) {
-      alert('Error updating Premium: ' + error.message);
-    }
-  };
+      <!-- PREMIUM PROMO -->
+      <div id="prmPromo" class="p-4 bg-gradient-to-br from-purple/15 to-[#7c3aed]/5 border border-purple/20 rounded-xl flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center text-lg text-purple border border-purple/20 flex-shrink-0">
+            <i class="fas fa-crown"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-purple text-sm">Go Premium!</h4>
+            <p class="text-[11px] text-t2">Unlock player Direct Messages, customized profiles, and priority queue.</p>
+          </div>
+        </div>
+        <button id="bOpenPremium" class="px-3.5 py-1.5 bg-purple hover:bg-[#8b5cf6] text-white text-xs font-bold rounded-lg transition">Upgrade</button>
+      </div>
 
-  // Ban confirmation processing
-  const handleProcessBan = async () => {
-    if (!banUser) return;
-    if (!banReason.trim()) {
-      alert('Please enter a ban reason!');
-      return;
-    }
-
-    const untilDate = banDuration === 'permanent'
-      ? null
-      : new Date(Date.now() + parseInt(banDuration) * 24 * 60 * 60 * 1000).toISOString();
-
-    try {
-      await updateDoc(doc(db, 'users', banUser.id), {
-        banned: true,
-        banType: banType,
-        banReason: banReason.trim(),
-        banUntil: untilDate
-      });
-      setShowBanModal(false);
-      setBanReason('');
-      setBanUser(null);
-      alert(`User ${banUser.name} has been banned successfully!`);
-    } catch (err: any) {
-      alert('Ban Error: ' + err.message);
-    }
-  };
-
-  // Lift ban
-  const handleUnbanUser = async (user: UserProfile) => {
-    if (!confirm(`Are you sure you want to lift the ban for ${user.name}?`)) return;
-    try {
-      await updateDoc(doc(db, 'users', user.id), {
-        banned: false,
-        banType: 'none',
-        banReason: '',
-        banUntil: null
-      });
-      alert(`Ban lifted for ${user.name}!`);
-    } catch (err: any) {
-      alert('Unban Error: ' + err.message);
-    }
-  };
-
-  // Mute action handlers
-  const handleProcessMute = async () => {
-    if (!muteUser) return;
-    if (!muteReason.trim()) {
-      alert('Please enter a mute reason!');
-      return;
-    }
-
-    const untilDate = muteDuration === 'permanent'
-      ? null
-      : new Date(Date.now() + parseFloat(muteDuration) * 60 * 60 * 1000).toISOString(); // duration in hours
-
-    try {
-      await updateDoc(doc(db, 'users', muteUser.id), {
-        muted: true,
-        muteReason: muteReason.trim(),
-        muteUntil: untilDate
-      });
-      setShowMuteModal(false);
-      setMuteReason('');
-      setMuteUser(null);
-      alert(`User ${muteUser.name} has been muted successfully! 🔇`);
-    } catch (err: any) {
-      alert('Mute Error: ' + err.message);
-    }
-  };
-
-  const handleUnmuteUser = async (user: UserProfile) => {
-    if (!confirm(`Are you sure you want to unmute ${user.name}?`)) return;
-    try {
-      await updateDoc(doc(db, 'users', user.id), {
-        muted: false,
-        muteReason: '',
-        muteUntil: null
-      });
-      alert(`User ${user.name} has been unmuted successfully! 🔊`);
-    } catch (err: any) {
-      alert('Unmute Error: ' + err.message);
-    }
-  };
-
-  // Adjust User balance
-  const handleAdjustBalance = async (user: UserProfile) => {
-    const amtStr = prompt(`Enter amount to adjust for ${user.name} (e.g. 500 to add, -200 to subtract):`);
-    if (!amtStr) return;
-    const adj = parseFloat(amtStr);
-    if (isNaN(adj) || adj === 0) {
-      alert('Invalid amount!');
-      return;
-    }
-
-    const msg = prompt(`Enter custom message for this transaction (optional):`, adj > 0 ? 'Admin Credit' : 'Admin Cut');
-    const colorStr = prompt(`Enter text color ('green', 'red', 'golden', 'blue' or leave empty for default):`, adj > 0 ? 'green' : 'red');
-
-    // Create transaction object
-    const newTx = {
-      id: `tx_${Math.floor(100000 + Math.random() * 900000)}`,
-      type: 'adjustment',
-      amount: adj,
-      status: 'approved',
-      account: adj > 0 ? 'Admin Add' : 'Admin Cut',
-      timestamp: new Date().toLocaleString(),
-      message: msg || (adj > 0 ? 'Admin Coins Added' : 'Admin Coins Deducted'),
-      color: colorStr ? colorStr.toLowerCase().trim() : (adj > 0 ? 'green' : 'red')
-    };
-
-    try {
-      await updateDoc(doc(db, 'users', user.id), {
-        balance: increment(adj),
-        transactions: arrayUnion(newTx)
-      });
+      <!-- STATS -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
+          <div id="statT" class="font-display text-2xl font-bold text-gold">0</div>
+          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Tournaments</div>
+        </div>
+        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
+          <div id="statW" class="font-display text-2xl font-bold text-gold">0</div>
+          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Wins</div>
+        </div>
+        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
+          <div id="statWR" class="font-display text-2xl font-bold text-gold">0%</div>
+          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Win Rate</div>
+        </div>
+        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
+          <div id="statB" class="font-display text-2xl font-bold text-gold">—</div>
+          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Best Finish</div>
+        </div>
+      </div>
       
-      // Send real-time notification to user
-      await addDoc(collection(db, 'notifications'), {
-        userId: user.id,
-        title: adj > 0 ? 'Coins Added! 🪙' : 'Coins Deducted! ⚠️',
-        message: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
-        body: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
-        type: 'wallet',
-        read: false,
-        createdAt: serverTimestamp()
+      <!-- EXTRA DETAILS -->
+      <div id="pDetailsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-3 hidden">
+        <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1.5 flex items-center gap-1.5">
+          <i class="fas fa-id-card"></i> Game Info & Socials
+        </h4>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-left">
+          <div id="pDetailCountryContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Country / Region</span>
+            <span id="pDetailCountry" class="text-white font-bold flex items-center gap-1.5 mt-0.5">🌍 Other</span>
+          </div>
+          <div id="pDetailFavGameContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Favorite Game</span>
+            <span id="pDetailFavGame" class="text-white font-bold mt-0.5">None</span>
+          </div>
+          <div id="pDetailGameUIDContainer" class="hidden">
+            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Game UID / IGN</span>
+            <span id="pDetailGameUID" class="text-gold font-mono font-extrabold mt-0.5">None</span>
+          </div>
+        </div>
+        
+        <!-- Social badges -->
+        <div id="pDetailSocials" class="flex flex-wrap gap-2 pt-2 border-t border-bdr/20 hidden">
+          <a id="pSocialDiscord" href="#" target="_blank" class="px-2.5 py-1 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-discord"></i> <span id="pSocialDiscordText">username</span>
+          </a>
+          <a id="pSocialInstagram" href="#" target="_blank" class="px-2.5 py-1 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] border border-[#E1306C]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-instagram"></i> <span id="pSocialInstagramText">handle</span>
+          </a>
+          <a id="pSocialYoutube" href="#" target="_blank" class="px-2.5 py-1 bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000] border border-[#FF0000]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
+            <i class="fab fa-youtube"></i> YouTube
+          </a>
+        </div>
+      </div>
+
+      <!-- ACCOUNT NAVIGATION -->
+      <div class="bg-card border border-bdr rounded-xl divide-y divide-bdr overflow-hidden">
+        <div class="px-4 py-2.5 text-[10px] font-semibold text-t2 uppercase tracking-wider bg-panel/50">Account Navigation</div>
+        
+        <button id="btnEditProfile" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
+          <span class="flex items-center gap-3"><i class="fas fa-pen text-gold w-4"></i> Edit Display Name</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+        <button id="btnCustomize" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
+          <span class="flex items-center gap-3"><i class="fas fa-palette text-gold w-4"></i> Customize Profile</span>
+          <span class="flex items-center gap-2">
+            <span class="text-[9px] bg-purple/15 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium</span>
+            <i class="fas fa-chevron-right text-xs"></i>
+          </span>
+        </button>
+        <button id="btnPlayerChat" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
+          <span class="flex items-center gap-3"><i class="fas fa-comments text-gold w-4"></i> Direct Messages</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+        <button id="btnPremium" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
+          <span class="flex items-center gap-3"><i class="fas fa-crown text-gold w-4"></i> Premium Passes</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+        <button id="bLogout" class="w-full text-left px-4 py-3 hover:bg-red/10 text-sm flex items-center justify-between text-red transition">
+          <span class="flex items-center gap-3"><i class="fas fa-sign-out-alt w-4"></i> Sign Out</span>
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── TOURNAMENTS TAB ── -->
+    <section id="tTour" class="tab space-y-4 hidden">
+      <div class="font-display text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-gamepad text-gold"></i> Tournaments
+      </div>
+
+      <!-- Filters -->
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button class="fb on px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="all">All</button>
+        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="live">🔴 Live</button>
+        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="upcoming">Upcoming</button>
+        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="ended">Ended</button>
+      </div>
+
+      <!-- Tournament Cards Grid -->
+      <div id="tList" class="space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ── RULES TAB ── -->
+    <section id="tRules" class="tab space-y-4 hidden">
+      <div class="font-display text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-book-open text-gold"></i> Rules & Regulations
+      </div>
+
+      <div class="bg-card border border-bdr rounded-xl p-3 flex items-center gap-3">
+        <i class="fas fa-search text-t3"></i>
+        <input id="rSearch" type="text" placeholder="Search guidelines..." class="bg-transparent border-none outline-none text-sm text-t1 w-full"/>
+      </div>
+
+      <div class="space-y-2.5">
+        <!-- Accordion 1 -->
+        <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
+          <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(0)">
+            <span><i class="fas fa-gavel text-gold mr-2.5"></i> General Rules</span>
+            <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
+          </button>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden">
+            <ul class="space-y-2 text-xs text-t2">
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Must register before tournament deadline — slots are limited.</li>
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Check in 10 minutes prior to the live match timer.</li>
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Ensure in-game name matches registration form exactly.</li>
+            </ul>
+          </div>
+        </div>
+        <!-- Accordion 2 -->
+        <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
+          <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(1)">
+            <span><i class="fas fa-shield-alt text-gold mr-2.5"></i> Anti-Cheat & Ban Policy</span>
+            <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
+          </button>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden">
+            <ul class="space-y-2 text-xs text-t2">
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Using third-party cheats (aimbot, wallhack, speedhack) yields a permanent ban.</li>
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Teaming or collusion results in zero prize distribution.</li>
+              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Report cheats via "Report Cheat" with screen recording links.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WALLET TAB ── -->
+    <section id="tWallet" class="tab space-y-4 hidden">
+      <div class="font-display text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-wallet text-gold"></i> My Wallet
+      </div>
+
+      <div id="wCard" class="p-6 bg-gradient-to-br from-[#1a2040] to-[#252b4a] border border-gold/30 rounded-2xl relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-36 h-36 bg-gradient-to-b from-gold/10 to-transparent rounded-full filter blur-xl"></div>
+        <div class="flex justify-between items-center text-xs text-t2">
+          <span class="tracking-wider uppercase font-semibold">ArenaX Coins Balance</span>
+          <i class="fas fa-coins text-gold text-lg"></i>
+        </div>
+        <div class="font-display text-4xl font-black text-gold mt-2 flex items-baseline gap-1.5">
+          <span id="wBal">0</span>
+          <span class="text-xs font-sans text-t2">AX Coins</span>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <button id="bDep" class="flex-1 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition"><i class="fas fa-plus mr-1.5"></i> Deposit</button>
+          <button id="bWith" class="flex-1 py-2 bg-transparent hover:bg-white/5 border border-bdr text-white text-xs font-bold rounded-lg transition"><i class="fas fa-arrow-up mr-1.5"></i> Withdraw</button>
+        </div>
+      </div>
+
+      <div id="wLock" class="p-6 bg-card border border-bdr rounded-xl text-center space-y-3 hidden">
+        <i class="fas fa-lock text-t3 text-3xl"></i>
+        <p class="text-xs text-t2">Wallet options restricted for Guest accounts.</p>
+        <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile via email or Google to activate wallet.')">Link Account</button>
+      </div>
+
+      <!-- Refer & Earn Bonus Offer -->
+      <div id="referCard" class="p-4 bg-gradient-to-br from-[#1a2040]/70 to-[#252b4a]/70 border border-gold/20 rounded-xl space-y-3 relative overflow-hidden">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center text-lg text-gold border border-gold/20 flex-shrink-0">
+            <i class="fas fa-gift"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-gold text-sm flex items-center gap-1.5">
+              Refer & Earn 50 AX Coins! <span class="text-[9px] bg-red text-white px-1.5 py-0.5 rounded-full font-bold uppercase animate-pulse">Offer</span>
+            </h4>
+            <p class="text-[11px] text-t2 leading-relaxed">Invite a friend! When they register through your referral link, you receive <strong class="text-gold">50 AX Coins</strong> instantly credited to your wallet!</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input id="referralLinkInput" type="text" readonly class="flex-1 bg-bg border border-bdr rounded-lg px-3 py-2 text-xs text-t2 font-mono select-all outline-none focus:border-gold transition" value="Loading referral link..."/>
+          <button id="bCopyReferral" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition flex items-center gap-1 active:scale-[0.98]">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="space-y-2.5">
+        <div class="text-[10px] text-t3 font-bold uppercase tracking-wider">Transaction Logs</div>
+        <div id="wHist" class="space-y-2">
+          <div class="p-6 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+            <i class="fas fa-receipt text-2xl mb-1.5"></i>
+            <p>No recorded transactions yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PLAYER CHAT TAB (DMs / Global Chat) ── -->
+    <section id="tChat" class="tab space-y-4 hidden flex flex-col h-[calc(100vh-140px)]">
+      <!-- Chat Sub-Tabs -->
+      <div class="flex items-center justify-between border-b border-bdr pb-2 shrink-0">
+        <div class="flex gap-4">
+          <button id="btnSubGlobal" class="pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer">
+            Global Chat
+            <span id="subGlobalIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold"></span>
+            <span id="subGlobalDot" class="absolute top-0 right-[-10px] w-1.5 h-1.5 rounded-full bg-gold animate-pulse hidden"></span>
+          </button>
+          <button id="btnSubDM" class="pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer">
+            Direct Messages
+            <span id="subDMIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold hidden"></span>
+          </button>
+        </div>
+        <button id="btnAddFriend" class="px-2.5 py-1 bg-gold/10 hover:bg-gold/20 text-gold text-[10px] font-bold rounded-lg border border-gold/20 transition flex items-center gap-1.5 hidden cursor-pointer">
+          <i class="fas fa-user-plus"></i> Add Friend
+        </button>
+      </div>
+
+      <!-- Global Chat Room Window -->
+      <div id="globalChatWindow" class="flex-1 flex flex-col min-h-0 bg-panel border border-bdr rounded-xl overflow-hidden">
+        <!-- Chat messages list -->
+        <div id="globalChatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6 animate-pulse">
+            <i class="fas fa-globe text-3xl mb-1"></i>
+            <p class="text-xs">Connecting to Global Chat...</p>
+          </div>
+        </div>
+
+        <!-- Typing indicators and form -->
+        <div class="p-3 bg-panel/80 border-t border-bdr shrink-0">
+          <!-- Typing users text -->
+          <div id="globalTypingIndicator" class="flex items-center gap-2 text-[10px] text-gold px-1 pb-2 hidden">
+            <div class="flex gap-1 items-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 0ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 150ms"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style="animation-delay: 300ms"></span>
+            </div>
+            <span id="globalTypingText" class="italic">Someone is typing...</span>
+          </div>
+
+          <form id="globalChatForm" class="flex gap-2">
+            <input id="globalChatInput" type="text" placeholder="Type a message to ArenaX players..." class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-xs outline-none focus:border-gold transition text-white">
+            <button type="submit" class="w-8 h-8 bg-red hover:bg-red/80 text-white rounded-lg flex items-center justify-center text-xs transition shrink-0 cursor-pointer">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Direct Messages Container (old tChat view) -->
+      <div id="dmChatContainer" class="space-y-4 flex-1 overflow-y-auto hidden">
+        <!-- Pending Requests -->
+        <div id="friendReqsWrap" class="p-3 bg-card border border-bdr rounded-xl space-y-3 hidden">
+          <div class="text-[10px] text-t3 uppercase tracking-wider font-bold">Friend Requests</div>
+          <div id="friendReqsList" class="space-y-2"></div>
+        </div>
+
+        <!-- Friends Chat List -->
+        <div id="friendsList" class="space-y-2">
+          <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>No active friends yet. Click "Add Friend" to start chatting!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LIVE SUPPORT TAB ── -->
+    <section id="tSupport" class="tab space-y-4 hidden">
+      <div class="font-display text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-headset text-gold"></i> Live Support Chat
+      </div>
+
+      <div id="sLock" class="p-6 bg-card border border-bdr rounded-xl text-center space-y-3 hidden">
+        <i class="fas fa-lock text-t3 text-3xl"></i>
+        <p class="text-xs text-t2">Live support chat not available for Guest accounts.</p>
+        <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile to access real-time live support chat.')">Link Account</button>
+      </div>
+
+      <div id="chatBox" class="bg-card border border-bdr rounded-2xl flex flex-col h-[340px] overflow-hidden">
+        <!-- Messages -->
+        <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+          <!-- Welcome message -->
+          <div class="flex gap-2">
+            <div class="w-7 h-7 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs flex-shrink-0">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
+              <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
+              <div class="flex flex-wrap gap-1.5 pt-1.5">
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="p-3 border-t border-bdr/40 flex gap-2">
+          <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#111420] border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
+          <button id="chatSend" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- BOTTOM FOOTER NAVIGATION -->
+  <nav class="fixed bottom-0 left-0 right-0 h-[64px] bg-panel border-t border-bdr flex items-stretch z-45">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Profile">
+      <i class="fas fa-user text-base"></i><span>Profile</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Tour">
+      <i class="fas fa-trophy text-base"></i><span>Events</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Rules">
+      <i class="fas fa-book-open text-base"></i><span>Rules</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
+      <i class="fas fa-wallet text-base"></i><span>Wallet</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
+      <i class="fas fa-comments text-base"></i><span>Chat</span>
+      <span id="chatDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-gold hidden"></span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1 hidden" data-t="Support">
+      <i class="fas fa-headset text-base"></i><span>Support</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ==================== UNDER DEVELOPMENT POPUP MODAL ==================== -->
+<div id="mUnderDevPopup" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[300] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl max-w-[440px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
+    <!-- Close Cross Button -->
+    <button id="bCloseUnderDevCross" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-gold hover:text-bg text-white transition flex items-center justify-center cursor-pointer">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+
+    <!-- Top Graphic Banner -->
+    <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
+      <img src="./src/assets/images/website_under_dev_1782818353395.jpg" class="w-full h-full object-cover" alt="Under Construction" />
+      <!-- Gradient overlay to blend bottom -->
+      <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="p-6 space-y-4 text-center">
+      <div class="flex justify-center">
+        <span class="px-2.5 py-1 bg-gold/10 border border-gold/30 text-gold text-[10px] font-black uppercase rounded-full tracking-widest animate-pulse">
+          ⚠️ UNDER DEVELOPMENT
+        </span>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="font-display text-xl font-black text-white uppercase tracking-wide">
+          ArenaX Arena Under Construction
+        </h3>
+        <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto">
+          Welcome to the Arena! We are currently busy deploying secure match validation and real coin wallet sync.
+          <br><br>
+          Feel free to explore tournaments, join real chat channels, customize your player details, and experience simulated earnings.
+        </p>
+      </div>
+
+      <button id="bCloseUnderDev" class="w-full py-3 bg-gold hover:bg-gold/80 text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10">
+        Enter Arena
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PREMIUM PLAN MODAL ==================== -->
+<div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-purple/10 border border-purple/20 rounded-full flex items-center justify-center text-purple text-lg"><i class="fas fa-crown"></i></div>
+      <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
+    </div>
+    <ul class="space-y-2.5 text-xs text-t2 bg-card p-4 rounded-xl border border-bdr">
+      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Direct DM chat with other players</li>
+      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Custom Profile (Avatars & Bio)</li>
+      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Premium VIP profile badge</li>
+      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Priority support live queue</li>
+    </ul>
+
+    <div class="grid grid-cols-2 gap-3">
+      <button id="prmWeekly" class="p-3 bg-card border border-purple/30 rounded-xl text-center flex flex-col items-center gap-1">
+        <span class="text-xs font-semibold text-white">Weekly Pass</span>
+        <span class="font-display text-lg font-bold text-purple">199 AX</span>
+        <span class="text-[9px] text-t3">7 Days VIP</span>
+      </button>
+      <button id="prmMonthly" class="p-3 bg-card border border-bdr rounded-xl text-center flex flex-col items-center gap-1">
+        <span class="text-xs font-semibold text-white">Monthly Pass</span>
+        <span class="font-display text-lg font-bold text-purple">399 AX</span>
+        <span class="text-[9px] text-t3">Best Value (30 days)</span>
+      </button>
+    </div>
+
+    <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
+    <button id="bClosePremium" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
+  </div>
+</div>
+
+<!-- ==================== CUSTOMIZE PROFILE MODAL ==================== -->
+<div id="mCustomize" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-palette"></i></div>
+        <h3 class="font-display text-lg font-bold text-white">Customize Profile</h3>
+      </div>
+      <button id="bCloseCustomizeCross" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto space-y-4 text-left pr-1.5 scrollbar-thin">
+      <!-- BASIC INFO (FOR ALL USERS) -->
+      <div class="border-b border-bdr/20 pb-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
+          <i class="fas fa-info-circle"></i> Basic Info
+        </h4>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Display Name</label>
+            <input id="custName" type="text" placeholder="Enter display name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Country / Region</label>
+              <select id="custCountry" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
+                <option value="">Select Country</option>
+                <option value="PK">🇵🇰 Pakistan</option>
+                <option value="IN">🇮🇳 India</option>
+                <option value="BD">🇧🇩 Bangladesh</option>
+                <option value="SA">🇸🇦 Saudi Arabia</option>
+                <option value="AE">🇦🇪 UAE</option>
+                <option value="US">🇺🇸 USA</option>
+                <option value="GB">🇬🇧 UK</option>
+                <option value="Other">🌍 Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Favorite Game</label>
+              <select id="custFavGame" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
+                <option value="">Select Game</option>
+                <option value="Grand RP Mobile">Grand RP Mobile</option>
+                <option value="PUBG Mobile">PUBG Mobile</option>
+                <option value="Free Fire">Free Fire</option>
+                <option value="COD Mobile">COD Mobile</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Game UID / IGN</label>
+            <input id="custGameUID" type="text" placeholder="e.g. 52410291" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Title / Badge Display (Read-Only)</label>
+            <div class="w-full bg-card/50 border border-bdr/60 rounded-lg px-3 py-2 text-xs text-t2 flex items-center justify-between">
+              <span id="custBadgeVal" class="font-semibold text-white">No badge awarded yet</span>
+              <span class="text-[9px] text-t3 italic">Awarded by admins</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOCIAL LINKS (FOR ALL USERS) -->
+      <div class="border-b border-bdr/20 pb-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
+          <i class="fas fa-share-alt"></i> Social Connections
+        </h4>
+        <div class="space-y-2">
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-discord text-blue-400 text-sm w-4 text-center"></i>
+              <input id="custDiscord" type="text" placeholder="Discord username" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-instagram text-pink-400 text-sm w-4 text-center"></i>
+              <input id="custInstagram" type="text" placeholder="Instagram handle" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
+              <i class="fab fa-youtube text-red-500 text-sm w-4 text-center"></i>
+              <input id="custYoutube" type="text" placeholder="YouTube channel URL" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREMIUM VISUALS (FOR PREMIUM ONLY) -->
+      <div class="space-y-4">
+        <h4 class="text-[10px] uppercase tracking-wider text-purple font-bold flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><i class="fas fa-crown"></i> Premium Customization</span>
+          <span id="custPrmBadge" class="text-[8px] bg-purple/20 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium Only</span>
+        </h4>
+        
+        <!-- Custom Avatar Upload -->
+        <div class="p-3 bg-purple/5 border border-purple/10 rounded-xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Custom Profile Photo</label>
+            <span class="text-[8px] text-t3 italic">Max 3MB</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-card border border-bdr rounded-full overflow-hidden flex-shrink-0">
+              <img id="custAvPreview" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="w-full h-full object-cover" alt="Preview"/>
+            </div>
+            <div class="flex-1">
+              <input id="fileAvatar" type="file" accept="image/*" class="hidden" />
+              <button id="btnBrowseAvatar" class="px-2.5 py-1 bg-ele hover:bg-card border border-bdr text-t1 hover:text-white rounded text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-upload text-purple"></i> Upload Photo
+              </button>
+              <p class="text-[8px] text-t3 mt-1">Accepts PNG, JPG, or WEBP images up to 3MB.</p>
+            </div>
+          </div>
+          <div id="uploadStatus" class="text-[9px] font-semibold hidden"></div>
+        </div>
+
+        <!-- Avatar Seed Styles (Dicebear fallback) -->
+        <div class="space-y-1.5">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Or Select Animated Seed Avatar</label>
+          <div id="custAvatars" class="grid grid-cols-4 gap-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Avatar Border/Glow selection -->
+        <div class="space-y-1.5">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Avatar Border Frame / Glow Effect</label>
+          <select id="custAvatarFrame" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple">
+            <option value="none">None (Standard Border)</option>
+            <option value="gold">⭐ Gold Glow</option>
+            <option value="fire">🔥 Fire Glow</option>
+            <option value="ice">❄️ Ice Glow</option>
+            <option value="royal">👑 Royal Purple Glow</option>
+          </select>
+        </div>
+
+        <!-- Username color swatches -->
+        <div class="space-y-2">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Username Color Swatch</label>
+          <div class="grid grid-cols-8 gap-2" id="custNameColors">
+            <!-- Swatches -->
+          </div>
+        </div>
+
+        <!-- Banner Theme gradients selection -->
+        <div class="space-y-2">
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Profile Card Background Theme</label>
+          <div class="grid grid-cols-4 gap-2" id="custBannerThemes">
+            <!-- Theme cards -->
+          </div>
+        </div>
+
+        <!-- Bio Description -->
+        <div>
+          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold mb-1">Bio Description</label>
+          <input id="custBio" type="text" placeholder="Tell something about you..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2 flex-shrink-0">
+      <button id="bCloseCustomize" class="flex-1 py-2 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition cursor-pointer">Cancel</button>
+      <button id="bSaveCustomize" class="flex-1 py-2 bg-gold text-bg font-bold rounded-lg text-xs transition cursor-pointer">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS MODAL ==================== -->
+<div id="mSettings" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+          <i class="fas fa-cog"></i>
+        </div>
+        <h3 class="font-display text-xl font-bold text-white">ArenaX Settings</h3>
+      </div>
+      <button id="bCloseSettingsCross" class="text-t3 hover:text-white transition"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Notification Preferences</h4>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Announcement Alerts</span>
+            <span class="text-[9px] text-t3">Real-time alerts for system announcements</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifAnnounce" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Friend Request Alerts</span>
+            <span class="text-[9px] text-t3">Alerts when someone sends a friend request</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifFriends" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">Tournament Updates</span>
+            <span class="text-[9px] text-t3">Get alerts about event brackets & slots</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="setNotifTours" type="checkbox" checked class="sr-only peer" />
+            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legal Documents -->
+    <div class="space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Legal Agreements</h4>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="bViewTerms" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+          <i class="fas fa-file-contract text-gold/80"></i> Terms & Conditions
+        </button>
+        <button id="bViewPrivacy" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+          <i class="fas fa-user-shield text-gold/80"></i> Privacy Policy
+        </button>
+      </div>
+    </div>
+
+    <div class="flex gap-2 border-t border-bdr/40 pt-3">
+      <button id="bSaveSettings" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">Save Settings</button>
+      <button id="bCloseSettings" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TERMS & CONDITIONS MODAL ==================== -->
+<div id="mTerms" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4">
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+        <i class="fas fa-file-contract"></i>
+      </div>
+      <h3 class="font-display text-xl font-bold text-white">Terms & Conditions</h3>
+    </div>
+    
+    <div class="max-h-[250px] overflow-y-auto text-xs text-t2 space-y-3 pr-2 scrollbar-thin">
+      <p class="font-bold text-white">Welcome to ArenaX!</p>
+      <p>By registering for or playing in ArenaX tournaments, you agree to comply fully with these Terms and Conditions.</p>
+      
+      <p class="font-semibold text-white">1. Fair Play & Anti-Cheat</p>
+      <p>Cheating, exploiting game bugs, using third-party macro software/scripts, or collusion with other players is strictly forbidden. Admins monitor matches and can ban accounts and forfeit entry fees without any appeal.</p>
+      
+      <p class="font-semibold text-white">2. Wallet, Deposits & Withdrawals</p>
+      <p>All deposits are reviewed by administration. Entering fake transaction IDs (TXN) will trigger an immediate permanent account ban. Withdrawals settle within 24-48 hours. Coins inside ArenaX cannot be transferred directly to other user accounts.</p>
+      
+      <p class="font-semibold text-white">3. Content Restrictions</p>
+      <p>Harassment, hate speech, spamming, and toxic behavior in public chats or support rooms is prohibited and will result in temporary or permanent messaging restrictions.</p>
+      
+      <p class="font-semibold text-white">4. Account Loss</p>
+      <p>Guest account data is stored locally in your browser. Clearing your cache or browser cookies will lead to loss of access, and guest accounts cannot be recovered.</p>
+    </div>
+
+    <button id="bCloseTerms" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">I Understand & Agree</button>
+  </div>
+</div>
+
+<!-- ==================== PRIVACY POLICY MODAL ==================== -->
+<div id="mPrivacy" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4">
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h3 class="font-display text-xl font-bold text-white">Privacy Policy</h3>
+    </div>
+    
+    <div class="max-h-[250px] overflow-y-auto text-xs text-t2 space-y-3 pr-2 scrollbar-thin">
+      <p class="font-bold text-white">Your Privacy Matters to ArenaX</p>
+      <p>We are committed to securing your personal information and ensuring full transparency.</p>
+      
+      <p class="font-semibold text-white">1. Information We Collect</p>
+      <p>We collect your email address, display name, profile avatar, and system metadata during registration/sign-in. Your gameplay logs, transaction histories, and messaging records are stored in a secure cloud database (Firestore).</p>
+      
+      <p class="font-semibold text-white">2. How We Use Data</p>
+      <p>Your data is used to maintain your profile, track balances, match you in tournaments, provide support, and prevent fraudulent actions or cheating.</p>
+      
+      <p class="font-semibold text-white">3. Third Party Policy</p>
+      <p>ArenaX does not sell, lease, or distribute your email address or personal statistics to any third-party marketing companies.</p>
+      
+      <p class="font-semibold text-white">4. Your Control</p>
+      <p>You can modify your display profile settings, turn off certain notifications in settings, or request full account deletion via support.</p>
+    </div>
+
+    <button id="bClosePrivacy" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">I Understand & Agree</button>
+  </div>
+</div>
+
+<!-- ==================== WALLET PAYMENT MODAL ==================== -->
+<div id="mPayment" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-wallet"></i></div>
+      <h3 id="payTitle" class="font-display text-xl font-bold text-white">Add Wallet Coins</h3>
+    </div>
+
+    <!-- Step 1 (Method selection) -->
+    <div id="payStep1" class="space-y-3">
+      <button class="pm-btn w-full p-4 bg-card border-2 border-bdr hover:border-green hover:bg-green/5 rounded-xl flex items-center gap-4 text-left transition" data-m="jc">
+        <div class="w-10 h-10 rounded-lg bg-green/10 text-green border border-green/20 flex items-center justify-center text-lg flex-shrink-0"><i class="fas fa-mobile-alt"></i></div>
+        <div>
+          <h4 class="font-bold text-sm text-white">JazzCash</h4>
+          <p class="text-[10px] text-t3">0302-4686897 · Instant Processing</p>
+        </div>
+        <i class="fas fa-chevron-right text-t3 ml-auto text-xs"></i>
+      </button>
+
+      <button class="pm-btn w-full p-4 bg-card border-2 border-bdr hover:border-[#a78bfa] hover:bg-[#a78bfa]/5 rounded-xl flex items-center gap-4 text-left transition" data-m="ep">
+        <div class="w-10 h-10 rounded-lg bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/20 flex items-center justify-center text-lg flex-shrink-0"><i class="fas fa-wallet"></i></div>
+        <div>
+          <h4 class="font-bold text-sm text-white">EasyPaisa</h4>
+          <p class="text-[10px] text-t3">0315-9876543 · Instant Processing</p>
+        </div>
+        <i class="fas fa-chevron-right text-t3 ml-auto text-xs"></i>
+      </button>
+
+      <button id="bClosePayment" class="w-full py-2.5 bg-ele text-t2 hover:text-white rounded-lg text-xs font-semibold border border-bdr transition">Cancel</button>
+    </div>
+
+    <!-- Step 2 (Amount / Instruction) -->
+    <div id="payStep2" class="space-y-3 hidden">
+      <button id="payBackBtn" class="text-xs text-t2 hover:text-gold transition font-medium py-1"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+      
+      <div class="flex gap-2">
+        <button class="amt-chip flex-1 py-1.5 bg-card border border-bdr rounded-full text-xs font-semibold hover:border-gold hover:text-gold transition" data-v="100">Rs 100</button>
+        <button class="amt-chip flex-1 py-1.5 bg-card border border-bdr rounded-full text-xs font-semibold hover:border-gold hover:text-gold transition" data-v="500">Rs 500</button>
+        <button class="amt-chip flex-1 py-1.5 bg-card border border-bdr rounded-full text-xs font-semibold hover:border-gold hover:text-gold transition" data-v="1000">Rs 1000</button>
+      </div>
+
+      <div>
+        <label class="block text-[10px] uppercase font-black text-t3 mb-1 tracking-wider">Deposit PKR Cash *</label>
+        <input id="payAmtInp" type="number" placeholder="Custom PKR Amount (Min Rs 50)" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold transition text-white font-mono"/>
+      </div>
+
+      <div class="p-3 bg-gold/5 border border-gold/15 rounded-lg flex flex-col gap-0.5">
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] font-bold text-t2 uppercase tracking-wide">AX Coins To Receive</span>
+          <span id="payEstimatedAX" class="text-gold font-black font-display text-sm">0 AX</span>
+        </div>
+        <p id="payEstimatedAXLabel" class="text-[9px] text-green font-medium text-right">Get <strong class="text-green">15% bonus</strong> AX coins on every deposit!</p>
+      </div>
+      
+      <div id="payInstr" class="bg-card p-3 rounded-xl border border-bdr text-[11px] text-t2 leading-relaxed font-medium">
+        <!-- Instructions populated dynamically -->
+      </div>
+
+      <div>
+        <label class="block text-[10px] uppercase font-black text-t3 mb-1 tracking-wider">Enter payment Transaction ID *</label>
+        <input id="payTxnId" type="text" placeholder="Transaction ID (TXN ID / TID) *" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold transition text-white font-mono uppercase"/>
+        <p class="text-[8px] text-t3 mt-1 leading-normal">Enter the precise 11-12 digit Transaction ID from your EasyPaisa/JazzCash receipt to submit the deposit check.</p>
+      </div>
+
+      <button id="payConfirmBtn" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black rounded-lg uppercase tracking-wider transition">Submit Deposit Request</button>
+      <button id="bClosePayment2" class="w-full py-2 bg-ele text-t2 text-xs font-semibold border border-bdr rounded-lg transition">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOURNAMENT REGISTER MODAL ==================== -->
+<div id="mTourDetail" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full overflow-y-auto max-h-[90vh]">
+    
+    <!-- Step 1: Details view -->
+    <div id="tregStep1" class="space-y-4">
+      <div class="bg-gradient-to-br from-gold/10 to-blue/5 border border-bdr rounded-xl p-5 text-center space-y-3 relative overflow-hidden">
+        <div>
+          <h3 id="tdetName" class="font-display text-2xl font-black text-white leading-tight">Tournament</h3>
+          <p id="tdetGame" class="text-xs text-t3 mt-0.5">Grand RP Mobile</p>
+        </div>
+        <div class="grid grid-cols-3 gap-2.5 pt-2">
+          <div class="p-2 bg-card/60 rounded-lg">
+            <div id="tdetPlayers" class="font-display text-base font-bold text-gold">0/32</div>
+            <div class="text-[9px] text-t3 uppercase font-semibold">Slots</div>
+          </div>
+          <div class="p-2 bg-card/60 rounded-lg">
+            <div id="tdetPrize" class="font-display text-base font-bold text-gold">TBD</div>
+            <div class="text-[9px] text-t3 uppercase font-semibold">Prize</div>
+          </div>
+          <div class="p-2 bg-card/60 rounded-lg">
+            <div id="tdetStatus" class="font-display text-base font-bold text-gold">Upcoming</div>
+            <div class="text-[9px] text-t3 uppercase font-semibold">Status</div>
+          </div>
+        </div>
+        <div id="tdetExtra" class="text-[10px] text-t3 pt-1">Format: Squad (4 Players)</div>
+      </div>
+
+      <div class="bg-red/5 border border-red/10 rounded-xl p-4 text-[11px] text-t2 leading-relaxed">
+        <strong>⚠️ Warning & Guidelines:</strong> Cheating, using third-party scripts, lag switching, or reporting fake results/cheats will trigger permanent ban without appeal and registration fee forfeiture.
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button id="bCloseTourDetail" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Close</button>
+        <button id="bParticipate" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5"><i class="fas fa-gamepad"></i> Participate</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Form submission -->
+    <div id="tregStep2" class="space-y-3.5 hidden">
+      <h3 class="font-display text-lg font-bold text-gold">Event Registration</h3>
+      <div class="space-y-2.5">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Real Name *</label>
+          <input id="tregRealName" type="text" placeholder="Your actual full name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">In-Game Username *</label>
+          <input id="tregGameName" type="text" placeholder="e.g. HackerOP" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Game UID *</label>
+            <input id="tregUID" type="text" placeholder="e.g. 84392434" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-t3 tracking-wider mb-1">Age *</label>
+            <input id="tregAge" type="number" placeholder="Your age" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+          </div>
+        </div>
+        <div class="space-y-1.5 pt-1.5">
+          <label class="flex items-start gap-2.5 text-[11px] text-t2 leading-relaxed">
+            <input id="tregCheck1" type="checkbox" class="mt-0.5 accent-gold"/>
+            <span>I confirm that I will not use any illegal software/hacks.</span>
+          </label>
+          <label class="flex items-start gap-2.5 text-[11px] text-t2 leading-relaxed">
+            <input id="tregCheck2" type="checkbox" class="mt-0.5 accent-gold"/>
+            <span>I understand registration reviews can take up to 24 hours.</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-3">
+        <button id="tregDecline" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Cancel</button>
+        <button id="tregAgree" class="flex-1 py-2.5 bg-gold text-bg font-bold rounded-lg text-xs transition">Next Step</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Transaction submit -->
+    <div id="tregStep3" class="space-y-3.5 hidden">
+      <h3 class="font-display text-lg font-bold text-gold">Confirm Wallet Registration</h3>
+      
+      <div class="p-4 bg-card border border-bdr rounded-xl text-xs space-y-3">
+        <div class="flex justify-between items-center border-b border-bdr/50 pb-2">
+          <span class="text-t3">Tournament Fee</span>
+          <strong id="tregFeeAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
+        <div class="flex justify-between items-center border-b border-bdr/50 pb-2">
+          <span class="text-t3">Your Current Balance</span>
+          <strong id="tregBalanceAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
+        <div class="flex justify-between items-center pb-1">
+          <span class="text-t3">Balance After Approval</span>
+          <strong id="tregBalanceAfterAX" class="text-white font-semibold">0 AX Coins</strong>
+        </div>
+      </div>
+
+      <div id="tregStatusMsg" class="p-3 bg-card/60 border border-bdr rounded-lg text-xs leading-relaxed">
+        <!-- Dynamic Status Message -->
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button id="tregBack" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition">Back</button>
+        <button id="tregSubmit" class="flex-1 py-2.5 bg-green text-bg font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">Confirm & Submit Entry</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Completion -->
+    <div id="tregStep4" class="text-center space-y-4 hidden py-4 animate-fade-in">
+      <div class="w-14 h-14 bg-green/10 border border-green/20 rounded-full text-green text-3xl flex items-center justify-center mx-auto"><i class="fas fa-check-circle"></i></div>
+      <div>
+        <h4 class="font-display text-xl font-black text-green leading-tight">Application Submitted!</h4>
+        <p class="text-xs text-t2 mt-1 leading-relaxed">Your application is in pending queue. Admins will verify your TXN ID and approve your slot. You will receive real-time notifications once accepted!</p>
+      </div>
+      <button id="tregDone" class="w-full py-2.5 bg-gold text-bg font-bold rounded-lg text-xs transition">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== ADD FRIEND MODAL ==================== -->
+<div id="mAddFriend" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-user-plus"></i></div>
+      <h3 class="font-display text-lg font-bold text-white">Add Friend</h3>
+    </div>
+    <p class="text-xs text-t2">Enter the target player handle exactly (e.g. <span class="text-gold font-semibold font-mono">@player#1234</span>)</p>
+    <div class="flex gap-2">
+      <input id="friendHandleInp" type="text" placeholder="@handle#1234" class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-sm text-t1 outline-none focus:border-gold"/>
+      <button id="btnSearchFriend" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg font-bold text-xs rounded-lg transition">Search</button>
+    </div>
+    
+    <!-- Search Results -->
+    <div id="friendSearchResult" class="space-y-2"></div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseAddFriend" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSendFriendReq" class="flex-1 py-2 bg-gold text-bg text-xs font-bold rounded-lg transition hidden">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PLAYER DM CHAT WINDOW ==================== -->
+<div id="mDMChat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[180] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl w-full max-w-[460px] h-[480px] flex flex-col overflow-hidden shadow-2xl">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-card border-b border-bdr flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img id="dmChatAv" src="" alt="" class="w-8 h-8 rounded-full border border-bdr"/>
+        <div>
+          <h4 id="dmChatName" class="text-xs font-bold text-white">Player Chat</h4>
+          <span class="text-[9px] text-green uppercase font-bold tracking-wider">Active Connection</span>
+        </div>
+      </div>
+      <button id="bCloseDMChat" class="text-t2 hover:text-gold transition text-lg"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Messages List -->
+    <div id="dmMsgs" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs bg-bg/50">
+      <!-- DM messages rendered dynamically -->
+    </div>
+
+    <!-- Message send bar -->
+    <div class="p-3 bg-card border-t border-bdr/40 flex gap-2">
+      <input id="dmInp" type="text" placeholder="Type direct message..." class="flex-1 bg-ele border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
+      <button id="dmSendBtn" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHEAT REPORT MODAL ==================== -->
+<div id="mReportCheat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-flag"></i></div>
+      <div>
+        <h3 class="font-display text-lg font-bold text-white leading-tight">Report Hack / Cheat</h3>
+        <p id="repEventName" class="text-xs text-t3">Event Name</p>
+      </div>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Your Name</label>
+        <input id="repYourName" type="text" disabled class="w-full bg-card/60 border border-bdr rounded-lg px-3 py-2 text-t3 font-semibold outline-none cursor-not-allowed"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player Name *</label>
+          <input id="repPlayerName" type="text" placeholder="e.g. CheaterName" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player UID *</label>
+          <input id="repPlayerUID" type="text" placeholder="UID exactly" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Type of Cheat / Hack *</label>
+        <select id="repHackType" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold">
+          <option value="Aimbot / Auto-Aim">Aimbot / Auto-Aim</option>
+          <option value="Wallhack / ESP / X-Ray">Wallhack / ESP / X-Ray</option>
+          <option value="Speedhack / Fast Movement">Speedhack / Fast Movement</option>
+          <option value="Fly Hack / No Gravity">Fly Hack / No Gravity</option>
+          <option value="No Recoil / Magic Bullet">No Recoil / Magic Bullet</option>
+          <option value="High Damage / Instakill">High Damage / Instakill</option>
+          <option value="Other Advantage">Other Advantage</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Detailed Description *</label>
+        <textarea id="repReason" rows="3" placeholder="Explain how and when cheating occurred..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Evidence Video URL (YouTube, Drive...)</label>
+        <input id="repVideoUrl" type="url" placeholder="Paste link (Highly Recommended)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseReportCheat" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSubmitReportCheat" class="flex-1 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOURNAMENT PARTICIPATION MODAL ==================== -->
+<div id="mTournamentParticipation" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[440px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-users"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white leading-tight">Verified Participants</h3>
+          <p id="partTourName" class="text-[10px] text-t3 font-medium">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseParticipation" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Participants List Container -->
+    <div id="participantsContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+      <!-- Loading state / dynamic players -->
+    </div>
+
+    <div class="flex-shrink-0 pt-2 border-t border-bdr/20 text-center">
+      <p id="participationCountText" class="text-[10px] text-t3 font-bold uppercase tracking-wider">0 Approved Slot(s)</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW PARTICIPANT PROFILE MODAL ==================== -->
+<div id="mViewParticipantProfile" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[440px] w-full space-y-4 shadow-2xl relative overflow-hidden">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0 relative z-10">
+      <h3 class="font-display text-base font-bold text-t2 uppercase tracking-widest flex items-center gap-1.5">
+        <i class="fas fa-id-card text-gold"></i> Player Card
+      </h3>
+      <button id="bCloseParticipantProfile" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- The actual profile card card wrapper with custom background gradient -->
+    <div id="vPartCard" class="p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center">
+      <!-- Avatar Section -->
+      <div class="relative">
+        <img id="vPartAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-20 h-20 rounded-full border-2 border-bdr object-cover"/>
+      </div>
+
+      <!-- Identity -->
+      <div class="space-y-1">
+        <h4 id="vPartName" class="font-display text-2xl font-black text-white tracking-tight flex items-center justify-center gap-2">Player Display Name</h4>
+        <p id="vPartHandle" class="text-xs text-t3 font-medium">@username#0000</p>
+        <p id="vPartBio" class="text-xs text-t2 italic max-w-sm px-4">This is the bio description of this tournament participant.</p>
+      </div>
+
+      <!-- Badges -->
+      <div class="flex flex-wrap justify-center gap-1.5" id="vPartBadges">
+        <span class="px-2.5 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase"><i class="fas fa-star mr-1"></i> Unranked</span>
+        <span id="vPartBadgePremium" class="px-2.5 py-0.5 text-[9px] font-bold bg-purple/15 text-purple rounded border border-purple/20 uppercase"><i class="fas fa-crown mr-1"></i> Premium</span>
+        <span id="vPartBadgeSpecial" class="px-2.5 py-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 rounded border border-blue-500/20 uppercase"><i class="fas fa-award mr-1"></i> Champion</span>
+      </div>
+    </div>
+
+    <!-- Detailed Game Info Table -->
+    <div class="p-4 bg-card border border-bdr rounded-xl space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1.5 flex items-center gap-1.5">
+        <i class="fas fa-gamepad"></i> Game Details
+      </h4>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-left">
+        <div>
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Country / Region</span>
+          <span id="vPartCountry" class="text-white font-bold flex items-center gap-1.5 mt-0.5">🌍 Other</span>
+        </div>
+        <div>
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Favorite Game</span>
+          <span id="vPartFavGame" class="text-white font-bold mt-0.5">None</span>
+        </div>
+        <div class="col-span-2">
+          <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Game UID / IGN</span>
+          <span id="vPartGameUID" class="text-gold font-mono font-extrabold mt-0.5">None</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social connections details -->
+    <div id="vPartSocialsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-2.5 hidden">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1 flex items-center gap-1.5">
+        <i class="fas fa-share-alt"></i> Social Connections
+      </h4>
+      <div id="vPartSocialsList" class="flex flex-wrap gap-2 pt-1">
+        <!-- Social buttons dynamic -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== TOURNAMENT LEADERBOARD MODAL ==================== -->
+<div id="mTournamentLeaderboard" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
+    
+    <!-- Title / Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-trophy"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white leading-tight">Match Leaderboard</h3>
+          <p id="leadTourName" class="text-[10px] text-t3 font-medium">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseLeaderboard" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Podium Visual Section (Optional but looks insanely polished) -->
+    <div id="leaderboardPodium" class="flex justify-center items-end gap-3 px-2 py-4 bg-card/40 rounded-xl border border-bdr/40 flex-shrink-0 hidden">
+      <!-- 2nd Place -->
+      <div class="flex flex-col items-center w-[110px] text-center">
+        <div class="relative mb-1">
+          <img id="podium2Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p2"/>
+          <div class="absolute -top-1.5 -right-1 bg-slate-400 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">2</div>
+        </div>
+        <div id="podium2Name" class="text-[10px] font-bold text-white truncate w-full">Player 2</div>
+        <div id="podium2Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
+      </div>
+      
+      <!-- 1st Place -->
+      <div class="flex flex-col items-center w-[120px] text-center -translate-y-1">
+        <div class="relative mb-1">
+          <img id="podium1Av" class="w-14 h-14 rounded-full border-2 border-gold object-cover shadow-[0_0_12px_rgba(240,192,64,0.3)]" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1"/>
+          <div class="absolute -top-2.5 -right-1.5 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center"><i class="fas fa-crown text-[7px]"></i></div>
+        </div>
+        <div id="podium1Name" class="text-xs font-bold text-white truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
+        <div id="podium1Score" class="text-[10px] text-gold font-mono font-black mt-0.5">Stats</div>
+      </div>
+
+      <!-- 3rd Place -->
+      <div class="flex flex-col items-center w-[110px] text-center">
+        <div class="relative mb-1">
+          <img id="podium3Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p3"/>
+          <div class="absolute -top-1.5 -right-1 bg-amber-700 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">3</div>
+        </div>
+        <div id="podium3Name" class="text-[10px] font-bold text-white truncate w-full">Player 3</div>
+        <div id="podium3Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
+      </div>
+    </div>
+
+    <!-- Scrollable Ranks List -->
+    <div id="leaderboardListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+      <!-- Ranks table/list elements dynamically populated -->
+    </div>
+
+    <!-- Footer / Custom notice -->
+    <div class="flex-shrink-0 pt-2 border-t border-bdr/20 text-center flex items-center justify-between text-[10px] text-t3 font-bold uppercase tracking-wider">
+      <span>RANKINGS UPDATED LIVE</span>
+      <span id="leadTotalEntries">0 ENTRANT(S)</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- Firebase Modular SDK Scripts via CDN -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+
+// Setup credentials
+const firebaseConfig = {
+  apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
+  authDomain: "arenax-c1586.firebaseapp.com",
+  projectId: "arenax-c1586",
+  storageBucket: "arenax-c1586.firebasestorage.app",
+  messagingSenderId: "1069776825982",
+  appId: "1:1069776825982:web:f2d7f11cef4c206206b22f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const googleProvider = new GoogleAuthProvider();
+
+// Staff Access logic
+const ADMIN_UIDS = ['xDa31jOrsoQC2HxjSheO3wBqyII2', 'lCNKrLAliFSvuML6Nwrr6YlNOtG3'];
+
+// Local states
+let userProfile = null;
+let guestProfile = null;
+let activeChatSubTab = 'global';
+let unreadGlobal = false;
+let globalChatUnsub = null;
+let globalChatTypingUnsub = null;
+let globalTypingTimeout = null;
+let activeMainTab = 'Profile';
+let activeDMOrientationUid = null;
+let toursData = [];
+let userRegs = {};
+let friendList = [];
+let depositUnsub = null;
+let userDepositsList = [];
+let userProfileTransactionsList = [];
+const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
+let selectedAvatarSeed = AVATAR_SEEDS[0];
+let devPopupShownThisSession = false;
+
+// Customization States
+let selectedBannerTheme = 'dark';
+let selectedAvatarFrame = 'none';
+let selectedNameColor = '#ffffff';
+let selectedCustomAvatarUrl = null;
+
+// Helper selection
+const $ = (id) => document.getElementById(id);
+
+// Capture referral parameter and store it in localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const referrerParam = urlParams.get('ref') || urlParams.get('referrer');
+if (referrerParam) {
+  localStorage.setItem('arenaX_ref', referrerParam);
+}
+
+// Custom Interactive Cursor Logic
+const cur = $('cur');
+const curR = $('curR');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', (e) => {
+  mx = e.clientX;
+  my = e.clientY;
+  cur.style.left = mx + 'px';
+  cur.style.top = my + 'px';
+});
+(function loopCursor() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  curR.style.left = rx + 'px';
+  curR.style.top = ry + 'px';
+  requestAnimationFrame(loopCursor);
+})();
+document.addEventListener('mousedown', () => cur.classList.add('scale-150'));
+document.addEventListener('mouseup', () => cur.classList.remove('scale-150'));
+
+// Screen Route controls
+function goTo(screenId) {
+  document.querySelectorAll('.scr, #sLogin, #sDash').forEach(s => s.classList.add('hidden'));
+  $(screenId).classList.remove('hidden');
+}
+
+// Lauch Dashboard
+function boot() {
+  const profile = userProfile || guestProfile;
+  $('pName').textContent = profile.name;
+  $('pHandle').textContent = profile.handle;
+  $('pAv').src = profile.av;
+  $('avImg').src = profile.av;
+  $('wBal').textContent = (profile.balance || 0).toLocaleString();
+
+  // 1. Profile Banner Theme (Premium only)
+  const card = $('profileCard');
+  if (profile.premium && profile.bannerTheme) {
+    const gradients = {
+      red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+      gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
+      blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+      purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+      green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+      sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+      ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+      dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+    };
+    card.style.background = gradients[profile.bannerTheme] || '';
+  } else {
+    card.style.background = '';
+  }
+
+  // 2. Username Color (Premium only)
+  if (profile.premium && profile.nameColor) {
+    $('pName').style.color = profile.nameColor;
+  } else {
+    $('pName').style.color = '';
+  }
+
+  // 3. Avatar Frame / Border Glow (Premium only)
+  const avImg = $('pAv');
+  if (profile.premium && profile.avatarFrame && profile.avatarFrame !== 'none') {
+    const frameColors = {
+      gold: '#c0a030',
+      fire: '#ff4500',
+      ice: '#00bfff',
+      royal: '#8b5cf6'
+    };
+    const color = frameColors[profile.avatarFrame];
+    avImg.style.boxShadow = `0 0 12px ${color}`;
+    avImg.style.borderColor = color;
+  } else {
+    avImg.style.boxShadow = '';
+    avImg.style.borderColor = '';
+  }
+
+  // 4. Custom Badge Display (Read-only)
+  if (profile.badge) {
+    $('pBadgeText').textContent = profile.badge;
+    $('pBadge').classList.remove('hidden');
+  } else {
+    $('pBadge').classList.add('hidden');
+  }
+
+  // 5. Bio Description
+  if (profile.bio) {
+    $('pBio').textContent = profile.bio;
+    $('pBio').classList.remove('hidden');
+  } else {
+    $('pBio').classList.add('hidden');
+  }
+
+  // 6. Game Info & Socials Details Card
+  let hasDetails = false;
+  
+  if (profile.country) {
+    const countryNames = {
+      PK: '🇵🇰 Pakistan',
+      IN: '🇮🇳 India',
+      BD: '🇧🇩 Bangladesh',
+      SA: '🇸🇦 Saudi Arabia',
+      AE: '🇦🇪 UAE',
+      US: '🇺🇸 USA',
+      GB: '🇬🇧 UK',
+      Other: '🌍 Other'
+    };
+    $('pDetailCountry').textContent = countryNames[profile.country] || profile.country;
+    $('pDetailCountryContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailCountryContainer').classList.add('hidden');
+  }
+
+  if (profile.favoriteGame) {
+    $('pDetailFavGame').textContent = profile.favoriteGame;
+    $('pDetailFavGameContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailFavGameContainer').classList.add('hidden');
+  }
+
+  if (profile.gameUID) {
+    $('pDetailGameUID').textContent = profile.gameUID;
+    $('pDetailGameUIDContainer').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailGameUIDContainer').classList.add('hidden');
+  }
+
+  let hasSocials = false;
+  if (profile.socialDiscord) {
+    $('pSocialDiscordText').textContent = profile.socialDiscord;
+    $('pSocialDiscord').href = `https://discord.com/users/${profile.socialDiscord}`;
+    $('pSocialDiscord').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialDiscord').classList.add('hidden');
+  }
+
+  if (profile.socialInstagram) {
+    $('pSocialInstagramText').textContent = profile.socialInstagram;
+    $('pSocialInstagram').href = `https://instagram.com/${profile.socialInstagram.replace('@', '')}`;
+    $('pSocialInstagram').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialInstagram').classList.add('hidden');
+  }
+
+  if (profile.socialYoutube) {
+    $('pSocialYoutube').href = profile.socialYoutube.startsWith('http') ? profile.socialYoutube : `https://youtube.com/${profile.socialYoutube}`;
+    $('pSocialYoutube').classList.remove('hidden');
+    hasSocials = true;
+  } else {
+    $('pSocialYoutube').classList.add('hidden');
+  }
+
+  if (hasSocials) {
+    $('pDetailSocials').classList.remove('hidden');
+    hasDetails = true;
+  } else {
+    $('pDetailSocials').classList.add('hidden');
+  }
+
+  if (hasDetails) {
+    $('pDetailsCard').classList.remove('hidden');
+  } else {
+    $('pDetailsCard').classList.add('hidden');
+  }
+
+  if (guestProfile) {
+    $('gBanner').classList.remove('hidden');
+    $('badgeGuest').classList.remove('hidden');
+    $('wLock').classList.remove('hidden');
+    $('sLock').classList.remove('hidden');
+    $('chatBox').classList.add('hidden');
+    $('wCard').classList.add('opacity-35', 'pointer-events-none');
+    $('prmPromo').classList.add('hidden');
+    $('badgePrm').classList.add('hidden');
+    $('prmBanner').classList.add('hidden');
+  } else {
+    $('gBanner').classList.add('hidden');
+    $('badgeGuest').classList.add('hidden');
+    $('wLock').classList.add('hidden');
+    $('sLock').classList.add('hidden');
+    $('chatBox').classList.remove('hidden');
+    $('wCard').classList.remove('opacity-35', 'pointer-events-none');
+    
+    // Check and set Premium states
+    if (userProfile.premium) {
+      $('badgePrm').classList.remove('hidden');
+      $('prmBanner').classList.remove('hidden');
+      $('prmPromo').classList.add('hidden');
+      $('profileCard').classList.add('prm-glow');
+    } else {
+      $('badgePrm').classList.add('hidden');
+      $('prmBanner').classList.add('hidden');
+      $('prmPromo').classList.remove('hidden');
+      $('profileCard').classList.remove('prm-glow');
+    }
+  }
+
+  // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
+  if (userProfile) {
+    $('referralLinkInput').value = 'https://kpllahore123-maker.github.io/arenaX?ref=' + userProfile.uid;
+  } else {
+    $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
+  }
+
+  loadTournamentsList();
+  loadLiveNotifications();
+  initGlobalChat();
+  goTo('sDash');
+
+  if (!devPopupShownThisSession) {
+    $('mUnderDevPopup').classList.remove('hidden');
+    devPopupShownThisSession = true;
+  }
+}
+
+// Navigation Tab controls
+function switchTab(tabId) {
+  activeMainTab = tabId;
+  document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
+  $('t' + tabId).classList.remove('hidden');
+  document.querySelectorAll('.ni').forEach(btn => {
+    if (btn.dataset.t === tabId) {
+      btn.classList.add('text-gold');
+      btn.classList.remove('text-t3');
+    } else {
+      btn.classList.remove('text-gold');
+      btn.classList.add('text-t3');
+    }
+  });
+
+  if (tabId === 'Chat') {
+    loadFriendSystem();
+    if (activeChatSubTab === 'global') {
+      unreadGlobal = false;
+      updateChatUnreadDot();
+      updateSubGlobalDot();
+    }
+  }
+}
+
+document.querySelectorAll('.ni').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.t));
+});
+
+function mergeAndRenderTransactions() {
+  const combined = [...userDepositsList, ...userProfileTransactionsList];
+  combined.sort((a, b) => {
+    let timeA = 0;
+    if (a.submittedAt) {
+      timeA = a.submittedAt.seconds ? a.submittedAt.seconds * 1000 : new Date(a.submittedAt).getTime();
+    } else if (a.timestamp) {
+      timeA = new Date(a.timestamp).getTime();
+    } else if (a.createdAt) {
+      timeA = a.createdAt.seconds ? a.createdAt.seconds * 1000 : new Date(a.createdAt).getTime();
+    }
+    
+    let timeB = 0;
+    if (b.submittedAt) {
+      timeB = b.submittedAt.seconds ? b.submittedAt.seconds * 1000 : new Date(b.submittedAt).getTime();
+    } else if (b.timestamp) {
+      timeB = new Date(b.timestamp).getTime();
+    } else if (b.createdAt) {
+      timeB = b.createdAt.seconds ? b.createdAt.seconds * 1000 : new Date(b.createdAt).getTime();
+    }
+    
+    return timeB - timeA;
+  });
+  renderUserDeposits(combined);
+}
+
+// Setup Auth State listener
+onAuthStateChanged(auth, async (fireUser) => {
+  if (depositUnsub) {
+    depositUnsub();
+    depositUnsub = null;
+  }
+  if (fireUser && !guestProfile) {
+    // Start real-time deposit listener for user
+    const qDeposits = query(
+      collection(db, 'deposit_requests'),
+      where('userId', '==', fireUser.uid)
+    );
+    depositUnsub = onSnapshot(qDeposits, (dSnap) => {
+      let list = [];
+      dSnap.forEach(dDoc => {
+        list.push({ id: dDoc.id, ...dDoc.data() });
       });
+      userDepositsList = list;
+      mergeAndRenderTransactions();
+    });
 
-      alert(`Balance adjusted by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  // Custom Notifications Sender
-  const handleSendNotification = async () => {
-    if (!notifTitle.trim() || !notifBody.trim()) {
-      alert('Please enter both Title and Message Body!');
-      return;
-    }
-
-    setNotifSending(true);
-
-    try {
-      if (notifTargetType === 'all') {
-        if (users.length === 0) {
-          alert('No users found to send notifications to!');
-          setNotifSending(false);
+    // Read and listen to Firestore User Profile in real time!
+    onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
+      if (snap.exists()) {
+        userProfile = { id: fireUser.uid, ...snap.data() };
+        userProfileTransactionsList = userProfile.transactions || [];
+        mergeAndRenderTransactions();
+        
+        // Full Ban checker block
+        if (userProfile.banned && userProfile.banType === 'full') {
+          alert(`❌ Account Banned!\n\nReason: ${userProfile.banReason || 'Rule Violations'}\nContact support@arenax.com if you feel this is unfair.`);
+          signOut(auth);
+          userProfile = null;
+          goTo('sLogin');
           return;
         }
 
-        const promises = users.map((u) => {
-          return addDoc(collection(db, 'notifications'), {
-            userId: u.id,
-            message: `${notifTitle}: ${notifBody}`,
-            title: notifTitle.trim(),
-            body: notifBody.trim(),
-            type: 'broadcast',
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        });
-
-        await Promise.all(promises);
-        alert(`Broadcast notification successfully sent to all ${users.length} players! 📢`);
-      } else if (notifTargetUser) {
-        await addDoc(collection(db, 'notifications'), {
-          userId: notifTargetUser.id,
-          message: `${notifTitle}: ${notifBody}`,
-          title: notifTitle.trim(),
-          body: notifBody.trim(),
-          type: 'custom',
-          read: false,
-          createdAt: serverTimestamp()
-        });
-        alert(`Notification successfully sent to ${notifTargetUser.name}! ✅`);
-      }
-
-      setShowNotifModal(false);
-      setNotifTitle('');
-      setNotifBody('');
-      setNotifTargetUser(null);
-    } catch (err: any) {
-      alert('Failed to send notification: ' + err.message);
-    } finally {
-      setNotifSending(false);
-    }
-  };
-
-  // Tournament Slot incremental approves
-  const handleApproveRegistration = async (reg: Registration) => {
-    try {
-      // Find tournament to check entry fee
-      let feeAmount = 0;
-      const localTour = tournaments.find(t => t.id === reg.tournamentId);
-      if (localTour && localTour.entryFee) {
-        const feeString = localTour.entryFee;
-        if (!feeString.toLowerCase().includes('free')) {
-          const matches = feeString.match(/\d+/);
-          if (matches) feeAmount = parseInt(matches[0], 10);
-        }
+        boot();
       } else {
-        // Fallback: Fetch directly from firestore
-        const tourDoc = await getDoc(doc(db, 'tournaments', reg.tournamentId));
-        if (tourDoc.exists()) {
-          const feeString = tourDoc.data().entryFee || '';
-          if (feeString && !feeString.toLowerCase().includes('free')) {
-            const matches = feeString.match(/\d+/);
-            if (matches) feeAmount = parseInt(matches[0], 10);
-          }
+        // Bootstrap new user in Firestore
+        const defaultName = fireUser.displayName || fireUser.email.split('@')[0];
+        const defaultHandle = '@' + defaultName.toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4);
+        const defaultAv = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
+
+        const refId = localStorage.getItem('arenaX_ref');
+        const newProfile = {
+          uid: fireUser.uid,
+          name: defaultName,
+          handle: defaultHandle,
+          av: defaultAv,
+          email: fireUser.email || '',
+          premium: false,
+          banned: false,
+          banType: 'none',
+          banReason: '',
+          banUntil: null,
+          balance: 0,
+          createdAt: new Date().toISOString()
+        };
+
+        if (refId && refId !== fireUser.uid) {
+          newProfile.referredBy = refId;
         }
+
+        setDoc(doc(db, 'users', fireUser.uid), newProfile)
+          .then(async () => {
+            userProfile = { id: fireUser.uid, ...newProfile };
+
+            // If user has been referred, credit the referrer
+            if (refId && refId !== fireUser.uid) {
+              localStorage.removeItem('arenaX_ref');
+              try {
+                const refUserDocRef = doc(db, 'users', refId);
+                const refSnap = await getDoc(refUserDocRef);
+                if (refSnap.exists()) {
+                  const referrerData = refSnap.data();
+
+                  // Award 50 AX Coins to the referrer
+                  await updateDoc(refUserDocRef, {
+                    balance: increment(50)
+                  });
+
+                  // Log as an approved deposit in transaction logs
+                  const txnId = 'REF-BONUS-' + Math.floor(100000 + Math.random() * 900000);
+                  await addDoc(collection(db, 'deposit_requests'), {
+                    userId: refId,
+                    userName: referrerData.name,
+                    userHandle: referrerData.handle,
+                    amountPKR: 0,
+                    amountAX: 50,
+                    method: 'Referral Bonus',
+                    txnId: txnId,
+                    status: 'approved',
+                    type: 'deposit',
+                    notes: `Referred new player: ${defaultName}`,
+                    submittedAt: serverTimestamp()
+                  });
+
+                  // Add notification for referrer
+                  await addDoc(collection(db, 'notifications'), {
+                    userId: refId,
+                    title: 'Referral Reward Credited! 🎁',
+                    body: `Your friend ${defaultName} joined ArenaX! You have been rewarded 50 AX Coins.`,
+                    createdAt: serverTimestamp(),
+                    read: false
+                  });
+                }
+              } catch (refErr) {
+                console.error('Failed to reward referrer:', refErr);
+              }
+            }
+
+            boot();
+          })
+          .catch(err => console.error('Bootstrap profile error: ', err));
       }
+    });
+  } else if (!guestProfile) {
+    userProfile = null;
+    goTo('sLogin');
+  }
+});
 
-      // Deduct fee atomically from user balance
-      if (feeAmount > 0) {
-        await updateDoc(doc(db, 'users', reg.userId), {
-          balance: increment(-feeAmount)
-        });
+// Auth Trigger handlers
+$('bGoogle').addEventListener('click', async () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  $('loginErr').classList.add('hidden');
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    if (err.code !== 'auth/popup-closed-by-user') {
+      $('loginErr').textContent = err.message;
+      $('loginErr').classList.remove('hidden');
+    }
+  }
+});
 
-        // Write transaction history log
-        await addDoc(collection(db, 'deposit_requests'), {
-          userId: reg.userId,
-          userName: reg.userName || '',
-          userEmail: '',
-          type: 'withdrawal',
-          method: 'Tournament Fee',
-          amountPKR: 0,
-          amountAX: feeAmount,
-          txnId: 'REG-' + Math.floor(100000 + Math.random() * 900000),
-          status: 'approved',
-          submittedAt: serverTimestamp()
-        });
+$('bEmail').addEventListener('click', async () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  const em = $('iEmail').value.trim();
+  const pw = $('iPass').value.trim();
+  if (!em || !pw) {
+    $('loginErr').textContent = 'Please enter email and password.';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  if (pw.length < 6) {
+    $('loginErr').textContent = 'Password must be at least 6 characters.';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+
+  $('loginErr').classList.add('hidden');
+  try {
+    await signInWithEmailAndPassword(auth, em, pw);
+  } catch (err) {
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, em, pw);
+        const dName = em.split('@')[0];
+        await updateProfile(cred.user, { displayName: dName });
+      } catch (signUpErr) {
+        $('loginErr').textContent = signUpErr.message;
+        $('loginErr').classList.remove('hidden');
       }
-
-      // 1. Approve registration document
-      await updateDoc(doc(db, 'tournament_registrations', reg.id), {
-        status: 'approved'
-      });
-
-      // 2. Increment Tournament registered count in Firestore atomically
-      await updateDoc(doc(db, 'tournaments', reg.tournamentId), {
-        registered: increment(1)
-      });
-
-      // 3. Send Notification to User
-      await addDoc(collection(db, 'notifications'), {
-        userId: reg.userId,
-        message: `🎉 Slots confirmed! Your registration entry for "${reg.tournamentName}" has been APPROVED. Good luck in the matches! ${feeAmount > 0 ? `${feeAmount} AX Coins have been deducted from your wallet.` : ''}`,
-        type: 'approved',
-        read: false,
-        createdAt: serverTimestamp()
-      });
-
-      alert(`Slot Registration Approved! ${feeAmount > 0 ? `${feeAmount} AX Coins deducted.` : ''} Slot counter incremented. ✅`);
-    } catch (e: any) {
-      alert('Approval Error: ' + e.message);
+    } else {
+      $('loginErr').textContent = err.message;
+      $('loginErr').classList.remove('hidden');
     }
-  };
+  }
+});
 
-  const handleRejectRegistration = async (reg: Registration) => {
-    if (!confirm('Decline this registration application?')) return;
-    try {
-      await updateDoc(doc(db, 'tournament_registrations', reg.id), {
-        status: 'rejected'
+// Guest Sign In Flow
+$('bGuest').addEventListener('click', () => {
+  if (!$('termsCheckbox').checked) {
+    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  $('mGuest').classList.remove('hidden');
+});
+$('bGBack').addEventListener('click', () => $('mGuest').classList.add('hidden'));
+$('bGConfirm').addEventListener('click', () => {
+  if (!$('termsCheckbox').checked) {
+    alert('You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+    return;
+  }
+  $('mGuest').classList.add('hidden');
+  const gid = Math.floor(100000 + Math.random() * 900000);
+  guestProfile = {
+    uid: `guest_${gid}`,
+    name: 'Guest Player',
+    handle: `@guest#${gid}`,
+    av: `https://api.dicebear.com/7.x/bottts/svg?seed=g${gid}`,
+    email: '',
+    premium: false,
+    banned: false,
+    balance: 0
+  };
+  userProfile = null;
+  boot();
+});
+
+// Log out handler
+$('bLogout').addEventListener('click', async () => {
+  if (!confirm('Are you sure you want to sign out?')) return;
+  if (guestProfile) {
+    guestProfile = null;
+    goTo('sLogin');
+  } else {
+    await signOut(auth);
+  }
+});
+
+// ── TOURNAMENTS LOGIC ──
+function loadTournamentsList() {
+  const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, (snap) => {
+    toursData = [];
+    snap.forEach(d => {
+      toursData.push({ id: d.id, ...d.data() });
+    });
+    
+    // Listen to user registrations
+    const profile = userProfile || guestProfile;
+    if (profile && !guestProfile) {
+      const qRegs = query(
+        collection(db, 'tournament_registrations'),
+        where('userId', '==', profile.uid)
+      );
+      onSnapshot(qRegs, (regSnap) => {
+        userRegs = {};
+        regSnap.forEach(rd => {
+          const r = rd.data();
+          userRegs[r.tournamentId] = { id: rd.id, ...r };
+        });
+        renderTournaments();
       });
-
-      // Send rejection notification
-      await addDoc(collection(db, 'notifications'), {
-        userId: reg.userId,
-        message: `❌ Your registration application for "${reg.tournamentName}" was declined. Please verify your TXN details or contact support.`,
-        type: 'rejected',
-        read: false,
-        createdAt: serverTimestamp()
-      });
-
-      alert('Registration declined.');
-    } catch (e: any) {
-      alert(e.message);
+    } else {
+      renderTournaments();
     }
-  };
+  });
+}
 
-  // Cheat reports action handlers
-  const handleResolveReport = async (reportId: string) => {
-    try {
-      await updateDoc(doc(db, 'tournament_reports', reportId), {
-        status: 'resolved'
-      });
-      alert('Report marked as Resolved! ✅');
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+function renderTournaments() {
+  const listEl = $('tList');
+  listEl.innerHTML = '';
+  const filter = activeTournamentFilter();
+  const filtered = toursData.filter(t => filter === 'all' || t.status === filter);
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+        <i class="fas fa-calendar-times text-2xl mb-2"></i>
+        <p>No tournaments matches found in this category.</p>
+      </div>`;
+    return;
+  }
+
+  filtered.forEach(t => {
+    const reg = userRegs[t.id];
+    const borderCls = reg && reg.status === 'approved' ? 'border-green bg-green/5' : reg && reg.status === 'rejected' ? 'border-red/40 bg-red/5' : 'border-bdr';
+
+    let dynamicCardClasses = `p-4 bg-card border ${borderCls} rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer`;
+    if (t.accentTheme === 'crimson') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-red/10 to-card/95 border border-red/40 rounded-xl space-y-3 relative transition hover:border-red duration-200 cursor-pointer shadow-[0_0_12px_rgba(232,64,74,0.05)]`;
+    } else if (t.accentTheme === 'gold') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-gold/10 to-card/95 border border-gold/40 rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer shadow-[0_0_12px_rgba(240,192,64,0.05)]`;
+    } else if (t.accentTheme === 'royal') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-purple/10 to-card/95 border border-purple/40 rounded-xl space-y-3 relative transition hover:border-purple duration-200 cursor-pointer shadow-[0_0_12px_rgba(167,139,250,0.05)]`;
+    } else if (t.accentTheme === 'mint') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-green/10 to-card/95 border border-green/40 rounded-xl space-y-3 relative transition hover:border-green duration-200 cursor-pointer shadow-[0_0_12px_rgba(61,220,132,0.05)]`;
+    } else if (t.accentTheme === 'ice') {
+      dynamicCardClasses = `p-4 bg-gradient-to-b from-blue/10 to-card/95 border border-blue/40 rounded-xl space-y-3 relative transition hover:border-blue duration-200 cursor-pointer shadow-[0_0_12px_rgba(79,158,255,0.05)]`;
     }
-  };
 
-  const handleDeleteReport = async (reportId: string) => {
-    if (!confirm('Are you sure you want to delete this cheat report permanently?')) return;
-    try {
-      await deleteDoc(doc(db, 'tournament_reports', reportId));
-      alert('Report deleted.');
-    } catch (error: any) {
-      alert('Error: ' + error.message);
-    }
-  };
+    const card = document.createElement('div');
+    card.className = dynamicCardClasses;
+    card.innerHTML = `
+      <div class="flex justify-between items-start gap-3">
+        <div>
+          <h4 class="font-display font-bold text-base text-white leading-tight">${t.name}</h4>
+          <p class="text-[10px] text-t3 font-medium mt-0.5">${t.game || 'Grand RP Mobile'}</p>
+        </div>
+        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25' : t.status === 'upcoming' ? 'bg-blue/15 text-blue border border-blue/25' : 'bg-neutral-800 text-t3 border border-neutral-700'}">
+          ${t.status === 'live' ? '🔴 Live' : t.status === 'upcoming' ? 'Upcoming' : 'Ended'}
+        </span>
+      </div>
 
-  // Save or Edit tournament
-  const handleSaveTournament = async () => {
-    if (!tName.trim()) {
-      alert('Please enter the tournament name!');
+      <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-t2 bg-[#111420]/40 p-2.5 rounded-lg border border-bdr/20">
+        <div>
+          <span class="text-[9px] text-t3 uppercase font-bold block">Prize Pool</span>
+          <span class="text-gold font-display text-sm font-bold">${t.prize || 'TBD'}</span>
+        </div>
+        <div>
+          <span class="text-[9px] text-t3 uppercase font-bold block">Size Slots</span>
+          <span class="text-white">${t.registered || 0}/${t.maxPlayers || 32}</span>
+        </div>
+        <div>
+          <span class="text-[9px] text-t3 uppercase font-bold block">Entry Fee</span>
+          <span class="text-gold font-medium">${t.entryFee || 'Free'}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-x-4 text-[10px] text-t3 font-medium">
+        <span><i class="fas fa-calendar mr-1 text-gold"></i> ${t.date || 'TBA'}</span>
+        <span><i class="fas fa-clock mr-1 text-gold"></i> ${t.time || 'TBA'}</span>
+        <span><i class="fas fa-users mr-1 text-gold"></i> ${t.teamType || 'Solo'}</span>
+      </div>
+
+      ${reg ? `
+        <div class="pt-2 border-t border-bdr/20 flex justify-between items-center text-xs">
+          <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-green':reg.status==='rejected'?'text-red':'text-gold'}">
+            ${reg.status === 'approved' ? 'Slots Verified ✓' : reg.status === 'rejected' ? 'Registration Rejected' : 'Verification Pending...'}
+          </span>
+          <span class="text-[10px] text-t3">TXN: ${reg.txnId}</span>
+        </div>
+      ` : ''}
+
+      ${t.status === 'live' && t.liveMessage ? `
+        <div class="p-2.5 bg-red/5 border border-red/20 rounded-lg text-[11px] text-red/90 font-medium flex gap-2 items-start leading-normal">
+          <i class="fas fa-bullhorn text-xs mt-0.5 animate-bounce text-red"></i>
+          <div>
+            <span class="font-bold text-red uppercase text-[9px] block mb-0.5 tracking-wider">🔴 Live Notice</span>
+            ${t.liveMessage}
+          </div>
+        </div>
+      ` : ''}
+
+      ${t.status === 'live' && t.youtubeLink ? `
+        <div class="pt-1">
+          <a href="${t.youtubeLink}" target="_blank" rel="noopener noreferrer" class="b-live-stream flex items-center justify-center gap-2 w-full py-1.5 bg-red hover:bg-[#cc3540] text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-red/20">
+            <i class="fab fa-youtube text-sm"></i> Watch Live YouTube Stream
+          </a>
+        </div>
+      ` : ''}
+
+      <div class="pt-2 flex gap-2 flex-wrap">
+        <button class="b-part flex-1 min-w-[100px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-users mr-1"></i> Slots
+        </button>
+        <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-list-ol mr-1"></i> Leaderboard
+        </button>
+        <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <i class="fas fa-flag mr-1"></i> Report
+        </button>
+      </div>
+    `;
+
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
+      handleTourCardClick(t);
+    });
+
+    card.querySelector('.b-report').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openReportCheat(t.id, t.name);
+    });
+
+    card.querySelector('.b-part').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTournamentParticipation(t);
+    });
+
+    card.querySelector('.b-leaderboard').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTournamentLeaderboard(t);
+    });
+
+    listEl.appendChild(card);
+  });
+}
+
+function activeTournamentFilter() {
+  const activeBtn = document.querySelector('.fb.on');
+  return activeBtn ? activeBtn.dataset.f : 'all';
+}
+
+document.querySelectorAll('.fb').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fb').forEach(b => b.classList.remove('on', 'bg-gold', 'text-bg'));
+    btn.classList.add('on');
+    renderTournaments();
+  });
+});
+
+// Click card tournament detail & rules lock checkers
+function handleTourCardClick(tour) {
+  const profile = userProfile || guestProfile;
+  
+  // 1. Check if user is banned from tournaments (onlyBan) or overall banned
+  if (profile && (profile.banType === 'tournament' || profile.banned)) {
+    alert(`❌ Tournament Access Blocked!\n\nYou are banned from participating in tournaments.\n\nReason: ${profile.banReason || 'Unspecified Rule Violations'}\n\nIf you feel this is unfair, try contacting live support.`);
+    return;
+  }
+
+  // 2. Check if user is already approved/verified in this tournament
+  const reg = userRegs[tour.id];
+  if (reg && reg.status === 'approved') {
+    alert(`you are already registered`);
+    return;
+  }
+
+  // Otherwise, if rejected or not registered, allow registration flow
+  openTournamentRegister(tour);
+}
+
+// Open and control Tournament Detail Form Modal
+let activeRegisterTour = null;
+function openTournamentRegister(tour) {
+  if (guestProfile) {
+    alert('Guest accounts are restricted from registering for tournaments. Please register a real profile!');
+    return;
+  }
+
+  activeRegisterTour = tour;
+  $('tdetName').textContent = tour.name;
+  $('tdetGame').textContent = tour.game || 'Grand RP Mobile';
+  $('tdetPlayers').textContent = `${tour.registered || 0}/${tour.maxPlayers || 32}`;
+  $('tdetPrize').textContent = tour.prize || 'TBD';
+  $('tdetStatus').textContent = tour.status;
+  $('tdetExtra').textContent = `Format: ${tour.teamType || 'Solo'} — Entry: ${tour.entryFee || 'Free'}`;
+
+  // Reset steps
+  document.querySelectorAll('#tregStep1, #tregStep2, #tregStep3, #tregStep4').forEach(step => step.classList.add('hidden'));
+  $('tregStep1').classList.remove('hidden');
+
+  $('tregRealName').value = '';
+  $('tregGameName').value = '';
+  $('tregUID').value = (userProfile && userProfile.gameUID) ? userProfile.gameUID : '';
+  $('tregAge').value = '';
+  $('tregCheck1').checked = false;
+  $('tregCheck2').checked = false;
+
+  $('mTourDetail').classList.remove('hidden');
+}
+
+$('bCloseTourDetail').addEventListener('click', () => $('mTourDetail').classList.add('hidden'));
+$('bParticipate').addEventListener('click', () => {
+  if (activeRegisterTour.status === 'ended') {
+    alert('This tournament has already ended!');
+    return;
+  }
+  $('tregStep1').classList.add('hidden');
+  $('tregStep2').classList.remove('hidden');
+});
+
+$('tregDecline').addEventListener('click', () => $('mTourDetail').classList.add('hidden'));
+$('tregAgree').addEventListener('click', () => {
+  if (!$('tregRealName').value.trim() || !$('tregGameName').value.trim() || !$('tregUID').value.trim() || !$('tregAge').value.trim()) {
+    alert('Please fill out all required fields!');
+    return;
+  }
+  if (!$('tregCheck1').checked || !$('tregCheck2').checked) {
+    alert('You must accept the terms & anti-cheat guidelines!');
+    return;
+  }
+
+  // Parse the entry fee
+  const feeString = activeRegisterTour.entryFee || '';
+  let feeAmount = 0;
+  if (feeString && !feeString.toLowerCase().includes('free')) {
+    const matches = feeString.match(/\d+/);
+    if (matches) feeAmount = parseInt(matches[0], 10);
+  }
+
+  const balance = userProfile ? (userProfile.balance || 0) : 0;
+
+  $('tregFeeAX').textContent = `${feeAmount} AX Coins`;
+  $('tregBalanceAX').textContent = `${balance} AX Coins`;
+  
+  if (balance < feeAmount) {
+    $('tregBalanceAfterAX').textContent = `Insufficient Balance`;
+    $('tregBalanceAfterAX').className = 'font-bold text-red';
+    $('tregStatusMsg').innerHTML = `<p class="text-red font-semibold">⚠️ Insufficient coins! You need ${feeAmount} AX Coins to register but you only have ${balance} AX Coins. Please deposit coins first.</p>`;
+    $('tregSubmit').disabled = true;
+    $('tregSubmit').classList.add('opacity-50', 'cursor-not-allowed');
+    $('tregSubmit').textContent = 'Insufficient Balance';
+  } else {
+    $('tregBalanceAfterAX').textContent = `${balance - feeAmount} AX Coins`;
+    $('tregBalanceAfterAX').className = 'font-bold text-green';
+    $('tregStatusMsg').innerHTML = `<p class="text-t2 font-medium">✅ You have enough coins. ${feeAmount} AX Coins will be deducted from your ArenaX wallet automatically when the admin approves your registration slot.</p>`;
+    $('tregSubmit').disabled = false;
+    $('tregSubmit').classList.remove('opacity-50', 'cursor-not-allowed');
+    $('tregSubmit').textContent = 'Confirm & Submit Entry';
+  }
+
+  $('tregStep2').classList.add('hidden');
+  $('tregStep3').classList.remove('hidden');
+});
+
+$('tregBack').addEventListener('click', () => {
+  $('tregStep3').classList.add('hidden');
+  $('tregStep2').classList.remove('hidden');
+});
+
+$('tregSubmit').addEventListener('click', async () => {
+  // Parse the entry fee again to double check
+  const feeString = activeRegisterTour.entryFee || '';
+  let feeAmount = 0;
+  if (feeString && !feeString.toLowerCase().includes('free')) {
+    const matches = feeString.match(/\d+/);
+    if (matches) feeAmount = parseInt(matches[0], 10);
+  }
+
+  const balance = userProfile ? (userProfile.balance || 0) : 0;
+  if (balance < feeAmount) {
+    alert('Insufficient coins! Please deposit more coins to register. ❌');
+    return;
+  }
+
+  $('tregSubmit').disabled = true;
+  $('tregSubmit').textContent = 'Submitting...';
+
+  try {
+    const autoTxnId = 'AX-WALLET-REG-' + Math.floor(100000 + Math.random() * 900000);
+    await addDoc(collection(db, 'tournament_registrations'), {
+      tournamentId: activeRegisterTour.id,
+      tournamentName: activeRegisterTour.name,
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      realName: $('tregRealName').value.trim(),
+      gameName: $('tregGameName').value.trim(),
+      gameUID: $('tregUID').value.trim(),
+      age: $('tregAge').value.trim(),
+      txnId: autoTxnId,
+      screenshot: 'Auto-verified ArenaX Wallet Hold',
+      status: 'pending',
+      submittedAt: serverTimestamp()
+    });
+
+    $('tregStep3').classList.add('hidden');
+    $('tregStep4').classList.remove('hidden');
+  } catch (err) {
+    alert('Registration error: ' + err.message);
+  } finally {
+    $('tregSubmit').disabled = false;
+    $('tregSubmit').textContent = 'Confirm & Submit Entry';
+  }
+});
+
+$('tregDone').addEventListener('click', () => $('mTourDetail').classList.add('hidden'));
+
+// ── CHEAT REPORTING WINDOW ──
+let activeReportTourId = '';
+function openReportCheat(tourId, tourName) {
+  if (guestProfile) {
+    alert('Guest profiles are restricted from filing tournament reports.');
+    return;
+  }
+  activeReportTourId = tourId;
+  $('repEventName').textContent = tourName;
+  $('repYourName').value = userProfile.name;
+  
+  $('repPlayerName').value = '';
+  $('repPlayerUID').value = '';
+  $('repReason').value = '';
+  $('repVideoUrl').value = '';
+
+  $('mReportCheat').classList.remove('hidden');
+}
+
+$('bCloseReportCheat').addEventListener('click', () => $('mReportCheat').classList.add('hidden'));
+$('bSubmitReportCheat').addEventListener('click', async () => {
+  const repName = $('repPlayerName').value.trim();
+  const repUID = $('repPlayerUID').value.trim();
+  const reason = $('repReason').value.trim();
+  const vidUrl = $('repVideoUrl').value.trim();
+
+  if (!repName || !repUID || !reason) {
+    alert('Please complete all required fields (*)!');
+    return;
+  }
+
+  $('bSubmitReportCheat').disabled = true;
+  $('bSubmitReportCheat').textContent = 'Submitting...';
+
+  try {
+    await addDoc(collection(db, 'tournament_reports'), {
+      tournamentId: activeReportTourId,
+      tournamentName: $('repEventName').textContent,
+      reporterId: userProfile.uid,
+      reporterName: userProfile.name,
+      reportedName: repName,
+      reportedUID: repUID,
+      hackType: $('repHackType').value,
+      reason: reason,
+      videoUrl: vidUrl,
+      status: 'open',
+      createdAt: serverTimestamp()
+    });
+
+    $('mReportCheat').classList.add('hidden');
+    alert('Cheat report submitted successfully! Live moderators will review the match logs and logs evidence within 24 hours. Verified reporting reduces unfair matches. ✅');
+  } catch (err) {
+    alert('Reporting Error: ' + err.message);
+  } finally {
+    $('bSubmitReportCheat').disabled = false;
+    $('bSubmitReportCheat').textContent = 'Submit Report';
+  }
+});
+
+// ── TOURNAMENTS PARTICIPATION & PROFILE PREVIEWS ──
+window.openTournamentParticipation = async function(tour) {
+  $('partTourName').textContent = tour.name;
+  const container = $('participantsContainer');
+  container.innerHTML = `
+    <div class="p-8 text-center text-t3 text-xs">
+      <i class="fas fa-circle-notch animate-spin text-2xl text-gold mb-2"></i>
+      <p>Loading verified registrations...</p>
+    </div>
+  `;
+  $('participationCountText').textContent = 'Loading...';
+  $('mTournamentParticipation').classList.remove('hidden');
+
+  try {
+    const qParts = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', tour.id),
+      where('status', '==', 'approved')
+    );
+    const snap = await getDocs(qParts);
+    container.innerHTML = '';
+    
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-t3 text-xs border border-dashed border-bdr/40 rounded-xl bg-card/40">
+          <i class="fas fa-user-slash text-2xl mb-2"></i>
+          <p>No verified participants yet for this event.</p>
+        </div>
+      `;
+      $('participationCountText').textContent = '0 Approved Slots';
       return;
     }
 
-    const tData = {
-      name: tName.trim(),
-      game: tGame.trim(),
-      prize: tPrize.trim() || 'TBD',
-      maxPlayers: parseInt(tMax) || 32,
-      date: tDate.trim() || 'TBA',
-      time: tTime.trim() || 'TBA',
-      entryFee: tFee.trim() || 'Free',
-      teamType: tTeamType,
-      status: tStatus
-    };
+    $('participationCountText').textContent = `${snap.size} Approved Slot(s)`;
 
-    try {
-      if (editingTour) {
-        // Edit existing
-        await updateDoc(doc(db, 'tournaments', editingTour.id), tData);
-        alert('Tournament updated successfully! ✅');
+    // Fetch and display each approved user
+    snap.forEach(docSnap => {
+      const reg = docSnap.data();
+      const pId = reg.userId;
+      const defaultName = reg.userName || 'Anonymous Player';
+      const pGameName = reg.gameName || defaultName;
+      const pGameUID = reg.gameUID || 'No Game ID';
+
+      // Use unique avatar seed based on player name/ID to show instantly
+      const seed = pId || defaultName;
+      const tempAv = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-card/60 border border-bdr/60 hover:border-gold/40 hover:bg-card rounded-xl flex items-center justify-between gap-3 transition duration-200 cursor-pointer';
+      
+      // We will define unique IDs to dynamically inject custom state when fetched
+      const avId = `part-av-${pId}-${docSnap.id}`;
+      const nameId = `part-name-${pId}-${docSnap.id}`;
+      const badgesContainerId = `part-badges-${pId}-${docSnap.id}`;
+      const rightSecId = `part-right-${pId}-${docSnap.id}`;
+
+      item.innerHTML = `
+        <div class="flex items-center gap-3">
+          <img class="w-10 h-10 rounded-full border border-bdr object-cover transition" src="${tempAv}" alt="Avatar" id="${avId}"/>
+          <div>
+            <div class="font-display font-bold text-sm text-white flex flex-wrap items-center gap-1" id="${nameId}">
+              <span>${defaultName}</span>
+              <i class="fas fa-check-circle text-green text-[10px]" title="Slot Verified"></i>
+            </div>
+            <div class="text-[10px] text-t3 font-medium">IGN: <span class="text-gold font-mono">${pGameName}</span></div>
+            <div class="flex gap-1 mt-0.5" id="${badgesContainerId}"></div>
+          </div>
+        </div>
+        <div class="text-right flex flex-col items-end gap-1" id="${rightSecId}">
+          <span class="px-2 py-0.5 text-[8px] font-bold bg-green/10 text-green rounded border border-green/20 uppercase tracking-wider">Slot OK</span>
+          <span class="text-[9px] text-t3 font-mono">UID: ${pGameUID}</span>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        openParticipantProfileCard(pId, reg);
+      });
+
+      // Try to load user's customized avatar and details if exists
+      getDoc(doc(db, 'users', pId)).then(uSnap => {
+        if (uSnap.exists()) {
+          const u = uSnap.data();
+          
+          // 1. Customized Avatar
+          if (u.av) {
+            const imgEl = item.querySelector(`#${avId}`);
+            if (imgEl) imgEl.src = u.av;
+          }
+
+          // 2. Custom Frame if Premium
+          if (u.premium && u.avatarFrame) {
+            const imgEl = item.querySelector(`#${avId}`);
+            if (imgEl) {
+              if (u.avatarFrame === 'gold') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-gold shadow-[0_0_8px_rgba(240,192,64,0.3)] object-cover';
+              } else if (u.avatarFrame === 'fire') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-red shadow-[0_0_8px_rgba(232,64,74,0.3)] object-cover';
+              } else if (u.avatarFrame === 'ice') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-blue shadow-[0_0_8px_rgba(79,158,255,0.3)] object-cover';
+              } else if (u.avatarFrame === 'royal') {
+                imgEl.className = 'w-10 h-10 rounded-full border border-purple shadow-[0_0_8px_rgba(167,139,250,0.3)] object-cover';
+              }
+            }
+          }
+
+          // 3. Customized Display Name & Color
+          const nameContainer = item.querySelector(`#${nameId}`);
+          if (nameContainer) {
+            const nameSpan = nameContainer.querySelector('span');
+            if (nameSpan) {
+              nameSpan.textContent = u.name || defaultName;
+              if (u.premium && u.nameColor) {
+                nameSpan.style.color = u.nameColor;
+              }
+            }
+          }
+
+          // 4. Badges (Premium, Rank)
+          const badgesContainer = item.querySelector(`#${badgesContainerId}`);
+          if (badgesContainer) {
+            let badgesHTML = '';
+            if (u.premium) {
+              badgesHTML += `<span class="px-1.5 py-0.2 text-[7px] font-bold bg-purple/10 text-purple rounded border border-purple/20 uppercase flex items-center gap-0.5"><i class="fas fa-crown text-[6px]"></i> Premium</span>`;
+            }
+            if (u.rank) {
+              badgesHTML += `<span class="px-1.5 py-0.2 text-[7px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase">${u.rank}</span>`;
+            }
+            badgesContainer.innerHTML = badgesHTML;
+          }
+        }
+      }).catch(e => console.error('Error fetching participant details in check participation list: ', e));
+
+      container.appendChild(item);
+    });
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="p-6 bg-red/10 border border-red/20 rounded-xl text-center text-xs text-red">
+        <i class="fas fa-exclamation-triangle text-xl mb-1.5"></i>
+        <p>Failed loading players: ${err.message}</p>
+      </div>
+    `;
+    $('participationCountText').textContent = 'Error';
+  }
+};
+
+$('bCloseParticipation').addEventListener('click', () => $('mTournamentParticipation').classList.add('hidden'));
+
+// ── DETAILED PLAYER CARD MODAL DISPLAY ──
+window.openParticipantProfileCard = async function(pId, registrationData) {
+  // Reset fields to default loading state
+  $('vPartName').textContent = registrationData.userName || 'Player';
+  $('vPartHandle').textContent = registrationData.userHandle || '@player#0000';
+  $('vPartBio').textContent = 'Loading customized bio...';
+  $('vPartCountry').textContent = '🌍 Loading...';
+  $('vPartFavGame').textContent = 'Loading...';
+  $('vPartGameUID').textContent = registrationData.gameUID || 'None';
+  $('vPartAv').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(pId)}`;
+  
+  // Reset badges
+  $('vPartBadges').innerHTML = `
+    <span class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-t3 rounded border border-neutral-700 uppercase">Unranked</span>
+  `;
+
+  // Hide socials by default
+  $('vPartSocialsCard').classList.add('hidden');
+  $('vPartSocialsList').innerHTML = '';
+
+  // Apply default border / gradient
+  $('vPartCard').className = 'p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-card to-card/40';
+
+  // Open the view modal
+  $('mViewParticipantProfile').classList.remove('hidden');
+
+  try {
+    const uSnap = await getDoc(doc(db, 'users', pId));
+    if (uSnap.exists()) {
+      const u = uSnap.data();
+      
+      // Avatar
+      if (u.av) $('vPartAv').src = u.av;
+
+      // Name & bio
+      $('vPartName').textContent = u.name || registrationData.userName;
+      $('vPartHandle').textContent = u.handle || registrationData.userHandle || `@player#${pId.slice(0, 4)}`;
+      $('vPartBio').textContent = u.bio || 'This player has not written a custom bio yet.';
+
+      // Details
+      $('vPartCountry').textContent = u.country ? `🌍 ${u.country}` : '🌍 Other';
+      $('vPartFavGame').textContent = u.favoriteGame || 'None Selected';
+      $('vPartGameUID').textContent = u.gameUID || registrationData.gameUID || 'None';
+
+      // Customized color name if premium
+      if (u.premium && u.nameColor) {
+        $('vPartName').style.color = u.nameColor;
       } else {
-        // Create new
-        await addDoc(collection(db, 'tournaments'), {
-          ...tData,
-          registered: 0,
-          createdAt: serverTimestamp()
-        });
-        alert('Tournament created successfully! ✅');
+        $('vPartName').style.color = '';
       }
-      setShowTourModal(false);
-      setEditingTour(null);
-      // Reset inputs
-      setTName('');
-      setTPrize('');
-      setTMax('32');
-      setTDate('');
-      setTTime('');
-      setTFee('Free');
-    } catch (error: any) {
-      alert('Tournament Save Error: ' + error.message);
+
+      // Banner themes / Avatar frame glow styling if premium
+      if (u.premium) {
+        // Banner background custom style
+        if (u.bannerTheme) {
+          if (u.bannerTheme === 'gold') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-gold/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#f0c040]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'cosmic') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-purple/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#a78bfa]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'cyber') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-blue/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#4f9eff]/10 to-[#141828]';
+          } else if (u.bannerTheme === 'crimson') {
+            $('vPartCard').className = 'p-5 rounded-xl border border-red/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#e8404a]/10 to-[#141828]';
+          }
+        }
+
+        // Avatar glow frame matching u.avatarFrame
+        if (u.avatarFrame) {
+          if (u.avatarFrame === 'gold') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-gold shadow-[0_0_15px_rgba(240,192,64,0.4)] object-cover';
+          } else if (u.avatarFrame === 'fire') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-red shadow-[0_0_15px_rgba(232,64,74,0.4)] object-cover';
+          } else if (u.avatarFrame === 'ice') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-blue shadow-[0_0_15px_rgba(79,158,255,0.4)] object-cover';
+          } else if (u.avatarFrame === 'royal') {
+            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-purple shadow-[0_0_15px_rgba(167,139,250,0.4)] object-cover';
+          }
+        } else {
+          $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
+        }
+      } else {
+        $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
+      }
+
+      // Render Badges
+      let badgesHTML = '';
+      if (u.rank) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase"><i class="fas fa-star mr-1"></i> ${u.rank}</span>`;
+      } else {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-neutral-800 text-t2 rounded border border-neutral-700 uppercase">Unranked</span>`;
+      }
+
+      if (u.premium) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-purple/15 text-purple rounded border border-purple/20 uppercase"><i class="fas fa-crown mr-1"></i> Premium</span>`;
+      }
+
+      if (u.specialBadge) {
+        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 rounded border border-blue-500/20 uppercase"><i class="fas fa-award mr-1"></i> ${u.specialBadge}</span>`;
+      }
+      $('vPartBadges').innerHTML = badgesHTML;
+
+      // Social Links
+      let socialButtonsHTML = '';
+      if (u.socials) {
+        if (u.socials.discord) {
+          socialButtonsHTML += `
+            <span class="px-3 py-1.5 bg-[#5865F2]/10 border border-[#5865F2]/30 text-[#5865F2] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#5865F2]/20 transition">
+              <i class="fab fa-discord"></i> ${u.socials.discord}
+            </span>
+          `;
+        }
+        if (u.socials.instagram) {
+          socialButtonsHTML += `
+            <a href="https://instagram.com/${u.socials.instagram}" target="_blank" class="px-3 py-1.5 bg-[#E1306C]/10 border border-[#E1306C]/30 text-[#E1306C] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#E1306C]/20 transition">
+              <i class="fab fa-instagram"></i> @${u.socials.instagram}
+            </a>
+          `;
+        }
+        if (u.socials.youtube) {
+          socialButtonsHTML += `
+            <a href="${u.socials.youtube}" target="_blank" class="px-3 py-1.5 bg-[#FF0000]/10 border border-[#FF0000]/30 text-[#FF0000] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#FF0000]/20 transition">
+              <i class="fab fa-youtube"></i> YouTube
+            </a>
+          `;
+        }
+      }
+
+      if (socialButtonsHTML) {
+        $('vPartSocialsList').innerHTML = socialButtonsHTML;
+        $('vPartSocialsCard').classList.remove('hidden');
+      }
+
+    } else {
+      $('vPartBio').textContent = 'This player has not customized their profile.';
+      $('vPartCountry').textContent = '🌍 Other';
+      $('vPartFavGame').textContent = 'None';
     }
+  } catch (err) {
+    console.error('Failed loading profile details:', err);
+    $('vPartBio').textContent = 'Failed loading player customizations.';
+  }
+};
+
+$('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));CustomizationListener:
+
+// ── TOURNAMENT LEADERBOARD DISPLAY ──
+window.openTournamentLeaderboard = async function(tour) {
+  $('leadTourName').textContent = tour.name;
+  const container = $('leaderboardListContainer');
+  const podium = $('leaderboardPodium');
+  
+  // Reset
+  podium.classList.add('hidden');
+  container.innerHTML = `
+    <div class="p-8 text-center text-t3 text-xs">
+      <i class="fas fa-circle-notch animate-spin text-2xl text-gold mb-2"></i>
+      <p>Fetching leaderboard statistics...</p>
+    </div>
+  `;
+  $('leadTotalEntries').textContent = 'Loading...';
+  $('mTournamentLeaderboard').classList.remove('hidden');
+
+  try {
+    const q = query(
+      collection(db, 'leaderboards'),
+      where('tournamentId', '==', tour.id)
+    );
+    const snap = await getDocs(q);
+    container.innerHTML = '';
+
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-t3 text-xs border border-dashed border-bdr/40 rounded-xl bg-card/40">
+          <i class="fas fa-trophy text-2xl mb-2 text-t3"></i>
+          <p>No leaderboard records found for this tournament yet.</p>
+          <p class="text-[10px] text-t3/80 mt-1">Staff will update rankings as matches finalize.</p>
+        </div>
+      `;
+      $('leadTotalEntries').textContent = '0 Entries';
+      return;
+    }
+
+    $('leadTotalEntries').textContent = `${snap.size} ENTRANT(S)`;
+
+    // Map entries
+    const entries = [];
+    snap.forEach(docSnap => {
+      entries.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    // Sort by rank explicitly just in case index is creating delays
+    entries.sort((a, b) => Number(a.rank) - Number(b.rank));
+
+    // Podium Setup (Ranks 1, 2, 3)
+    const first = entries.find(e => Number(e.rank) === 1);
+    const second = entries.find(e => Number(e.rank) === 2);
+    const third = entries.find(e => Number(e.rank) === 3);
+
+    if (first || second || third) {
+      podium.classList.remove('hidden');
+      
+      // Rank 1
+      if (first) {
+        $('podium1Name').textContent = first.playerName;
+        $('podium1Score').textContent = first.score || 'Champion';
+        $('podium1Av').src = first.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(first.playerName)}`;
+      } else {
+        $('podium1Name').textContent = 'TBA';
+        $('podium1Score').textContent = '-';
+        $('podium1Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba1';
+      }
+
+      // Rank 2
+      if (second) {
+        $('podium2Name').textContent = second.playerName;
+        $('podium2Score').textContent = second.score || 'Runner-up';
+        $('podium2Av').src = second.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(second.playerName)}`;
+      } else {
+        $('podium2Name').textContent = 'TBA';
+        $('podium2Score').textContent = '-';
+        $('podium2Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba2';
+      }
+
+      // Rank 3
+      if (third) {
+        $('podium3Name').textContent = third.playerName;
+        $('podium3Score').textContent = third.score || '3rd Place';
+        $('podium3Av').src = third.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(third.playerName)}`;
+      } else {
+        $('podium3Name').textContent = 'TBA';
+        $('podium3Score').textContent = '-';
+        $('podium3Av').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=tba3';
+      }
+    }
+
+    // List Container
+    entries.forEach(e => {
+      const rankBg = Number(e.rank) === 1 ? 'bg-gold/15 text-gold border-gold/30' :
+                     Number(e.rank) === 2 ? 'bg-slate-400/10 text-slate-300 border-slate-500/20' :
+                     Number(e.rank) === 3 ? 'bg-amber-700/15 text-amber-500 border-amber-800/20' :
+                     'bg-[#1e2440] text-t2 border-bdr/60';
+
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-card/60 border border-bdr/50 rounded-xl flex items-center justify-between gap-3 transition hover:bg-card';
+      item.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-6 h-6 rounded-full border flex items-center justify-center font-mono font-bold text-xs ${rankBg}">
+            ${e.rank}
+          </div>
+          <img class="w-8 h-8 rounded-full border border-bdr object-cover" src="${e.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(e.playerName)}"/>
+          <div>
+            <div class="font-bold text-sm text-white flex items-center gap-1.5">
+              ${e.playerName}
+              ${e.userId ? `<span class="text-[8px] bg-gold/10 text-gold px-1.5 py-0.2 rounded border border-gold/20 flex items-center gap-0.5"><i class="fas fa-check-circle text-[7px]"></i> Verified</span>` : ''}
+            </div>
+            ${e.playerHandle ? `<div class="text-[9px] text-t3 font-medium">${e.playerHandle}</div>` : ''}
+          </div>
+        </div>
+        <div class="text-right flex flex-col items-end gap-0.5">
+          <span class="text-xs font-bold font-mono text-gold">${e.score || 'Completed'}</span>
+          ${e.userId ? `
+            <button class="b-view-p-card text-[9px] text-blue-400 hover:text-white hover:underline font-bold" data-uid="${e.userId}">
+              View Profile <i class="fas fa-chevron-right text-[7px]"></i>
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      if (e.userId) {
+        item.querySelector('.b-view-p-card').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          // Fetch registration data placeholder to reuse the profile display modal
+          const dummyReg = {
+            userName: e.playerName,
+            userHandle: e.playerHandle || '@player#0000',
+            gameUID: 'Linked Profile'
+          };
+          openParticipantProfileCard(e.userId, dummyReg);
+        });
+      }
+
+      container.appendChild(item);
+    });
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="p-6 bg-red/10 border border-red/20 rounded-xl text-center text-xs text-red">
+        <i class="fas fa-exclamation-triangle text-xl mb-1.5"></i>
+        <p>Failed loading leaderboard: ${err.message}</p>
+      </div>
+    `;
+    $('leadTotalEntries').textContent = 'Error';
+  }
+};
+
+$('bCloseLeaderboard').addEventListener('click', () => $('mTournamentLeaderboard').classList.add('hidden'));
+
+// ── ACCORDION INTERACTIVITY ──
+window.toggleAccordion = (index) => {
+  const accordions = document.querySelectorAll('.ai .ab');
+  const icons = document.querySelectorAll('.ai i.fa-chevron-down');
+  
+  accordions.forEach((ab, i) => {
+    if (i === index) {
+      ab.classList.toggle('hidden');
+      icons[i].classList.toggle('rotate-180');
+    } else {
+      ab.classList.add('hidden');
+      icons[i].classList.remove('rotate-180');
+    }
+  });
+};
+
+// Search rules
+$('rSearch').addEventListener('input', (e) => {
+  const queryStr = e.target.value.toLowerCase();
+  document.querySelectorAll('.ai').forEach(ai => {
+    const text = ai.textContent.toLowerCase();
+    ai.classList.toggle('hidden', !text.includes(queryStr));
+  });
+});
+
+// ── WALLET DEPOSITS & TRANSACTIONS ──
+let selectedDepMethod = 'jc';
+const payInstructions = {
+  jc: '<strong>JazzCash Transfer:</strong><br/>1. Open your JazzCash Mobile App.<br/>2. Select Send Money → Mobile Account.<br/>3. Enter Receiver Number: <strong class="text-gold">0302-4686897</strong>.<br/>4. Enter PKR Amount & confirm.<br/>5. Put Ref Key: <strong class="text-gold">AX-COINS</strong>.<br/>6. Enter Transaction ID (TXN ID) below to claim coins instantly.',
+  ep: '<strong>EasyPaisa Transfer:</strong><br/>1. Open your EasyPaisa Mobile App.<br/>2. Select Send Money → EasyPaisa Mobile Account.<br/>3. Enter Receiver Number: <strong class="text-gold">0315-9876543</strong>.<br/>4. Enter PKR Amount & confirm.<br/>5. Put Ref Key: <strong class="text-gold">AX-COINS</strong>.<br/>6. Enter Transaction ID (TXN ID) below to claim coins instantly.'
+};
+
+$('bDep').addEventListener('click', () => {
+  $('payStep1').classList.remove('hidden');
+  $('payStep2').classList.add('hidden');
+  $('payAmtInp').value = '';
+  $('mPayment').classList.remove('hidden');
+});
+
+document.querySelectorAll('.pm-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedDepMethod = btn.dataset.m;
+    $('payInstr').innerHTML = payInstructions[selectedDepMethod];
+    $('payStep1').classList.add('hidden');
+    $('payStep2').classList.remove('hidden');
+  });
+});
+
+$('payBackBtn').addEventListener('click', () => {
+  $('payStep2').classList.add('hidden');
+  $('payStep1').classList.remove('hidden');
+});
+
+document.querySelectorAll('.amt-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.amt-chip').forEach(c => c.classList.remove('border-gold', 'text-gold'));
+    chip.classList.add('border-gold', 'text-gold');
+    $('payAmtInp').value = chip.dataset.v;
+    $('payAmtInp').dispatchEvent(new Event('input'));
+  });
+});
+
+// Estimated Coins Live update listener
+$('payAmtInp').addEventListener('input', () => {
+  const amt = parseFloat($('payAmtInp').value) || 0;
+  if (amt > 0) {
+    const bonusAX = Math.floor(amt * 1.15);
+    $('payEstimatedAX').textContent = `${bonusAX.toLocaleString()} AX`;
+    $('payEstimatedAXLabel').innerHTML = `Includes <strong class="text-green">15% bonus</strong> coins!`;
+  } else {
+    $('payEstimatedAX').textContent = `0 AX`;
+    $('payEstimatedAXLabel').innerHTML = `Get <strong class="text-green">15% bonus</strong> AX coins on every deposit!`;
+  }
+});
+
+$('payConfirmBtn').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert('Connect a full account to deposit real money.');
+    return;
+  }
+  const amt = parseFloat($('payAmtInp').value);
+  if (!amt || amt < 50) {
+    alert('Minimum deposit is Rs 50!');
+    return;
+  }
+  const txnId = $('payTxnId').value.trim();
+  if (!txnId) {
+    alert('Please enter your payment Transaction ID (TXN ID / TID) to claim coins!');
+    return;
+  }
+
+  try {
+    const finalAX = Math.floor(amt * 1.15);
+    const methodStr = selectedDepMethod === 'jc' ? 'JazzCash' : 'EasyPaisa';
+
+    // Submit to Firestore deposit_requests collection
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      amountPKR: amt,
+      amountAX: finalAX,
+      method: methodStr,
+      txnId: txnId,
+      status: 'pending',
+      rejectionReason: '',
+      submittedAt: serverTimestamp()
+    });
+
+    $('mPayment').classList.add('hidden');
+    $('payAmtInp').value = '';
+    $('payTxnId').value = '';
+    $('payEstimatedAX').textContent = '0 AX';
+
+    alert(`Deposit request submitted successfully! ⏳\n\nYour transaction ID: ${txnId}\nPKR Amount: Rs ${amt}\nAX Coins: ${finalAX} AX\n\nPlease wait for administration to review your request. We are verifying your payment.`);
+  } catch (err) {
+    alert('Error submitting deposit request: ' + err.message);
+  }
+});
+
+function renderUserDeposits(list) {
+  const histEl = $('wHist');
+  if (!histEl) return;
+  
+  if (list.length === 0) {
+    histEl.innerHTML = `
+      <div class="p-6 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+        <i class="fas fa-receipt text-2xl mb-1.5"></i>
+        <p>No recorded transactions yet.</p>
+      </div>
+    `;
+    return;
+  }
+
+  histEl.innerHTML = '';
+  list.forEach(tx => {
+    const isWithdrawal = tx.type === 'withdrawal' || tx.type === 'withdraw' || (tx.type === 'adjustment' && tx.amount < 0);
+    const item = document.createElement('div');
+    item.className = 'p-3.5 bg-card border border-bdr rounded-xl flex flex-col gap-2.5';
+
+    let statusHtml = '';
+    let statusClass = '';
+    let bgIconClass = '';
+    let textAmtClass = '';
+
+    if (tx.type === 'adjustment') {
+      const isAdd = tx.amount >= 0;
+      statusClass = isAdd ? 'text-green bg-green/10 border border-green/20' : 'text-red bg-red/10 border border-red/20';
+      bgIconClass = isAdd ? 'bg-green/10 border border-green/20 text-green' : 'bg-red/10 border border-red/20 text-red';
+      textAmtClass = isAdd ? 'text-green' : 'text-red';
+      statusHtml = `
+        <div class="flex items-center gap-1 text-[10px] font-bold ${isAdd ? 'text-green' : 'text-red'} uppercase">
+          <i class="fas ${isAdd ? 'fa-check-circle' : 'fa-times-circle'}"></i> Balance Adjusted
+        </div>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">${tx.message || (isAdd ? 'Coins added by Admin.' : 'Coins deducted by Admin.')}</p>
+      `;
+      
+      const dateStr = tx.timestamp || 'Just now';
+      const amountAX = Math.abs(tx.amount);
+      const methodLabel = tx.account || 'Admin Adjustment';
+      const txnLabel = tx.id || 'ADJ';
+      
+      item.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
+              <i class="fas ${isAdd ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+            </div>
+            <div>
+              <div class="text-white font-bold uppercase text-[10px]">${methodLabel}</div>
+              <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-display font-black text-sm ${textAmtClass}">
+              ${isAdd ? '+' : '-'}${amountAX} AX
+            </div>
+            <div class="text-[9px] text-t3 font-mono">-</div>
+          </div>
+        </div>
+        
+        <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
+          <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
+            <span class="text-t3 uppercase">ID: ${txnLabel}</span>
+            <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">approved</span>
+          </div>
+          ${statusHtml}
+        </div>
+      `;
+    } else {
+      if (tx.status === 'pending') {
+        statusClass = 'text-gold bg-gold/10 border border-gold/20';
+        bgIconClass = 'bg-gold/10 border border-gold/20 text-gold';
+        textAmtClass = 'text-gold';
+        statusHtml = isWithdrawal ? `
+          <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+            Withdrawal Pending Review
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to process your withdrawal request... Will be credited in 24-48 hours.</p>
+        ` : `
+          <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+            Pending Administration Review
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to review your request... We are checking your TXN ID.</p>
+        `;
+      } else if (tx.status === 'approved') {
+        statusClass = 'text-green bg-green/10 border border-green/20';
+        bgIconClass = isWithdrawal ? 'bg-red/10 border border-red/20 text-red' : 'bg-green/10 border border-green/20 text-green';
+        textAmtClass = isWithdrawal ? 'text-red' : 'text-green';
+        statusHtml = isWithdrawal ? `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+            <i class="fas fa-arrow-up"></i> Successful Withdrawal
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! Rs ${tx.amountPKR} sent to ${tx.method}.</p>
+        ` : `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-green uppercase">
+            <i class="fas fa-check-circle"></i> Successful deposit
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! ${tx.amountAX} AX Coins credited to wallet.</p>
+        `;
+      } else {
+        statusClass = 'text-red bg-red/10 border border-red/20';
+        bgIconClass = 'bg-red/10 border border-red/20 text-red';
+        textAmtClass = 'text-red';
+        statusHtml = `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+            <i class="fas fa-times-circle"></i> Rejected ${isWithdrawal ? 'Withdrawal' : 'Deposit'}
+          </div>
+          <p class="text-[9px] text-red/80 font-semibold leading-normal mt-0.5">Reason: ${tx.rejectionReason || 'Invalid details.'}</p>
+        `;
+      }
+
+      const dateStr = tx.submittedAt ? new Date(tx.submittedAt.seconds * 1000).toLocaleString() : 'Just now';
+
+      item.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
+              <i class="fas ${isWithdrawal ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+            </div>
+            <div>
+              <div class="text-white font-bold uppercase text-[10px]">${isWithdrawal ? 'Withdrawal' : 'Deposit'} (${tx.method})</div>
+              <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-display font-black text-sm ${textAmtClass}">
+              ${isWithdrawal ? '-' : '+'}${tx.amountAX} AX
+            </div>
+            <div class="text-[9px] text-t3 font-mono">Rs ${tx.amountPKR}</div>
+          </div>
+        </div>
+        
+        <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
+          <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
+            <span class="text-t3 uppercase">ID: ${tx.txnId}</span>
+            <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">${tx.status}</span>
+          </div>
+          ${statusHtml}
+        </div>
+      `;
+    }
+
+    histEl.appendChild(item);
+  });
+}
+
+$('bWith').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert('Connect a full account to request withdrawals.');
+    return;
+  }
+  const curBal = userProfile.balance || 0;
+  if (curBal <= 0) {
+    alert('No balance available to withdraw!');
+    return;
+  }
+  const amtStr = prompt(`Withdraw how many AX Coins? (Max: ${curBal})`);
+  if (!amtStr) return;
+  const amt = parseFloat(amtStr);
+  if (isNaN(amt) || amt <= 0 || amt > curBal) {
+    alert('Invalid withdrawal amount!');
+    return;
+  }
+  const account = prompt('Enter your EasyPaisa / JazzCash Account Number and Name to receive PKR:');
+  if (!account || !account.trim()) {
+    alert('Withdrawal account details are required!');
+    return;
+  }
+
+  try {
+    const newBal = curBal - amt;
+    // Deduct immediately to prevent double spending
+    await updateDoc(doc(db, 'users', userProfile.uid), {
+      balance: newBal
+    });
+
+    const txnId = `WTH-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Save as a withdrawal type under deposit_requests collection
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      amountPKR: amt, // For withdrawals, coin-to-PKR is 1:1
+      amountAX: amt,
+      method: 'EasyPaisa/JazzCash',
+      txnId: txnId,
+      status: 'pending',
+      type: 'withdrawal',
+      accountDetails: account.trim(),
+      rejectionReason: '',
+      submittedAt: serverTimestamp()
+    });
+
+    alert(`Withdrawal request submitted successfully! ⏳\n\nCoins Deducted: ${amt} AX\nTransaction ID: ${txnId}\n\nOur team will review and verify your request within 24-48 hours. PKR will be sent to:\n${account}`);
+  } catch (err) {
+    alert('Failed to submit withdrawal: ' + err.message);
+  }
+});
+
+$('bClosePayment').addEventListener('click', () => $('mPayment').classList.add('hidden'));
+$('bClosePayment2').addEventListener('click', () => $('mPayment').classList.add('hidden'));
+
+// Copy Referral Link Event
+$('bCopyReferral').addEventListener('click', () => {
+  if (!userProfile) {
+    alert('Please register and login to get a unique referral link.');
+    return;
+  }
+  const input = $('referralLinkInput');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = $('bCopyReferral');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      btn.classList.add('bg-green-500', 'text-white');
+      btn.classList.remove('bg-gold', 'text-bg');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('bg-green-500', 'text-white');
+        btn.classList.add('bg-gold', 'text-bg');
+      }, 2000);
+    }).catch(err => {
+      console.error('Copy failed: ', err);
+      input.select();
+    });
+  } else {
+    input.select();
+    document.execCommand('copy');
+    const btn = $('bCopyReferral');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+  }
+});
+
+// ── CUSTOMIZE PROFILE MODAL ──
+const bannerGradients = {
+  red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+  gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
+  blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+  purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+  green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+  sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+  ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+  dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+};
+
+const nameColors = {
+  white: '#ffffff',
+  gold: '#c0a030',
+  red: '#ff4d4d',
+  blue: '#3b82f6',
+  green: '#10b981',
+  purple: '#8b5cf6',
+  orange: '#f97316',
+  cyan: '#06b6d4'
+};
+
+function loadBannerThemeSelector() {
+  const container = $('custBannerThemes');
+  const isPremium = userProfile ? userProfile.premium : false;
+  container.innerHTML = Object.keys(bannerGradients).map(theme => `
+    <button type="button" class="theme-opt h-10 rounded-lg border border-bdr relative transition flex items-center justify-center cursor-pointer ${isPremium ? '' : 'opacity-60'}" data-theme="${theme}" style="background: ${bannerGradients[theme]}">
+      <span class="text-[9px] font-bold uppercase tracking-wider text-white/90 bg-black/40 px-1.5 py-0.5 rounded">${theme}</span>
+      <div class="theme-check absolute inset-0 border border-gold rounded-lg ${selectedBannerTheme === theme ? '' : 'hidden'} flex items-center justify-center bg-black/25">
+        <i class="fas fa-check text-gold text-xs"></i>
+      </div>
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.theme-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Profile Banner Theme is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      container.querySelectorAll('.theme-opt .theme-check').forEach(c => c.classList.add('hidden'));
+      opt.querySelector('.theme-check').classList.remove('hidden');
+      selectedBannerTheme = opt.dataset.theme;
+    });
+  });
+}
+
+function loadNameColorSelector() {
+  const container = $('custNameColors');
+  const isPremium = userProfile ? userProfile.premium : false;
+  container.innerHTML = Object.keys(nameColors).map(colorKey => `
+    <button type="button" class="color-opt w-full aspect-square rounded-full border border-bdr relative transition flex items-center justify-center cursor-pointer ${isPremium ? '' : 'opacity-60'}" data-color="${nameColors[colorKey]}" style="background-color: ${nameColors[colorKey]}">
+      <div class="color-check absolute inset-0 border border-white rounded-full ${selectedNameColor.toLowerCase() === nameColors[colorKey].toLowerCase() ? '' : 'hidden'} flex items-center justify-center bg-black/20">
+        <i class="fas fa-check text-white text-[9px]"></i>
+      </div>
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.color-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Username Color is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      container.querySelectorAll('.color-opt .color-check').forEach(c => c.classList.add('hidden'));
+      opt.querySelector('.color-check').classList.remove('hidden');
+      selectedNameColor = opt.dataset.color;
+    });
+  });
+}
+
+function loadAvatarPickerGrid() {
+  const grid = $('custAvatars');
+  const userSeed = (userProfile && userProfile.av && userProfile.av.includes('seed=')) ? userProfile.av.split('seed=')[1] : null;
+  const isPremium = userProfile ? userProfile.premium : false;
+  
+  grid.innerHTML = AVATAR_SEEDS.map((s, i) => {
+    const isSelected = userSeed === s || (!userSeed && i === 0);
+    return `
+      <button class="cav-opt bg-ele border border-bdr rounded-xl p-1.5 transition overflow-hidden relative ${isPremium ? '' : 'opacity-60'} ${isSelected ? 'border-gold scale-105' : ''}" data-seed="${s}">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${s}" class="w-full h-auto object-cover rounded-lg" alt=""/>
+      </button>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.cav-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      if (userProfile && !userProfile.premium) {
+        alert('🔒 Avatar seed picker is a Premium feature!\n\nUpgrade to VIP Premium Pass to unlock this feature!');
+        return;
+      }
+      grid.querySelectorAll('.cav-opt').forEach(o => o.classList.remove('border-gold', 'scale-105'));
+      opt.classList.add('border-gold', 'scale-105');
+      selectedAvatarSeed = opt.dataset.seed;
+      selectedCustomAvatarUrl = null; // Clear custom upload if user picks a seed
+      $('custAvPreview').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAvatarSeed}`;
+    });
+  });
+}
+
+// Custom Avatar File Browse and Upload
+$('btnBrowseAvatar').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (userProfile && !userProfile.premium) {
+    alert('🔒 Custom Avatar Upload is a Premium feature!\n\nUpgrade to VIP Premium Pass to upload your own custom photo!');
+    return;
+  }
+  $('fileAvatar').click();
+});
+
+$('fileAvatar').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    alert('❌ Invalid file type! Please upload an image file.');
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    alert('❌ File is too large! Maximum size allowed is 3MB.');
+    return;
+  }
+
+  const statusEl = $('uploadStatus');
+  statusEl.classList.remove('hidden');
+  statusEl.innerHTML = `<span class="text-purple"><i class="fas fa-spinner fa-spin mr-1"></i> Uploading ${file.name}...</span>`;
+
+  try {
+    const timestamp = Date.now();
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+    const storagePath = `avatars/${userProfile.uid}_${timestamp}_${cleanFileName}`;
+    const storageRef = ref(storage, storagePath);
+
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    $('custAvPreview').src = downloadURL;
+    selectedCustomAvatarUrl = downloadURL;
+
+    statusEl.innerHTML = `<span class="text-green-400 font-semibold"><i class="fas fa-check mr-1"></i> Uploaded successfully!</span>`;
+  } catch (err) {
+    console.error('File upload failed:', err);
+    statusEl.innerHTML = `<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> Upload failed: ${err.message}</span>`;
+  }
+});
+
+$('bCloseCustomize').addEventListener('click', () => $('mCustomize').classList.add('hidden'));
+$('bCloseCustomizeCross').addEventListener('click', () => $('mCustomize').classList.add('hidden'));
+
+$('bSaveCustomize').addEventListener('click', async () => {
+  const name = $('custName').value.trim();
+  const country = $('custCountry').value;
+  const favoriteGame = $('custFavGame').value;
+  const gameUID = $('custGameUID').value.trim();
+  const socialDiscord = $('custDiscord').value.trim();
+  const socialInstagram = $('custInstagram').value.trim();
+  const socialYoutube = $('custYoutube').value.trim();
+
+  if (!name) {
+    alert('Display Name is required!');
+    return;
+  }
+
+  // Common updates for all users
+  const updateData = {
+    name,
+    country,
+    favoriteGame,
+    gameUID,
+    socialDiscord,
+    socialInstagram,
+    socialYoutube
   };
 
-  const handleOpenEditTour = (tour: Tournament) => {
-    setEditingTour(tour);
-    setTName(tour.name);
-    setTGame(tour.game);
-    setTPrize(tour.prize);
-    setTMax(tour.maxPlayers.toString());
-    setTDate(tour.date);
-    setTTime(tour.time);
-    setTFee(tour.entryFee);
-    setTTeamType(tour.teamType || 'Solo');
-    setTStat(tour.status);
-    setShowTourModal(true);
-  };
+  // Premium updates (Only applied if premium)
+  if (userProfile.premium) {
+    updateData.bio = $('custBio').value.trim();
+    updateData.bannerTheme = selectedBannerTheme;
+    updateData.avatarFrame = $('custAvatarFrame').value;
+    updateData.nameColor = selectedNameColor;
 
-  const handleDeleteTour = async (tourId: string) => {
-    if (!confirm('Are you sure you want to delete this tournament permanently? This action is irreversible.')) return;
+    if (selectedCustomAvatarUrl) {
+      updateData.av = selectedCustomAvatarUrl;
+    } else if (selectedAvatarSeed) {
+      updateData.av = `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAvatarSeed}`;
+    }
+  }
+
+  try {
+    await updateDoc(doc(db, 'users', userProfile.uid), updateData);
+    $('mCustomize').classList.add('hidden');
+    alert('Profile customizations saved successfully! ✅');
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// Open VIP Plans modal
+let premiumDuration = 'weekly';
+$('prmWeekly').addEventListener('click', () => {
+  premiumDuration = 'weekly';
+  $('prmWeekly').classList.add('border-purple');
+  $('prmWeekly').classList.remove('border-bdr');
+  $('prmMonthly').classList.remove('border-purple');
+  $('prmMonthly').classList.add('border-bdr');
+  $('bBuyPremium').textContent = 'Upgrade Weekly — 199 AX Coins';
+});
+
+$('prmMonthly').addEventListener('click', () => {
+  premiumDuration = 'monthly';
+  $('prmMonthly').classList.add('border-purple');
+  $('prmMonthly').classList.remove('border-bdr');
+  $('prmWeekly').classList.remove('border-purple');
+  $('prmWeekly').classList.add('border-bdr');
+  $('bBuyPremium').textContent = 'Upgrade Monthly — 399 AX Coins';
+});
+
+$('bBuyPremium').addEventListener('click', async () => {
+  const costCoins = premiumDuration === 'weekly' ? 199 : 399;
+  const balance = userProfile.balance || 0;
+  
+  if (balance < costCoins) {
+    alert('Insufficient coins! Please deposit more coins into your ArenaX wallet to purchase premium. ❌');
+    return;
+  }
+  
+  if (confirm(`Confirm activating Premium pass? This will deduct ${costCoins} AX Coins from your ArenaX wallet immediately.`)) {
     try {
-      await deleteDoc(doc(db, 'tournaments', tourId));
-      alert('Tournament deleted permanently!');
-    } catch (error: any) {
-      alert(error.message);
+      const newBal = balance - costCoins;
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        premium: true,
+        balance: newBal
+      });
+      
+      // Log transaction history
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: userProfile.uid,
+        userName: userProfile.name,
+        userEmail: userProfile.email || '',
+        type: 'withdrawal',
+        method: premiumDuration === 'weekly' ? 'Weekly Sub' : 'Monthly Sub',
+        amountPKR: 0,
+        amountAX: costCoins,
+        txnId: 'PRM-' + Math.floor(100000 + Math.random() * 900000),
+        status: 'approved',
+        submittedAt: serverTimestamp()
+      });
+      
+      $('mPremium').classList.add('hidden');
+      alert(`Congratulations! ArenaX Premium VIP activated. ${costCoins} AX Coins deducted. Access all benefits now! ✅`);
+    } catch (err) {
+      alert(err.message);
     }
-  };
+  }
+});
 
-  // User Page Filtering & Search
-  const filteredUsers = users.filter((u) => {
-    if (userFilter === 'premium' && !u.premium) return false;
-    if (userFilter === 'banned' && !u.banned) return false;
-    if (userSearch) {
-      const q = userSearch.toLowerCase();
-      return u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q) || (u.email && u.email.toLowerCase().includes(q));
+$('bClosePremium').addEventListener('click', () => $('mPremium').classList.add('hidden'));
+
+// ── FRIEND DIRECT MESSAGES LOGIC ──
+function loadFriendSystem() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+
+  // Real-time listen to friendRequests
+  onSnapshot(collection(db, 'users', profile.uid, 'friendRequests'), (snap) => {
+    const listEl = $('friendReqsList');
+    listEl.innerHTML = '';
+    
+    if (snap.empty) {
+      $('friendReqsWrap').classList.add('hidden');
+      return;
     }
-    return true;
+
+    $('friendReqsWrap').classList.remove('hidden');
+    snap.forEach(d => {
+      const r = d.data();
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-ele border border-bdr rounded-xl flex items-center justify-between text-xs font-semibold';
+      item.innerHTML = `
+        <div class="flex items-center gap-3">
+          <img src="${r.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + r.uid}" class="w-8 h-8 rounded-full border border-bdr"/>
+          <div>
+            <div class="text-white">${r.name}</div>
+            <div class="text-[9px] text-t3 font-medium">${r.handle}</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="b-acc w-7 h-7 bg-green/10 hover:bg-green/20 text-green rounded-full border border-green/20 transition flex items-center justify-center text-[10px]" data-uid="${r.uid}" data-name="${r.name}" data-handle="${r.handle}" data-av="${r.av}"><i class="fas fa-check"></i></button>
+          <button class="b-dec w-7 h-7 bg-red/10 hover:bg-red/20 text-red rounded-full border border-red/20 transition flex items-center justify-center text-[10px]" data-uid="${r.uid}"><i class="fas fa-times"></i></button>
+        </div>
+      `;
+
+      item.querySelector('.b-acc').addEventListener('click', (e) => acceptFriendRequest(e.currentTarget.dataset));
+      item.querySelector('.b-dec').addEventListener('click', (e) => declineFriendRequest(e.currentTarget.dataset.uid));
+      listEl.appendChild(item);
+    });
   });
 
-  return (
-    <div id="adminApp" className="block min-h-screen bg-[#07090f] text-[#f0f2ff] font-sans">
-      <style>{`
-        .ff-title { font-family: 'Rajdhani', sans-serif; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1e2440; border-radius: 4px; }
-      `}</style>
+  // Real-time listen to friends list
+  onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
+    const listEl = $('friendsList');
+    listEl.innerHTML = '';
 
-      <div className="flex h-screen overflow-hidden">
-        
-        {/* SIDEBAR NAVIGATION */}
-        <aside className="w-[220px] bg-[#0f1220] border-r border-[#1e2440] flex flex-col flex-shrink-0">
-          <div className="p-5 border-b border-[#1e2440] text-center">
-            <h2 className="ff-title text-xl font-extrabold tracking-wider">
-              Arena<span className="text-[#e8404a]">X</span> ADMIN
-            </h2>
-            <p className="text-[10px] text-[#4a5070] tracking-widest uppercase mt-0.5">Control Panel</p>
-          </div>
+    if (snap.empty) {
+      listEl.innerHTML = `
+        <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+          <i class="fas fa-user-friends text-2xl mb-2"></i>
+          <p>No active friends yet. Click "Add Friend" to start chatting!</p>
+        </div>`;
+      return;
+    }
 
-          <nav className="flex-1 py-4 overflow-y-auto space-y-1.5">
-            <div className="text-[10px] text-[#4a5070] uppercase font-bold tracking-wider px-5 py-2">Analytics</div>
-            
-            <button
-              onClick={() => setActivePage('pgDash')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgDash' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-chart-line w-4 text-center text-xs"></i>
-              Dashboard
-            </button>
-
-            <button
-              onClick={() => setActivePage('pgUsers')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgUsers' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-users w-4 text-center text-xs"></i>
-              Users Management
-            </button>
-
-            <div className="text-[10px] text-[#4a5070] uppercase font-bold tracking-wider px-5 py-2 pt-4">Tournaments</div>
-
-            <button
-              onClick={() => setActivePage('pgTours')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgTours' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-trophy w-4 text-center text-xs"></i>
-              Events List
-            </button>
-
-            <button
-              onClick={() => setActivePage('pgRegistrations')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgRegistrations' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-clipboard-list w-4 text-center text-xs"></i>
-              Registrations ({registrations.filter(r => r.status === 'pending').length})
-            </button>
-
-            <button
-              onClick={() => setActivePage('pgReports')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgReports' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-flag w-4 text-center text-xs"></i>
-              Cheat Reports ({reports.filter(r => r.status === 'open').length})
-            </button>
-
-            <div className="text-[10px] text-[#4a5070] uppercase font-bold tracking-wider px-5 py-2 pt-4">Customer Logs</div>
-
-            <button
-              onClick={() => setActivePage('pgSupport')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgSupport' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-headset w-4 text-center text-xs"></i>
-              Support Tickets ({tickets.filter(t => t.status === 'open').length})
-            </button>
-
-            <button
-              onClick={() => setActivePage('pgGlobalChat')}
-              className={`w-full text-left px-5 py-2.5 text-sm font-semibold flex items-center gap-3 transition ${activePage === 'pgGlobalChat' ? 'text-[#f0c040] bg-[#f0c040]/10 border-l-3 border-[#f0c040]' : 'text-[#8890b0] hover:bg-[#141828] hover:text-white border-l-3 border-transparent'}`}
-            >
-              <i className="fas fa-comments w-4 text-center text-xs"></i>
-              Global Chat Spectator
-            </button>
-          </nav>
-
-          <div className="p-4 border-t border-[#1e2440] space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#e8404a] text-white flex items-center justify-center text-xs font-bold uppercase">
-                AD
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-white truncate">Staff Moderator</div>
-                <div className="text-[9px] uppercase tracking-wider text-[#e8404a] font-bold">Admin Authority</div>
-              </div>
-            </div>
-
-            <button
-              onClick={onSwitchToPlayer}
-              className="w-full py-2 bg-[#1e2440] hover:bg-[#252a45] text-xs font-semibold rounded-lg text-[#8890b0] hover:text-white transition flex items-center justify-center gap-1.5"
-            >
-              <i className="fas fa-arrow-left"></i> Player Panel
-            </button>
-          </div>
-        </aside>
-
-        {/* MAIN BODY AREA */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-[#07090f]">
-          
-          {/* TOPBAR */}
-          <div className="h-14 bg-[#0f1220] border-b border-[#1e2440] flex items-center justify-between px-6">
-            <h3 className="ff-title text-lg font-bold text-white uppercase tracking-wider">
-              {activePage === 'pgDash' && 'Dashboard Overview'}
-              {activePage === 'pgUsers' && 'User Management Log'}
-              {activePage === 'pgTours' && 'Active Events List'}
-              {activePage === 'pgRegistrations' && 'Slots Verification'}
-              {activePage === 'pgReports' && 'Hack cheat Reports'}
-              {activePage === 'pgSupport' && 'Live Support Channels'}
-              {activePage === 'pgGlobalChat' && 'Global Chat Room Spectator'}
-            </h3>
-            <span className="text-xs text-[#4a5070] font-mono tracking-wide">{clockStr}</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
-            {/* ── DASHBOARD ANALYTICS ── */}
-            {activePage === 'pgDash' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-[#141828] border border-[#1e2440] rounded-xl">
-                    <div className="text-xs text-[#8890b0] uppercase font-bold tracking-wider">Total Users</div>
-                    <div className="ff-title text-3xl font-black text-[#f0c040] mt-1">{users.length}</div>
-                    <p className="text-[10px] text-[#4a5070] mt-1">Live profiles</p>
-                  </div>
-                  <div className="p-4 bg-[#141828] border border-[#1e2440] rounded-xl">
-                    <div className="text-xs text-[#8890b0] uppercase font-bold tracking-wider">Premium Users</div>
-                    <div className="ff-title text-3xl font-black text-[#a78bfa] mt-1">{users.filter(u=>u.premium).length}</div>
-                    <p className="text-[10px] text-[#4a5070] mt-1">VIP Passes</p>
-                  </div>
-                  <div className="p-4 bg-[#141828] border border-[#1e2440] rounded-xl">
-                    <div className="text-xs text-[#8890b0] uppercase font-bold tracking-wider">Pending Slotes</div>
-                    <div className="ff-title text-3xl font-black text-[#e8404a] mt-1">{registrations.filter(r=>r.status==='pending').length}</div>
-                    <p className="text-[10px] text-[#4a5070] mt-1">Slot approvals</p>
-                  </div>
-                  <div className="p-4 bg-[#141828] border border-[#1e2440] rounded-xl">
-                    <div className="text-xs text-[#8890b0] uppercase font-bold tracking-wider">Active Hack Reports</div>
-                    <div className="ff-title text-3xl font-black text-[#e8404a] mt-1">{reports.filter(r=>r.status==='open').length}</div>
-                    <p className="text-[10px] text-[#4a5070] mt-1">Unresolved cheats</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#1e2440] flex justify-between items-center bg-[#0f1220]/50">
-                    <h4 className="ff-title text-base font-bold text-white">Recent Registration Requests</h4>
-                    <button onClick={() => setActivePage('pgRegistrations')} className="text-xs text-[#f0c040] hover:underline font-semibold">View All Registrations →</button>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#0f1220]/30 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                          <th className="p-4">Player</th>
-                          <th className="p-4">Tournament</th>
-                          <th className="p-4">IGN / UID</th>
-                          <th className="p-4">TXN ID</th>
-                          <th className="p-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#1e2440]/30">
-                        {registrations.slice(0, 4).map((reg) => (
-                          <tr key={reg.id} className="hover:bg-white/[0.02]">
-                            <td className="p-4 font-semibold text-white">{reg.realName} <span className="text-[10px] text-[#4a5070] font-normal">{reg.userHandle}</span></td>
-                            <td className="p-4 text-[#f0c040] font-semibold">{reg.tournamentName}</td>
-                            <td className="p-4 text-[#8890b0]">{reg.gameName} <div className="text-[10px] text-[#4a5070] font-mono">{reg.gameUID}</div></td>
-                            <td className="p-4 text-blue-400 font-mono">{reg.txnId}</td>
-                            <td className="p-4 space-x-1 flex">
-                              {reg.status === 'pending' ? (
-                                <>
-                                  <button onClick={() => handleApproveRegistration(reg)} className="px-2.5 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded text-[11px] font-semibold">Approve</button>
-                                  <button onClick={() => handleRejectRegistration(reg)} className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded text-[11px] font-semibold">Decline</button>
-                                </>
-                              ) : (
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${reg.status === 'approved' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
-                                  {reg.status}
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                        {registrations.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="p-8 text-center text-[#4a5070]">No registration requests yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── USERS MANAGEMENT PAGE ── */}
-            {activePage === 'pgUsers' && (
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2.5 justify-between items-center">
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {['all', 'premium', 'banned'].map((filter) => (
-                      <button
-                        key={filter}
-                        onClick={() => setUserFilter(filter as any)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition ${userFilter === filter ? 'bg-[#f0c040] text-[#0a0c12]' : 'bg-[#141828] hover:bg-[#1e2440] border border-[#1e2440] text-[#8890b0]'}`}
-                      >
-                        {filter}
-                      </button>
-                    ))}
-                    <span className="w-[1px] h-4 bg-[#1e2440] mx-1"></span>
-                    <button
-                      onClick={() => {
-                        setNotifTargetType('all');
-                        setNotifTargetUser(null);
-                        setNotifTitle('');
-                        setNotifBody('');
-                        setShowNotifModal(true);
-                      }}
-                      className="px-3.5 py-1.5 bg-[#3b82f6]/10 hover:bg-[#3b82f6]/20 border border-[#3b82f6]/30 text-[#60a5fa] text-xs font-bold rounded-full transition uppercase tracking-wider flex items-center gap-1.5"
-                    >
-                      <i className="fas fa-bullhorn"></i> Broadcast to All
-                    </button>
-                  </div>
-
-                  <div className="flex bg-[#141828] border border-[#1e2440] px-3 py-1.5 rounded-lg text-xs items-center gap-2">
-                    <i className="fas fa-search text-[#4a5070]"></i>
-                    <input
-                      type="text"
-                      placeholder="Search name/handle..."
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      className="bg-transparent border-none outline-none text-white w-[180px]"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-[#0f1220]/40 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                        <th className="p-4">Profile</th>
-                        <th className="p-4">Balance</th>
-                        <th className="p-4">Role/Status</th>
-                        <th className="p-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1e2440]/30">
-                      {filteredUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-white/[0.01]">
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <img src={user.av} alt="Avatar" className="w-8 h-8 rounded-full border border-[#1e2440]" />
-                              <div>
-                                <div className="font-bold text-white">{user.name}</div>
-                                <div className="text-[10px] text-[#4a5070]">{user.handle}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4 font-mono font-bold text-[#f0c040]">{user.balance.toLocaleString()} AX</td>
-                          <td className="p-4">
-                            <div className="flex flex-col gap-1 items-start">
-                              {user.banned ? (
-                                <span className="px-2 py-0.5 bg-red-500/15 text-red-400 border border-red-500/20 text-[9px] font-bold rounded uppercase">
-                                  {user.banType === 'tournament' ? 'Tournament Banned' : 'Banned Account'}
-                                </span>
-                              ) : user.premium ? (
-                                <span className="px-2 py-0.5 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/20 text-[9px] font-bold rounded uppercase">
-                                  Premium VIP
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 bg-neutral-800 text-neutral-400 border border-neutral-700 text-[9px] font-bold rounded uppercase">
-                                  Free
-                                </span>
-                              )}
-                              {user.muted && (
-                                <span className="px-2 py-0.5 bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px] font-bold rounded uppercase">
-                                  Muted 🔇
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4 space-x-1 space-y-1">
-                            <button
-                              onClick={() => handleAdjustBalance(user)}
-                              className="px-2 py-1 bg-[#1e2340] border border-[#1e2440] hover:border-white text-white text-[11px] font-semibold rounded hover:bg-[#141828] transition"
-                            >
-                              Coins
-                            </button>
-                            <button
-                              onClick={() => handleTogglePremium(user)}
-                              className="px-2 py-1 bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 text-[#a78bfa] text-[11px] font-semibold rounded border border-[#a78bfa]/20 transition"
-                            >
-                              {user.premium ? 'Revoke VIP' : 'Give VIP'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setNotifTargetType('single');
-                                setNotifTargetUser(user);
-                                setNotifTitle('');
-                                setNotifBody('');
-                                setShowNotifModal(true);
-                              }}
-                              className="px-2 py-1 bg-[#3b82f6]/10 hover:bg-[#3b82f6]/20 text-[#60a5fa] text-[11px] font-semibold rounded border border-[#3b82f6]/20 transition"
-                            >
-                              Notify
-                            </button>
-                            {user.muted ? (
-                              <button
-                                onClick={() => handleUnmuteUser(user)}
-                                className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded border border-amber-500/20 transition"
-                              >
-                                Unmute
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setMuteUser(user);
-                                  setMuteDuration('1');
-                                  setMuteReason('');
-                                  setShowMuteModal(true);
-                                }}
-                                className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded border border-amber-500/20 transition"
-                              >
-                                Mute
-                              </button>
-                            )}
-                            {user.banned ? (
-                              <button
-                                onClick={() => handleUnbanUser(user)}
-                                className="px-2 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[11px] font-semibold rounded border border-green-500/20 transition"
-                              >
-                                Lift Ban
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setBanUser(user);
-                                  setBanType('full');
-                                  setBanDuration('30');
-                                  setBanReason('');
-                                  setShowBanModal(true);
-                                }}
-                                className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-semibold rounded border border-red-500/20 transition"
-                              >
-                                Ban
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredUsers.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="p-8 text-center text-[#4a5070]">No users match this description.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* ── TOURNAMENTS PAGE ── */}
-            {activePage === 'pgTours' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="ff-title text-base font-bold text-[#8890b0] uppercase tracking-wider">Configure Events</h4>
-                  <button
-                    onClick={() => {
-                      setEditingTour(null);
-                      setTName('');
-                      setTPrize('');
-                      setTMax('32');
-                      setTDate('');
-                      setTTime('');
-                      setTFee('Rs 100');
-                      setTTeamType('Solo');
-                      setTStat('upcoming');
-                      setShowTourModal(true);
-                    }}
-                    className="px-4 py-2 bg-[#e8404a] text-white text-xs font-bold rounded-lg hover:bg-[#cc3540] transition flex items-center gap-1.5"
-                  >
-                    <i className="fas fa-plus"></i> Add Tournament
-                  </button>
-                </div>
-
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-[#0f1220]/40 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                        <th className="p-4">Tournament / Date</th>
-                        <th className="p-4">Game</th>
-                        <th className="p-4">Format / Size</th>
-                        <th className="p-4">Slots</th>
-                        <th className="p-4">Prize Pool</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1e2440]/30">
-                      {tournaments.map((tour) => (
-                        <tr key={tour.id} className="hover:bg-white/[0.01]">
-                          <td className="p-4">
-                            <div className="font-bold text-white text-sm">{tour.name}</div>
-                            <div className="text-[10px] text-[#4a5070]">{tour.date} · {tour.time}</div>
-                          </td>
-                          <td className="p-4 text-[#8890b0]">{tour.game}</td>
-                          <td className="p-4 font-semibold text-[#a78bfa]">{tour.teamType || 'Solo'}</td>
-                          <td className="p-4 font-semibold text-white">{tour.registered}/{tour.maxPlayers}</td>
-                          <td className="p-4 font-bold text-[#f0c040]">{tour.prize}</td>
-                          <td className="p-4">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${tour.status==='live'?'bg-red-500/15 text-red-400':'bg-blue-500/15 text-blue-400'}`}>
-                              {tour.status}
-                            </span>
-                          </td>
-                          <td className="p-4 space-x-1">
-                            <button
-                              onClick={() => handleOpenEditTour(tour)}
-                              className="px-2 py-1 bg-[#1e2340] border border-[#1e2440] text-white text-[11px] font-semibold rounded hover:bg-[#141828] transition"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTour(tour.id)}
-                              className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-semibold rounded border border-red-500/20 transition"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {tournaments.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="p-8 text-center text-[#4a5070]">No tournaments configured yet.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* ── REGISTRATIONS VERIFICATION PAGE ── */}
-            {activePage === 'pgRegistrations' && (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  {['pending', 'approved', 'rejected', 'all'].map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setRegFilter(filter as any)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition ${regFilter === filter ? 'bg-[#f0c040] text-[#0a0c12]' : 'bg-[#141828] hover:bg-[#1e2440] border border-[#1e2440] text-[#8890b0]'}`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-[#0f1220]/40 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                        <th className="p-4">Player Details</th>
-                        <th className="p-4">Tournament</th>
-                        <th className="p-4">IGN & UID</th>
-                        <th className="p-4">Transaction Details</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1e2440]/30">
-                      {registrations
-                        .filter(r => regFilter === 'all' || r.status === regFilter)
-                        .map((reg) => (
-                          <tr key={reg.id} className="hover:bg-white/[0.01]">
-                            <td className="p-4">
-                              <div className="font-bold text-white">{reg.realName}</div>
-                              <div className="text-[10px] text-[#4a5070]">{reg.userHandle} (Age: {reg.age})</div>
-                            </td>
-                            <td className="p-4 text-[#f0c040] font-semibold">{reg.tournamentName}</td>
-                            <td className="p-4">
-                              <div className="font-semibold text-white">{reg.gameName}</div>
-                              <div className="text-[10px] text-[#4a5070] font-mono">UID: {reg.gameUID}</div>
-                            </td>
-                            <td className="p-4">
-                              <div className="font-mono text-blue-400 font-bold">{reg.txnId}</div>
-                              {reg.screenshot && (
-                                <a href={reg.screenshot} target="_blank" rel="noreferrer" className="text-[10px] text-[#8890b0] hover:text-[#f0c040] underline mt-0.5 block">View Payment Receipt</a>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${reg.status === 'approved' ? 'bg-green-500/15 text-green-400 border border-green-500/20' : reg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse'}`}>
-                                {reg.status}
-                              </span>
-                            </td>
-                            <td className="p-4 space-x-1">
-                              {reg.status === 'pending' && (
-                                <>
-                                  <button onClick={() => handleApproveRegistration(reg)} className="px-2 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 text-[11px] font-semibold rounded transition">Approve</button>
-                                  <button onClick={() => handleRejectRegistration(reg)} className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[11px] font-semibold rounded transition">Reject</button>
-                                </>
-                              )}
-                              {reg.status !== 'pending' && <span className="text-[#4a5070]">-</span>}
-                            </td>
-                          </tr>
-                        ))}
-                      {registrations.filter(r => regFilter === 'all' || r.status === regFilter).length === 0 && (
-                        <tr>
-                          <td colSpan={6} className="p-8 text-center text-[#4a5070]">No registration requests found.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* ── CHEAT REPORTS PAGE ── */}
-            {activePage === 'pgReports' && (
-              <div className="space-y-4">
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30">
-                    <h4 className="ff-title text-base font-bold text-white">Cheat Reports logs</h4>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#0f1220]/30 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                          <th className="p-4">Reporter</th>
-                          <th className="p-4">Reported Hacker</th>
-                          <th className="p-4">Event Name</th>
-                          <th className="p-4">Details & Reason</th>
-                          <th className="p-4">Status</th>
-                          <th className="p-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#1e2440]/30">
-                        {reports.map((rep) => (
-                          <tr key={rep.id} className="hover:bg-white/[0.01] align-top">
-                            <td className="p-4">
-                              <div className="font-bold text-white">{rep.reporterName || 'Unknown'}</div>
-                              <div className="text-[10px] text-[#4a5070] font-mono">UID: {rep.reporterId}</div>
-                            </td>
-                            <td className="p-4">
-                              <div className="font-bold text-red-400">{rep.reportedName}</div>
-                              <div className="text-[10px] text-[#4a5070] font-mono">UID: {rep.reportedUID}</div>
-                              <span className="mt-1 px-2 py-0.5 bg-red-500/10 text-red-400 rounded text-[9px] font-bold uppercase border border-red-500/20 inline-block">{rep.hackType}</span>
-                            </td>
-                            <td className="p-4 font-semibold text-[#f0c040]">{rep.tournamentName}</td>
-                            <td className="p-4 max-w-[240px]">
-                              <p className="text-white leading-relaxed">{rep.reason}</p>
-                              {rep.videoUrl && (
-                                <a href={rep.videoUrl} target="_blank" rel="noreferrer" className="text-blue-400 font-medium hover:underline text-[10px] mt-1.5 block flex items-center gap-1">
-                                  <i className="fas fa-video"></i> View Video Evidence
-                                </a>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${rep.status === 'open' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-green-500/15 text-green-400 border border-green-500/20'}`}>
-                                {rep.status}
-                              </span>
-                            </td>
-                            <td className="p-4 space-y-1 block">
-                              {rep.status === 'open' ? (
-                                <>
-                                  <button onClick={() => handleResolveReport(rep.id)} className="w-full px-2 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 text-[10px] font-semibold rounded block text-center">Resolve</button>
-                                  <button
-                                    onClick={() => {
-                                      // Search user profile of reported hacker
-                                      const u = users.find(x => x.name.toLowerCase() === rep.reportedName.toLowerCase() || x.uid === rep.reportedUID);
-                                      if (u) {
-                                        setBanUser(u);
-                                        setBanType('full');
-                                        setBanDuration('permanent');
-                                        setBanReason(`Cheating reported in event: ${rep.tournamentName}`);
-                                        setShowBanModal(true);
-                                      } else {
-                                        alert(`Hacker UID (${rep.reportedUID}) not found in live User Database.`);
-                                      }
-                                    }}
-                                    className="w-full px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[10px] font-semibold rounded block text-center"
-                                  >
-                                    Ban Hacker
-                                  </button>
-                                </>
-                              ) : (
-                                <button onClick={() => handleDeleteReport(rep.id)} className="w-full px-2 py-1 bg-[#1e2340] border border-[#1e2440] text-red-400 text-[10px] font-semibold rounded block text-center">Delete</button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                        {reports.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-8 text-center text-[#4a5070]">No cheat reports submitted.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── SUPPORT TICKETS CHANNEL PAGE ── */}
-            {activePage === 'pgSupport' && (
-              <div className="space-y-4">
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30 flex justify-between items-center">
-                    <h4 className="ff-title text-base font-bold text-white">Live Support Channels</h4>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#0f1220]/30 border-b border-[#1e2440] text-[#4a5070] font-bold uppercase tracking-wider text-[10px]">
-                          <th className="p-4">Customer</th>
-                          <th className="p-4">Last Message</th>
-                          <th className="p-4">Last Updated</th>
-                          <th className="p-4">Status</th>
-                          <th className="p-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#1e2440]/30">
-                        {tickets.map((t) => (
-                          <tr key={t.id} className="hover:bg-white/[0.01]">
-                            <td className="p-4 font-semibold text-white">{t.userName} <span className="text-[10px] text-[#4a5070] font-normal">{t.userHandle}</span></td>
-                            <td className="p-4 text-[#8890b0] max-w-[200px] truncate">{t.lastMsg}</td>
-                            <td className="p-4 text-[#4a5070]">{t.updatedAt?.toDate?.()?.toLocaleString('en-PK') || 'recently'}</td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.status === 'open' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-green-500/15 text-green-400 border border-green-500/20'}`}>
-                                {t.status}
-                              </span>
-                            </td>
-                            <td className="p-4 space-x-1.5 flex items-center">
-                              <button
-                                onClick={() => { setActiveTicket(t); setShowSupportModal(true); }}
-                                className="px-2.5 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[11px] font-semibold rounded transition"
-                              >
-                                Reply Log
-                              </button>
-                              
-                              {t.status === 'open' && (
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await updateDoc(doc(db, 'support_tickets', t.id), { status: 'resolved' });
-                                      alert('Ticket resolved successfully!');
-                                    } catch (e: any) { alert(e.message); }
-                                  }}
-                                  className="px-2.5 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 text-[11px] font-semibold rounded transition"
-                                >
-                                  Resolve
-                                </button>
-                              )}
-
-                              <button
-                                onClick={() => handleDeleteTicket(t.id)}
-                                className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[11px] font-semibold rounded transition"
-                                title="Delete Ticket"
-                              >
-                                <i className="fas fa-trash-alt"></i> Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                        {tickets.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="p-8 text-center text-[#4a5070]">No support tickets active.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── GLOBAL CHAT SPECTATOR & REPORTS PAGE ── */}
-            {activePage === 'pgGlobalChat' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-160px)]">
-                {/* Left: Chat Spectator */}
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl flex flex-col min-h-0 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30 flex justify-between items-center shrink-0">
-                    <div>
-                      <h4 className="ff-title text-base font-bold text-white flex items-center gap-2">
-                        <i className="fas fa-eye text-[#3ddc84]"></i> Live Global Chat Spectator
-                      </h4>
-                      <p className="text-[10px] text-[#8890b0] mt-0.5">Real-time monitor of players' conversations.</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-[#3ddc84]/10 text-[#3ddc84] border border-[#3ddc84]/20 text-[9px] font-bold rounded-full uppercase tracking-wider animate-pulse">
-                      Live
-                    </span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {globalMessages.length === 0 ? (
-                      <div className="h-full flex items-center justify-center text-[#4a5070] text-xs">
-                        No chat messages to display.
-                      </div>
-                    ) : (
-                      globalMessages.map((msg) => {
-                        // 1. Check for Public Admin Deletion
-                        if (msg.isDeletedByAdmin) {
-                          return (
-                            <div key={msg.id} className="bg-red-500/5 border border-red-500/20 p-3 rounded-lg flex items-start justify-between gap-4 opacity-75">
-                              <div className="flex gap-2.5 min-w-0">
-                                <div className="w-8 h-8 rounded-full bg-[#171b2e] flex items-center justify-center border border-red-500/20 text-red-400 shrink-0">
-                                  <i className="fas fa-trash-can text-xs"></i>
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-red-400">{msg.userName || 'Anonymous'}</span>
-                                    <span className="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[8px] font-bold rounded uppercase tracking-wider">Publicly Deleted</span>
-                                  </div>
-                                  <p className="text-xs text-[#8890b0] mt-1 italic line-through font-serif">{msg.text}</p>
-                                  {msg.originalText && msg.originalText !== msg.text && (
-                                    <p className="text-[10px] text-white font-mono mt-1 bg-black/40 p-1.5 rounded border border-[#252a45]/40">
-                                      Original text before delete: <span className="font-sans font-bold text-red-300">"{msg.originalText}"</span>
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('Are you sure you want to completely PURGE this message from the database?')) {
-                                      try {
-                                        await deleteDoc(doc(db, 'global_chat', msg.id));
-                                        alert('Message permanently purged! 🗑️');
-                                      } catch (e: any) {
-                                        alert('Error purging: ' + e.message);
-                                      }
-                                    }
-                                  }}
-                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
-                                  title="Silent Delete Completely (Purge document)"
-                                >
-                                  <i className="fas fa-eraser text-xs"></i>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        // 2. Check for System Announcement
-                        if (msg.isSystemAnnouncement) {
-                          return (
-                            <div key={msg.id} className="bg-amber-500/5 border border-amber-500/30 p-3 rounded-lg flex items-start justify-between gap-4">
-                              <div className="flex gap-2.5 min-w-0">
-                                <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/40 text-amber-400 shrink-0">
-                                  <i className="fas fa-bullhorn text-xs"></i>
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-amber-400">Official Announcement</span>
-                                    <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-400 text-[8px] font-bold rounded uppercase tracking-wider">System</span>
-                                  </div>
-                                  <p className="text-xs text-white mt-1 font-semibold whitespace-pre-wrap select-text">{msg.text}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('Are you sure you want to delete this announcement?')) {
-                                      try {
-                                        await deleteDoc(doc(db, 'global_chat', msg.id));
-                                        alert('Announcement deleted!');
-                                      } catch (e: any) {
-                                        alert('Error: ' + e.message);
-                                      }
-                                    }
-                                  }}
-                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
-                                  title="Silent Delete Announcement"
-                                >
-                                  <i className="fas fa-eraser text-xs"></i>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        // 3. Check for Admin Message
-                        if (msg.isAdminMessage) {
-                          return (
-                            <div key={msg.id} className="bg-red-500/5 border border-red-500/30 p-3 rounded-lg flex items-start justify-between gap-4">
-                              <div className="flex gap-2.5 min-w-0">
-                                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/35 text-red-400 shrink-0">
-                                  <i className="fas fa-shield-alt text-xs"></i>
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-red-400">{msg.userName || 'System Admin'}</span>
-                                    <span className="px-1.5 py-0.5 bg-red-500/15 text-red-400 text-[8px] font-bold rounded uppercase tracking-wider">Staff</span>
-                                  </div>
-                                  <p className="text-xs text-white mt-1 font-medium whitespace-pre-wrap select-text">{msg.text}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('Are you sure you want to delete this staff message?')) {
-                                      try {
-                                        await deleteDoc(doc(db, 'global_chat', msg.id));
-                                        alert('Staff message deleted!');
-                                      } catch (e: any) {
-                                        alert('Error: ' + e.message);
-                                      }
-                                    }
-                                  }}
-                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
-                                  title="Silent Delete Staff Message"
-                                >
-                                  <i className="fas fa-eraser text-xs"></i>
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        // 4. Regular User Message
-                        const isMuted = users.find(u => u.id === msg.userId)?.muted || false;
-                        const isBanned = users.find(u => u.id === msg.userId)?.banned || false;
-                        return (
-                          <div key={msg.id} className="bg-[#171b2e]/50 border border-[#252a45]/40 p-3 rounded-lg flex items-start justify-between gap-4">
-                            <div className="flex gap-2.5 min-w-0">
-                              <img src={msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45] shrink-0" />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs font-bold text-white truncate max-w-[120px]">{msg.userName || 'Anonymous'}</span>
-                                  <span className="text-[8px] text-[#4a5070] font-mono">UID: {msg.userId?.slice(-6)}</span>
-                                  {msg.isAbusive && (
-                                    <span className="px-1.5 py-0.5 bg-[#e8404a]/10 text-[#e8404a] text-[8px] font-bold rounded uppercase">Flagged</span>
-                                  )}
-                                  {isMuted && (
-                                    <span className="px-1 py-0.5 bg-amber-500/10 text-amber-400 text-[8px] font-bold rounded uppercase">Muted</span>
-                                  )}
-                                  {isBanned && (
-                                    <span className="px-1 py-0.5 bg-red-500/10 text-red-400 text-[8px] font-bold rounded uppercase">Banned</span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-[#8890b0] mt-1 break-all whitespace-pre-wrap select-text">{msg.text}</p>
-                                {msg.originalText && msg.originalText !== msg.text && (
-                                  <p className="text-[9px] text-[#e8404a]/80 mt-1 font-mono italic">Original: "{msg.originalText}"</p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0 font-sans">
-                              {/* Silent Delete */}
-                              <button
-                                onClick={async () => {
-                                  if (confirm('Are you sure you want to SILENTLY delete this message? It will disappear completely.')) {
-                                    try {
-                                      await deleteDoc(doc(db, 'global_chat', msg.id));
-                                      alert('Message silently deleted!');
-                                    } catch (e: any) {
-                                      alert('Error: ' + e.message);
-                                    }
-                                  }
-                                }}
-                                className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
-                                title="Silent Delete (Erase completely)"
-                              >
-                                <i className="fas fa-eraser text-xs"></i>
-                              </button>
-
-                              {/* Public Delete */}
-                              <button
-                                onClick={async () => {
-                                  if (confirm('Are you sure you want to PUBLICLY delete this message? It will be replaced with a notice.')) {
-                                    try {
-                                      await updateDoc(doc(db, 'global_chat', msg.id), {
-                                        isDeletedByAdmin: true,
-                                        text: 'This message was deleted by administration.',
-                                        originalText: msg.originalText || msg.text || ''
-                                      });
-                                      alert('Message publicly deleted!');
-                                    } catch (e: any) {
-                                      alert('Error: ' + e.message);
-                                    }
-                                  }
-                                }}
-                                className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded border border-red-500/20 transition"
-                                title="Public Delete (Show Deleted message)"
-                              >
-                                <i className="fas fa-trash-alt text-xs"></i>
-                              </button>
-
-                              {/* Mute Action */}
-                              <button
-                                onClick={() => {
-                                  const foundUser = users.find(u => u.id === msg.userId);
-                                  if (foundUser) {
-                                    if (foundUser.muted) {
-                                      handleUnmuteUser(foundUser);
-                                    } else {
-                                      setMuteUser(foundUser);
-                                      setMuteDuration('1');
-                                      setMuteReason(`Abusive behavior in Global Chat ("${msg.text}")`);
-                                      setShowMuteModal(true);
-                                    }
-                                  } else {
-                                    alert(`Player ID ${msg.userId} not found in user management.`);
-                                  }
-                                }}
-                                className={`p-1.5 rounded border transition ${
-                                  users.find(u => u.id === msg.userId)?.muted
-                                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30'
-                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20'
-                                }`}
-                                title={users.find(u => u.id === msg.userId)?.muted ? "Unmute Player" : "Mute Player"}
-                              >
-                                <i className={`fas fa-${users.find(u => u.id === msg.userId)?.muted ? 'volume-up' : 'volume-mute'} text-xs`}></i>
-                              </button>
-
-                              {/* Ban Action */}
-                              <button
-                                onClick={() => {
-                                  const foundUser = users.find(u => u.id === msg.userId);
-                                  if (foundUser) {
-                                    setBanUser(foundUser);
-                                    setBanReason(`Abusive behavior in Global Chat ("${msg.text}")`);
-                                    setShowBanModal(true);
-                                  } else {
-                                    alert(`Player ID ${msg.userId} not found in user management.`);
-                                  }
-                                }}
-                                className="p-1.5 bg-[#ff4500]/10 hover:bg-[#ff4500]/20 text-[#ff4500] rounded border border-[#ff4500]/20 transition"
-                                title="Ban Player"
-                              >
-                                <i className="fas fa-ban text-xs"></i>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Broadcast form */}
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      if (!adminChatText.trim()) return;
-                      try {
-                        const payload: any = {
-                          userId: 'admin_staff',
-                          userName: adminEmail ? adminEmail.split('@')[0].toUpperCase() : 'ADMIN',
-                          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin_staff',
-                          text: adminChatText.trim(),
-                          originalText: adminChatText.trim(),
-                          createdAt: serverTimestamp()
-                        };
-                        if (adminChatType === 'announcement') {
-                          payload.isSystemAnnouncement = true;
-                        } else {
-                          payload.isAdminMessage = true;
-                        }
-                        await addDoc(collection(db, 'global_chat'), payload);
-                        setAdminChatText('');
-                        alert('Published broadcast successfully! 📢');
-                      } catch (err: any) {
-                        alert('Broadcast failed: ' + err.message);
-                      }
-                    }}
-                    className="p-4 border-t border-[#1e2440] bg-[#0f1220]/20 space-y-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 bg-[#0c0e17] border border-[#222a45] px-2.5 py-1.5 rounded-lg">
-                        <label className="text-[10px] uppercase font-bold text-[#8890b0] select-none">Send As:</label>
-                        <select
-                          value={adminChatType}
-                          onChange={(e: any) => setAdminChatType(e.target.value)}
-                          className="bg-transparent border-none text-xs text-white font-bold outline-none cursor-pointer focus:ring-0"
-                        >
-                          <option value="admin" className="bg-[#141828] text-red-400 font-bold">🔴 Staff Message</option>
-                          <option value="announcement" className="bg-[#141828] text-amber-400 font-bold">📢 Official Announcement</option>
-                        </select>
-                      </div>
-                      <span className="text-[10px] text-[#8890b0] font-mono">Posting as: <strong className="text-white">{adminEmail ? adminEmail.split('@')[0].toUpperCase() : 'ADMIN'}</strong></span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={adminChatText}
-                        onChange={(e) => setAdminChatText(e.target.value)}
-                        placeholder="Type official staff message or announcement here..."
-                        className="flex-1 bg-[#0c0e17] border border-[#222a45] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-red-500"
-                        required
-                      />
-                      <button
-                        type="submit"
-                        className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-1.5"
-                      >
-                        <i className="fas fa-paper-plane"></i> Publish
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Right: Abusive Reports */}
-                <div className="bg-[#141828] border border-[#1e2440] rounded-xl flex flex-col min-h-0 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#1e2440] bg-[#0f1220]/30 flex justify-between items-center shrink-0">
-                    <div>
-                      <h4 className="ff-title text-base font-bold text-[#e8404a] flex items-center gap-2">
-                        <i className="fas fa-exclamation-triangle"></i> Automated Abusive Chat Reports
-                      </h4>
-                      <p className="text-[10px] text-[#8890b0] mt-0.5">Logs of automatically reported system flags.</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-[#e8404a]/10 text-[#e8404a] border border-[#e8404a]/20 text-[9px] font-bold rounded-full uppercase tracking-wider">
-                      {chatReports.filter(r => r.status === 'open').length} Open
-                    </span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {chatReports.length === 0 ? (
-                      <div className="h-full flex items-center justify-center text-[#4a5070] text-xs">
-                        No abusive chat reports logged.
-                      </div>
-                    ) : (
-                      chatReports.map((rep) => (
-                        <div key={rep.id} className={`p-4 rounded-lg flex flex-col gap-3 border ${rep.status === 'open' ? 'bg-[#e8404a]/5 border-[#e8404a]/20' : 'bg-[#171b2e]/30 border-[#252a45]/30'}`}>
-                          <div className="flex justify-between items-start gap-4">
-                            <div>
-                              <div className="font-bold text-white text-xs">{rep.userName || 'Anonymous'}</div>
-                              <div className="text-[9px] text-[#8890b0] font-mono mt-0.5">{rep.userEmail} | UID: {rep.userId?.slice(-6)}</div>
-                            </div>
-                            <span className={`px-2 py-0.5 text-[8px] font-bold uppercase rounded-full border ${rep.status === 'open' ? 'bg-[#e8404a]/10 text-[#e8404a] border-[#e8404a]/20' : 'bg-[#3ddc84]/10 text-[#3ddc84] border-[#3ddc84]/20'}`}>
-                              {rep.status}
-                            </span>
-                          </div>
-
-                          <div className="p-2.5 bg-[#0a0d16]/80 rounded-lg border border-[#252a45]/60">
-                            <div className="text-[8px] uppercase tracking-wider text-[#e8404a] font-bold mb-1">Flagged Text:</div>
-                            <p className="text-xs text-[#8890b0] font-mono select-all font-semibold italic">"{rep.messageText}"</p>
-                          </div>
-
-                          <div className="flex justify-between items-center text-[10px] text-[#4a5070] mt-1 border-t border-[#252a45]/40 pt-2.5">
-                            <span>{rep.createdAt ? new Date(rep.createdAt.seconds * 1000).toLocaleString() : 'Just now'}</span>
-                            {rep.status === 'open' && (
-                              <div className="flex gap-1.5">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await updateDoc(doc(db, 'chat_reports', rep.id), { status: 'dismissed' });
-                                      alert('Report dismissed successfully! ✅');
-                                    } catch (e: any) {
-                                      alert('Error: ' + e.message);
-                                    }
-                                  }}
-                                  className="px-2.5 py-1 bg-[#4a5070]/20 hover:bg-[#4a5070]/30 border border-[#4a5070]/30 text-[#8890b0] rounded text-xs font-bold transition"
-                                >
-                                  Dismiss
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    const foundUser = users.find(u => u.id === rep.userId);
-                                    if (foundUser) {
-                                      setMuteUser(foundUser);
-                                      setMuteDuration('24'); // Default to 24 hours for report mutes
-                                      setMuteReason(`Abusive behavior in Global Chat ("${rep.messageText}")`);
-                                      setShowMuteModal(true);
-                                      try {
-                                        await updateDoc(doc(db, 'chat_reports', rep.id), { status: 'resolved_muted' });
-                                      } catch (e) {
-                                        console.warn(e);
-                                      }
-                                    } else {
-                                      alert(`Player ID ${rep.userId} not found in database.`);
-                                    }
-                                  }}
-                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-[#0f1220] rounded text-xs font-bold transition"
-                                >
-                                  Mute Player
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const foundUser = users.find(u => u.id === rep.userId);
-                                    if (foundUser) {
-                                      setBanUser(foundUser);
-                                      setBanReason(`Abusive behavior in Global Chat ("${rep.messageText}")`);
-                                      setShowBanModal(true);
-                                      updateDoc(doc(db, 'chat_reports', rep.id), { status: 'resolved_banned' }).catch(console.warn);
-                                    } else {
-                                      alert(`Player ID ${rep.userId} not found in database.`);
-                                    }
-                                  }}
-                                  className="px-2.5 py-1 bg-[#ff4500] hover:bg-[#e03d00] text-white rounded text-xs font-bold transition"
-                                >
-                                  Ban Player
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </main>
-      </div>
-
-      {/* MODAL WINDOW GENERAL */}
-      {showGeneralModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[400px] w-full animate-fade-in space-y-4">
-            <h3 className="font-sans text-lg font-bold text-[#f0c040]">{modalTitle}</h3>
-            <div className="text-xs text-[#8890b0] leading-relaxed">{modalBody}</div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowGeneralModal(false)} className="flex-1 py-2 bg-[#1e2340] hover:bg-[#141828] text-[#8890b0] font-semibold rounded-lg text-xs transition">Cancel</button>
-              <button onClick={() => { if (modalConfirmAction) modalConfirmAction(); setShowGeneralModal(false); }} className="flex-1 py-2 bg-[#e8404a] hover:bg-[#cc3540] text-white font-semibold rounded-lg text-xs transition">Confirm</button>
-            </div>
-          </div>
+    snap.forEach(d => {
+      const f = d.data();
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-4 cursor-pointer transition';
+      item.innerHTML = `
+        <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr flex-shrink-0"/>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-white truncate">${f.name}</div>
+          <div class="text-[10px] text-t3 truncate mt-0.5">${f.handle}</div>
         </div>
-      )}
+        <i class="fas fa-comment-dots text-gold text-lg"></i>
+      `;
 
-      {/* MODAL CONFIG TOURNAMENT */}
-      {showTourModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[440px] w-full animate-fade-in space-y-4 relative">
-            <button onClick={() => setShowTourModal(false)} className="absolute top-4 right-4 text-[#8890b0] hover:text-[#f0c040] transition">
-              <i className="fas fa-times"></i>
-            </button>
+      item.addEventListener('click', () => openFriendDM(f));
+      listEl.appendChild(item);
+    });
+  });
+}
 
-            <h3 className="font-sans text-lg font-bold text-[#f0c040]">
-              {editingTour ? 'Configure Tournament Settings' : 'Create New Tournament'}
-            </h3>
+// Accept and Decline Friend Requests
+async function acceptFriendRequest(data) {
+  const profile = userProfile || guestProfile;
+  try {
+    // Add to my friend collection
+    await setDoc(doc(db, 'users', profile.uid, 'friends', data.uid), {
+      uid: data.uid,
+      name: data.name,
+      handle: data.handle,
+      av: data.av,
+      addedAt: serverTimestamp()
+    });
+    // Add myself to their friend list
+    await setDoc(doc(db, 'users', data.uid, 'friends', profile.uid), {
+      uid: profile.uid,
+      name: profile.name,
+      handle: profile.handle,
+      av: profile.av,
+      addedAt: serverTimestamp()
+    });
+    // Delete request log
+    await deleteDoc(doc(db, 'users', profile.uid, 'friendRequests', data.uid));
+    alert(`Friendship accepted with ${data.name}! ✓`);
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
-            <div className="space-y-3.5">
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Tournament Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Grand RP Champion League"
-                  value={tName}
-                  onChange={(e) => setTName(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                />
-              </div>
+async function declineFriendRequest(uid) {
+  const profile = userProfile || guestProfile;
+  try {
+    await deleteDoc(doc(db, 'users', profile.uid, 'friendRequests', uid));
+  } catch (err) {
+    console.error(err);
+  }
+}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Max Player slots *</label>
-                  <input
-                    type="number"
-                    value={tMax}
-                    onChange={(e) => setTMax(e.target.value)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Team Size Format *</label>
-                  <select
-                    value={tTeamType}
-                    onChange={(e) => setTTeamType(e.target.value as any)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  >
-                    <option value="Solo">Solo (1 Player)</option>
-                    <option value="Duo (2 Players)">Duo (2 Players)</option>
-                    <option value="Trio (3 Players)">Trio (3 Players)</option>
-                    <option value="Squad (4 Players)">Squad (4 Players)</option>
-                  </select>
-                </div>
-              </div>
+// Add friend modal trigger search
+$('btnAddFriend').addEventListener('click', () => {
+  if (guestProfile) {
+    alert('Guest profiles are restricted from finding players. Register a real account!');
+    return;
+  }
+  $('friendHandleInp').value = '';
+  $('friendSearchResult').innerHTML = '';
+  $('bSendFriendReq').classList.add('hidden');
+  $('mAddFriend').classList.remove('hidden');
+});
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Match Date *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Jul 5, 2026"
-                    value={tDate}
-                    onChange={(e) => setTDate(e.target.value)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Match Time *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 08:00 PM PKT"
-                    value={tTime}
-                    onChange={(e) => setTTime(e.target.value)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  />
-                </div>
-              </div>
+$('bCloseAddFriend').addEventListener('click', () => $('mAddFriend').classList.add('hidden'));
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Registration Fee *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Rs 100 or Free"
-                    value={tFee}
-                    onChange={(e) => setTFee(e.target.value)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Status *</label>
-                  <select
-                    value={tStatus}
-                    onChange={(e) => setTStat(e.target.value as any)}
-                    className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                  >
-                    <option value="upcoming">Upcoming</option>
-                    <option value="live">🔴 Live Now</option>
-                    <option value="ended">Ended</option>
-                  </select>
-                </div>
-              </div>
+// ── GLOBAL CHAT SYSTEM LOGIC ──
 
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Prize Pool Earnings *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 15,000 AX Coins"
-                  value={tPrize}
-                  onChange={(e) => setTPrize(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                />
-              </div>
-            </div>
+function initGlobalChat() {
+  if (globalChatUnsub) globalChatUnsub();
+  if (globalChatTypingUnsub) globalChatTypingUnsub();
 
-            <div className="flex gap-3 pt-3">
-              <button
-                onClick={() => setShowTourModal(false)}
-                className="flex-1 py-2.5 bg-[#1e2340] border border-[#1e2440] text-[#8890b0] font-semibold rounded-lg text-xs hover:bg-[#141828] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveTournament}
-                className="flex-1 py-2.5 bg-[#e8404a] text-white font-bold rounded-lg text-xs hover:bg-[#cc3540] transition"
-              >
-                Save config
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
 
-      {/* MODAL BAN / BLOCK SETTINGS */}
-      {showBanModal && banUser && (
-        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4 relative">
-            <button onClick={() => { setShowBanModal(false); setBanUser(null); }} className="absolute top-4 right-4 text-[#8890b0] hover:text-[#f0c040] transition">
-              <i className="fas fa-times"></i>
-            </button>
-
-            <h3 className="font-sans text-lg font-bold text-[#e8404a] flex items-center gap-1.5">
-              <i className="fas fa-ban"></i> Ban Settings: {banUser.name}
-            </h3>
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Ban Type *</label>
-                <select
-                  value={banType}
-                  onChange={(e) => setBanType(e.target.value as any)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                >
-                  <option value="full">Ban Entire Account (Full Lockout)</option>
-                  <option value="tournament">Ban ONLY from Tournament Participation</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Ban Duration *</label>
-                <select
-                  value={banDuration}
-                  onChange={(e) => setBanDuration(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                >
-                  <option value="1">1 Day</option>
-                  <option value="7">7 Days</option>
-                  <option value="30">30 Days</option>
-                  <option value="90">90 Days</option>
-                  <option value="permanent">Permanent / Forever</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Reason for Ban *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Verified aimbot hacks in city cup"
-                  value={banReason}
-                  onChange={(e) => setBanReason(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3">
-              <button
-                onClick={() => { setShowBanModal(false); setBanUser(null); }}
-                className="flex-1 py-2.5 bg-[#1e2340] border border-[#1e2440] text-[#8890b0] font-semibold rounded-lg text-xs hover:bg-[#141828] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleProcessBan}
-                className="flex-1 py-2.5 bg-[#e8404a] text-white font-bold rounded-lg text-xs hover:bg-[#cc3540] transition"
-              >
-                Confirm Ban
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL MUTE SETTINGS */}
-      {showMuteModal && muteUser && (
-        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4 relative shadow-2xl">
-            <button onClick={() => { setShowMuteModal(false); setMuteUser(null); }} className="absolute top-4 right-4 text-[#8890b0] hover:text-[#f0c040] transition">
-              <i className="fas fa-times"></i>
-            </button>
-
-            <h3 className="font-sans text-lg font-bold text-amber-500 flex items-center gap-1.5">
-              <i className="fas fa-volume-mute"></i> Mute Settings: {muteUser.name}
-            </h3>
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Mute Duration *</label>
-                <select
-                  value={muteDuration}
-                  onChange={(e) => setMuteDuration(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                >
-                  <option value="1">1 Hour</option>
-                  <option value="12">12 Hours</option>
-                  <option value="24">24 Hours (1 Day)</option>
-                  <option value="168">7 Days (1 Week)</option>
-                  <option value="permanent">Permanent / Forever</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Reason for Mute *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Excessive spamming / foul language in global chat"
-                  value={muteReason}
-                  onChange={(e) => setMuteReason(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3">
-              <button
-                onClick={() => { setShowMuteModal(false); setMuteUser(null); }}
-                className="flex-1 py-2.5 bg-[#1e2340] border border-[#1e2440] text-[#8890b0] font-semibold rounded-lg text-xs hover:bg-[#141828] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleProcessMute}
-                className="flex-1 py-2.5 bg-amber-500 text-[#0f1220] font-bold rounded-lg text-xs hover:bg-amber-600 transition"
-              >
-                Confirm Mute
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SUPPORT LIVE CHAT RESPONSES MODAL */}
-      {showSupportModal && activeTicket && (
-        <div className="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl w-full max-w-[500px] h-[520px] flex flex-col overflow-hidden animate-fade-in relative shadow-2xl">
-            {/* Header */}
-            <div className="p-4 border-b border-[#1e2440] bg-[#0f1220] flex items-center justify-between gap-3">
-              <div>
-                <h3 className="font-sans text-base font-bold text-white leading-tight">Live Chat Support</h3>
-                <p className="text-[10px] text-[#4a5070]">User: <span className="text-[#f0c040] font-bold">{activeTicket.userName}</span> ({activeTicket.userHandle})</p>
-              </div>
-              <button
-                onClick={() => { setShowSupportModal(false); setActiveTicket(null); }}
-                className="text-[#8890b0] hover:text-[#f0c040] text-lg transition"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-
-            {/* Chat Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#07090f]/50">
-              {supportMessages.map((msg, mIdx) => {
-                const isAdmin = msg.sender === 'admin';
-                const isBot = msg.sender === 'bot';
-                return (
-                  <div key={mIdx} className={`flex gap-2.5 ${isAdmin ? 'flex-row-reverse' : ''}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${isAdmin ? 'bg-[#e8404a] text-white' : isBot ? 'bg-[#f0c040]/10 text-[#f0c040] border border-[#f0c040]/20' : 'bg-[#1e2340] text-white border border-[#1e2440]'}`}>
-                      <i className={`fas fa-${isAdmin ? 'shield-alt' : isBot ? 'robot' : 'user'}`}></i>
-                    </div>
-                    <div className="max-w-[75%]">
-                      <div className={`text-[10px] text-[#4a5070] mb-0.5 ${isAdmin ? 'text-right' : ''}`}>
-                        {isAdmin ? 'Admin' : isBot ? 'ArenaX Bot' : activeTicket.userName}
-                      </div>
-                      <div className={`p-3 rounded-xl text-xs leading-relaxed ${isAdmin ? 'bg-[#e8404a]/15 border border-[#e8404a]/25 text-white rounded-tr-none' : 'bg-[#141828] border border-[#1e2440] text-white rounded-tl-none'}`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Footer Input */}
-            <div className="p-3 bg-[#0f1220] border-t border-[#1e2440] flex gap-2">
-              <input
-                type="text"
-                placeholder="Type admin reply..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendAdminReply()}
-                className="flex-1 bg-[#141828] border border-[#1e2440] rounded-xl px-4 py-2.5 text-xs outline-none text-white focus:border-[#f0c040] transition"
-              />
-              <button
-                onClick={handleSendAdminReply}
-                className="w-10 h-10 bg-[#e8404a] text-white rounded-xl flex items-center justify-center text-xs hover:bg-[#cc3540] transition active:scale-95"
-              >
-                <i className="fas fa-paper-plane"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CUSTOM NOTIFICATION MODAL */}
-      {showNotifModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4 relative">
-            <button
-              onClick={() => { setShowNotifModal(false); setNotifTargetUser(null); }}
-              className="absolute top-4 right-4 text-[#8890b0] hover:text-[#f0c040] transition"
-            >
-              <i className="fas fa-times"></i>
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-lg">
-                <i className="fas fa-bell"></i>
-              </div>
-              <div>
-                <h3 className="font-sans text-base font-bold text-white">
-                  {notifTargetType === 'all' ? 'Broadcast Notification' : 'Send Player Notification'}
-                </h3>
-                <p className="text-[11px] text-[#8890b0]">
-                  {notifTargetType === 'all' 
-                    ? 'This will send a notification to ALL registered users simultaneously.' 
-                    : `To: ${notifTargetUser?.name || 'Player'} (${notifTargetUser?.handle || ''})`}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Notification Title *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Announcement, Reward Alert..."
-                  value={notifTitle}
-                  onChange={(e) => setNotifTitle(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Message Body *</label>
-                <textarea
-                  rows={4}
-                  placeholder="Type your notification message body..."
-                  value={notifBody}
-                  onChange={(e) => setNotifBody(e.target.value)}
-                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => { setShowNotifModal(false); setNotifTargetUser(null); }}
-                className="flex-1 py-2 bg-[#1e2340] border border-[#1e2440] text-[#8890b0] font-semibold rounded-lg text-xs hover:bg-[#141828] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendNotification}
-                disabled={notifSending}
-                className="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition disabled:opacity-50"
-              >
-                {notifSending ? 'Sending...' : 'Send Notification'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
+  const qGlobal = query(
+    collection(db, 'global_chat'),
+    orderBy('createdAt', 'desc'),
+    limit(60)
   );
-};
+
+  globalChatUnsub = onSnapshot(qGlobal, (snap) => {
+    const list = [];
+    snap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    // Reverse to show oldest first at top, newest at bottom
+    list.reverse();
+
+    // Trigger unread indicator if chat is not open or not on global subtab
+    if (activeMainTab !== 'Chat' || activeChatSubTab !== 'global') {
+      unreadGlobal = true;
+      updateChatUnreadDot();
+      updateSubGlobalDot();
+    }
+
+    renderGlobalMessages(list);
+  }, (err) => {
+    console.warn("Global chat listen error:", err);
+  });
+
+  // Listen for typing users
+  const qTyping = query(
+    collection(db, 'global_chat_typing'),
+    where('typing', '==', true)
+  );
+
+  globalChatTypingUnsub = onSnapshot(qTyping, (snap) => {
+    const typingNames = [];
+    const now = Date.now();
+    snap.forEach((d) => {
+      const data = d.data();
+      const currentUid = (userProfile || guestProfile)?.uid;
+      // Skip ourselves, and skip older than 6 seconds
+      if (d.id !== currentUid && (now - (data.timestamp || 0)) < 6000) {
+        typingNames.push(data.name || 'Anonymous');
+      }
+    });
+
+    const indicator = $('globalTypingIndicator');
+    const textEl = $('globalTypingText');
+    if (indicator && textEl) {
+      if (typingNames.length > 0) {
+        textEl.textContent = `${typingNames.join(', ')} ${typingNames.length === 1 ? 'is' : 'are'} typing...`;
+        indicator.classList.remove('hidden');
+      } else {
+        indicator.classList.add('hidden');
+      }
+    }
+  });
+}
+
+function renderGlobalMessages(list) {
+  const container = $('globalChatMsgs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const currentUid = (userProfile || guestProfile)?.uid;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6">
+        <i class="fas fa-globe text-3xl mb-1"></i>
+        <p class="text-xs">No messages in Global Chat yet.</p>
+        <p class="text-[10px]">Be the first to say hello!</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.forEach((msg) => {
+    const msgDiv = document.createElement('div');
+
+    // 1. Check for Public Admin Deletion
+    if (msg.isDeletedByAdmin) {
+      msgDiv.className = 'flex justify-center w-full my-2 px-4';
+      msgDiv.innerHTML = `
+        <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/25 px-4 py-2 rounded-xl text-[11px] text-red-400 font-bold uppercase tracking-wider font-sans">
+          <i class="fas fa-shield-halved text-xs animate-pulse"></i> This message was deleted by administration.
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 2. Check for System Announcement
+    if (msg.isSystemAnnouncement) {
+      msgDiv.className = 'flex justify-center w-full my-3 px-4';
+      msgDiv.innerHTML = `
+        <div class="flex flex-col items-center text-center bg-amber-500/15 border border-amber-500/25 px-5 py-3 rounded-2xl max-w-[90%] text-xs text-amber-400 font-bold shadow-lg shadow-amber-500/5">
+          <div class="flex items-center gap-2 text-[10px] uppercase tracking-wider font-extrabold mb-1.5 text-amber-400">
+            <i class="fas fa-bullhorn text-xs"></i> Official Announcement
+          </div>
+          <p class="font-medium text-white leading-relaxed select-text">${msg.text || ''}</p>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 3. Check for Admin Message
+    if (msg.isAdminMessage) {
+      msgDiv.className = 'flex gap-2.5 max-w-[85%] mr-auto';
+      msgDiv.innerHTML = `
+        <div class="w-7 h-7 rounded-full bg-red-500/15 border border-red-500/35 flex items-center justify-center shrink-0 shadow-md">
+          <i class="fas fa-shield-alt text-red-500 text-xs"></i>
+        </div>
+        <div>
+          <div class="text-[9px] text-red-400 font-extrabold mb-0.5 tracking-wider uppercase flex items-center gap-1.5">
+            ${msg.userName || 'System Admin'} <span class="bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase leading-none">Staff</span>
+          </div>
+          <div class="p-3 rounded-xl text-xs leading-relaxed bg-[#1b1216] border border-red-500/30 text-white rounded-tl-none font-semibold shadow-lg shadow-red-500/5">
+            ${msg.text || ''}
+          </div>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      return;
+    }
+
+    // 4. Regular Chat Message
+    const isMe = msg.userId === currentUid;
+    msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
+    
+    msgDiv.innerHTML = `
+      <img
+        src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
+        alt="Avatar"
+        class="w-7 h-7 rounded-full border border-bdr bg-panel shrink-0"
+      />
+      <div>
+        <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''}">
+          ${msg.userName || 'Anonymous'}
+        </div>
+        <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
+          ${msg.text || ''}
+        </div>
+      </div>
+    `;
+    container.appendChild(msgDiv);
+  });
+
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateChatUnreadDot() {
+  const dot = $('chatDot');
+  if (!dot) return;
+  if (unreadGlobal) {
+    dot.classList.remove('hidden');
+    dot.classList.add('bg-gold');
+  } else {
+    dot.classList.add('hidden');
+  }
+}
+
+function updateSubGlobalDot() {
+  const dot = $('subGlobalDot');
+  if (!dot) return;
+  if (unreadGlobal && activeChatSubTab !== 'global') {
+    dot.classList.remove('hidden');
+  } else {
+    dot.classList.add('hidden');
+  }
+}
+
+async function setGlobalTypingState(isTyping) {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+  try {
+    await setDoc(doc(db, 'global_chat_typing', profile.uid), {
+      name: profile.name || 'Anonymous Player',
+      typing: isTyping,
+      timestamp: Date.now()
+    }, { merge: true });
+  } catch (e) {
+    console.warn("Typing update error:", e);
+  }
+}
+
+function handleGlobalInputKeyPress() {
+  setGlobalTypingState(true);
+  if (globalTypingTimeout) clearTimeout(globalTypingTimeout);
+  globalTypingTimeout = setTimeout(() => {
+    setGlobalTypingState(false);
+  }, 2500);
+}
+
+// Global Chat & Sub-tabs events
+$('btnSubGlobal').addEventListener('click', () => {
+  activeChatSubTab = 'global';
+  $('btnSubGlobal').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer';
+  $('btnSubDM').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer';
+  $('subGlobalIndicator').classList.remove('hidden');
+  $('subDMIndicator').classList.add('hidden');
+  $('globalChatWindow').classList.remove('hidden');
+  $('dmChatContainer').classList.add('hidden');
+  $('btnAddFriend').classList.add('hidden');
+
+  unreadGlobal = false;
+  updateChatUnreadDot();
+  updateSubGlobalDot();
+  
+  const container = $('globalChatMsgs');
+  if (container) container.scrollTop = container.scrollHeight;
+});
+
+$('btnSubDM').addEventListener('click', () => {
+  activeChatSubTab = 'dm';
+  $('btnSubDM').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-gold relative transition cursor-pointer';
+  $('btnSubGlobal').className = 'pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer';
+  $('subDMIndicator').classList.remove('hidden');
+  $('subGlobalIndicator').classList.add('hidden');
+  $('dmChatContainer').classList.remove('hidden');
+  $('globalChatWindow').classList.add('hidden');
+  if (!guestProfile) {
+    $('btnAddFriend').classList.remove('hidden');
+  }
+});
+
+function checkIfMuted() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return false;
+  
+  if (profile.muted) {
+    if (profile.muteUntil) {
+      const until = new Date(profile.muteUntil).getTime();
+      if (Date.now() > until) {
+        // Mute has expired, auto-unmute in database
+        updateDoc(doc(db, 'users', profile.uid), {
+          muted: false,
+          muteReason: '',
+          muteUntil: null
+        }).catch(console.warn);
+        return false;
+      } else {
+        const timeStr = new Date(until).toLocaleString();
+        alert(`🔇 You are muted until ${timeStr}.\nReason: ${profile.muteReason || 'No reason specified'}`);
+        return true;
+      }
+    } else {
+      alert(`🔇 You are permanently muted from chat.\nReason: ${profile.muteReason || 'No reason specified'}`);
+      return true;
+    }
+  }
+  return false;
+}
+
+$('globalChatInput').addEventListener('input', () => {
+  handleGlobalInputKeyPress();
+});
+
+$('globalChatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (guestProfile) {
+    alert('Create an account to participate in Global Chat!');
+    return;
+  }
+  if (checkIfMuted()) {
+    return;
+  }
+  const input = $('globalChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  // Cancel typing status immediately
+  setGlobalTypingState(false);
+  if (globalTypingTimeout) clearTimeout(globalTypingTimeout);
+
+  const profile = userProfile || guestProfile;
+  const BAD_WORDS = ["bkl", "mc", "bc", "chutiya", "gand", "gandi", "gali", "fuck", "bitch", "asshole", "shitty", "randi", "loda", "lunde", "kutta", "saala", "saale", "madarchod", "behenchod", "harami", "bhonsri"];
+  
+  let filtered = text;
+  let isAbusive = false;
+  const lower = text.toLowerCase();
+  
+  BAD_WORDS.forEach((word) => {
+    const regex = new RegExp(word, 'gi');
+    if (regex.test(lower)) {
+      isAbusive = true;
+      filtered = filtered.replace(regex, '***');
+    }
+  });
+
+  try {
+    const msgRef = await addDoc(collection(db, 'global_chat'), {
+      userId: profile.uid,
+      userName: profile.name,
+      userAvatar: profile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1',
+      text: filtered,
+      originalText: text,
+      isAbusive: isAbusive,
+      createdAt: serverTimestamp()
+    });
+
+    if (isAbusive) {
+      await addDoc(collection(db, 'chat_reports'), {
+        userId: profile.uid,
+        userName: profile.name,
+        userEmail: profile.email || '',
+        messageId: msgRef.id,
+        messageText: text,
+        createdAt: serverTimestamp(),
+        status: 'open'
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to send message:", err);
+  }
+});
+
+let searchFriendTarget = null;
+$('btnSearchFriend').addEventListener('click', async () => {
+  const handle = $('friendHandleInp').value.trim().toLowerCase();
+  if (handle.length < 3) {
+    alert('Please enter a search handle of at least 3 characters!');
+    return;
+  }
+
+  $('friendSearchResult').innerHTML = '<div class="text-xs text-t3 animate-pulse">Scanning database...</div>';
+  $('bSendFriendReq').classList.add('hidden');
+
+  try {
+    const qUser = query(collection(db, 'users'), where('handle', '==', handle));
+    const snap = await getDocs(qUser);
+    let found = null;
+    snap.forEach(d => {
+      const u = d.data();
+      if (!found && u.uid !== userProfile.uid) {
+        found = { id: d.id, ...u };
+      }
+    });
+
+    if (!found) {
+      $('friendSearchResult').innerHTML = '<div class="text-xs text-red font-semibold">No profile matches this handle. Try again!</div>';
+      return;
+    }
+
+    searchFriendTarget = found;
+    $('friendSearchResult').innerHTML = `
+      <div class="p-3 bg-card border border-bdr rounded-xl flex items-center gap-3">
+        <img src="${found.av}" class="w-9 h-9 rounded-full border border-bdr"/>
+        <div>
+          <div class="text-xs font-bold text-white">${found.name}</div>
+          <div class="text-[10px] text-t3 font-medium font-mono">${found.handle}</div>
+        </div>
+      </div>
+    `;
+    $('bSendFriendReq').classList.remove('hidden');
+  } catch (err) {
+    $('friendSearchResult').innerHTML = `<div class="text-xs text-red">Search Error: ${err.message}</div>`;
+  }
+});
+
+$('bSendFriendReq').addEventListener('click', async () => {
+  if (!searchFriendTarget) return;
+  try {
+    await setDoc(doc(db, 'users', searchFriendTarget.uid, 'friendRequests', userProfile.uid), {
+      uid: userProfile.uid,
+      name: userProfile.name,
+      handle: userProfile.handle,
+      av: userProfile.av,
+      sentAt: serverTimestamp()
+    });
+    $('mAddFriend').classList.add('hidden');
+    alert(`Friend request sent successfully to ${searchFriendTarget.name}!`);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// DM CHAT OPEN & LISTEN
+let dmUnsub = null;
+let activeDMFriendUid = '';
+function openFriendDM(friend) {
+  // Check if player is VIP Premium
+  if (!userProfile.premium) {
+    alert(`🔒 Premium Feature Blocked!\n\nPlayer Direct Messages (DMs) are exclusive to VIP Premium Passes.\n\nGo to profile settings and upgrade to Premium to chat directly with other players.`);
+    return;
+  }
+
+  activeDMFriendUid = friend.uid;
+  $('dmChatName').textContent = friend.name;
+  $('dmChatAv').src = friend.av;
+  $('dmMsgs').innerHTML = '<div class="text-center text-xs text-t3 py-4 animate-pulse">Loading secure chat...</div>';
+  $('mDMChat').classList.remove('hidden');
+
+  if (dmUnsub) {
+    dmUnsub();
+    dmUnsub = null;
+  }
+
+  const roomId = [userProfile.uid, friend.uid].sort().join('_');
+  const q = query(collection(db, 'dms', roomId, 'messages'), orderBy('createdAt', 'asc'));
+  dmUnsub = onSnapshot(q, (snap) => {
+    const listEl = $('dmMsgs');
+    listEl.innerHTML = '';
+    
+    snap.forEach(d => {
+      const m = d.data();
+      const isMe = m.sender === userProfile.uid;
+      const flexCls = isMe ? 'flex-row-reverse' : '';
+      const bgCls = isMe ? 'bg-gold border-gold text-bg font-semibold rounded-tr-none' : 'bg-card border-bdr text-t1 rounded-tl-none';
+
+      const bubble = document.createElement('div');
+      bubble.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
+      bubble.innerHTML = `
+        <div class="max-w-full p-2.5 rounded-xl border text-[11px] leading-relaxed break-words ${bgCls}">
+          ${m.text}
+        </div>
+      `;
+      listEl.appendChild(bubble);
+    });
+
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="text-center text-[10px] text-t3 py-6">Secure DM room initialized. Say hello! 🔒</div>';
+    }
+    listEl.scrollTop = listEl.scrollHeight;
+  });
+}
+
+$('bCloseDMChat').addEventListener('click', () => {
+  $('mDMChat').classList.add('hidden');
+  if (dmUnsub) {
+    dmUnsub();
+    dmUnsub = null;
+  }
+});
+
+// Send DMs perfectly
+$('dmSendBtn').addEventListener('click', () => sendDirectMessage());
+$('dmInp').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendDirectMessage();
+});
+
+async function sendDirectMessage() {
+  if (checkIfMuted()) {
+    return;
+  }
+  const txt = $('dmInp').value.trim();
+  if (!txt || !activeDMFriendUid) return;
+  $('dmInp').value = '';
+
+  const roomId = [userProfile.uid, activeDMFriendUid].sort().join('_');
+  try {
+    await addDoc(collection(db, 'dms', roomId, 'messages'), {
+      text: txt,
+      sender: userProfile.uid,
+      senderName: userProfile.name,
+      createdAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error('Error sending DM: ', err);
+  }
+}
+
+// ── CUSTOMER SUPPORT CHAT FIX & BOT SYNC ──
+let supportUnsub = null;
+function loadLiveSupportChat() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+
+  const ticketId = profile.uid + '_ticket';
+  
+  if (supportUnsub) {
+    supportUnsub();
+    supportUnsub = null;
+  }
+
+  const q = query(collection(db, 'support', ticketId, 'messages'), orderBy('createdAt', 'asc'));
+  supportUnsub = onSnapshot(q, (snap) => {
+    const box = $('chatMsgs');
+    box.innerHTML = '';
+
+    snap.forEach(d => {
+      const m = d.data();
+      const isMe = m.sender === 'user';
+      const isBot = m.sender === 'bot';
+      const isAdmin = m.sender === 'admin';
+
+      let bgCls = 'bg-card border-bdr text-t1 rounded-tl-none';
+      let flexCls = '';
+      let senderLabel = m.senderName || 'Player';
+      let icon = '<i class="fas fa-headset"></i>';
+
+      if (isMe) {
+        bgCls = 'bg-gold border-gold text-bg font-semibold rounded-tr-none';
+        flexCls = 'flex-row-reverse';
+        senderLabel = 'You';
+        icon = '<i class="fas fa-user"></i>';
+      } else if (isBot) {
+        bgCls = 'bg-ele border-bdr text-t1 rounded-tl-none';
+        senderLabel = 'Support Bot';
+        icon = '<i class="fas fa-robot"></i>';
+      } else if (isAdmin) {
+        bgCls = 'bg-red/15 border-red/25 text-red rounded-tl-none font-medium';
+        senderLabel = 'Moderator Admin';
+        icon = '<i class="fas fa-shield-alt text-red"></i>';
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
+      wrap.innerHTML = `
+        <div class="w-7 h-7 bg-card border border-bdr rounded-full flex items-center justify-center text-[10px] flex-shrink-0">
+          ${icon}
+        </div>
+        <div class="min-w-0 flex-1">
+          <span class="text-[9px] text-t3 uppercase font-bold tracking-wider block mb-0.5 ${isMe?'text-right':''}">${senderLabel}</span>
+          <div class="p-3 border rounded-xl text-xs leading-relaxed break-words ${bgCls}">
+            ${m.text}
+          </div>
+        </div>
+      `;
+      box.appendChild(wrap);
+    });
+
+    if (snap.empty) {
+      // Restore default bot choices
+      box.innerHTML = `
+        <div class="flex gap-2">
+          <div class="w-7 h-7 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs flex-shrink-0">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
+            <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
+            <div class="flex flex-wrap gap-1.5 pt-1.5">
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
+            </div>
+          </div>
+        </div>`;
+    }
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+// Intercept clicks on support bot option chips
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('.qrb');
+  if (chip) {
+    sendSupportMessage(chip.dataset.m);
+  }
+});
+
+$('chatSend').addEventListener('click', () => sendSupportMessage());
+$('chatIn').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendSupportMessage();
+});
+
+// Sync both user message and automatic bot responses into Firestore!
+const BOT_AUTO_ANSWERS = [
+  { keys: ['cheat', 'report', 'hack'], ans: 'To report a cheater, click the "Report Hack/Cheat" button under the tournament card. Provide reported name, UID, and screen record proof links.' },
+  { keys: ['recharge', 'coins', 'deposit', 'wallet'], ans: 'Go to Wallet → Deposit, choose JazzCash or EasyPaisa, send money to the listed agent, and enter amount PKR to credit your balance!' },
+  { keys: ['withdraw'], ans: 'To withdraw earnings, click Withdraw in Wallet, enter amount AX Coins & receive agent mobile number. Transfers settle within 48 hours.' },
+  { keys: ['premium', 'upgrade', 'vip'], ans: 'Go to Profile → Customize, or click Upgrade in Premium plans to purchase VIP privileges.' },
+];
+
+async function sendSupportMessage(customTxt) {
+  const txt = (customTxt || $('chatIn').value).trim();
+  if (!txt) return;
+  if (!customTxt) $('chatIn').value = '';
+
+  const ticketId = userProfile.uid + '_ticket';
+  const messagesCol = collection(db, 'support', ticketId, 'messages');
+
+  try {
+    // 1. Write user message to Firestore
+    await addDoc(messagesCol, {
+      text: txt,
+      sender: 'user',
+      senderName: userProfile.name,
+      createdAt: serverTimestamp()
+    });
+
+    // Create Support ticket index reference in Firestore for admin to view
+    await setDoc(doc(db, 'support_tickets', ticketId), {
+      id: ticketId,
+      ticketId: ticketId,
+      uid: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      lastMsg: txt,
+      status: 'open',
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    // 2. Generate and write automatic bot replies directly to Firestore to keep sync!
+    const lower = txt.toLowerCase();
+    
+    // Human live Agent escalate trigger
+    if (['agent', 'human', 'mod', 'admin', 'connect'].some(k => lower.includes(k))) {
+      setTimeout(async () => {
+        await addDoc(messagesCol, {
+          text: 'Connecting to human agent moderator... Your ticket has been marked priority. Please wait while administrators join the chat!',
+          sender: 'bot',
+          senderName: 'Support Bot',
+          createdAt: serverTimestamp()
+        });
+        await updateDoc(doc(db, 'support_tickets', ticketId), {
+          lastMsg: '[Bot]: Connecting live agent...',
+          updatedAt: serverTimestamp()
+        });
+      }, 700);
+    } else {
+      const matchRule = BOT_AUTO_ANSWERS.find(r => r.keys.some(k => lower.includes(k)));
+      const replyStr = matchRule ? matchRule.ans : 'I am support bot assistant. Type "agent" to connect with a live administrator moderator directly.';
+      
+      setTimeout(async () => {
+        await addDoc(messagesCol, {
+          text: replyStr,
+          sender: 'bot',
+          senderName: 'Support Bot',
+          createdAt: serverTimestamp()
+        });
+        await updateDoc(doc(db, 'support_tickets', ticketId), {
+          lastMsg: `[Bot]: ${replyStr}`,
+          updatedAt: serverTimestamp()
+        });
+      }, 700);
+    }
+  } catch (err) {
+    console.error('Error writing support log: ', err);
+  }
+}
+
+// Real-time listen to live app announcements & notifications
+function loadLiveNotifications() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+
+  let isInitial = true;
+
+  const qNotifs = query(
+    collection(db, 'notifications'),
+    where('userId', '==', profile.uid)
+  );
+  onSnapshot(qNotifs, (snap) => {
+    let unreadCount = 0;
+    const items = [];
+    snap.forEach(d => {
+      const n = d.data();
+      items.push({ id: d.id, ...n });
+      if (!n.read) unreadCount++;
+    });
+
+    const dot = $('notifDot');
+    if (unreadCount > 0) {
+      dot.classList.remove('hidden');
+    } else {
+      dot.classList.add('hidden');
+    }
+
+    // Trigger toast alert for newly added unread notifications in real time
+    snap.docChanges().forEach((change) => {
+      if (change.type === 'added' && !isInitial) {
+        const n = change.doc.data();
+        if (!n.read) {
+          const title = n.title || 'New Notification';
+          const body = n.message || n.body || '';
+          showToastNotification(title, body);
+        }
+      }
+    });
+
+    isInitial = false;
+  });
+}
+
+function showToastNotification(title, body) {
+  // Create toast container if it doesn't exist
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full px-4 sm:px-0 pointer-events-none';
+    document.body.appendChild(container);
+  }
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'bg-[#111420] border border-[#252a45] text-white rounded-xl shadow-2xl p-4 flex flex-col gap-1 transform translate-x-full opacity-0 transition-all duration-300 pointer-events-auto cursor-pointer hover:bg-[#171b2e]';
+  toast.innerHTML = `
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-[#f0c040]/10 flex items-center justify-center text-[#f0c040] text-sm">
+          <i class="fas fa-bell"></i>
+        </div>
+        <span class="font-display font-bold text-xs text-[#f0c040] tracking-wide uppercase">${title}</span>
+      </div>
+      <button class="text-[#4a5070] hover:text-white transition text-xs"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-xs text-[#8890b0] pl-10 leading-relaxed">${body}</p>
+  `;
+
+  // Close toast on button click or click on toast itself
+  const closeBtn = toast.querySelector('button');
+  const dismiss = () => {
+    toast.classList.add('translate-x-full', 'opacity-0');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  };
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismiss();
+  });
+  toast.addEventListener('click', () => {
+    dismiss();
+    const bellBtn = $('bBell');
+    if (bellBtn) bellBtn.click();
+  });
+
+  container.appendChild(toast);
+
+  // Trigger slide in
+  setTimeout(() => {
+    toast.classList.remove('translate-x-full', 'opacity-0');
+  }, 10);
+
+  // Auto dismiss after 7 seconds
+  setTimeout(() => {
+    if (toast.parentElement) {
+      dismiss();
+    }
+  }, 7000);
+}
+
+$('bBell').addEventListener('click', async () => {
+  if (guestProfile) {
+    alert('Log in to see your verified slot notifications!');
+    return;
+  }
+
+  try {
+    const qNotifs = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
+    const snap = await getDocs(qNotifs);
+    const unread = [];
+    const msgs = [];
+    
+    snap.forEach(d => {
+      const n = d.data();
+      const msgText = n.message || (n.title ? `${n.title}\n${n.body}` : n.body) || 'New Notification';
+      msgs.push(msgText);
+      if (!n.read) unread.push(d.id);
+    });
+
+    // Mark as read in Firestore
+    for (const id of unread) {
+      await updateDoc(doc(db, 'notifications', id), { read: true });
+    }
+
+    if (msgs.length === 0) {
+      alert('No new notifications yet!');
+    } else {
+      alert(`🔔 Notifications:\n\n${msgs.map(m => `• ${m}`).join('\n\n')}`);
+    }
+  } catch (err) {
+    alert('No notifications loaded.');
+  }
+});
+
+// Button upgrades redirections
+$('gUpgradeBtn').addEventListener('click', () => alert('Exit guest profile, and connect real Google or email ID to save AX earnings!'));
+$('btnEditProfile').addEventListener('click', () => {
+  if (guestProfile) {
+    alert('Connect a full account first to change Display Name!');
+    return;
+  }
+  const n = prompt('Enter your new Display Name:', userProfile.name);
+  if (n && n.trim()) {
+    updateDoc(doc(db, 'users', userProfile.uid), { name: n.trim() })
+      .then(() => alert('Name updated successfully!'))
+      .catch(err => alert(err.message));
+  }
+});
+
+// Trigger customise modal
+$('btnCustomize').addEventListener('click', () => {
+  if (!userProfile) return;
+
+  // Basic Info Values
+  $('custName').value = userProfile.name || '';
+  $('custCountry').value = userProfile.country || '';
+  $('custFavGame').value = userProfile.favoriteGame || '';
+  $('custGameUID').value = userProfile.gameUID || '';
+  $('custBadgeVal').textContent = userProfile.badge || 'No badge awarded yet';
+
+  // Social Connections
+  $('custDiscord').value = userProfile.socialDiscord || '';
+  $('custInstagram').value = userProfile.socialInstagram || '';
+  $('custYoutube').value = userProfile.socialYoutube || '';
+
+  // Premium Values
+  $('custBio').value = userProfile.bio || '';
+  $('custAvPreview').src = userProfile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile.uid}`;
+  selectedCustomAvatarUrl = null; // reset upload state
+  $('uploadStatus').classList.add('hidden');
+  $('uploadStatus').innerHTML = '';
+
+  selectedBannerTheme = userProfile.bannerTheme || 'dark';
+  selectedAvatarFrame = userProfile.avatarFrame || 'none';
+  selectedNameColor = userProfile.nameColor || '#ffffff';
+
+  // Lock premium visual controls if not premium
+  if (userProfile.premium) {
+    $('custPrmBadge').textContent = 'Premium Active';
+    $('custPrmBadge').classList.remove('bg-purple/20', 'text-purple');
+    $('custPrmBadge').classList.add('bg-green-500/20', 'text-green-400');
+    
+    // Enable fields
+    $('custAvatarFrame').disabled = false;
+    $('custAvatarFrame').classList.remove('opacity-60', 'pointer-events-none');
+    $('custBio').disabled = false;
+    $('custBio').classList.remove('opacity-60', 'pointer-events-none');
+    $('btnBrowseAvatar').disabled = false;
+    $('btnBrowseAvatar').classList.remove('opacity-60', 'pointer-events-none');
+  } else {
+    $('custPrmBadge').textContent = 'Premium Only';
+    $('custPrmBadge').classList.add('bg-purple/20', 'text-purple');
+    $('custPrmBadge').classList.remove('bg-green-500/20', 'text-green-400');
+    
+    // Disable fields
+    $('custAvatarFrame').disabled = true;
+    $('custAvatarFrame').classList.add('opacity-60', 'pointer-events-none');
+    $('custBio').disabled = true;
+    $('custBio').classList.add('opacity-60', 'pointer-events-none');
+    $('btnBrowseAvatar').disabled = true;
+    $('btnBrowseAvatar').classList.add('opacity-60', 'pointer-events-none');
+  }
+
+  // Load select grids/swatches
+  loadAvatarPickerGrid();
+  loadBannerThemeSelector();
+  loadNameColorSelector();
+
+  $('mCustomize').classList.remove('hidden');
+});
+
+$('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
+$('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
+$('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('hidden'));
+
+// Topbar Support Click Handler
+$('bTopbarSupport').addEventListener('click', () => {
+  switchTab('Support');
+  loadLiveSupportChat();
+});
+
+// Settings Modal Triggers
+$('bSettings').addEventListener('click', () => {
+  $('mSettings').classList.remove('hidden');
+});
+$('bCloseSettingsCross').addEventListener('click', () => $('mSettings').classList.add('hidden'));
+$('bCloseSettings').addEventListener('click', () => $('mSettings').classList.add('hidden'));
+$('bSaveSettings').addEventListener('click', () => {
+  alert('⚙️ Settings saved successfully!');
+  $('mSettings').classList.add('hidden');
+});
+
+// Terms Modal Triggers
+$('bViewTerms').addEventListener('click', () => $('mTerms').classList.remove('hidden'));
+$('lnkTerms').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('mTerms').classList.remove('hidden');
+});
+$('bCloseTerms').addEventListener('click', () => $('mTerms').classList.add('hidden'));
+
+// Privacy Modal Triggers
+$('bViewPrivacy').addEventListener('click', () => $('mPrivacy').classList.remove('hidden'));
+$('lnkPrivacy').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('mPrivacy').classList.remove('hidden');
+});
+$('bClosePrivacy').addEventListener('click', () => $('mPrivacy').classList.add('hidden'));
+
+// Trigger and launch support chat connection listener when support tab mounts
+document.querySelector('.ni[data-t="Support"]').addEventListener('click', () => {
+  loadLiveSupportChat();
+});
+
+// Under Development Popup modal listeners
+$('bCloseUnderDev').addEventListener('click', () => {
+  $('mUnderDevPopup').classList.add('hidden');
+});
+$('bCloseUnderDevCross').addEventListener('click', () => {
+  $('mUnderDevPopup').classList.add('hidden');
+});
+
+// Initial bootstrapper loads
+loadAvatarPickerGrid();
+
+</script>
+</body>
+</html>
