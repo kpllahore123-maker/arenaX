@@ -1404,6 +1404,8 @@ let toursData = [];
 let userRegs = {};
 let friendList = [];
 let depositUnsub = null;
+let userDepositsList = [];
+let userProfileTransactionsList = [];
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
@@ -1664,6 +1666,32 @@ document.querySelectorAll('.ni').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.t));
 });
 
+function mergeAndRenderTransactions() {
+  const combined = [...userDepositsList, ...userProfileTransactionsList];
+  combined.sort((a, b) => {
+    let timeA = 0;
+    if (a.submittedAt) {
+      timeA = a.submittedAt.seconds ? a.submittedAt.seconds * 1000 : new Date(a.submittedAt).getTime();
+    } else if (a.timestamp) {
+      timeA = new Date(a.timestamp).getTime();
+    } else if (a.createdAt) {
+      timeA = a.createdAt.seconds ? a.createdAt.seconds * 1000 : new Date(a.createdAt).getTime();
+    }
+    
+    let timeB = 0;
+    if (b.submittedAt) {
+      timeB = b.submittedAt.seconds ? b.submittedAt.seconds * 1000 : new Date(b.submittedAt).getTime();
+    } else if (b.timestamp) {
+      timeB = new Date(b.timestamp).getTime();
+    } else if (b.createdAt) {
+      timeB = b.createdAt.seconds ? b.createdAt.seconds * 1000 : new Date(b.createdAt).getTime();
+    }
+    
+    return timeB - timeA;
+  });
+  renderUserDeposits(combined);
+}
+
 // Setup Auth State listener
 onAuthStateChanged(auth, async (fireUser) => {
   if (depositUnsub) {
@@ -1681,18 +1709,16 @@ onAuthStateChanged(auth, async (fireUser) => {
       dSnap.forEach(dDoc => {
         list.push({ id: dDoc.id, ...dDoc.data() });
       });
-      list.sort((a, b) => {
-        const ta = a.submittedAt?.seconds || 0;
-        const tb = b.submittedAt?.seconds || 0;
-        return tb - ta;
-      });
-      renderUserDeposits(list);
+      userDepositsList = list;
+      mergeAndRenderTransactions();
     });
 
     // Read and listen to Firestore User Profile in real time!
     onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
       if (snap.exists()) {
         userProfile = { id: fireUser.uid, ...snap.data() };
+        userProfileTransactionsList = userProfile.transactions || [];
+        mergeAndRenderTransactions();
         
         // Full Ban checker block
         if (userProfile.banned && userProfile.banType === 'full') {
@@ -2859,7 +2885,7 @@ function renderUserDeposits(list) {
 
   histEl.innerHTML = '';
   list.forEach(tx => {
-    const isWithdrawal = tx.type === 'withdrawal';
+    const isWithdrawal = tx.type === 'withdrawal' || tx.type === 'withdraw' || (tx.type === 'adjustment' && tx.amount < 0);
     const item = document.createElement('div');
     item.className = 'p-3.5 bg-card border border-bdr rounded-xl flex flex-col gap-2.5';
 
@@ -2868,79 +2894,125 @@ function renderUserDeposits(list) {
     let bgIconClass = '';
     let textAmtClass = '';
 
-    if (tx.status === 'pending') {
-      statusClass = 'text-gold bg-gold/10 border border-gold/20';
-      bgIconClass = 'bg-gold/10 border border-gold/20 text-gold';
-      textAmtClass = 'text-gold';
-      statusHtml = isWithdrawal ? `
-        <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
-          <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
-          Withdrawal Pending Review
+    if (tx.type === 'adjustment') {
+      const isAdd = tx.amount >= 0;
+      statusClass = isAdd ? 'text-green bg-green/10 border border-green/20' : 'text-red bg-red/10 border border-red/20';
+      bgIconClass = isAdd ? 'bg-green/10 border border-green/20 text-green' : 'bg-red/10 border border-red/20 text-red';
+      textAmtClass = isAdd ? 'text-green' : 'text-red';
+      statusHtml = `
+        <div class="flex items-center gap-1 text-[10px] font-bold ${isAdd ? 'text-green' : 'text-red'} uppercase">
+          <i class="fas ${isAdd ? 'fa-check-circle' : 'fa-times-circle'}"></i> Balance Adjusted
         </div>
-        <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to process your withdrawal request... Will be credited in 24-48 hours.</p>
-      ` : `
-        <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
-          <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
-          Pending Administration Review
-        </div>
-        <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to review your request... We are checking your TXN ID.</p>
+        <p class="text-[9px] text-t3 leading-normal mt-0.5">${tx.message || (isAdd ? 'Coins added by Admin.' : 'Coins deducted by Admin.')}</p>
       `;
-    } else if (tx.status === 'approved') {
-      statusClass = 'text-green bg-green/10 border border-green/20';
-      bgIconClass = isWithdrawal ? 'bg-red/10 border border-red/20 text-red' : 'bg-green/10 border border-green/20 text-green';
-      textAmtClass = isWithdrawal ? 'text-red' : 'text-green';
-      statusHtml = isWithdrawal ? `
-        <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
-          <i class="fas fa-arrow-up"></i> Successful Withdrawal
+      
+      const dateStr = tx.timestamp || 'Just now';
+      const amountAX = Math.abs(tx.amount);
+      const methodLabel = tx.account || 'Admin Adjustment';
+      const txnLabel = tx.id || 'ADJ';
+      
+      item.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
+              <i class="fas ${isAdd ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+            </div>
+            <div>
+              <div class="text-white font-bold uppercase text-[10px]">${methodLabel}</div>
+              <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-display font-black text-sm ${textAmtClass}">
+              ${isAdd ? '+' : '-'}${amountAX} AX
+            </div>
+            <div class="text-[9px] text-t3 font-mono">-</div>
+          </div>
         </div>
-        <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! Rs ${tx.amountPKR} sent to ${tx.method}.</p>
-      ` : `
-        <div class="flex items-center gap-1 text-[10px] font-bold text-green uppercase">
-          <i class="fas fa-check-circle"></i> Successful deposit
+        
+        <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
+          <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
+            <span class="text-t3 uppercase">ID: ${txnLabel}</span>
+            <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">approved</span>
+          </div>
+          ${statusHtml}
         </div>
-        <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! ${tx.amountAX} AX Coins credited to wallet.</p>
       `;
     } else {
-      statusClass = 'text-red bg-red/10 border border-red/20';
-      bgIconClass = 'bg-red/10 border border-red/20 text-red';
-      textAmtClass = 'text-red';
-      statusHtml = `
-        <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
-          <i class="fas fa-times-circle"></i> Rejected ${isWithdrawal ? 'Withdrawal' : 'Deposit'}
+      if (tx.status === 'pending') {
+        statusClass = 'text-gold bg-gold/10 border border-gold/20';
+        bgIconClass = 'bg-gold/10 border border-gold/20 text-gold';
+        textAmtClass = 'text-gold';
+        statusHtml = isWithdrawal ? `
+          <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+            Withdrawal Pending Review
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to process your withdrawal request... Will be credited in 24-48 hours.</p>
+        ` : `
+          <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-gold">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+            Pending Administration Review
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">⏳ Wait for administration to review your request... We are checking your TXN ID.</p>
+        `;
+      } else if (tx.status === 'approved') {
+        statusClass = 'text-green bg-green/10 border border-green/20';
+        bgIconClass = isWithdrawal ? 'bg-red/10 border border-red/20 text-red' : 'bg-green/10 border border-green/20 text-green';
+        textAmtClass = isWithdrawal ? 'text-red' : 'text-green';
+        statusHtml = isWithdrawal ? `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+            <i class="fas fa-arrow-up"></i> Successful Withdrawal
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! Rs ${tx.amountPKR} sent to ${tx.method}.</p>
+        ` : `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-green uppercase">
+            <i class="fas fa-check-circle"></i> Successful deposit
+          </div>
+          <p class="text-[9px] text-t3 leading-normal mt-0.5">Successfully processed! ${tx.amountAX} AX Coins credited to wallet.</p>
+        `;
+      } else {
+        statusClass = 'text-red bg-red/10 border border-red/20';
+        bgIconClass = 'bg-red/10 border border-red/20 text-red';
+        textAmtClass = 'text-red';
+        statusHtml = `
+          <div class="flex items-center gap-1 text-[10px] font-bold text-red uppercase">
+            <i class="fas fa-times-circle"></i> Rejected ${isWithdrawal ? 'Withdrawal' : 'Deposit'}
+          </div>
+          <p class="text-[9px] text-red/80 font-semibold leading-normal mt-0.5">Reason: ${tx.rejectionReason || 'Invalid details.'}</p>
+        `;
+      }
+
+      const dateStr = tx.submittedAt ? new Date(tx.submittedAt.seconds * 1000).toLocaleString() : 'Just now';
+
+      item.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
+              <i class="fas ${isWithdrawal ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+            </div>
+            <div>
+              <div class="text-white font-bold uppercase text-[10px]">${isWithdrawal ? 'Withdrawal' : 'Deposit'} (${tx.method})</div>
+              <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-display font-black text-sm ${textAmtClass}">
+              ${isWithdrawal ? '-' : '+'}${tx.amountAX} AX
+            </div>
+            <div class="text-[9px] text-t3 font-mono">Rs ${tx.amountPKR}</div>
+          </div>
         </div>
-        <p class="text-[9px] text-red/80 font-semibold leading-normal mt-0.5">Reason: ${tx.rejectionReason || 'Invalid details.'}</p>
+        
+        <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
+          <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
+            <span class="text-t3 uppercase">ID: ${tx.txnId}</span>
+            <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">${tx.status}</span>
+          </div>
+          ${statusHtml}
+        </div>
       `;
     }
-
-    const dateStr = tx.submittedAt ? new Date(tx.submittedAt.seconds * 1000).toLocaleString() : 'Just now';
-
-    item.innerHTML = `
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${bgIconClass}">
-            <i class="fas ${isWithdrawal ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
-          </div>
-          <div>
-            <div class="text-white font-bold uppercase text-[10px]">${isWithdrawal ? 'Withdrawal' : 'Deposit'} (${tx.method})</div>
-            <div class="text-[9px] text-t3 font-mono mt-0.5">${dateStr}</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <div class="font-display font-black text-sm ${textAmtClass}">
-            ${isWithdrawal ? '-' : '+'}${tx.amountAX} AX
-          </div>
-          <div class="text-[9px] text-t3 font-mono">Rs ${tx.amountPKR}</div>
-        </div>
-      </div>
-      
-      <div class="p-2.5 bg-[#0a0d16]/60 border border-bdr/55 rounded-lg flex flex-col">
-        <div class="flex justify-between items-center text-[9px] border-b border-bdr/35 pb-1 mb-1 font-mono">
-          <span class="text-t3 uppercase">ID: ${tx.txnId}</span>
-          <span class="px-1.5 py-0.5 rounded text-[8px] ${statusClass} uppercase font-bold tracking-wider">${tx.status}</span>
-        </div>
-        ${statusHtml}
-      </div>
-    `;
 
     histEl.appendChild(item);
   });
