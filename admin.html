@@ -1165,7 +1165,7 @@ function loadRealtimeDatabase() {
   }
 
   // 8. Listen Global Chat (spectator)
-  const qChat = query(collection(db, 'global_chat'), orderBy('timestamp', 'desc'), limit(60));
+  const qChat = query(collection(db, 'global_chat'), orderBy('createdAt', 'desc'), limit(60));
   onSnapshot(qChat, (snap) => {
     chatMessages = [];
     snap.forEach(d => chatMessages.push({ id: d.id, ...d.data() }));
@@ -1177,7 +1177,7 @@ function loadRealtimeDatabase() {
   });
 
   // 9. Listen Abusive Chat Reports
-  const qChatReports = query(collection(db, 'chat_reports'), orderBy('timestamp', 'desc'));
+  const qChatReports = query(collection(db, 'chat_reports'), orderBy('createdAt', 'desc'));
   onSnapshot(qChatReports, (snap) => {
     chatReports = [];
     snap.forEach(d => chatReports.push({ id: d.id, ...d.data() }));
@@ -1687,6 +1687,29 @@ function renderUsers() {
   });
 }
 
+// Helpers for safe Firestore Timestamp display
+function getSafeDateString(fieldVal) {
+  if (!fieldVal) return '';
+  if (typeof fieldVal.toDate === 'function') {
+    return fieldVal.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  if (fieldVal.seconds) {
+    return new Date(fieldVal.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  return new Date(fieldVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function getSafeDateTimeString(fieldVal) {
+  if (!fieldVal) return '';
+  if (typeof fieldVal.toDate === 'function') {
+    return fieldVal.toDate().toLocaleString();
+  }
+  if (fieldVal.seconds) {
+    return new Date(fieldVal.seconds * 1000).toLocaleString();
+  }
+  return new Date(fieldVal).toLocaleString();
+}
+
 // ── GLOBAL CHAT SPECTATOR LOGIC ──
 function renderAdminChat() {
   const container = $('adminChatMsgs');
@@ -1704,14 +1727,12 @@ function renderAdminChat() {
   let html = '';
   chatMessages.forEach(msg => {
     const sender = users.find(u => u.id === msg.userId || u.uid === msg.userId);
-    const senderName = msg.username || sender?.name || 'Unregistered Guest';
+    const senderName = msg.userName || msg.username || sender?.name || 'Unregistered Guest';
     const isMuted = sender?.muted || false;
     const isBanned = sender?.banned || false;
     
-    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
-    const avatarUrl = msg.avatarSeed 
-      ? `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.avatarSeed}` 
-      : (sender?.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.userId || 'placeholder'}`);
+    const timeStr = getSafeDateString(msg.createdAt);
+    const avatarUrl = msg.userAvatar || sender?.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.userId || 'placeholder'}`;
     
     html += `
       <div class="flex items-start gap-3 bg-panel/30 border border-bdr/20 p-3 rounded-lg hover:bg-panel/50 transition">
@@ -1780,7 +1801,7 @@ function renderAdminChatReports() {
   let html = '';
   pendingReports.forEach(rep => {
     const reportedUser = users.find(u => u.id === rep.userId);
-    const dateStr = rep.timestamp ? new Date(rep.timestamp).toLocaleString() : '';
+    const dateStr = getSafeDateTimeString(rep.createdAt);
     
     html += `
       <div class="bg-panel/40 border border-bdr p-3 rounded-lg space-y-2">
