@@ -1228,7 +1228,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         </div>
         <div className="flex items-center gap-2">
           {/* Admin panel switch option for staff */}
-          {(isAdminUID || currentUser.email === 'admin@arenax.com') && (
+          {(isAdminUID || (currentUser && currentUser.email === 'admin@arenax.com')) && (
             <button
               onClick={onSwitchToAdmin}
               className="px-3 py-1 bg-[#e8404a] text-white text-[11px] uppercase font-bold rounded hover:bg-[#cc3540] transition tracking-wider flex items-center gap-1"
