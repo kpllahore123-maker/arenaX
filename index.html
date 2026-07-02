@@ -59,6 +59,7 @@ tailwind.config = {
 #curR { position: fixed; width: 30px; height: 30px; border: 1.5px solid rgba(240, 192, 64, 0.5); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: left 0.1s ease, top 0.1s ease, width 0.2s, height 0.2s, border-color 0.2s; }
 .hv-hover #curR { width: 44px; height: 44px; border-color: #f0c040; }
 </style>
+
 </head>
 <body class="bg-bg text-t1 font-sans min-h-screen relative overflow-hidden pb-[64px] select-none">
 
@@ -1625,9 +1626,9 @@ function boot() {
     }
   }
 
-  // Set referral link for logged-in users
+  // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
   if (userProfile) {
-    $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
+    $('referralLinkInput').value = 'https://kpllahore123-maker.github.io/arenaX?ref=' + userProfile.uid;
   } else {
     $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
   }
@@ -3735,6 +3736,8 @@ function loadLiveNotifications() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
+  let isInitial = true;
+
   const qNotifs = query(
     collection(db, 'notifications'),
     where('userId', '==', profile.uid)
@@ -3754,7 +3757,80 @@ function loadLiveNotifications() {
     } else {
       dot.classList.add('hidden');
     }
+
+    // Trigger toast alert for newly added unread notifications in real time
+    snap.docChanges().forEach((change) => {
+      if (change.type === 'added' && !isInitial) {
+        const n = change.doc.data();
+        if (!n.read) {
+          const title = n.title || 'New Notification';
+          const body = n.message || n.body || '';
+          showToastNotification(title, body);
+        }
+      }
+    });
+
+    isInitial = false;
   });
+}
+
+function showToastNotification(title, body) {
+  // Create toast container if it doesn't exist
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full px-4 sm:px-0 pointer-events-none';
+    document.body.appendChild(container);
+  }
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'bg-[#111420] border border-[#252a45] text-white rounded-xl shadow-2xl p-4 flex flex-col gap-1 transform translate-x-full opacity-0 transition-all duration-300 pointer-events-auto cursor-pointer hover:bg-[#171b2e]';
+  toast.innerHTML = `
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-[#f0c040]/10 flex items-center justify-center text-[#f0c040] text-sm">
+          <i class="fas fa-bell"></i>
+        </div>
+        <span class="font-display font-bold text-xs text-[#f0c040] tracking-wide uppercase">${title}</span>
+      </div>
+      <button class="text-[#4a5070] hover:text-white transition text-xs"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-xs text-[#8890b0] pl-10 leading-relaxed">${body}</p>
+  `;
+
+  // Close toast on button click or click on toast itself
+  const closeBtn = toast.querySelector('button');
+  const dismiss = () => {
+    toast.classList.add('translate-x-full', 'opacity-0');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  };
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismiss();
+  });
+  toast.addEventListener('click', () => {
+    dismiss();
+    const bellBtn = $('bBell');
+    if (bellBtn) bellBtn.click();
+  });
+
+  container.appendChild(toast);
+
+  // Trigger slide in
+  setTimeout(() => {
+    toast.classList.remove('translate-x-full', 'opacity-0');
+  }, 10);
+
+  // Auto dismiss after 7 seconds
+  setTimeout(() => {
+    if (toast.parentElement) {
+      dismiss();
+    }
+  }, 7000);
 }
 
 $('bBell').addEventListener('click', async () => {
