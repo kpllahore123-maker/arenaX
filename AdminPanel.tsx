@@ -299,7 +299,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
     const newTx = {
       id: `tx_${Math.floor(100000 + Math.random() * 900000)}`,
       type: 'adjustment',
-      amount: Math.abs(adj),
+      amount: adj,
       status: 'approved',
       account: adj > 0 ? 'Admin Add' : 'Admin Cut',
       timestamp: new Date().toLocaleString(),
@@ -312,6 +312,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
         balance: increment(adj),
         transactions: arrayUnion(newTx)
       });
+      
+      // Send real-time notification to user
+      await addDoc(collection(db, 'notifications'), {
+        userId: user.id,
+        title: adj > 0 ? 'Coins Added! 🪙' : 'Coins Deducted! ⚠️',
+        message: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
+        body: msg || (adj > 0 ? `Admin added ${adj} AX Coins to your wallet.` : `Admin deducted ${Math.abs(adj)} AX Coins from your wallet.`),
+        type: 'wallet',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
       alert(`Balance adjusted by ${adj > 0 ? '+' : ''}${adj} AX Coins!`);
     } catch (err: any) {
       alert(err.message);
