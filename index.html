@@ -3736,6 +3736,34 @@ $('btnSubDM').addEventListener('click', () => {
   }
 });
 
+function checkIfMuted() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return false;
+  
+  if (profile.muted) {
+    if (profile.muteUntil) {
+      const until = new Date(profile.muteUntil).getTime();
+      if (Date.now() > until) {
+        // Mute has expired, auto-unmute in database
+        updateDoc(doc(db, 'users', profile.uid), {
+          muted: false,
+          muteReason: '',
+          muteUntil: null
+        }).catch(console.warn);
+        return false;
+      } else {
+        const timeStr = new Date(until).toLocaleString();
+        alert(`🔇 You are muted until ${timeStr}.\nReason: ${profile.muteReason || 'No reason specified'}`);
+        return true;
+      }
+    } else {
+      alert(`🔇 You are permanently muted from chat.\nReason: ${profile.muteReason || 'No reason specified'}`);
+      return true;
+    }
+  }
+  return false;
+}
+
 $('globalChatInput').addEventListener('input', () => {
   handleGlobalInputKeyPress();
 });
@@ -3744,6 +3772,9 @@ $('globalChatForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (guestProfile) {
     alert('Create an account to participate in Global Chat!');
+    return;
+  }
+  if (checkIfMuted()) {
     return;
   }
   const input = $('globalChatInput');
@@ -3922,6 +3953,9 @@ $('dmInp').addEventListener('keydown', (e) => {
 });
 
 async function sendDirectMessage() {
+  if (checkIfMuted()) {
+    return;
+  }
   const txt = $('dmInp').value.trim();
   if (!txt || !activeDMFriendUid) return;
   $('dmInp').value = '';
