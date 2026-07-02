@@ -124,6 +124,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   // Notifications
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotifsCount, setUnreadNotifsCount] = useState(0);
+  const [toasts, setToasts] = useState<{ id: string; title: string; body: string }[]>([]);
+  const isInitialNotifs = useRef(true);
 
   // Rules search
   const [rulesQuery, setRulesQuery] = useState('');
@@ -356,6 +358,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     if (!currentUser || isGuest) {
       setNotifications([]);
       setUnreadNotifsCount(0);
+      isInitialNotifs.current = true;
       return;
     }
     const qNotifs = query(
@@ -370,6 +373,28 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         list.push({ id: d.id, ...n });
         if (!n.read) unread++;
       });
+
+      // Show real-time alerts for newly added notifications
+      if (!isInitialNotifs.current) {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const n = change.doc.data();
+            if (!n.read) {
+              const title = n.title || 'New Notification';
+              const body = n.message || n.body || '';
+              const newToastId = `toast_${Date.now()}_${Math.random()}`;
+              setToasts((prev) => [...prev, { id: newToastId, title, body }]);
+              // Auto remove after 7 seconds
+              setTimeout(() => {
+                setToasts((prev) => prev.filter((t) => t.id !== newToastId));
+              }, 7000);
+            }
+          }
+        });
+      } else {
+        isInitialNotifs.current = false;
+      }
+
       setNotifications(list);
       setUnreadNotifsCount(unread);
     }, (err) => {
@@ -1119,6 +1144,39 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   // Main Dashboard
   return (
     <div id="sDash" className="min-h-screen bg-[#0a0c12] text-[#f0f2ff] flex flex-col font-sans pb-[64px] overflow-hidden">
+      {/* Real-Time Toast Notifications Overlay */}
+      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full px-4 sm:px-0 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            onClick={() => {
+              setToasts((prev) => prev.filter((item) => item.id !== t.id));
+              handleOpenNotifications();
+            }}
+            className="bg-[#111420] border border-[#252a45] text-white rounded-xl shadow-2xl p-4 flex flex-col gap-1 pointer-events-auto cursor-pointer hover:bg-[#171b2e] transition duration-300 transform translate-x-0 animate-slide-in"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#f0c040]/10 flex items-center justify-center text-[#f0c040] text-sm">
+                  <i className="fas fa-bell"></i>
+                </div>
+                <span className="font-semibold text-xs text-[#f0c040] tracking-wide uppercase">{t.title}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setToasts((prev) => prev.filter((item) => item.id !== t.id));
+                }}
+                className="text-[#4a5070] hover:text-white transition text-xs"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <p className="text-xs text-[#8890b0] pl-10 leading-relaxed">{t.body}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Dynamic Cursor Effects Styling */}
       <style>{`
         body { font-family: 'Inter', sans-serif; }
