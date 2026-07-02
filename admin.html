@@ -129,6 +129,10 @@ tailwind.config = {
         <i class="fas fa-headset w-4 text-center"></i> Support Tickets <span id="tktOpenCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
       </button>
 
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="GlobalChat">
+        <i class="fas fa-comments w-4 text-center"></i> Global Chat Spectator
+      </button>
+
       <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2 pt-4">Payments System</div>
 
       <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Deposits">
@@ -488,6 +492,59 @@ tailwind.config = {
         </div>
       </section>
 
+      <!-- ── GLOBAL CHAT SPECTATOR PAGE ── -->
+      <section id="pGlobalChat" class="page hidden h-[calc(100vh-140px)]">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+          <!-- Left: Live Chat Spectator (7 cols) -->
+          <div class="lg:col-span-7 bg-card border border-bdr rounded-xl flex flex-col min-h-0 overflow-hidden h-full">
+            <div class="px-5 py-4 border-b border-bdr bg-panel/30 flex justify-between items-center shrink-0">
+              <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-eye text-green"></i> Live Global Chat Spectator
+              </h4>
+              <span class="text-[9px] text-t3 font-mono uppercase font-bold">Showing last 60 messages</span>
+            </div>
+            
+            <!-- Message List -->
+            <div id="adminChatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3.5 min-h-0">
+              <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6 animate-pulse">
+                <i class="fas fa-comments text-3xl mb-1"></i>
+                <p class="text-xs">Connecting to live chat stream...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Flagged/Abusive Reports & Mutes (5 cols) -->
+          <div class="lg:col-span-5 flex flex-col gap-6 min-h-0 h-full">
+            <!-- Abusive Chat Reports -->
+            <div class="flex-1 bg-card border border-bdr rounded-xl flex flex-col min-h-0 overflow-hidden">
+              <div class="px-5 py-4 border-b border-bdr bg-panel/30 flex justify-between items-center shrink-0">
+                <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-shield-halved text-red"></i> Abusive Chat Flags
+                </h4>
+                <span id="chatReportsCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+              </div>
+              
+              <!-- Report List -->
+              <div id="adminChatReports" class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                <div class="p-8 text-center text-t3 text-xs">No active chat reports.</div>
+              </div>
+            </div>
+
+            <!-- Active Muted Players -->
+            <div class="h-[220px] bg-card border border-bdr rounded-xl flex flex-col min-h-0 overflow-hidden shrink-0">
+              <div class="px-5 py-4 border-b border-bdr bg-panel/30 shrink-0">
+                <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-volume-mute text-gold"></i> Currently Muted Players
+                </h4>
+              </div>
+              <div id="adminMutedUsersList" class="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+                <div class="text-center text-t3 text-xs py-4">No muted players.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
 </div>
@@ -721,6 +778,41 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== STAFF MODERATE MUTE MODAL ==================== -->
+<div id="mMute" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center text-amber-500 text-lg"><i class="fas fa-volume-mute"></i></div>
+      <div>
+        <h3 class="font-display text-lg font-bold text-white">Moderate Chat Mute</h3>
+        <p id="mutePlayerLabel" class="text-xs text-t2">Player Name</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Mute Duration *</label>
+        <select id="muteDuration" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red font-medium">
+          <option value="1">1 Hour</option>
+          <option value="12">12 Hours</option>
+          <option value="24">24 Hours (1 Day)</option>
+          <option value="168">7 Days (1 Week)</option>
+          <option value="permanent">Permanent / Forever</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Mute Reason *</label>
+        <textarea id="muteReason" rows="3" placeholder="Reason for mute (e.g. Foul language in global chat...)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseMuteModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bProcessMute" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-bg text-xs font-bold rounded-lg transition">Apply Mute Penalty</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== STAFF NOTIFICATION MODAL ==================== -->
 <div id="mNotif" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
@@ -779,7 +871,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where, arrayUnion, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
@@ -805,6 +897,9 @@ let tickets = [];
 let deposits = [];
 let depositFilter = 'pending';
 let adminLogs = [];
+let chatMessages = [];
+let chatReports = [];
+let muteTargetUser = null;
 
 let activePage = 'Dash';
 let banTargetUser = null;
@@ -863,7 +958,8 @@ function switchPage(page) {
                                  page === 'Registrations' ? 'Verify Applications Slots' :
                                  page === 'Reports' ? 'Violation Cheat Reports logs' :
                                  page === 'Deposits' ? 'Verify Deposits Queue' :
-                                 page === 'Super' ? 'Super Admin Audit Control' : 'Customer Support Chat Channels';
+                                 page === 'Super' ? 'Super Admin Audit Control' :
+                                 page === 'GlobalChat' ? 'Global Chat Spectator & Mutes' : 'Customer Support Chat Channels';
 }
 window.switchPage = switchPage;
 
@@ -952,6 +1048,7 @@ function loadRealtimeDatabase() {
     $('statUsers').textContent = users.length;
     $('statPremium').textContent = users.filter(u => u.premium).length;
     renderUsers();
+    renderAdminMutedPlayers();
   }, (err) => {
     console.warn("Failed to listen to users:", err);
   });
@@ -1066,6 +1163,28 @@ function loadRealtimeDatabase() {
       }
     });
   }
+
+  // 8. Listen Global Chat (spectator)
+  const qChat = query(collection(db, 'global_chat'), orderBy('timestamp', 'desc'), limit(60));
+  onSnapshot(qChat, (snap) => {
+    chatMessages = [];
+    snap.forEach(d => chatMessages.push({ id: d.id, ...d.data() }));
+    // Reverse so oldest shows first inside spectator window
+    chatMessages.reverse();
+    renderAdminChat();
+  }, (err) => {
+    console.warn("Failed to listen to global chat:", err);
+  });
+
+  // 9. Listen Abusive Chat Reports
+  const qChatReports = query(collection(db, 'chat_reports'), orderBy('timestamp', 'desc'));
+  onSnapshot(qChatReports, (snap) => {
+    chatReports = [];
+    snap.forEach(d => chatReports.push({ id: d.id, ...d.data() }));
+    renderAdminChatReports();
+  }, (err) => {
+    console.warn("Failed to listen to chat reports:", err);
+  });
 }
 
 // ── SUPER ADMIN DASHBOARD LOGIC ──
@@ -1568,6 +1687,241 @@ function renderUsers() {
   });
 }
 
+// ── GLOBAL CHAT SPECTATOR LOGIC ──
+function renderAdminChat() {
+  const container = $('adminChatMsgs');
+  if (!container) return;
+
+  if (chatMessages.length === 0) {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6">
+        <i class="fas fa-comments text-3xl mb-1"></i>
+        <p class="text-xs">No chat messages published yet.</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  chatMessages.forEach(msg => {
+    const sender = users.find(u => u.id === msg.userId || u.uid === msg.userId);
+    const senderName = msg.username || sender?.name || 'Unregistered Guest';
+    const isMuted = sender?.muted || false;
+    const isBanned = sender?.banned || false;
+    
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+    const avatarUrl = msg.avatarSeed 
+      ? `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.avatarSeed}` 
+      : (sender?.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.userId || 'placeholder'}`);
+    
+    html += `
+      <div class="flex items-start gap-3 bg-panel/30 border border-bdr/20 p-3 rounded-lg hover:bg-panel/50 transition">
+        <!-- Avatar -->
+        <div class="w-8 h-8 rounded-full bg-card flex-shrink-0 flex items-center justify-center overflow-hidden border border-bdr">
+          <img src="${avatarUrl}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+        </div>
+        
+        <!-- Msg Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-bold text-white truncate max-w-[120px]">${senderName}</span>
+            <span class="text-[9px] text-t3 font-mono">${timeStr}</span>
+            ${isMuted ? `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[8px] px-1 rounded-sm uppercase tracking-wide font-black">Muted</span>` : ''}
+            ${isBanned ? `<span class="bg-red/20 text-red border border-red/30 text-[8px] px-1 rounded-sm uppercase tracking-wide font-black">Banned</span>` : ''}
+          </div>
+          <p class="text-xs text-t2 mt-1 break-words font-medium select-text">${msg.text || ''}</p>
+        </div>
+
+        <!-- Staff Quick Actions -->
+        <div class="flex items-center gap-1 shrink-0 ml-2 font-bold font-sans">
+          <button 
+            onclick="triggerMuteAction('${msg.userId}')"
+            class="p-1.5 rounded border ${isMuted ? 'border-amber-500/40 bg-amber-500/20 text-amber-300' : 'border-amber-500/20 bg-amber-500/10 text-amber-400'} hover:bg-amber-500/25 transition"
+            title="${isMuted ? 'Unmute Player' : 'Mute Player'}"
+          >
+            <i class="fas ${isMuted ? 'fa-volume-up' : 'fa-volume-mute'} text-[10px]"></i>
+          </button>
+          <button 
+            onclick="triggerBanAction('${msg.userId}')"
+            class="p-1.5 rounded border border-red/25 bg-red/10 hover:bg-red/20 text-red transition"
+            title="Ban Player"
+          >
+            <i class="fas fa-ban text-[10px]"></i>
+          </button>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+  // Auto-scroll to latest chat message
+  container.scrollTop = container.scrollHeight;
+}
+window.renderAdminChat = renderAdminChat;
+
+function renderAdminChatReports() {
+  const container = $('adminChatReports');
+  const countSpan = $('chatReportsCount');
+  if (!container) return;
+
+  const pendingReports = chatReports.filter(r => r.status === 'open' || r.status === undefined);
+  if (countSpan) {
+    countSpan.textContent = pendingReports.length;
+    if (pendingReports.length > 0) {
+      countSpan.classList.remove('hidden');
+    } else {
+      countSpan.classList.add('hidden');
+    }
+  }
+
+  if (pendingReports.length === 0) {
+    container.innerHTML = `<div class="p-8 text-center text-t3 text-xs">No active chat abuse reports. All clean!</div>`;
+    return;
+  }
+
+  let html = '';
+  pendingReports.forEach(rep => {
+    const reportedUser = users.find(u => u.id === rep.userId);
+    const dateStr = rep.timestamp ? new Date(rep.timestamp).toLocaleString() : '';
+    
+    html += `
+      <div class="bg-panel/40 border border-bdr p-3 rounded-lg space-y-2">
+        <div class="flex justify-between items-start gap-2">
+          <div>
+            <span class="text-xs font-bold text-white">${reportedUser?.name || 'Player ID: ' + rep.userId}</span>
+            <span class="text-[9px] text-t3 font-mono block">${dateStr}</span>
+          </div>
+          <span class="bg-red/15 text-red text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-red/20">Flagged Chat</span>
+        </div>
+        <p class="text-xs text-t2 font-medium bg-card/40 p-2 rounded border border-bdr/20 select-text font-serif italic">"${rep.messageText || ''}"</p>
+        <div class="flex gap-2 justify-end pt-1 font-bold font-sans">
+          <button 
+            onclick="dismissChatReport('${rep.id}')"
+            class="px-2.5 py-1 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white rounded text-[10px] transition"
+          >
+            Dismiss
+          </button>
+          <button 
+            onclick="triggerMuteAction('${rep.userId}', '${rep.id}', \`${(rep.messageText || '').replace(/'/g, "\\'").replace(/"/g, '\\"')}\`)"
+            class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-bg rounded text-[10px] transition"
+          >
+            Mute Player
+          </button>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+window.renderAdminChatReports = renderAdminChatReports;
+
+function renderAdminMutedPlayers() {
+  const container = $('adminMutedUsersList');
+  if (!container) return;
+
+  const mutedUsers = users.filter(u => u.muted === true);
+  if (mutedUsers.length === 0) {
+    container.innerHTML = `<div class="text-center text-t3 text-xs py-4">No muted players inside ArenaX.</div>`;
+    return;
+  }
+
+  let html = '';
+  mutedUsers.forEach(u => {
+    let untilStr = 'Permanent';
+    if (u.muteUntil) {
+      const until = new Date(u.muteUntil).getTime();
+      if (Date.now() > until) {
+        // Auto-unmute expired users inline
+        updateDoc(doc(db, 'users', u.uid || u.id), {
+          muted: false,
+          muteReason: '',
+          muteUntil: null
+        }).catch(console.warn);
+        return;
+      }
+      untilStr = new Date(until).toLocaleString();
+    }
+    
+    html += `
+      <div class="flex items-center justify-between p-2 bg-panel/30 border border-bdr/20 rounded-lg text-xs gap-2">
+        <div class="min-w-0 flex-1">
+          <div class="font-bold text-white truncate">${u.name || 'Player'}</div>
+          <p class="text-[9px] text-amber-400 font-medium truncate">Muted Until: ${untilStr}</p>
+          <p class="text-[9px] text-t3 truncate mt-0.5">Reason: ${u.muteReason || 'None specified'}</p>
+        </div>
+        <button 
+          onclick="handleUnmuteUser('${u.id || u.uid}')"
+          class="px-2 py-1 bg-green hover:bg-green-600 text-bg text-[10px] font-black rounded transition shrink-0 font-sans"
+        >
+          Unmute
+        </button>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+window.renderAdminMutedPlayers = renderAdminMutedPlayers;
+
+async function handleUnmuteUser(userId) {
+  if (confirm('Unmute this user from Global Chat?')) {
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        muted: false,
+        muteUntil: null,
+        muteReason: ''
+      });
+      logAdminActivity('Player Unmuted', userId, 'Restored global chat messaging permissions');
+      alert('Player unmuted successfully!');
+    } catch (err) {
+      alert('Unmute failed: ' + err.message);
+    }
+  }
+}
+window.handleUnmuteUser = handleUnmuteUser;
+
+async function dismissChatReport(repId) {
+  try {
+    await updateDoc(doc(db, 'chat_reports', repId), { status: 'dismissed' });
+    logAdminActivity('Chat Report Dismissed', repId, 'Marked chat report status as dismissed');
+  } catch (err) {
+    alert('Failed to dismiss chat report: ' + err.message);
+  }
+}
+window.dismissChatReport = dismissChatReport;
+
+let activeReportIdToResolve = null;
+
+function triggerMuteAction(userId, reportId = null, abusiveSnippet = '') {
+  const target = users.find(u => u.id === userId || u.uid === userId);
+  if (!target) {
+    alert('User not found in memory database.');
+    return;
+  }
+
+  if (target.muted) {
+    // If they are already muted, clicking Mute button can trigger unmute directly
+    handleUnmuteUser(userId);
+    return;
+  }
+
+  muteTargetUser = target;
+  activeReportIdToResolve = reportId;
+  
+  $('mutePlayerLabel').textContent = `${target.name || 'Player'} (${target.handle || 'No Handle'})`;
+  $('muteReason').value = abusiveSnippet ? `Abusive behavior in Global Chat ("${abusiveSnippet}")` : 'Excessive spamming / abusive behavior in chat';
+  $('mMute').classList.remove('hidden');
+}
+window.triggerMuteAction = triggerMuteAction;
+
+function triggerBanAction(userId) {
+  const target = users.find(u => u.id === userId || u.uid === userId);
+  if (!target) {
+    alert('User not found in memory database.');
+    return;
+  }
+  // Reuse existing openBanModal
+  openBanModal(target);
+}
+window.triggerBanAction = triggerBanAction;
+
 // Coins Adjustment Action
 async function adjustCoins(u) {
   const val = prompt(`Enter AX coins to adjust for ${u.name} (e.g. 500 to add, -200 to subtract):`);
@@ -1679,6 +2033,50 @@ async function liftBan(u) {
     }
   }
 }
+
+// Mute Modal Action Listeners
+$('bCloseMuteModal').addEventListener('click', () => {
+  $('mMute').classList.add('hidden');
+  muteTargetUser = null;
+  activeReportIdToResolve = null;
+});
+
+$('bProcessMute').addEventListener('click', async () => {
+  if (!muteTargetUser) return;
+  const durHours = $('muteDuration').value;
+  const reason = $('muteReason').value.trim();
+  if (!reason) {
+    alert('Please enter a mute reason.');
+    return;
+  }
+
+  let muteUntil = null;
+  if (durHours !== 'permanent') {
+    const hours = parseInt(durHours);
+    muteUntil = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+  }
+
+  try {
+    await updateDoc(doc(db, 'users', muteTargetUser.id), {
+      muted: true,
+      muteUntil: muteUntil,
+      muteReason: reason
+    });
+
+    logAdminActivity('Player Muted', muteTargetUser.id, `Muted for ${durHours} hour(s). Reason: ${reason}`);
+
+    if (activeReportIdToResolve) {
+      await updateDoc(doc(db, 'chat_reports', activeReportIdToResolve), { status: 'resolved_muted' });
+    }
+
+    alert('User muted successfully!');
+    $('mMute').classList.add('hidden');
+    muteTargetUser = null;
+    activeReportIdToResolve = null;
+  } catch (err) {
+    alert('Failed to mute user: ' + err.message);
+  }
+});
 
 // ── CUSTOM NOTIFICATION EVENT LISTENERS & LOGIC ──
 let notifTargetType = 'single';
