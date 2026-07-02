@@ -69,6 +69,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
   const [banDuration, setBanDuration] = useState<string>('30'); // in days, or 'permanent'
   const [banReason, setBanReason] = useState<string>('');
 
+  // Admin Global Chat broadcasts
+  const [adminChatText, setAdminChatText] = useState('');
+  const [adminChatType, setAdminChatType] = useState<'admin' | 'announcement'>('admin');
+
   // Mute Modal state
   const [showMuteModal, setShowMuteModal] = useState(false);
   const [muteUser, setMuteUser] = useState<UserProfile | null>(null);
@@ -1361,88 +1365,305 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                         No chat messages to display.
                       </div>
                     ) : (
-                      globalMessages.map((msg) => (
-                        <div key={msg.id} className="bg-[#171b2e]/50 border border-[#252a45]/40 p-3 rounded-lg flex items-start justify-between gap-4">
-                          <div className="flex gap-2.5 min-w-0">
-                            <img src={msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45] shrink-0" />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-white">{msg.userName || 'Anonymous'}</span>
-                                <span className="text-[8px] text-[#4a5070] font-mono">UID: {msg.userId?.slice(-6)}</span>
-                                {msg.isAbusive && (
-                                  <span className="px-1.5 py-0.5 bg-[#e8404a]/10 text-[#e8404a] text-[8px] font-bold rounded uppercase">Flagged</span>
+                      globalMessages.map((msg) => {
+                        // 1. Check for Public Admin Deletion
+                        if (msg.isDeletedByAdmin) {
+                          return (
+                            <div key={msg.id} className="bg-red-500/5 border border-red-500/20 p-3 rounded-lg flex items-start justify-between gap-4 opacity-75">
+                              <div className="flex gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-[#171b2e] flex items-center justify-center border border-red-500/20 text-red-400 shrink-0">
+                                  <i className="fas fa-trash-can text-xs"></i>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-red-400">{msg.userName || 'Anonymous'}</span>
+                                    <span className="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[8px] font-bold rounded uppercase tracking-wider">Publicly Deleted</span>
+                                  </div>
+                                  <p className="text-xs text-[#8890b0] mt-1 italic line-through font-serif">{msg.text}</p>
+                                  {msg.originalText && msg.originalText !== msg.text && (
+                                    <p className="text-[10px] text-white font-mono mt-1 bg-black/40 p-1.5 rounded border border-[#252a45]/40">
+                                      Original text before delete: <span className="font-sans font-bold text-red-300">"{msg.originalText}"</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('Are you sure you want to completely PURGE this message from the database?')) {
+                                      try {
+                                        await deleteDoc(doc(db, 'global_chat', msg.id));
+                                        alert('Message permanently purged! 🗑️');
+                                      } catch (e: any) {
+                                        alert('Error purging: ' + e.message);
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
+                                  title="Silent Delete Completely (Purge document)"
+                                >
+                                  <i className="fas fa-eraser text-xs"></i>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // 2. Check for System Announcement
+                        if (msg.isSystemAnnouncement) {
+                          return (
+                            <div key={msg.id} className="bg-amber-500/5 border border-amber-500/30 p-3 rounded-lg flex items-start justify-between gap-4">
+                              <div className="flex gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/40 text-amber-400 shrink-0">
+                                  <i className="fas fa-bullhorn text-xs"></i>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-amber-400">Official Announcement</span>
+                                    <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-400 text-[8px] font-bold rounded uppercase tracking-wider">System</span>
+                                  </div>
+                                  <p className="text-xs text-white mt-1 font-semibold whitespace-pre-wrap select-text">{msg.text}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('Are you sure you want to delete this announcement?')) {
+                                      try {
+                                        await deleteDoc(doc(db, 'global_chat', msg.id));
+                                        alert('Announcement deleted!');
+                                      } catch (e: any) {
+                                        alert('Error: ' + e.message);
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
+                                  title="Silent Delete Announcement"
+                                >
+                                  <i className="fas fa-eraser text-xs"></i>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // 3. Check for Admin Message
+                        if (msg.isAdminMessage) {
+                          return (
+                            <div key={msg.id} className="bg-red-500/5 border border-red-500/30 p-3 rounded-lg flex items-start justify-between gap-4">
+                              <div className="flex gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/35 text-red-400 shrink-0">
+                                  <i className="fas fa-shield-alt text-xs"></i>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-red-400">{msg.userName || 'System Admin'}</span>
+                                    <span className="px-1.5 py-0.5 bg-red-500/15 text-red-400 text-[8px] font-bold rounded uppercase tracking-wider">Staff</span>
+                                  </div>
+                                  <p className="text-xs text-white mt-1 font-medium whitespace-pre-wrap select-text">{msg.text}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('Are you sure you want to delete this staff message?')) {
+                                      try {
+                                        await deleteDoc(doc(db, 'global_chat', msg.id));
+                                        alert('Staff message deleted!');
+                                      } catch (e: any) {
+                                        alert('Error: ' + e.message);
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
+                                  title="Silent Delete Staff Message"
+                                >
+                                  <i className="fas fa-eraser text-xs"></i>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // 4. Regular User Message
+                        const isMuted = users.find(u => u.id === msg.userId)?.muted || false;
+                        const isBanned = users.find(u => u.id === msg.userId)?.banned || false;
+                        return (
+                          <div key={msg.id} className="bg-[#171b2e]/50 border border-[#252a45]/40 p-3 rounded-lg flex items-start justify-between gap-4">
+                            <div className="flex gap-2.5 min-w-0">
+                              <img src={msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45] shrink-0" />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-bold text-white truncate max-w-[120px]">{msg.userName || 'Anonymous'}</span>
+                                  <span className="text-[8px] text-[#4a5070] font-mono">UID: {msg.userId?.slice(-6)}</span>
+                                  {msg.isAbusive && (
+                                    <span className="px-1.5 py-0.5 bg-[#e8404a]/10 text-[#e8404a] text-[8px] font-bold rounded uppercase">Flagged</span>
+                                  )}
+                                  {isMuted && (
+                                    <span className="px-1 py-0.5 bg-amber-500/10 text-amber-400 text-[8px] font-bold rounded uppercase">Muted</span>
+                                  )}
+                                  {isBanned && (
+                                    <span className="px-1 py-0.5 bg-red-500/10 text-red-400 text-[8px] font-bold rounded uppercase">Banned</span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-[#8890b0] mt-1 break-all whitespace-pre-wrap select-text">{msg.text}</p>
+                                {msg.originalText && msg.originalText !== msg.text && (
+                                  <p className="text-[9px] text-[#e8404a]/80 mt-1 font-mono italic">Original: "{msg.originalText}"</p>
                                 )}
                               </div>
-                              <p className="text-xs text-[#8890b0] mt-1 break-all whitespace-pre-wrap">{msg.text}</p>
-                              {msg.originalText && msg.originalText !== msg.text && (
-                                <p className="text-[9px] text-[#e8404a]/80 mt-1 font-mono italic">Original: "{msg.originalText}"</p>
-                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                              {/* Silent Delete */}
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to SILENTLY delete this message? It will disappear completely.')) {
+                                    try {
+                                      await deleteDoc(doc(db, 'global_chat', msg.id));
+                                      alert('Message silently deleted!');
+                                    } catch (e: any) {
+                                      alert('Error: ' + e.message);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded border border-orange-500/20 transition"
+                                title="Silent Delete (Erase completely)"
+                              >
+                                <i className="fas fa-eraser text-xs"></i>
+                              </button>
+
+                              {/* Public Delete */}
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to PUBLICLY delete this message? It will be replaced with a notice.')) {
+                                    try {
+                                      await updateDoc(doc(db, 'global_chat', msg.id), {
+                                        isDeletedByAdmin: true,
+                                        text: 'This message was deleted by administration.',
+                                        originalText: msg.originalText || msg.text || ''
+                                      });
+                                      alert('Message publicly deleted!');
+                                    } catch (e: any) {
+                                      alert('Error: ' + e.message);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded border border-red-500/20 transition"
+                                title="Public Delete (Show Deleted message)"
+                              >
+                                <i className="fas fa-trash-alt text-xs"></i>
+                              </button>
+
+                              {/* Mute Action */}
+                              <button
+                                onClick={() => {
+                                  const foundUser = users.find(u => u.id === msg.userId);
+                                  if (foundUser) {
+                                    if (foundUser.muted) {
+                                      handleUnmuteUser(foundUser);
+                                    } else {
+                                      setMuteUser(foundUser);
+                                      setMuteDuration('1');
+                                      setMuteReason(`Abusive behavior in Global Chat ("${msg.text}")`);
+                                      setShowMuteModal(true);
+                                    }
+                                  } else {
+                                    alert(`Player ID ${msg.userId} not found in user management.`);
+                                  }
+                                }}
+                                className={`p-1.5 rounded border transition ${
+                                  users.find(u => u.id === msg.userId)?.muted
+                                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30'
+                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20'
+                                }`}
+                                title={users.find(u => u.id === msg.userId)?.muted ? "Unmute Player" : "Mute Player"}
+                              >
+                                <i className={`fas fa-${users.find(u => u.id === msg.userId)?.muted ? 'volume-up' : 'volume-mute'} text-xs`}></i>
+                              </button>
+
+                              {/* Ban Action */}
+                              <button
+                                onClick={() => {
+                                  const foundUser = users.find(u => u.id === msg.userId);
+                                  if (foundUser) {
+                                    setBanUser(foundUser);
+                                    setBanReason(`Abusive behavior in Global Chat ("${msg.text}")`);
+                                    setShowBanModal(true);
+                                  } else {
+                                    alert(`Player ID ${msg.userId} not found in user management.`);
+                                  }
+                                }}
+                                className="p-1.5 bg-[#ff4500]/10 hover:bg-[#ff4500]/20 text-[#ff4500] rounded border border-[#ff4500]/20 transition"
+                                title="Ban Player"
+                              >
+                                <i className="fas fa-ban text-xs"></i>
+                              </button>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={async () => {
-                                if (confirm('Are you sure you want to delete this message?')) {
-                                  try {
-                                    await deleteDoc(doc(db, 'global_chat', msg.id));
-                                    alert('Message deleted successfully! 🗑️');
-                                  } catch (e: any) {
-                                    alert('Error deleting: ' + e.message);
-                                  }
-                                }
-                              }}
-                              className="p-1.5 bg-[#e8404a]/10 hover:bg-[#e8404a]/20 text-[#e8404a] rounded border border-[#e8404a]/20 transition"
-                              title="Delete Message"
-                            >
-                              <i className="fas fa-trash text-xs"></i>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const foundUser = users.find(u => u.id === msg.userId);
-                                if (foundUser) {
-                                  if (foundUser.muted) {
-                                    handleUnmuteUser(foundUser);
-                                  } else {
-                                    setMuteUser(foundUser);
-                                    setMuteDuration('1');
-                                    setMuteReason(`Abusive behavior in Global Chat ("${msg.text}")`);
-                                    setShowMuteModal(true);
-                                  }
-                                } else {
-                                  alert(`Player ID ${msg.userId} not found in user management.`);
-                                }
-                              }}
-                              className={`p-1.5 rounded border transition ${
-                                users.find(u => u.id === msg.userId)?.muted
-                                  ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30'
-                                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20'
-                              }`}
-                              title={users.find(u => u.id === msg.userId)?.muted ? "Unmute Player" : "Mute Player"}
-                            >
-                              <i className={`fas fa-${users.find(u => u.id === msg.userId)?.muted ? 'volume-up' : 'volume-mute'} text-xs`}></i>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const foundUser = users.find(u => u.id === msg.userId);
-                                if (foundUser) {
-                                  setBanUser(foundUser);
-                                  setBanReason(`Abusive behavior in Global Chat ("${msg.text}")`);
-                                  setShowBanModal(true);
-                                } else {
-                                  alert(`Player ID ${msg.userId} not found in user management.`);
-                                }
-                              }}
-                              className="p-1.5 bg-[#ff4500]/10 hover:bg-[#ff4500]/20 text-[#ff4500] rounded border border-[#ff4500]/20 transition"
-                              title="Ban Player"
-                            >
-                              <i className="fas fa-ban text-xs"></i>
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
+
+                  {/* Broadcast form */}
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!adminChatText.trim()) return;
+                      try {
+                        const payload: any = {
+                          userId: 'admin_staff',
+                          userName: adminEmail ? adminEmail.split('@')[0].toUpperCase() : 'ADMIN',
+                          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin_staff',
+                          text: adminChatText.trim(),
+                          originalText: adminChatText.trim(),
+                          createdAt: serverTimestamp()
+                        };
+                        if (adminChatType === 'announcement') {
+                          payload.isSystemAnnouncement = true;
+                        } else {
+                          payload.isAdminMessage = true;
+                        }
+                        await addDoc(collection(db, 'global_chat'), payload);
+                        setAdminChatText('');
+                        alert('Published broadcast successfully! 📢');
+                      } catch (err: any) {
+                        alert('Broadcast failed: ' + err.message);
+                      }
+                    }}
+                    className="p-4 border-t border-[#1e2440] bg-[#0f1220]/20 space-y-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 bg-[#0c0e17] border border-[#222a45] px-2.5 py-1.5 rounded-lg">
+                        <label className="text-[10px] uppercase font-bold text-[#8890b0] select-none">Send As:</label>
+                        <select
+                          value={adminChatType}
+                          onChange={(e: any) => setAdminChatType(e.target.value)}
+                          className="bg-transparent border-none text-xs text-white font-bold outline-none cursor-pointer focus:ring-0"
+                        >
+                          <option value="admin" className="bg-[#141828] text-red-400 font-bold">🔴 Staff Message</option>
+                          <option value="announcement" className="bg-[#141828] text-amber-400 font-bold">📢 Official Announcement</option>
+                        </select>
+                      </div>
+                      <span className="text-[10px] text-[#8890b0] font-mono">Posting as: <strong className="text-white">{adminEmail ? adminEmail.split('@')[0].toUpperCase() : 'ADMIN'}</strong></span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={adminChatText}
+                        onChange={(e) => setAdminChatText(e.target.value)}
+                        placeholder="Type official staff message or announcement here..."
+                        className="flex-1 bg-[#0c0e17] border border-[#222a45] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-red-500"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+                      >
+                        <i className="fas fa-paper-plane"></i> Publish
+                      </button>
+                    </div>
+                  </form>
                 </div>
 
                 {/* Right: Abusive Reports */}
