@@ -69,6 +69,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
   const [banDuration, setBanDuration] = useState<string>('30'); // in days, or 'permanent'
   const [banReason, setBanReason] = useState<string>('');
 
+  // Mute Modal state
+  const [showMuteModal, setShowMuteModal] = useState(false);
+  const [muteUser, setMuteUser] = useState<UserProfile | null>(null);
+  const [muteDuration, setMuteDuration] = useState<string>('1'); // in hours, or 'permanent'
+  const [muteReason, setMuteReason] = useState<string>('');
+
   // Custom Notifications states
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifTargetType, setNotifTargetType] = useState<'single' | 'all'>('single');
@@ -310,6 +316,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
       alert(`Ban lifted for ${user.name}!`);
     } catch (err: any) {
       alert('Unban Error: ' + err.message);
+    }
+  };
+
+  // Mute action handlers
+  const handleProcessMute = async () => {
+    if (!muteUser) return;
+    if (!muteReason.trim()) {
+      alert('Please enter a mute reason!');
+      return;
+    }
+
+    const untilDate = muteDuration === 'permanent'
+      ? null
+      : new Date(Date.now() + parseFloat(muteDuration) * 60 * 60 * 1000).toISOString(); // duration in hours
+
+    try {
+      await updateDoc(doc(db, 'users', muteUser.id), {
+        muted: true,
+        muteReason: muteReason.trim(),
+        muteUntil: untilDate
+      });
+      setShowMuteModal(false);
+      setMuteReason('');
+      setMuteUser(null);
+      alert(`User ${muteUser.name} has been muted successfully! 🔇`);
+    } catch (err: any) {
+      alert('Mute Error: ' + err.message);
+    }
+  };
+
+  const handleUnmuteUser = async (user: UserProfile) => {
+    if (!confirm(`Are you sure you want to unmute ${user.name}?`)) return;
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        muted: false,
+        muteReason: '',
+        muteUntil: null
+      });
+      alert(`User ${user.name} has been unmuted successfully! 🔊`);
+    } catch (err: any) {
+      alert('Unmute Error: ' + err.message);
     }
   };
 
@@ -875,21 +922,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                           </td>
                           <td className="p-4 font-mono font-bold text-[#f0c040]">{user.balance.toLocaleString()} AX</td>
                           <td className="p-4">
-                            {user.banned ? (
-                              <span className="px-2 py-0.5 bg-red-500/15 text-red-400 border border-red-500/20 text-[9px] font-bold rounded uppercase">
-                                {user.banType === 'tournament' ? 'Tournament Banned' : 'Banned Account'}
-                              </span>
-                            ) : user.premium ? (
-                              <span className="px-2 py-0.5 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/20 text-[9px] font-bold rounded uppercase">
-                                Premium VIP
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-neutral-800 text-neutral-400 border border-neutral-700 text-[9px] font-bold rounded uppercase">
-                                Free
-                              </span>
-                            )}
+                            <div className="flex flex-col gap-1 items-start">
+                              {user.banned ? (
+                                <span className="px-2 py-0.5 bg-red-500/15 text-red-400 border border-red-500/20 text-[9px] font-bold rounded uppercase">
+                                  {user.banType === 'tournament' ? 'Tournament Banned' : 'Banned Account'}
+                                </span>
+                              ) : user.premium ? (
+                                <span className="px-2 py-0.5 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/20 text-[9px] font-bold rounded uppercase">
+                                  Premium VIP
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-neutral-800 text-neutral-400 border border-neutral-700 text-[9px] font-bold rounded uppercase">
+                                  Free
+                                </span>
+                              )}
+                              {user.muted && (
+                                <span className="px-2 py-0.5 bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px] font-bold rounded uppercase">
+                                  Muted 🔇
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-4 space-x-1">
+                          <td className="p-4 space-x-1 space-y-1">
                             <button
                               onClick={() => handleAdjustBalance(user)}
                               className="px-2 py-1 bg-[#1e2340] border border-[#1e2440] hover:border-white text-white text-[11px] font-semibold rounded hover:bg-[#141828] transition"
@@ -914,6 +968,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                             >
                               Notify
                             </button>
+                            {user.muted ? (
+                              <button
+                                onClick={() => handleUnmuteUser(user)}
+                                className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded border border-amber-500/20 transition"
+                              >
+                                Unmute
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setMuteUser(user);
+                                  setMuteDuration('1');
+                                  setMuteReason('');
+                                  setShowMuteModal(true);
+                                }}
+                                className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded border border-amber-500/20 transition"
+                              >
+                                Mute
+                              </button>
+                            )}
                             {user.banned ? (
                               <button
                                 onClick={() => handleUnbanUser(user)}
@@ -932,7 +1006,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                                 }}
                                 className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-semibold rounded border border-red-500/20 transition"
                               >
-                                Ban / Block
+                                Ban
                               </button>
                             )}
                           </td>
@@ -1327,6 +1401,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                               onClick={() => {
                                 const foundUser = users.find(u => u.id === msg.userId);
                                 if (foundUser) {
+                                  if (foundUser.muted) {
+                                    handleUnmuteUser(foundUser);
+                                  } else {
+                                    setMuteUser(foundUser);
+                                    setMuteDuration('1');
+                                    setMuteReason(`Abusive behavior in Global Chat ("${msg.text}")`);
+                                    setShowMuteModal(true);
+                                  }
+                                } else {
+                                  alert(`Player ID ${msg.userId} not found in user management.`);
+                                }
+                              }}
+                              className={`p-1.5 rounded border transition ${
+                                users.find(u => u.id === msg.userId)?.muted
+                                  ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30'
+                                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20'
+                              }`}
+                              title={users.find(u => u.id === msg.userId)?.muted ? "Unmute Player" : "Mute Player"}
+                            >
+                              <i className={`fas fa-${users.find(u => u.id === msg.userId)?.muted ? 'volume-up' : 'volume-mute'} text-xs`}></i>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const foundUser = users.find(u => u.id === msg.userId);
+                                if (foundUser) {
                                   setBanUser(foundUser);
                                   setBanReason(`Abusive behavior in Global Chat ("${msg.text}")`);
                                   setShowBanModal(true);
@@ -1399,6 +1498,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                                   className="px-2.5 py-1 bg-[#4a5070]/20 hover:bg-[#4a5070]/30 border border-[#4a5070]/30 text-[#8890b0] rounded text-xs font-bold transition"
                                 >
                                   Dismiss
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const foundUser = users.find(u => u.id === rep.userId);
+                                    if (foundUser) {
+                                      setMuteUser(foundUser);
+                                      setMuteDuration('24'); // Default to 24 hours for report mutes
+                                      setMuteReason(`Abusive behavior in Global Chat ("${rep.messageText}")`);
+                                      setShowMuteModal(true);
+                                      try {
+                                        await updateDoc(doc(db, 'chat_reports', rep.id), { status: 'resolved_muted' });
+                                      } catch (e) {
+                                        console.warn(e);
+                                      }
+                                    } else {
+                                      alert(`Player ID ${rep.userId} not found in database.`);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-[#0f1220] rounded text-xs font-bold transition"
+                                >
+                                  Mute Player
                                 </button>
                                 <button
                                   onClick={() => {
@@ -1636,6 +1756,64 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToPlayer, adminE
                 className="flex-1 py-2.5 bg-[#e8404a] text-white font-bold rounded-lg text-xs hover:bg-[#cc3540] transition"
               >
                 Confirm Ban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MUTE SETTINGS */}
+      {showMuteModal && muteUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-[#0f1220] border border-[#1e2440] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4 relative shadow-2xl">
+            <button onClick={() => { setShowMuteModal(false); setMuteUser(null); }} className="absolute top-4 right-4 text-[#8890b0] hover:text-[#f0c040] transition">
+              <i className="fas fa-times"></i>
+            </button>
+
+            <h3 className="font-sans text-lg font-bold text-amber-500 flex items-center gap-1.5">
+              <i className="fas fa-volume-mute"></i> Mute Settings: {muteUser.name}
+            </h3>
+
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Mute Duration *</label>
+                <select
+                  value={muteDuration}
+                  onChange={(e) => setMuteDuration(e.target.value)}
+                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#f0c040] transition"
+                >
+                  <option value="1">1 Hour</option>
+                  <option value="12">12 Hours</option>
+                  <option value="24">24 Hours (1 Day)</option>
+                  <option value="168">7 Days (1 Week)</option>
+                  <option value="permanent">Permanent / Forever</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-[#4a5070] uppercase font-bold mb-1">Reason for Mute *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Excessive spamming / foul language in global chat"
+                  value={muteReason}
+                  onChange={(e) => setMuteReason(e.target.value)}
+                  className="w-full bg-[#141828] border border-[#1e2440] rounded-lg px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3">
+              <button
+                onClick={() => { setShowMuteModal(false); setMuteUser(null); }}
+                className="flex-1 py-2.5 bg-[#1e2340] border border-[#1e2440] text-[#8890b0] font-semibold rounded-lg text-xs hover:bg-[#141828] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProcessMute}
+                className="flex-1 py-2.5 bg-amber-500 text-[#0f1220] font-bold rounded-lg text-xs hover:bg-amber-600 transition"
+              >
+                Confirm Mute
               </button>
             </div>
           </div>
