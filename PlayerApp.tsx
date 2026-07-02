@@ -910,7 +910,13 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const handleOpenNotifications = async () => {
     if (!currentUser || isGuest) return;
     const unread = notifications.filter(n => !n.read);
-    const messages = notifications.map(n => `• ${n.message}`).join('\n\n');
+    const messages = notifications.map(n => {
+      if (n.message) return `• ${n.message}`;
+      if (n.title && n.body) return `• ${n.title}\n  ${n.body}`;
+      if (n.body) return `• ${n.body}`;
+      if (n.title) return `• ${n.title}`;
+      return '• New ArenaX notification received.';
+    }).join('\n\n');
     
     if (notifications.length === 0) {
       alert('No notifications yet!');
