@@ -22,7 +22,7 @@ export interface Tournament {
   prize: string;
   maxPlayers: number;
   registered: number;
-  status: 'upcoming' | 'live' | 'ended';
+  status: 'upcoming' | 'live' | 'ended' | 'cancelled';
   date: string;
   time: string;
   entryFee: string;
