@@ -670,6 +670,68 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== CANCEL TOURNAMENT MODAL ==================== -->
+<div id="mCancelTour" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[480px] w-full space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center text-amber-500 text-lg"><i class="fas fa-ban"></i></div>
+      <div>
+        <h3 class="font-display text-lg font-bold text-white">Cancel Tournament Event</h3>
+        <p class="text-[11px] text-t2" id="cancelTourName">Select refund and notification options</p>
+      </div>
+    </div>
+
+    <div class="space-y-4 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1.5">Cancellation Reason (Will be sent in notifications) *</label>
+        <textarea id="tCancelReason" rows="3" placeholder="e.g. Due to technical issues or scheduling conflicts, this match has been cancelled." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red resize-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1.5">Refund Strategy Options</label>
+        <div class="space-y-2 bg-[#0c0e17] p-3 rounded-lg border border-bdr">
+          <label class="flex items-center gap-2.5 cursor-pointer text-white">
+            <input type="radio" name="refundStrategy" value="all" checked class="w-4 h-4 accent-gold cursor-pointer" />
+            <div>
+              <div class="font-bold text-xs text-t1">Refund ALL Approved Players</div>
+              <div class="text-[10px] text-t2 font-medium">Instantly return the entry fee to all approved participants' wallets.</div>
+            </div>
+          </label>
+          <hr class="border-[#1e2440]/30 my-1.5" />
+          <label class="flex items-center gap-2.5 cursor-pointer text-t2">
+            <input type="radio" name="refundStrategy" value="none" class="w-4 h-4 accent-gold cursor-pointer" />
+            <div>
+              <div class="font-bold text-xs text-t2">No Refunds</div>
+              <div class="text-[10px] text-t3 font-medium">Cancel the tournament without returning any wallet coins.</div>
+            </div>
+          </label>
+          <hr class="border-[#1e2440]/30 my-1.5" />
+          <label class="flex items-center gap-2.5 cursor-pointer text-t2">
+            <input type="radio" name="refundStrategy" value="selected" class="w-4 h-4 accent-gold cursor-pointer" />
+            <div>
+              <div class="font-bold text-xs text-t2">Refund Selected Players Only</div>
+              <div class="text-[10px] text-t3 font-medium">Select specific players to refund from the checklist below.</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Player Selection Checklist (hidden by default unless Strategy is Selected) -->
+      <div id="cancelTourChecklistContainer" class="hidden space-y-2">
+        <label class="block text-[10px] uppercase font-bold text-t2">Select Players to Refund *</label>
+        <div id="cancelTourChecklist" class="max-h-[160px] overflow-y-auto bg-[#0c0e17] border border-bdr rounded-lg p-2.5 space-y-1.5 divide-y divide-[#1e2440]/30">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseCancelModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Dismiss</button>
+      <button id="bConfirmCancelTour" class="flex-1 py-2.5 bg-red text-white text-xs font-bold rounded-lg transition">Confirm & Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== MANAGE TOURNAMENT LEADERBOARD MODAL ==================== -->
 <div id="mManageLeaderboard" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[640px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
@@ -2427,12 +2489,16 @@ function renderTournaments() {
       <td class="p-4 space-x-1 font-semibold text-xs flex items-center">
         <button class="b-edit px-2 py-1 bg-ele border border-bdr text-white hover:bg-card rounded transition">Edit</button>
         <button class="b-leaderboard px-2 py-1 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded transition">Leaderboard</button>
+        ${(t.status === 'upcoming' || t.status === 'live') ? `<button class="b-cancel px-2 py-1 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/35 text-amber-400 rounded border border-amber-500/20 transition">Cancel</button>` : ''}
         <button class="b-del px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Delete</button>
       </td>
     `;
 
     tr.querySelector('.b-edit').addEventListener('click', () => openTourModal(t));
     tr.querySelector('.b-leaderboard').addEventListener('click', () => openManageLeaderboard(t));
+    if (t.status === 'upcoming' || t.status === 'live') {
+      tr.querySelector('.b-cancel').addEventListener('click', () => openCancelTourModal(t));
+    }
     tr.querySelector('.b-del').addEventListener('click', () => deleteTournament(t.id));
     container.appendChild(tr);
   });
@@ -2536,6 +2602,200 @@ async function deleteTournament(tid) {
     }
   }
 }
+
+// ── CANCEL TOURNAMENT AND REFUND LOGIC ──
+let cancellingTour = null;
+let cancellingTourRegs = [];
+
+async function openCancelTourModal(tour) {
+  cancellingTour = tour;
+  $('cancelTourName').textContent = `Cancel options for: ${tour.name}`;
+  $('tCancelReason').value = '';
+  
+  // Reset strategy radios
+  const radios = document.getElementsByName('refundStrategy');
+  for (let r of radios) {
+    if (r.value === 'all') r.checked = true;
+  }
+  $('cancelTourChecklistContainer').classList.add('hidden');
+  $('cancelTourChecklist').innerHTML = `<div class="p-4 text-center text-t3 text-[10px]">Loading registrations...</div>`;
+  $('mCancelTour').classList.remove('hidden');
+
+  try {
+    // Get all approved registrations for this tournament
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', tour.id),
+      where('status', '==', 'approved')
+    );
+    const snap = await getDocs(q);
+    cancellingTourRegs = [];
+    snap.forEach(d => {
+      cancellingTourRegs.push({ id: d.id, ...d.data() });
+    });
+
+    const feeAmount = parseEntryFee(tour.entryFee);
+    
+    if (cancellingTourRegs.length === 0) {
+      $('cancelTourChecklist').innerHTML = `<div class="p-4 text-center text-t3 text-[10px]">No approved participants registered for this event.</div>`;
+    } else {
+      $('cancelTourChecklist').innerHTML = '';
+      cancellingTourRegs.forEach(reg => {
+        const item = document.createElement('label');
+        item.className = 'flex items-center justify-between p-1.5 text-white text-xs cursor-pointer hover:bg-white/[0.02] rounded';
+        item.innerHTML = `
+          <div class="flex items-center gap-2">
+            <input type="checkbox" value="${reg.userId}" data-reg-id="${reg.id}" class="w-3.5 h-3.5 accent-gold cursor-pointer cancel-refund-checkbox" checked />
+            <div class="min-w-0">
+              <div class="font-bold truncate text-[11px]">${reg.realName || 'No Name'}</div>
+              <div class="text-[9px] text-t2 font-mono">UID: ${reg.userId.slice(-6)} · @${reg.userHandle || 'anonymous'}</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold text-gold shrink-0">${feeAmount} AX</span>
+        `;
+        $('cancelTourChecklist').appendChild(item);
+      });
+    }
+  } catch (err) {
+    console.error("Error loading participants for cancellation:", err);
+    $('cancelTourChecklist').innerHTML = `<div class="p-4 text-center text-red text-[10px]">Failed to load: ${err.message}</div>`;
+  }
+}
+
+// Helper to parse entry fee
+function parseEntryFee(feeStr) {
+  if (!feeStr) return 0;
+  if (feeStr.toLowerCase().includes('free')) return 0;
+  const matches = feeStr.match(/\d+/);
+  return matches ? parseInt(matches[0], 10) : 0;
+}
+
+// Bind modal listeners
+$('bCloseCancelModal').addEventListener('click', () => $('mCancelTour').classList.add('hidden'));
+
+document.getElementsByName('refundStrategy').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    if (e.target.value === 'selected') {
+      $('cancelTourChecklistContainer').classList.remove('hidden');
+    } else {
+      $('cancelTourChecklistContainer').classList.add('hidden');
+    }
+  });
+});
+
+$('bConfirmCancelTour').addEventListener('click', async () => {
+  if (!cancellingTour) return;
+  const reason = $('tCancelReason').value.trim();
+  if (!reason) {
+    alert('Please provide a Cancellation Reason. It will be sent to the players.');
+    return;
+  }
+
+  // Get selected strategy
+  let strategy = 'all';
+  const radios = document.getElementsByName('refundStrategy');
+  for (let r of radios) {
+    if (r.checked) strategy = r.value;
+  }
+
+  const feeAmount = parseEntryFee(cancellingTour.entryFee);
+  
+  if (confirm(`Are you sure you want to CANCEL this tournament? This action will process refunds (${strategy}) and notify registered players.`)) {
+    $('bConfirmCancelTour').disabled = true;
+    $('bConfirmCancelTour').textContent = 'Processing...';
+
+    try {
+      // 1. Update tournament status to 'cancelled'
+      await updateDoc(doc(db, 'tournaments', cancellingTour.id), {
+        status: 'cancelled',
+        liveMessage: `Tournament Cancelled: ${reason}`
+      });
+
+      // Log admin activity
+      await logAdminActivity('Cancel Tournament', cancellingTour.name, `Cancelled event. Reason: ${reason}. Refund Strategy: ${strategy}`);
+
+      // 2. Process refunds based on selected strategy
+      let playersToRefund = [];
+      if (strategy === 'all') {
+        playersToRefund = cancellingTourRegs;
+      } else if (strategy === 'selected') {
+        const checkboxes = document.querySelectorAll('.cancel-refund-checkbox');
+        const checkedUserIds = Array.from(checkboxes)
+          .filter(cb => cb.checked)
+          .map(cb => cb.value);
+        playersToRefund = cancellingTourRegs.filter(reg => checkedUserIds.includes(reg.userId));
+      }
+
+      // Process refunds in users collections
+      if (feeAmount > 0 && playersToRefund.length > 0) {
+        for (let reg of playersToRefund) {
+          // Add coins back to user balance
+          await updateDoc(doc(db, 'users', reg.userId), {
+            balance: increment(feeAmount)
+          });
+
+          // Write refund transaction record in deposit_requests
+          await addDoc(collection(db, 'deposit_requests'), {
+            userId: reg.userId,
+            userName: reg.userName || '',
+            userEmail: '',
+            type: 'deposit',
+            method: 'Tournament Refund',
+            amountPKR: 0,
+            amountAX: feeAmount,
+            txnId: 'REF-' + Math.floor(100000 + Math.random() * 900000),
+            status: 'approved',
+            submittedAt: serverTimestamp()
+          });
+
+          // Send Refund Notification
+          await addDoc(collection(db, 'notifications'), {
+            userId: reg.userId,
+            message: `🚨 Tournament "${cancellingTour.name}" has been cancelled. Reason: "${reason}". A refund of ${feeAmount} AX Coins has been credited back to your wallet.`,
+            type: 'approved',
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+
+      const refundedUserIds = playersToRefund.map(r => r.userId);
+      
+      // Update ALL registrations and notify those who weren't refunded
+      const allRegsSnap = await getDocs(query(
+        collection(db, 'tournament_registrations'),
+        where('tournamentId', '==', cancellingTour.id)
+      ));
+
+      for (let d of allRegsSnap.docs) {
+        const regData = d.data();
+        const isRefunded = refundedUserIds.includes(regData.userId);
+        
+        await updateDoc(doc(db, 'tournament_registrations', d.id), {
+          status: 'cancelled'
+        });
+
+        if (!isRefunded) {
+          await addDoc(collection(db, 'notifications'), {
+            userId: regData.userId,
+            message: `🚨 Tournament "${cancellingTour.name}" has been cancelled. Reason: "${reason}".`,
+            type: 'rejected',
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+
+      alert('Tournament cancelled and refunds/notifications processed successfully! 📢✅');
+      $('mCancelTour').classList.add('hidden');
+    } catch (err) {
+      alert('Error cancelling tournament: ' + err.message);
+    } finally {
+      $('bConfirmCancelTour').disabled = false;
+      $('bConfirmCancelTour').textContent = 'Confirm & Cancel';
+    }
+  }
+});
 
 // ── REGISTRATIONS APPLICANTS RENDER ──
 let regsFilter = 'pending';
