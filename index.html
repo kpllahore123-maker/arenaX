@@ -68,17 +68,20 @@ tailwind.config = {
 <div id="curR" class="hidden md:block"></div>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
-<div id="sLogin" class="fixed inset-0 bg-bg z-[100] flex items-center justify-center p-4">
+<div id="sLogin" class="fixed inset-0 bg-[#060b09] z-[100] flex items-center justify-center p-4">
   <div class="absolute inset-0 pointer-events-none overflow-hidden">
-    <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-b from-gold/10 to-transparent rounded-full filter blur-[120px]"></div>
+    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-[130px]"></div>
+    <div class="absolute bottom-[-15%] right-[-15%] w-[450px] h-[450px] bg-emerald-500/5 rounded-full filter blur-[110px]"></div>
+    <!-- Pitch graphic markings in background with low opacity -->
+    <div class="absolute inset-10 border border-emerald-500/5 rounded-3xl pointer-events-none select-none"></div>
   </div>
   <div class="relative w-full max-w-[420px] space-y-6">
     <div class="text-center">
-      <div class="w-16 h-16 bg-gradient-to-br from-gold to-[#e8a820] rounded-2xl flex items-center justify-center text-3xl text-bg mx-auto shadow-[0_0_32px_rgba(240,192,64,0.4)]">
-        <i class="fas fa-trophy"></i>
+      <div class="w-16 h-16 bg-gradient-to-br from-emerald-400 to-[#10b981] rounded-2xl flex items-center justify-center text-3xl text-bg mx-auto shadow-[0_0_32px_rgba(16,185,129,0.35)]">
+        <i class="fas fa-futbol text-white animate-spin-slow"></i>
       </div>
-      <h1 class="font-display text-4xl font-extrabold tracking-wider mt-4">Arena<span class="text-gold">X</span></h1>
-      <p class="text-[11px] text-t2 tracking-[3px] uppercase mt-1">Compete · Rise · Dominate</p>
+      <h1 class="font-display text-4xl font-extrabold tracking-wider mt-4 text-white">Arena<span class="text-emerald-400">X</span></h1>
+      <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase mt-1 font-semibold">Compete · Rise · Dominate</p>
     </div>
 
     <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-5">
@@ -153,7 +156,17 @@ tailwind.config = {
 </div>
 
 <!-- ==================== MAIN DASHBOARD SCREEN ==================== -->
-<div id="sDash" class="hidden flex flex-col h-screen overflow-hidden">
+<div id="sDash" class="hidden flex flex-col h-screen overflow-hidden relative">
+  <!-- Stadium ambient light and pitch markings overlay -->
+  <div class="absolute inset-0 pointer-events-none opacity-[0.04] overflow-hidden select-none z-0">
+    <div class="absolute inset-4 border-2 border-emerald-500 rounded-2xl"></div>
+    <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-emerald-500"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full border-2 border-emerald-500"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500"></div>
+  </div>
+  <!-- Emerald ambient glowing lights -->
+  <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/[0.04] rounded-full filter blur-[100px] pointer-events-none select-none z-0"></div>
+  <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/[0.04] rounded-full filter blur-[100px] pointer-events-none select-none z-0"></div>
   
   <!-- TOPBAR -->
   <nav class="h-[56px] bg-panel border-b border-bdr flex items-center justify-between px-4 flex-shrink-0 z-50">
@@ -259,6 +272,54 @@ tailwind.config = {
         <div class="p-3 bg-card border border-bdr rounded-xl text-center">
           <div id="statB" class="font-display text-2xl font-bold text-gold">—</div>
           <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Best Finish</div>
+        </div>
+      </div>
+
+      <!-- LIVE EVENT PROMO CARD -->
+      <div class="p-4 bg-gradient-to-br from-gold/15 via-[#f0c040]/5 to-transparent border border-gold/25 rounded-xl space-y-3 relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 opacity-10 text-gold text-7xl select-none pointer-events-none">
+          <i class="fas fa-trophy"></i>
+        </div>
+        
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-gold/10 rounded-lg flex items-center justify-center text-gold border border-gold/20 flex-shrink-0">
+            <i class="fas fa-futbol"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-black text-gold text-sm uppercase tracking-wider">FIFA World Cup Squad Event!</h4>
+            <p class="text-[10px] text-t3">ArenaX Exclusive Dual-Action Hybrid Tournament</p>
+          </div>
+        </div>
+        
+        <div class="space-y-2 text-xs text-t2">
+          <p class="leading-relaxed text-[11px]">
+            Welcome to the ultimate hybrid battleground of the season! Watch or compete as a player runs and plays football while facing armed players shooting in real combat.
+          </p>
+          
+          <div class="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-bdr/40">
+            <div class="flex items-center gap-1.5 text-t2">
+              <i class="fas fa-calendar-alt text-gold w-3.5"></i>
+              <span>Date: <strong>July 15, 2026</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-t2">
+              <i class="fas fa-clock text-gold w-3.5"></i>
+              <span>Time: <strong>08:00 PM PKT</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-t2">
+              <i class="fas fa-coins text-gold w-3.5"></i>
+              <span>Prize: <strong class="text-gold">50,000 AX Coins</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-t2">
+              <i class="fas fa-users text-gold w-3.5"></i>
+              <span>Format: <strong>Squad (4v4)</strong></span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="pt-1">
+          <button onclick="goTo('sDash'); switchTab('Tour');" class="w-full py-2 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-black uppercase tracking-widest rounded-lg transition duration-150">
+            <i class="fas fa-trophy mr-1"></i> Join & Register Now
+          </button>
         </div>
       </div>
       
@@ -594,7 +655,7 @@ tailwind.config = {
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <img src="./src/assets/images/website_under_dev_1782818353395.jpg" class="w-full h-full object-cover" alt="Under Construction" />
+      <img src="./src/assets/images/event_banner_1783187383925.jpg" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" />
       <!-- Gradient overlay to blend bottom -->
       <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
     </div>
@@ -603,18 +664,18 @@ tailwind.config = {
     <div class="p-6 space-y-4 text-center">
       <div class="flex justify-center">
         <span class="px-2.5 py-1 bg-gold/10 border border-gold/30 text-gold text-[10px] font-black uppercase rounded-full tracking-widest animate-pulse">
-          ⚠️ UNDER DEVELOPMENT
+          🔥 SPECIAL LIVE EVENT
         </span>
       </div>
 
       <div class="space-y-2">
         <h3 class="font-display text-xl font-black text-white uppercase tracking-wide">
-          ArenaX Arena Under Construction
+          FIFA World Cup Squad Event!
         </h3>
         <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto">
-          Welcome to the Arena! We are currently busy deploying secure match validation and real coin wallet sync.
+          Welcome to the ultimate ArenaX battleground! Join our exclusive hybrid event where a player plays football while facing shooting/combat players with tactical weapons. 
           <br><br>
-          Feel free to explore tournaments, join real chat channels, customize your player details, and experience simulated earnings.
+          Register your <strong>4-player squad</strong> today to secure your slot and compete for the mega prize pool of <strong>50,000 AX Coins</strong>!
         </p>
       </div>
 
@@ -1501,6 +1562,7 @@ function goTo(screenId) {
   document.querySelectorAll('.scr, #sLogin, #sDash').forEach(s => s.classList.add('hidden'));
   $(screenId).classList.remove('hidden');
 }
+window.goTo = goTo;
 
 // Lauch Dashboard
 function boot() {
@@ -1720,6 +1782,7 @@ function switchTab(tabId) {
     }
   }
 }
+window.switchTab = switchTab;
 
 document.querySelectorAll('.ni').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.t));
@@ -1975,12 +2038,95 @@ $('bLogout').addEventListener('click', async () => {
 
 // ── TOURNAMENTS LOGIC ──
 function loadTournamentsList() {
-  const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, 'tournaments'));
   onSnapshot(q, (snap) => {
     toursData = [];
     snap.forEach(d => {
       toursData.push({ id: d.id, ...d.data() });
     });
+
+    // Client-side sort by createdAt descending
+    toursData.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || a.createdAt || 0;
+      const timeB = b.createdAt?.seconds || b.createdAt || 0;
+      return timeB - timeA;
+    });
+
+    // Automatically enforce 'soccer' accentTheme on any FIFA, Soccer, or Football tournaments loaded from database
+    toursData.forEach(t => {
+      if (t.name && (t.name.toLowerCase().includes('fifa') || t.name.toLowerCase().includes('soccer') || t.name.toLowerCase().includes('football'))) {
+        t.accentTheme = 'soccer';
+      }
+    });
+
+    // Fallback demo data if Firestore tournaments collection is empty
+    if (toursData.length === 0) {
+      toursData = [
+        {
+          id: 'demo_fifa',
+          name: 'FIFA World Cup',
+          game: 'FIFA Mobile / FC 24',
+          status: 'upcoming',
+          registered: 0,
+          maxPlayers: 32,
+          prize: '50,000 AX Coins',
+          date: 'Jul 15, 2026',
+          time: '08:00 PM PKT',
+          entryFee: 'Rs 200',
+          teamType: 'Squad (4 Players)',
+          hasTeams: true,
+          accentTheme: 'soccer'
+        },
+        {
+          id: 'demo1',
+          name: 'Grand RP Duo Showdown',
+          game: 'Grand RP Mobile',
+          status: 'live',
+          registered: 18,
+          maxPlayers: 32,
+          prize: '10,000 AX',
+          date: 'Live Now',
+          time: '08:00 PM',
+          entryFee: 'Rs 150',
+          teamType: 'Duo (2 Players)',
+          accentTheme: 'crimson'
+        },
+        {
+          id: 'demo2',
+          name: 'City Cup Championship',
+          game: 'Grand RP Mobile',
+          status: 'upcoming',
+          registered: 4,
+          maxPlayers: 64,
+          prize: '25,000 AX',
+          date: 'July 5, 2026',
+          time: '09:00 PM',
+          entryFee: 'Free',
+          teamType: 'Squad (4 Players)',
+          accentTheme: 'ice'
+        }
+      ];
+    } else {
+      // Ensure FIFA World Cup is always in the list even if database has some custom tournaments but not FIFA
+      const hasFIFA = toursData.some(t => t.name === 'FIFA World Cup');
+      if (!hasFIFA) {
+        toursData.unshift({
+          id: 'demo_fifa',
+          name: 'FIFA World Cup',
+          game: 'FIFA Mobile / FC 24',
+          status: 'upcoming',
+          registered: 0,
+          maxPlayers: 32,
+          prize: '50,000 AX Coins',
+          date: 'Jul 15, 2026',
+          time: '08:00 PM PKT',
+          entryFee: 'Rs 200',
+          teamType: 'Squad (4 Players)',
+          hasTeams: true,
+          accentTheme: 'soccer'
+        });
+      }
+    }
     
     // Listen to user registrations
     const profile = userProfile || guestProfile;
@@ -1996,10 +2142,62 @@ function loadTournamentsList() {
           userRegs[r.tournamentId] = { id: rd.id, ...r };
         });
         renderTournaments();
+      }, (err) => {
+        console.warn("Registrations listen error:", err);
+        renderTournaments();
       });
     } else {
       renderTournaments();
     }
+  }, (err) => {
+    console.warn("Tournaments listen error:", err);
+    // Use fallback demo data on listen failure
+    toursData = [
+      {
+        id: 'demo_fifa',
+        name: 'FIFA World Cup',
+        game: 'FIFA Mobile / FC 24',
+        status: 'upcoming',
+        registered: 0,
+        maxPlayers: 32,
+        prize: '50,000 AX Coins',
+        date: 'Jul 15, 2026',
+        time: '08:00 PM PKT',
+        entryFee: 'Rs 200',
+        teamType: 'Squad (4 Players)',
+        hasTeams: true,
+        accentTheme: 'soccer'
+      },
+      {
+        id: 'demo1',
+        name: 'Grand RP Duo Showdown',
+        game: 'Grand RP Mobile',
+        status: 'live',
+        registered: 18,
+        maxPlayers: 32,
+        prize: '10,000 AX',
+        date: 'Live Now',
+        time: '08:00 PM',
+        entryFee: 'Rs 150',
+        teamType: 'Duo (2 Players)',
+        accentTheme: 'crimson'
+      },
+      {
+        id: 'demo2',
+        name: 'City Cup Championship',
+        game: 'Grand RP Mobile',
+        status: 'upcoming',
+        registered: 4,
+        maxPlayers: 64,
+        prize: '25,000 AX',
+        date: 'July 5, 2026',
+        time: '09:00 PM',
+        entryFee: 'Free',
+        teamType: 'Squad (4 Players)',
+        accentTheme: 'ice'
+      }
+    ];
+    renderTournaments();
   });
 }
 
@@ -2033,81 +2231,168 @@ function renderTournaments() {
       dynamicCardClasses = `p-4 bg-gradient-to-b from-green/10 to-card/95 border border-green/40 rounded-xl space-y-3 relative transition hover:border-green duration-200 cursor-pointer shadow-[0_0_12px_rgba(61,220,132,0.05)]`;
     } else if (t.accentTheme === 'ice') {
       dynamicCardClasses = `p-4 bg-gradient-to-b from-blue/10 to-card/95 border border-blue/40 rounded-xl space-y-3 relative transition hover:border-blue duration-200 cursor-pointer shadow-[0_0_12px_rgba(79,158,255,0.05)]`;
+    } else if (t.accentTheme === 'soccer') {
+      dynamicCardClasses = `p-5 bg-gradient-to-br from-[#0c2e1f] via-[#101917] to-[#0a0c12] border-2 border-emerald-500/50 hover:border-emerald-300 rounded-2xl space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)] cursor-pointer group`;
     }
 
     const card = document.createElement('div');
     card.className = dynamicCardClasses;
-    card.innerHTML = `
-      <div class="flex justify-between items-start gap-3">
-        <div>
-          <h4 class="font-display font-bold text-base text-white leading-tight">${t.name}</h4>
-          <p class="text-[10px] text-t3 font-medium mt-0.5">${t.game || 'Grand RP Mobile'}</p>
-        </div>
-        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25' : t.status === 'upcoming' ? 'bg-blue/15 text-blue border border-blue/25' : t.status === 'cancelled' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' : 'bg-neutral-800 text-t3 border border-neutral-700'}">
-          ${t.status === 'live' ? '🔴 Live' : t.status === 'upcoming' ? 'Upcoming' : t.status === 'cancelled' ? '❌ Cancelled' : 'Ended'}
-        </span>
-      </div>
 
-      <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-t2 bg-[#111420]/40 p-2.5 rounded-lg border border-bdr/20">
-        <div>
-          <span class="text-[9px] text-t3 uppercase font-bold block">Prize Pool</span>
-          <span class="text-gold font-display text-sm font-bold">${t.prize || 'TBD'}</span>
+    if (t.accentTheme === 'soccer') {
+      card.innerHTML = `
+        <!-- Soccer Pitch Visual Gridlines -->
+        <div class="absolute inset-0 opacity-[0.05] pointer-events-none select-none">
+          <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[1px] bg-white"></div>
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border border-white"></div>
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white"></div>
+          <div class="absolute inset-4 border border-white"></div>
         </div>
-        <div>
-          <span class="text-[9px] text-t3 uppercase font-bold block">Size Slots</span>
-          <span class="text-white">${t.registered || 0}/${t.maxPlayers || 32}</span>
+        
+        <!-- Glowing Ambient Lights -->
+        <div class="absolute top-0 left-1/4 w-16 h-1 bg-emerald-400 blur-sm"></div>
+        <div class="absolute top-0 right-1/4 w-16 h-1 bg-emerald-400 blur-sm"></div>
+        
+        <!-- Background Icon -->
+        <div class="absolute -right-8 -bottom-8 opacity-10 text-emerald-400 text-8xl rotate-12 transition-transform duration-500 group-hover:rotate-45 pointer-events-none select-none">
+          <i class="fas fa-futbol"></i>
         </div>
-        <div>
-          <span class="text-[9px] text-t3 uppercase font-bold block">Entry Fee</span>
-          <span class="text-gold font-medium">${t.entryFee || 'Free'}</span>
-        </div>
-      </div>
 
-      <div class="flex flex-wrap gap-x-4 text-[10px] text-t3 font-medium">
-        <span><i class="fas fa-calendar mr-1 text-gold"></i> ${t.date || 'TBA'}</span>
-        <span><i class="fas fa-clock mr-1 text-gold"></i> ${t.time || 'TBA'}</span>
-        <span><i class="fas fa-users mr-1 text-gold"></i> ${t.teamType || 'Solo'}</span>
-      </div>
-
-      ${reg ? `
-        <div class="pt-2 border-t border-bdr/20 flex justify-between items-center text-xs">
-          <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-green':reg.status==='rejected'?'text-red':'text-gold'}">
-            ${reg.status === 'approved' ? 'Slots Verified ✓' : reg.status === 'rejected' ? 'Registration Rejected' : 'Verification Pending...'}
-          </span>
-          <span class="text-[10px] text-t3">TXN: ${reg.txnId}</span>
-        </div>
-      ` : ''}
-
-      ${t.status === 'live' && t.liveMessage ? `
-        <div class="p-2.5 bg-red/5 border border-red/20 rounded-lg text-[11px] text-red/90 font-medium flex gap-2 items-start leading-normal">
-          <i class="fas fa-bullhorn text-xs mt-0.5 animate-bounce text-red"></i>
+        <div class="flex justify-between items-start gap-3 relative z-10">
           <div>
-            <span class="font-bold text-red uppercase text-[9px] block mb-0.5 tracking-wider">🔴 Live Notice</span>
-            ${t.liveMessage}
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <span class="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[8px] font-black uppercase tracking-widest rounded-md">
+                🏆 HYBRID SOCCER
+              </span>
+              <span class="px-2 py-0.5 bg-gold/15 border border-gold/30 text-gold text-[8px] font-black uppercase tracking-widest rounded-md">
+                SPECIAL EVENT
+              </span>
+            </div>
+            <h4 class="font-display font-black text-lg text-white leading-tight uppercase tracking-wide group-hover:text-emerald-300 transition-colors">${t.name}</h4>
+            <p class="text-[10px] text-emerald-400 font-bold mt-0.5 flex items-center gap-1">
+              <i class="fas fa-gamepad"></i> ${t.game || 'Grand RP Mobile'}
+            </p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.status === 'live' ? 'bg-red text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35'}">
+            ${t.status === 'live' ? '🔴 Live' : 'Upcoming'}
+          </span>
+        </div>
+
+        <!-- Scoreboard Style Grid -->
+        <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-t2 bg-black/50 p-3 rounded-xl border border-emerald-500/15 relative z-10">
+          <div class="text-center border-r border-emerald-500/10">
+            <span class="text-[9px] text-emerald-400/60 uppercase font-black tracking-wider block mb-0.5">Prize Pool</span>
+            <span class="text-gold font-display text-base font-black tracking-tight">${t.prize || 'TBD'}</span>
+          </div>
+          <div class="text-center border-r border-emerald-500/10">
+            <span class="text-[9px] text-emerald-400/60 uppercase font-black tracking-wider block mb-0.5">Slots Filled</span>
+            <span class="text-white font-mono text-sm font-bold">${t.registered || 0}/${t.maxPlayers || 32}</span>
+          </div>
+          <div class="text-center">
+            <span class="text-[9px] text-emerald-400/60 uppercase font-black tracking-wider block mb-0.5">Entry Fee</span>
+            <span class="text-emerald-300 font-bold font-mono text-sm">${t.entryFee || 'Free'}</span>
           </div>
         </div>
-      ` : ''}
 
-      ${t.status === 'live' && t.youtubeLink ? `
-        <div class="pt-1">
-          <a href="${t.youtubeLink}" target="_blank" rel="noopener noreferrer" class="b-live-stream flex items-center justify-center gap-2 w-full py-1.5 bg-red hover:bg-[#cc3540] text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-red/20">
-            <i class="fab fa-youtube text-sm"></i> Watch Live YouTube Stream
-          </a>
+        <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-t3 font-medium relative z-10 pt-1">
+          <span class="flex items-center gap-1 text-emerald-400/90"><i class="fas fa-calendar-alt text-emerald-400"></i> ${t.date || 'TBA'}</span>
+          <span class="flex items-center gap-1 text-emerald-400/90"><i class="fas fa-clock text-emerald-400"></i> ${t.time || 'TBA'}</span>
+          <span class="flex items-center gap-1 text-emerald-400/90"><i class="fas fa-users text-emerald-400"></i> ${t.teamType || 'Solo'}</span>
         </div>
-      ` : ''}
 
-      <div class="pt-2 flex gap-2 flex-wrap">
-        <button class="b-part flex-1 min-w-[100px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-          <i class="fas fa-users mr-1"></i> Slots
-        </button>
-        <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-          <i class="fas fa-list-ol mr-1"></i> Leaderboard
-        </button>
-        <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-          <i class="fas fa-flag mr-1"></i> Report
-        </button>
-      </div>
-    `;
+        ${reg ? `
+          <div class="pt-2 border-t border-emerald-500/10 flex justify-between items-center text-xs relative z-10">
+            <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-emerald-400':reg.status==='rejected'?'text-red':'text-gold'}">
+              ${reg.status === 'approved' ? '✓ Registered' : reg.status === 'rejected' ? 'Rejected' : 'Verification Pending...'}
+            </span>
+            <span class="text-[10px] text-t3 font-mono">TXN: ${reg.txnId}</span>
+          </div>
+        ` : ''}
+
+        <div class="pt-2 flex gap-2 flex-wrap relative z-10">
+          <button class="b-part flex-1 min-w-[100px] py-1.5 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-users mr-1"></i> Slots
+          </button>
+          <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-list-ol mr-1"></i> Standings
+          </button>
+          <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-flag mr-1"></i> Report
+          </button>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-3">
+          <div>
+            <h4 class="font-display font-bold text-base text-white leading-tight">${t.name}</h4>
+            <p class="text-[10px] text-t3 font-medium mt-0.5">${t.game || 'Grand RP Mobile'}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25' : t.status === 'upcoming' ? 'bg-blue/15 text-blue border border-blue/25' : t.status === 'cancelled' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' : 'bg-neutral-800 text-t3 border border-neutral-700'}">
+            ${t.status === 'live' ? '🔴 Live' : t.status === 'upcoming' ? 'Upcoming' : t.status === 'cancelled' ? '❌ Cancelled' : 'Ended'}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-t2 bg-[#111420]/40 p-2.5 rounded-lg border border-bdr/20">
+          <div>
+            <span class="text-[9px] text-t3 uppercase font-bold block">Prize Pool</span>
+            <span class="text-gold font-display text-sm font-bold">${t.prize || 'TBD'}</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-t3 uppercase font-bold block">Size Slots</span>
+            <span class="text-white">${t.registered || 0}/${t.maxPlayers || 32}</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-t3 uppercase font-bold block">Entry Fee</span>
+            <span class="text-gold font-medium">${t.entryFee || 'Free'}</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-x-4 text-[10px] text-t3 font-medium">
+          <span><i class="fas fa-calendar mr-1 text-gold"></i> ${t.date || 'TBA'}</span>
+          <span><i class="fas fa-clock mr-1 text-gold"></i> ${t.time || 'TBA'}</span>
+          <span><i class="fas fa-users mr-1 text-gold"></i> ${t.teamType || 'Solo'}</span>
+        </div>
+
+        ${reg ? `
+          <div class="pt-2 border-t border-bdr/20 flex justify-between items-center text-xs">
+            <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-green':reg.status==='rejected'?'text-red':'text-gold'}">
+              ${reg.status === 'approved' ? 'Slots Verified ✓' : reg.status === 'rejected' ? 'Registration Rejected' : 'Verification Pending...'}
+            </span>
+            <span class="text-[10px] text-t3">TXN: ${reg.txnId}</span>
+          </div>
+        ` : ''}
+
+        ${t.status === 'live' && t.liveMessage ? `
+          <div class="p-2.5 bg-red/5 border border-red/20 rounded-lg text-[11px] text-red/90 font-medium flex gap-2 items-start leading-normal">
+            <i class="fas fa-bullhorn text-xs mt-0.5 animate-bounce text-red"></i>
+            <div>
+              <span class="font-bold text-red uppercase text-[9px] block mb-0.5 tracking-wider">🔴 Live Notice</span>
+              ${t.liveMessage}
+            </div>
+          </div>
+        ` : ''}
+
+        ${t.status === 'live' && t.youtubeLink ? `
+          <div class="pt-1">
+            <a href="${t.youtubeLink}" target="_blank" rel="noopener noreferrer" class="b-live-stream flex items-center justify-center gap-2 w-full py-1.5 bg-red hover:bg-[#cc3540] text-white text-[11px] font-bold rounded-lg transition shadow-md shadow-red/20">
+              <i class="fab fa-youtube text-sm"></i> Watch Live YouTube Stream
+            </a>
+          </div>
+        ` : ''}
+
+        <div class="pt-2 flex gap-2 flex-wrap">
+          <button class="b-part flex-1 min-w-[100px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-users mr-1"></i> Slots
+          </button>
+          <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-list-ol mr-1"></i> Leaderboard
+          </button>
+          <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+            <i class="fas fa-flag mr-1"></i> Report
+          </button>
+        </div>
+      `;
+    }
 
     card.addEventListener('click', (e) => {
       if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
@@ -4024,24 +4309,40 @@ async function sendDirectMessage() {
 
 // ── CUSTOMER SUPPORT CHAT FIX & BOT SYNC ──
 let supportUnsub = null;
+let currentSupportMessages = [];
+let supportEscalated = false;
+
 function loadLiveSupportChat() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
-  const ticketId = profile.uid + '_ticket';
+  const uid = profile.uid || profile.id;
+  const ticketId = uid + '_ticket';
   
   if (supportUnsub) {
     supportUnsub();
     supportUnsub = null;
   }
 
+  // Persist escalation status from database
+  getDoc(doc(db, 'support_tickets', ticketId)).then((ticketDoc) => {
+    if (ticketDoc.exists()) {
+      const data = ticketDoc.data();
+      supportEscalated = data.status === 'escalated';
+    } else {
+      supportEscalated = false;
+    }
+  }).catch((err) => console.warn('Failed to fetch ticket status:', err));
+
   const q = query(collection(db, 'support', ticketId, 'messages'), orderBy('createdAt', 'asc'));
   supportUnsub = onSnapshot(q, (snap) => {
+    currentSupportMessages = [];
     const box = $('chatMsgs');
     box.innerHTML = '';
 
     snap.forEach(d => {
       const m = d.data();
+      currentSupportMessages.push(m);
       const isMe = m.sender === 'user';
       const isBot = m.sender === 'bot';
       const isAdmin = m.sender === 'admin';
@@ -4129,7 +4430,8 @@ async function sendSupportMessage(customTxt) {
   if (!txt) return;
   if (!customTxt) $('chatIn').value = '';
 
-  const ticketId = userProfile.uid + '_ticket';
+  const uid = userProfile.uid || userProfile.id;
+  const ticketId = uid + '_ticket';
   const messagesCol = collection(db, 'support', ticketId, 'messages');
 
   try {
@@ -4137,7 +4439,7 @@ async function sendSupportMessage(customTxt) {
     await addDoc(messagesCol, {
       text: txt,
       sender: 'user',
-      senderName: userProfile.name,
+      senderName: userProfile.name || 'Player',
       createdAt: serverTimestamp()
     });
 
@@ -4145,19 +4447,25 @@ async function sendSupportMessage(customTxt) {
     await setDoc(doc(db, 'support_tickets', ticketId), {
       id: ticketId,
       ticketId: ticketId,
-      uid: userProfile.uid,
-      userName: userProfile.name,
-      userHandle: userProfile.handle,
+      uid: uid,
+      userName: userProfile.name || 'Player',
+      userHandle: userProfile.handle || 'player',
       lastMsg: txt,
-      status: 'open',
+      status: supportEscalated ? 'escalated' : 'open',
       updatedAt: serverTimestamp()
     }, { merge: true });
 
     // 2. Generate and write automatic bot replies directly to Firestore to keep sync!
+    if (supportEscalated) {
+      // Ticket is already escalated, let humans handle it
+      return;
+    }
+
     const lower = txt.toLowerCase();
     
-    // Human live Agent escalate trigger
+    // Explicit escalation keywords
     if (['agent', 'human', 'mod', 'admin', 'connect'].some(k => lower.includes(k))) {
+      supportEscalated = true;
       setTimeout(async () => {
         await addDoc(messagesCol, {
           text: 'Connecting to human agent moderator... Your ticket has been marked priority. Please wait while administrators join the chat!',
@@ -4166,11 +4474,79 @@ async function sendSupportMessage(customTxt) {
           createdAt: serverTimestamp()
         });
         await updateDoc(doc(db, 'support_tickets', ticketId), {
+          status: 'escalated',
           lastMsg: '[Bot]: Connecting live agent...',
           updatedAt: serverTimestamp()
         });
       }, 700);
-    } else {
+      return;
+    }
+
+    // Call server-side Gemini AI support chat route!
+    try {
+      // Map history for Gemini backend
+      const history = (currentSupportMessages || [])
+        .filter(m => m.sender === 'user' || m.sender === 'bot')
+        .map(m => ({
+          role: m.sender === 'user' ? 'user' : 'model',
+          text: m.text
+        }));
+
+      const res = await fetch('/api/support-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: txt,
+          history: history,
+          userProfile: userProfile,
+          tournaments: toursData
+        })
+      });
+
+      if (!res.ok) throw new Error('API server returned error');
+      const data = await res.json();
+      let replyStr = data.text;
+
+      if (replyStr.includes('[ESCALATE]')) {
+        supportEscalated = true;
+        replyStr = replyStr.replace('[ESCALATE]', '').trim();
+        
+        setTimeout(async () => {
+          await addDoc(messagesCol, {
+            text: replyStr,
+            sender: 'bot',
+            senderName: 'Support Bot',
+            createdAt: serverTimestamp()
+          });
+          await addDoc(messagesCol, {
+            text: '🔄 [Ticket Escalated]: Connecting to live human agent moderator... Your query has been marked as high-priority. Please wait!',
+            sender: 'bot',
+            senderName: 'Support Bot',
+            createdAt: serverTimestamp()
+          });
+          await updateDoc(doc(db, 'support_tickets', ticketId), {
+            status: 'escalated',
+            lastMsg: '[Bot]: Ticket escalated to live admin.',
+            updatedAt: serverTimestamp()
+          });
+        }, 700);
+      } else {
+        setTimeout(async () => {
+          await addDoc(messagesCol, {
+            text: replyStr,
+            sender: 'bot',
+            senderName: 'Support Bot',
+            createdAt: serverTimestamp()
+          });
+          await updateDoc(doc(db, 'support_tickets', ticketId), {
+            lastMsg: `[Bot]: ${replyStr}`,
+            updatedAt: serverTimestamp()
+          });
+        }, 700);
+      }
+    } catch (apiErr) {
+      console.warn("Gemini support API failed, falling back to keywords:", apiErr);
+      // Fallback to basic keyword rules
       const matchRule = BOT_AUTO_ANSWERS.find(r => r.keys.some(k => lower.includes(k)));
       const replyStr = matchRule ? matchRule.ans : 'I am support bot assistant. Type "agent" to connect with a live administrator moderator directly.';
       
