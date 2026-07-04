@@ -4492,14 +4492,31 @@ async function sendSupportMessage(customTxt) {
           text: m.text
         }));
 
+      const cleanProfile = userProfile ? {
+        name: userProfile.name,
+        handle: userProfile.handle,
+        balance: userProfile.balance,
+        premium: userProfile.premium
+      } : null;
+
+      const cleanTournaments = (toursData || []).map(t => ({
+        name: t.name,
+        game: t.game,
+        entryFee: t.entryFee,
+        prize: t.prize,
+        status: t.status,
+        registered: t.registered,
+        maxPlayers: t.maxPlayers
+      }));
+
       const res = await fetch('/api/support-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: txt,
           history: history,
-          userProfile: userProfile,
-          tournaments: toursData
+          userProfile: cleanProfile,
+          tournaments: cleanTournaments
         })
       });
 
