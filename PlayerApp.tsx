@@ -129,6 +129,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [tregCheck1, setTregCheck1] = useState(false);
   const [tregCheck2, setTregCheck2] = useState(false);
   const [tregSubmitting, setTregSubmitting] = useState(false);
+  const [allTournamentRegistrations, setAllTournamentRegistrations] = useState<any[]>([]);
+  const [tregSelectedTeamColor, setTregSelectedTeamColor] = useState<string>('');
 
   // Report Modal state
   const [reportTour, setReportTour] = useState<Tournament | null>(null);
@@ -237,15 +239,43 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Load Tournaments & Current User's Registrations
   useEffect(() => {
-    const qTours = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+    const qTours = query(collection(db, 'tournaments'));
     const unsubTours = onSnapshot(qTours, (snap) => {
       const list: Tournament[] = [];
       snap.forEach((d) => {
         list.push({ id: d.id, ...d.data() } as Tournament);
       });
-      if (list.length === 0) {
-        // Fallback demo data if Firestore is empty
+      
+      // Sort client-side by createdAt descending to ensure resilience
+      list.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+
+      // Ensure FIFA World Cup is always in the list
+      const hasFIFA = list.some(t => t.name === 'FIFA World Cup');
+      if (!hasFIFA) {
+        list.unshift({
+          id: 'demo_fifa',
+          name: 'FIFA World Cup',
+          game: 'FIFA Mobile / FC 24',
+          status: 'upcoming',
+          registered: 0,
+          maxPlayers: 32,
+          prize: '50,000 AX Coins',
+          date: 'Jul 15, 2026',
+          time: '08:00 PM PKT',
+          entryFee: 'Rs 200',
+          teamType: 'Squad (4 Players)',
+          hasTeams: true
+        });
+      }
+
+      if (list.length === 1 && list[0].id === 'demo_fifa') {
+        // Fallback demo data if Firestore is empty except for our injected one
         setTournaments([
+          list[0],
           {
             id: 'demo1',
             name: 'Grand RP Duo Showdown',
@@ -434,6 +464,65 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsubNotifs();
   }, [currentUser, isGuest]);
 
+  // Listen to all registrations for the selected tournament
+  useEffect(() => {
+    if (!selectedTournament) {
+      setAllTournamentRegistrations([]);
+      setTregSelectedTeamColor('');
+      return;
+    }
+
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', selectedTournament.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setAllTournamentRegistrations(list);
+    });
+
+    return () => unsubscribe();
+  }, [selectedTournament]);
+
+  // Auto-seed the "FIFA World Cup" special tournament
+  useEffect(() => {
+    if (!currentUser || isGuest) return;
+    const seedFIFA = async () => {
+      try {
+        const q = query(
+          collection(db, 'tournaments'),
+          where('name', '==', 'FIFA World Cup')
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          // Add the special event
+          await addDoc(collection(db, 'tournaments'), {
+            name: 'FIFA World Cup',
+            game: 'FIFA Mobile / FC 24',
+            prize: '50,000 AX Coins',
+            maxPlayers: 32,
+            date: 'Jul 15, 2026',
+            time: '08:00 PM PKT',
+            entryFee: 'Rs 200',
+            teamType: 'Squad (4 Players)',
+            status: 'upcoming',
+            hasTeams: true,
+            registered: 0,
+            createdAt: serverTimestamp()
+          });
+          console.log('FIFA World Cup tournament successfully auto-provisioned!');
+        }
+      } catch (err) {
+        console.warn('Failed to seed FIFA tournament:', err);
+      }
+    };
+    seedFIFA();
+  }, [currentUser, isGuest]);
+
   // Google Login
   const handleGoogleLogin = async () => {
     if (!agreedToTerms) {
@@ -577,7 +666,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       await addDoc(messagesCollection, {
         text: txt,
         sender: 'user',
-        senderName: currentUser.name,
+        senderName: currentUser.name || 'Player',
         createdAt: serverTimestamp()
       });
 
@@ -586,10 +675,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         id: ticketId,
         ticketId: ticketId,
         uid: currentUser.uid,
-        userName: currentUser.name,
-        userHandle: currentUser.handle,
+        userName: currentUser.name || 'Player',
+        userHandle: currentUser.handle || 'player',
         lastMsg: txt,
-        status: 'open',
+        status: escalated ? 'escalated' : 'open',
         updatedAt: serverTimestamp()
       }, { merge: true });
 
@@ -609,12 +698,95 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               createdAt: serverTimestamp()
             });
             await setDoc(doc(db, 'support_tickets', ticketId), {
+              status: 'escalated',
               lastMsg: '[Bot]: Connecting to human agent...',
               updatedAt: serverTimestamp()
             }, { merge: true });
           }, 800);
-        } else {
-          // Regular bot auto-reply
+          return;
+        }
+
+        // Call Gemini support chat API
+        try {
+          const history = (supportMessages || [])
+            .filter(m => m.sender === 'user' || m.sender === 'bot')
+            .map(m => ({
+              role: m.sender === 'user' ? 'user' : 'model',
+              text: m.text
+            }));
+
+          const cleanProfile = currentUser ? {
+            name: currentUser.name,
+            handle: currentUser.handle,
+            balance: currentUser.balance,
+            premium: currentUser.premium
+          } : null;
+
+          const cleanTournaments = (tournaments || []).map(t => ({
+            name: t.name,
+            game: t.game,
+            entryFee: t.entryFee,
+            prize: t.prize,
+            status: t.status,
+            registered: t.registered,
+            maxPlayers: t.maxPlayers
+          }));
+
+          const res = await fetch('/api/support-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: txt,
+              history: history,
+              userProfile: cleanProfile,
+              tournaments: cleanTournaments
+            })
+          });
+
+          if (!res.ok) throw new Error('API server returned error');
+          const data = await res.json();
+          let replyStr = data.text;
+
+          if (replyStr.includes('[ESCALATE]')) {
+            setEscalated(true);
+            replyStr = replyStr.replace('[ESCALATE]', '').trim();
+
+            setTimeout(async () => {
+              await addDoc(messagesCollection, {
+                text: replyStr,
+                sender: 'bot',
+                senderName: 'ArenaX Support Bot',
+                createdAt: serverTimestamp()
+              });
+              await addDoc(messagesCollection, {
+                text: '🔄 [Ticket Escalated]: Connecting to live human agent moderator... Your query has been marked as high-priority. Please wait!',
+                sender: 'bot',
+                senderName: 'ArenaX Support Bot',
+                createdAt: serverTimestamp()
+              });
+              await setDoc(doc(db, 'support_tickets', ticketId), {
+                status: 'escalated',
+                lastMsg: '[Bot]: Ticket escalated to live admin.',
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+            }, 700);
+          } else {
+            setTimeout(async () => {
+              await addDoc(messagesCollection, {
+                text: replyStr,
+                sender: 'bot',
+                senderName: 'ArenaX Support Bot',
+                createdAt: serverTimestamp()
+              });
+              await setDoc(doc(db, 'support_tickets', ticketId), {
+                lastMsg: `[Bot]: ${replyStr.slice(0, 60)}...`,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+            }, 700);
+          }
+        } catch (apiErr) {
+          console.warn("React support bot Gemini API failed, using local rules:", apiErr);
+          // Fallback to local keyword rules
           const matched = BOT_RULES.find(rule => rule.keys.some(k => lower.includes(k)));
           const botReplyMsg = matched ? matched.reply : 'I am not sure! Try rephrasing or type "agent" to connect with our live human support moderators.';
           
@@ -910,6 +1082,21 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       alert('Please fill out all required fields!');
       return;
     }
+
+    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+    if (isSquadEvent && !tregSelectedTeamColor) {
+      alert('Please select a Squad / Team Color theme!');
+      return;
+    }
+
+    if (isSquadEvent && tregSelectedTeamColor) {
+      const approvedCount = allTournamentRegistrations.filter(r => r.selectedTeamColor === tregSelectedTeamColor && r.status === 'approved').length;
+      if (approvedCount >= 4) {
+        alert(`❌ Team ${tregSelectedTeamColor} is already full with 4 approved players! Please choose a different color.`);
+        return;
+      }
+    }
+
     if (!tregCheck1 || !tregCheck2) {
       alert('You must accept the rules and guidelines to participate!');
       return;
@@ -945,6 +1132,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         txnId: autoTxnId,
         screenshot: 'Auto-verified ArenaX Wallet Hold',
         status: 'pending',
+        selectedTeamColor: tregSelectedTeamColor || null,
         submittedAt: serverTimestamp()
       });
       setTregStep(4); // Success step
@@ -1346,6 +1534,30 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* FEATURED SQUAD TOURNAMENT CALLOUT */}
+            <div className="p-4 bg-gradient-to-r from-[#f0c040]/15 to-[#f0c040]/5 border border-[#f0c040]/25 rounded-xl flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#f0c040]/10 rounded-xl flex items-center justify-center text-lg text-[#f0c040] border border-[#f0c040]/20 flex-shrink-0">
+                  <i className="fas fa-trophy"></i>
+                </div>
+                <div>
+                  <h4 className="font-bold text-[#f0c040] text-sm">FIFA World Cup Squad Event!</h4>
+                  <p className="text-[11px] text-[#8890b0] leading-normal">
+                    Assemble or claim a spot in a 4-Player squad! Choose one of 8 team colors. Rs 200 entry / 50,000 AX prize!
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveTab('Tour');
+                  setActiveTournamentFilter('all');
+                }}
+                className="px-3.5 py-1.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-lg transition whitespace-nowrap font-bold"
+              >
+                Join Now
+              </button>
             </div>
 
             {/* PREMIUM PROMO CARD */}
@@ -2477,6 +2689,60 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     </div>
                   </div>
 
+                  {(() => {
+                    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+                    if (!isSquadEvent) return null;
+
+                    const squadColors = [
+                      { id: 'Red', label: 'Team Red', icon: '🔴' },
+                      { id: 'Blue', label: 'Team Blue', icon: '🔵' },
+                      { id: 'Green', label: 'Team Green', icon: '🟢' },
+                      { id: 'Yellow', label: 'Team Yellow', icon: '🟡' },
+                      { id: 'Purple', label: 'Team Purple', icon: '🟣' },
+                      { id: 'Orange', label: 'Team Orange', icon: '🟠' },
+                      { id: 'White', label: 'Team White', icon: '⚪' },
+                      { id: 'Black', label: 'Team Black', icon: '⚫' },
+                    ];
+
+                    return (
+                      <div className="space-y-1.5 border-t border-[#252a45]/60 pt-2.5">
+                        <label className="block text-[10px] text-[#8890b0] uppercase font-bold">Select Squad Color Theme *</label>
+                        
+                        <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
+                          {squadColors.map((squad) => {
+                            const approvedCount = allTournamentRegistrations.filter(r => r.selectedTeamColor === squad.id && r.status === 'approved').length;
+                            const isFull = approvedCount >= 4;
+                            const isSelected = tregSelectedTeamColor === squad.id;
+
+                            return (
+                              <button
+                                key={squad.id}
+                                type="button"
+                                disabled={isFull}
+                                onClick={() => setTregSelectedTeamColor(squad.id)}
+                                className={`flex items-center justify-between p-2 rounded-lg border text-xs font-semibold transition ${
+                                  isSelected 
+                                    ? 'bg-[#1e2340] border-[#f0c040] text-[#f0c040]' 
+                                    : isFull 
+                                      ? 'opacity-40 cursor-not-allowed bg-black/20 border-transparent text-[#4a5070]' 
+                                      : 'bg-[#141828]/50 border-[#252a45] text-white hover:border-[#8890b0]'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <span>{squad.icon}</span>
+                                  <span className="truncate">{squad.label}</span>
+                                </span>
+                                <span className={`text-[9px] px-1 rounded ${isFull ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                  {isFull ? 'FULL' : `${approvedCount}/4`}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="space-y-2 border-t border-[#252a45] pt-3">
                     <label className="flex items-start gap-2.5 text-xs text-[#8890b0] cursor-pointer">
                       <input
@@ -2510,6 +2776,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     onClick={() => {
                       if (!tregRealName || !tregGameName || !tregUID || !tregAge) {
                         alert('Fill all fields!');
+                        return;
+                      }
+                      const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+                      if (isSquadEvent && !tregSelectedTeamColor) {
+                        alert('Please select a Squad / Team Color theme!');
                         return;
                       }
                       if (!tregCheck1 || !tregCheck2) {
@@ -2599,6 +2870,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <p className="text-xs text-[#8890b0] max-w-[300px] mx-auto leading-relaxed">
                     Our team is reviewing your payment logs. Slot updates will be pushed shortly! Check notifications.
                   </p>
+                  {tregSelectedTeamColor && (
+                    <div className="mt-2 text-xs bg-[#1e2340]/50 border border-[#252a45] px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-[#f0c040]">
+                      Selected Team: 
+                      {tregSelectedTeamColor === 'Red' && '🔴 Team Red'}
+                      {tregSelectedTeamColor === 'Blue' && '🔵 Team Blue'}
+                      {tregSelectedTeamColor === 'Green' && '🟢 Team Green'}
+                      {tregSelectedTeamColor === 'Yellow' && '🟡 Team Yellow'}
+                      {tregSelectedTeamColor === 'Purple' && '🟣 Team Purple'}
+                      {tregSelectedTeamColor === 'Orange' && '🟠 Team Orange'}
+                      {tregSelectedTeamColor === 'White' && '⚪ Team White'}
+                      {tregSelectedTeamColor === 'Black' && '⚫ Team Black'}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelectedTournament(null)}
