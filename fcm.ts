@@ -1,4 +1,4 @@
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { app, db, auth } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -65,15 +65,31 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
   }
 
   try {
+    const supported = await isSupported();
+    if (!supported) {
+      console.warn("Firebase Messaging is not supported in this browser.");
+      return null;
+    }
+
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       const messaging = getMessaging(app);
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      
+      // Register service worker explicitly to guarantee it resolves correctly in container/iframe environments
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log("Service Worker registered successfully:", reg);
+      
+      const token = await getToken(messaging, { 
+        serviceWorkerRegistration: reg,
+        vapidKey: VAPID_KEY 
+      });
+
       if (token) {
         console.log("FCM Token obtained:", token);
         const pathForWrite = `users/${uid}`;
         try {
           await setDoc(doc(db, 'users', uid), { fcmToken: token }, { merge: true });
+          console.log("FCM Token successfully saved to Firestore for uid:", uid);
         } catch (err) {
           handleFirestoreError(err, OperationType.WRITE, pathForWrite);
         }
@@ -97,15 +113,22 @@ export function setupForegroundNotificationListener(onNotificationReceived: (pay
     return () => {};
   }
 
-  try {
-    const messaging = getMessaging(app);
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("Foreground message received:", payload);
-      onNotificationReceived(payload);
-    });
-    return unsubscribe;
-  } catch (error) {
-    console.error("An error occurred while setting up foreground listener:", error);
-    return () => {};
-  }
+  let unsubscribe = () => {};
+
+  isSupported().then((supported) => {
+    if (!supported) return;
+    try {
+      const messaging = getMessaging(app);
+      unsubscribe = onMessage(messaging, (payload) => {
+        console.log("Foreground message received:", payload);
+        onNotificationReceived(payload);
+      });
+    } catch (error) {
+      console.error("An error occurred while setting up foreground listener:", error);
+    }
+  }).catch(console.error);
+
+  return () => {
+    unsubscribe();
+  };
 }
