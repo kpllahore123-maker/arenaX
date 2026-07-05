@@ -1006,7 +1006,15 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <img src="./src/assets/images/event_banner_1783187383925.jpg" onerror="this.onerror=null; if(this.src.includes('src/assets') || this.src.includes('assets/')) { this.src='/event_banner_1783187383925.jpg'; } else { this.src='https://images.unsplash.com/photo-1540747737956-37872404a8c1?q=80&w=1200&auto=format&fit=crop'; }" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" />
+      <img id="eventBannerImg" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1540747737956-37872404a8c1?q=80&w=1200&auto=format&fit=crop';" />
+      <script>
+        (function() {
+          var img = document.getElementById('eventBannerImg');
+          if (img) {
+            img.src = 'event_banner_1783187383925.jpg';
+          }
+        })();
+      </script>
       <!-- Gradient overlay to blend bottom -->
       <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
     </div>
