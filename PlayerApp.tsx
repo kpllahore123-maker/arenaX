@@ -33,6 +33,7 @@ import {
   Transaction
 } from '../types';
 import { ReportModal } from './ReportModal';
+import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener } from '../fcm';
 
 interface PlayerAppProps {
   onSwitchToAdmin: () => void;
@@ -236,6 +237,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     });
     return () => unsub();
   }, [isGuest]);
+
+  // Request FCM Notification Permission and Save token when User logs in
+  useEffect(() => {
+    if (currentUser && currentUser.uid && !isGuest) {
+      requestNotificationPermissionAndGetToken(currentUser.uid).catch(console.error);
+    }
+  }, [currentUser?.uid, isGuest]);
+
+  // Handle FCM foreground notifications and show toast
+  useEffect(() => {
+    if (!currentUser || isGuest) return;
+
+    const unsubscribe = setupForegroundNotificationListener((payload) => {
+      const title = payload.notification?.title || 'ArenaX Event';
+      const body = payload.notification?.body || 'New update received';
+      const newToastId = `toast_${Date.now()}_${Math.random()}`;
+      setToasts((prev) => [...prev, { id: newToastId, title, body }]);
+      
+      // Auto remove after 7 seconds
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== newToastId));
+      }, 7000);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser?.uid, isGuest]);
 
   // Load Tournaments & Current User's Registrations
   useEffect(() => {
