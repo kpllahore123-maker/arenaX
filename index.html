@@ -38,6 +38,13 @@ tailwind.config = {
 }
 </script>
 <style>
+/* Custom CSS Selector for active football ground backdrop as requested by user */
+div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7) > div#dFootballActiveGround:nth-of-type(3) {
+  background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop') !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: #0a0c12; }
@@ -58,6 +65,117 @@ tailwind.config = {
 #cur { position: fixed; width: 9px; height: 9px; background: #f0c040; border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: transform 0.1s, background 0.15s; }
 #curR { position: fixed; width: 30px; height: 30px; border: 1.5px solid rgba(240, 192, 64, 0.5); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: left 0.1s ease, top 0.1s ease, width 0.2s, height 0.2s, border-color 0.2s; }
 .hv-hover #curR { width: 44px; height: 44px; border-color: #f0c040; }
+
+/* Football Pitch Moving Background Keyframes */
+@keyframes pitch-pan {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+  100% { transform: translateY(0); }
+}
+.animate-pitch-pan {
+  animation: pitch-pan 22s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.25; }
+  90% { opacity: 0.25; }
+  100% { transform: translate(40px, -100px) rotate(360deg); opacity: 0; }
+}
+@keyframes float-medium {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.35; }
+  85% { opacity: 0.35; }
+  100% { transform: translate(-50px, -130px) rotate(-360deg); opacity: 0; }
+}
+@keyframes float-fast {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.45; }
+  80% { opacity: 0.45; }
+  100% { transform: translate(30px, -160px) rotate(180deg); opacity: 0; }
+}
+.animate-float-slow {
+  animation: float-slow 18s linear infinite;
+}
+.animate-float-medium {
+  animation: float-medium 13s linear infinite;
+}
+.animate-float-fast {
+  animation: float-fast 8s linear infinite;
+}
+
+@keyframes sweep-left {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(30px, 20px) scale(1.15) rotate(12deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes sweep-right {
+  0% { transform: translate(0, 0) scale(1.1) rotate(0deg); }
+  50% { transform: translate(-25px, 30px) scale(0.9) rotate(-18deg); }
+  100% { transform: translate(0, 0) scale(1.1) rotate(0deg); }
+}
+.animate-sweep-left {
+  animation: sweep-left 15s ease-in-out infinite;
+}
+.animate-sweep-right {
+  animation: sweep-right 13s ease-in-out infinite;
+}
+
+/* New Football Event Styles */
+@keyframes flag-wave {
+  0% { transform: skewY(0deg) scaleX(1); }
+  50% { transform: skewY(3deg) scaleX(0.97) translateY(1px); }
+  100% { transform: skewY(0deg) scaleX(1); }
+}
+.animate-flag-wave {
+  animation: flag-wave 3s ease-in-out infinite;
+}
+
+@keyframes camera-flash {
+  0%, 93%, 97%, 100% { opacity: 0; }
+  94%, 96% { opacity: 1; }
+  95% { opacity: 0.8; }
+}
+.animate-camera-flash {
+  animation: camera-flash 4s infinite;
+}
+
+@keyframes gold-glow {
+  0%, 100% { text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3); }
+  50% { text-shadow: 0 0 20px rgba(245, 158, 11, 0.9), 0 0 40px rgba(245, 158, 11, 0.6); }
+}
+.animate-gold-glow {
+  animation: gold-glow 2s ease-in-out infinite;
+}
+
+@keyframes trophy-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-6deg) scale(1.1); }
+  20%, 40%, 60%, 80% { transform: rotate(6deg) scale(1.1); }
+}
+.animate-trophy-shake {
+  animation: trophy-shake 1.5s ease-in-out infinite;
+}
+
+/* Card Flip 3D classes */
+.perspective-800 {
+  perspective: 800px;
+}
+.card-inner {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.card-flipped {
+  transform: rotateY(180deg);
+}
+.card-front, .card-back {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+}
+.card-back {
+  transform: rotateY(180deg);
+}
 </style>
 
 </head>
@@ -174,9 +292,16 @@ tailwind.config = {
       <i class="fas fa-trophy text-gold mr-2"></i>Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
+      <!-- Football Ground Access -->
+      <button id="bFootballGround" class="relative w-9 h-9 bg-card border border-emerald-500/30 rounded-full flex items-center justify-center text-sm text-emerald-400 hover:text-emerald-300 hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(16,185,129,0.3)] transition" title="Football Ground">
+        <i class="fas fa-futbol"></i>
+        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+      </button>
+
       <!-- Topbar Support -->
       <button id="bTopbarSupport" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Support Chat">
         <i class="fas fa-headset"></i>
+        <i class="fas fa-futbol absolute -bottom-1 -right-1 text-[9px] text-emerald-400 bg-panel rounded-full p-[1px]"></i>
       </button>
 
       <!-- Notification Bell -->
@@ -237,6 +362,8 @@ tailwind.config = {
             <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 uppercase hidden">
               <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
             </span>
+            <span id="badgeFifa" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-emerald-500/20 to-teal-400/20 text-emerald-400 rounded border border-emerald-500/35 uppercase hidden"><i class="fas fa-futbol mr-1"></i> FIFA Member</span>
+            <span id="badgeFifaWorldMember" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-600/20 text-gold rounded border border-gold/45 uppercase hidden"><i class="fas fa-medal mr-1"></i> FIFA World Member</span>
           </div>
         </div>
       </div>
@@ -619,6 +746,226 @@ tailwind.config = {
       </div>
     </section>
 
+    <!-- ── FOOTBALL GROUND TAB ── -->
+    <section id="tFootball" class="tab space-y-4 hidden flex flex-col relative">
+      <div class="font-display text-xl font-bold flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-futbol text-emerald-400 animate-spin-slow"></i> 
+          <span class="text-white">ArenaX Football Ground</span>
+        </div>
+        <span class="text-xs px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full font-sans uppercase font-bold tracking-wider animate-pulse flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Stadium
+        </span>
+      </div>
+
+      <!-- CHOOSE FOOTBALL TEAM SCREEN -->
+      <div id="dFootballChooseTeam" class="space-y-4">
+        <div class="bg-gradient-to-r from-emerald-950/20 to-teal-950/20 border border-emerald-500/15 rounded-xl p-4 text-center">
+          <h3 class="font-display text-base font-black text-emerald-400 uppercase tracking-widest">Select Your Football Team</h3>
+          <p class="text-[11px] text-t2 mt-1">Choose your franchise club to unlock the 10 daily stadium missions & win the ultimate FIFA tag!</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4" id="dFootballTeamGrid">
+          <!-- Team Cards will be rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- ACTIVE GROUND & MISSIONS SCREEN -->
+      <div id="dFootballActiveGround" style="background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop'); background-size: cover; background-position: center;" class="space-y-4 hidden relative p-4 rounded-2xl border border-emerald-500/30 overflow-hidden min-h-[560px] flex flex-col justify-between">
+        
+        <!-- Live Animated Moving Football Pitch / Turf Backdrop -->
+        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
+          <!-- Slow moving real illuminated stadium background image -->
+          <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center opacity-95 animate-pitch-pan"></div>
+          
+          <!-- Stadium Turf Overlay & Radial Vignette for clear readability -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.4)_95%)]"></div>
+          
+          <!-- Beautiful Stadium Chalk Markings -->
+          <div class="absolute inset-6 border border-white/5 rounded-sm"></div>
+          <div class="absolute top-1/2 left-6 right-6 h-[1px] bg-white/5"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 border border-white/5 rounded-full"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/10 rounded-full"></div>
+
+          <!-- Sweeping Floodlights (Atmospheric stadium light beams) -->
+          <div class="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/[0.08] rounded-full filter blur-3xl animate-sweep-left"></div>
+          <div class="absolute -top-12 -right-12 w-64 h-64 bg-teal-500/[0.08] rounded-full filter blur-3xl animate-sweep-right"></div>
+          
+          <!-- Dynamic camera flashes in audience -->
+          <div class="absolute top-[15%] left-[20%] w-1 h-1 bg-white rounded-full animate-camera-flash"></div>
+          <div class="absolute top-[18%] left-[25%] w-1.5 h-1.5 bg-yellow-200 rounded-full animate-camera-flash" style="animation-delay: 1.5s;"></div>
+          <div class="absolute top-[12%] right-[30%] w-1 h-1 bg-white rounded-full animate-camera-flash" style="animation-delay: 0.8s;"></div>
+          <div class="absolute top-[14%] right-[15%] w-1.5 h-1.5 bg-blue-200 rounded-full animate-camera-flash" style="animation-delay: 2.3s;"></div>
+          <div class="absolute top-[22%] left-[45%] w-1 h-1 bg-white rounded-full animate-camera-flash" style="animation-delay: 3s;"></div>
+
+          <!-- Floating soccer particles -->
+          <div class="absolute top-1/3 left-10 w-4 h-4 text-emerald-400/10 text-xs animate-float-slow"><i class="fas fa-futbol"></i></div>
+          <div class="absolute top-2/3 right-12 w-5 h-5 text-emerald-300/10 text-sm animate-float-medium"><i class="fas fa-futbol"></i></div>
+        </div>
+
+        <!-- STADIUM FOREGROUND WIDGETS -->
+        
+        <!-- Scoreboard Widget (Top Left) -->
+        <div class="absolute top-4 left-4 z-20 bg-black/85 backdrop-blur-md border border-emerald-500/30 rounded-xl px-3 py-2 flex items-center gap-3 shadow-2xl">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+            <span class="text-[8px] font-mono font-black text-red-500 tracking-wider">LIVE</span>
+          </div>
+          <div class="h-3 w-[1px] bg-white/20"></div>
+          <div class="text-[10px] font-mono font-black text-white flex items-center gap-2">
+            <span id="scoreboardTeamName" class="text-gold">PAK</span> 
+            <span class="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded text-[9px]" id="scoreboardMatchScore">2 - 1</span> 
+            <span class="text-t3">WLD</span>
+          </div>
+        </div>
+
+        <!-- Stadium Banner Title -->
+        <div class="absolute top-4 right-4 z-20 text-right">
+          <div class="text-[9px] uppercase tracking-widest font-black text-gold animate-gold-glow">WORLD CUP 2026 EVENT</div>
+          <div class="text-[8px] text-t3 uppercase font-semibold">ArenaX Turf Stadium</div>
+        </div>
+
+        <!-- Center Interactive Playing Area -->
+        <div class="flex-1 flex flex-col items-center justify-center min-h-[360px] relative z-10">
+          <!-- Animated Big Headline -->
+          <div class="text-center mb-8 space-y-1 animate-fade-in pointer-events-none select-none">
+            <h4 class="text-white font-display text-[26px] font-black tracking-widest leading-none drop-shadow-md">
+              ARENA X <span class="text-gold animate-gold-glow">WORLD CUP</span>
+            </h4>
+            <p class="text-[10px] text-emerald-400 font-mono tracking-widest uppercase font-black">2026 Grand Championship Edition</p>
+          </div>
+
+          <!-- Bouncing Interactive Soccer Ball on Turf -->
+          <div id="stadiumFloatingBall" class="relative group cursor-pointer transition transform hover:scale-115 active:scale-90" onclick="kickStadiumBall()">
+            <!-- Shadow below ball -->
+            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-2.5 bg-black/50 filter blur-sm rounded-full group-hover:scale-75 transition-all"></div>
+            <!-- Soccer ball itself -->
+            <div class="w-16 h-16 rounded-full shadow-[0_0_25px_rgba(16,185,129,0.6)] flex items-center justify-center select-none animate-bounce" style="animation-duration: 2s;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" class="w-full h-full object-contain filter drop-shadow-lg" alt="Real Football" />
+            </div>
+            <!-- Help Prompt -->
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 text-gold border border-gold/30 text-[8px] font-bold px-2 py-0.5 rounded uppercase whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none tracking-wider shadow-lg">KICK FOR LUCK!</div>
+          </div>
+        </div>
+
+        <!-- Bottom Controller Panel -->
+        <div class="relative z-20 flex items-center justify-between gap-4 border-t border-white/5 pt-4 bg-black/40 -mx-4 -mb-4 px-4 pb-4">
+          <!-- Left: Club Details Button -->
+          <button id="bShowStadiumClub" class="w-12 h-12 bg-black/80 hover:bg-black border border-white/10 text-emerald-400 rounded-xl shadow-lg flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer" onclick="showClubProfileModal()">
+            <i class="fas fa-shield-halved text-base"></i>
+            <span class="text-[7px] uppercase font-bold tracking-tighter mt-1">Club</span>
+          </button>
+
+          <!-- Center: Play Shootout Action Call -->
+          <button onclick="openPenaltyShootout()" class="px-6 py-2.5 bg-gradient-to-r from-gold via-amber-500 to-gold hover:from-[#e8b830] text-bg font-black rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] flex items-center gap-2 hover:scale-105 active:scale-95 transition cursor-pointer text-xs uppercase tracking-wider border border-white/20">
+            <i class="fas fa-futbol animate-spin-slow"></i> Play Shootout
+          </button>
+
+          <!-- Right: See Tasks Slide drawer button -->
+          <button id="bShowStadiumTasks" class="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-teal-400 text-bg font-black rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/15 animate-pulse">
+            <i class="fas fa-tasks text-base"></i>
+            <span class="text-[7px] uppercase font-bold tracking-tighter mt-1">Tasks</span>
+          </button>
+        </div>
+
+        <!-- DYNAMIC TASKS DRAWER / SLIDE-IN PANEL (Overlaid on Stadium Background) -->
+        <div id="dFootballTasksDrawer" class="absolute inset-y-0 right-0 w-[310px] max-w-full bg-[#05140b]/95 backdrop-blur-md border-l border-emerald-500/20 shadow-[0_0_50px_rgba(0,0,0,0.85)] z-40 transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+          <!-- Drawer Header -->
+          <div class="p-4 border-b border-white/10 flex items-center justify-between bg-black/60">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-trophy text-gold animate-bounce"></i>
+              <span class="font-display font-black text-white text-xs uppercase tracking-widest">STADIUM MISSIONS</span>
+            </div>
+            <button id="bCloseTasksDrawer" class="w-8 h-8 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <!-- Drawer Content -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Event Countdown Banner -->
+            <div class="p-3 bg-gradient-to-br from-amber-500/10 to-emerald-500/10 border border-gold/20 rounded-xl space-y-1 relative overflow-hidden">
+              <div class="flex justify-between items-center text-[10px]">
+                <span class="font-bold text-gold uppercase tracking-wider">🏆 Cup Event Finals</span>
+                <span class="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-[8px]" id="dCountdownText">12 Days Left</span>
+              </div>
+              <p class="text-[9px] text-t2 leading-relaxed">Complete all 10 daily missions before the tournament countdown expires!</p>
+            </div>
+
+            <!-- 🏆 SPECIAL 5-QUEST WORLD CUP CAMPAIGN -->
+            <div class="p-4 bg-gradient-to-br from-amber-600/[0.08] via-yellow-500/[0.03] to-black/85 border-2 border-gold/40 rounded-2xl space-y-3 shadow-[0_0_15px_rgba(245,158,11,0.15)] relative overflow-hidden">
+              <div class="absolute -right-6 -top-6 w-16 h-16 bg-gold/10 rounded-full blur-xl pointer-events-none"></div>
+              
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs">🎁</span>
+                  <h4 class="font-display font-black text-[11px] text-gold uppercase tracking-widest leading-none">World Cup Gifts Campaign</h4>
+                </div>
+                <span class="text-[8px] font-mono font-bold bg-gold/20 text-gold px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">5 Quests Event</span>
+              </div>
+
+              <!-- Perks/Rewards Preview -->
+              <div class="p-2.5 bg-black/50 rounded-xl border border-gold/15 flex flex-col gap-1.5 text-[10px]">
+                <div class="text-[9px] text-white/60 font-semibold uppercase tracking-wider mb-0.5">Rewards upon completing all 5:</div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs">🏅</span>
+                  <span class="text-t1 font-bold">"FIFA World Member" <span class="text-gold">Permanent Badge</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs">👑</span>
+                  <span class="text-t1 font-bold">7 Days <span class="text-purple-400 font-extrabold">Free VIP Premium Pass</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs">🖼️</span>
+                  <span class="text-t1 font-bold">Special <span class="text-gold font-extrabold">Gold Football Avatar Frame</span></span>
+                </div>
+              </div>
+
+              <!-- Quests List -->
+              <div class="space-y-2" id="worldCupCampaignQuestsContainer">
+                <!-- Quests will be rendered here dynamically -->
+              </div>
+
+              <!-- Claim Rewards Button -->
+              <button id="bClaimWorldCupGifts" class="w-full py-2 bg-gradient-to-r from-gold via-yellow-500 to-gold text-bg font-black rounded-xl text-[10px] tracking-wider uppercase transition shadow-lg hover:brightness-110 active:scale-95 cursor-pointer hidden">
+                🎁 Claim World Cup Rewards!
+              </button>
+            </div>
+
+            <!-- Progress Tracker Bar -->
+            <div class="p-3 bg-black/40 border border-white/5 rounded-xl space-y-2">
+              <div class="flex justify-between items-center text-[10px]">
+                <span class="font-bold text-t1 uppercase tracking-wider flex items-center gap-1">
+                  <i class="fas fa-tasks text-emerald-400"></i> Daily Missions Completion
+                </span>
+                <span class="font-mono text-emerald-400 font-extrabold text-xs" id="dFootballProgressText">0 / 10 Completed</span>
+              </div>
+              <div class="w-full h-2 bg-ele/40 border border-bdr/50 rounded-full overflow-hidden">
+                <div id="dFootballProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Ultimate Claim Panel (Shows when 10/10 completed) -->
+            <div id="dFootballClaimPanel" class="p-4 bg-gradient-to-r from-amber-500/20 to-gold/20 border border-gold/30 rounded-xl text-center space-y-3 hidden animate-bounce">
+              <h4 class="font-display font-black text-gold text-xs uppercase tracking-widest">🏆 CHAMPIONSHIP UNLOCKED!</h4>
+              <p class="text-[10px] text-t1 leading-relaxed">You have dominated all 10 stadium missions! Claim your champion gifts now.</p>
+              <button id="bFootballClaimGifts" class="w-full py-2 bg-gold hover:bg-[#e8b830] text-bg font-black rounded-lg text-[10px] tracking-widest uppercase transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5">
+                <i class="fas fa-gift text-xs animate-pulse"></i> Claim 250 AX & Tag!
+              </button>
+            </div>
+
+            <!-- Missions List Container -->
+            <div class="space-y-2" id="dFootballMissionsContainer">
+              <!-- Missions will be injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
   </div>
 
   <!-- BOTTOM FOOTER NAVIGATION -->
@@ -634,6 +981,10 @@ tailwind.config = {
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
       <i class="fas fa-wallet text-base"></i><span>Wallet</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Football">
+      <i class="fas fa-futbol text-emerald-400"></i><span>Football</span>
+      <span class="absolute top-1.5 right-4 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
       <i class="fas fa-comments text-base"></i><span>Chat</span>
@@ -655,7 +1006,7 @@ tailwind.config = {
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <img src="./event_banner_1783187383925.jpg" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" />
+      <img src="./src/assets/images/event_banner_1783187383925.jpg" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" />
       <!-- Gradient overlay to blend bottom -->
       <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
     </div>
@@ -682,6 +1033,195 @@ tailwind.config = {
       <button id="bCloseUnderDev" class="w-full py-3 bg-gold hover:bg-gold/80 text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10">
         Enter Arena
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ENTERING GROUND OVERLAY ==================== -->
+<div id="mFootballGroundLoader" class="fixed inset-0 bg-black/95 z-[600] flex flex-col items-center justify-center p-6 space-y-6 text-center hidden">
+  <!-- Glowing green stadium floodlight effect -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-emerald-500/[0.08] rounded-full filter blur-[100px] pointer-events-none"></div>
+
+  <!-- Big Spinning Football -->
+  <div class="relative">
+    <div class="w-24 h-24 rounded-full bg-emerald-950/20 border border-emerald-500/20 flex items-center justify-center text-5xl text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-spin-slow">
+      <i class="fas fa-futbol"></i>
+    </div>
+    <!-- Spinning satellite border ring -->
+    <div class="absolute inset-x-[-12px] inset-y-[-12px] border-2 border-dashed border-emerald-500/30 rounded-full animate-spin"></div>
+  </div>
+
+  <div class="space-y-2">
+    <h2 class="font-display text-2xl font-black text-white uppercase tracking-widest animate-pulse">Entering The Football Ground</h2>
+    <p class="text-xs text-t2 max-w-xs mx-auto">Connecting to ArenaX Stadium Matchmaking Servers...</p>
+  </div>
+
+  <!-- Simulated Loading Bar -->
+  <div class="w-64 h-2 bg-emerald-950 rounded-full overflow-hidden border border-emerald-500/10 p-[1px]">
+    <div id="dFootballLoaderBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: 0%"></div>
+  </div>
+  
+  <span class="text-[9px] font-mono text-emerald-400/70 uppercase tracking-widest" id="dFootballLoaderStatus">Initializing Turf Pitch...</span>
+</div>
+
+<!-- ==================== PENALTY SHOOTOUT MODAL ==================== -->
+<div id="mFootballShootout" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[500] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl max-w-[420px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
+    <!-- Close Button -->
+    <button id="bCloseShootout" class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-black/60 hover:bg-red/80 text-white transition flex items-center justify-center cursor-pointer">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+
+    <!-- Goalpost Banner / Canvas View -->
+    <div class="relative w-full h-52 overflow-hidden flex flex-col justify-end p-4 border-b border-bdr bg-black">
+      <!-- Real Stadium Background behind Goalposts -->
+      <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504156806644-d9894178301d?q=80&w=800&auto=format&fit=crop')] bg-cover bg-center opacity-85 pointer-events-none"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none"></div>
+      
+      <!-- Crossbar and Goal Nets -->
+      <div class="absolute left-8 right-8 top-12 bottom-0 border-t-4 border-l-4 border-r-4 border-white/80 rounded-t-lg bg-emerald-950/10 backdrop-blur-[0.5px] flex items-center justify-center">
+        <!-- Net mesh pattern -->
+        <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]"></div>
+        
+        <!-- Goalkeeper -->
+        <div id="dShootoutKeeper" class="absolute bottom-0 w-16 h-20 transition-all duration-300 flex flex-col items-center justify-end">
+          <!-- Keeper icon -->
+          <div class="w-10 h-10 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-bg shadow-md">
+            <i class="fas fa-hands text-sm animate-pulse"></i>
+          </div>
+          <div class="w-14 h-8 bg-amber-600 rounded-t-xl border-x-2 border-white"></div>
+          <span class="text-[7px] bg-black/60 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider mb-1">GK</span>
+        </div>
+      </div>
+
+      <!-- Soccer Ball -->
+      <div id="dShootoutBall" class="absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-2xl transition-all duration-700 z-10 cursor-pointer hover:scale-110">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" class="w-full h-full object-contain filter drop-shadow-md" alt="Shootout Football" />
+      </div>
+
+      <!-- Spot Indicator -->
+      <div class="absolute bottom-7 left-1/2 -translate-x-1/2 w-12 h-4 border border-white/20 rounded-full bg-black/10"></div>
+
+      <!-- Stadium Background Lights -->
+      <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-44 h-44 bg-blue-500/10 rounded-full filter blur-[40px] pointer-events-none"></div>
+    </div>
+
+    <!-- Shootout Controls & Stats -->
+    <div class="p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-bdr/40 pb-3">
+        <div>
+          <h4 class="font-display font-bold text-white text-sm">PENALTY SHOOTOUT</h4>
+          <p class="text-[10px] text-t2">Score past the keeper to complete missions!</p>
+        </div>
+        <div class="flex gap-4 text-center">
+          <div>
+            <div class="font-mono text-xs text-amber-400 font-extrabold" id="dShootoutBallsLeft">5/5</div>
+            <div class="text-[7px] uppercase text-t3 font-bold">Balls Left</div>
+          </div>
+          <div>
+            <div class="font-mono text-xs text-emerald-400 font-extrabold" id="dShootoutScore">0</div>
+            <div class="text-[7px] uppercase text-t3 font-bold">Goals</div>
+          </div>
+          <div>
+            <div class="font-mono text-xs text-red font-extrabold" id="dShootoutMissed">0</div>
+            <div class="text-[7px] uppercase text-t3 font-bold">Saved</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="dShootoutBallsRechargeContainer" class="hidden text-center text-[10px] text-amber-400 font-sans border border-amber-500/20 bg-amber-950/20 py-1.5 rounded-lg animate-pulse">
+        ⚡ Next Ball Recharge in: <span id="dShootoutBallsTimer" class="font-bold font-mono text-gold">29:59</span>
+      </div>
+
+      <div id="dShootoutActionPanel" class="space-y-3">
+        <p class="text-xs text-center text-t1 font-medium">Choose your aim target to shoot the ball:</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button data-aim="left" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
+            <i class="fas fa-arrow-up-left text-sm"></i>
+            <span>Top Left</span>
+          </button>
+          <button data-aim="center" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
+            <i class="fas fa-arrow-up text-sm"></i>
+            <span>Center</span>
+          </button>
+          <button data-aim="right" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
+            <i class="fas fa-arrow-up-right text-sm"></i>
+            <span>Top Right</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Feedbacks / Alerts -->
+      <div id="dShootoutResult" class="text-center py-2 min-h-[36px] flex items-center justify-center text-xs font-bold text-t2 uppercase tracking-wide">
+        Ready to take the shot...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SQUAD / CLUB PROFILE MODAL ==================== -->
+<div id="mFootballClubModal" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[500] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-emerald-500/30 rounded-2xl max-w-[420px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
+    <!-- Close Button -->
+    <button id="bCloseClubModal" class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-black/60 hover:bg-emerald-500 hover:text-bg text-white transition flex items-center justify-center cursor-pointer" onclick="document.getElementById('mFootballClubModal').classList.add('hidden')">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+    
+    <!-- Top banner matching selected team color -->
+    <div id="dClubModalHeader" class="p-6 bg-gradient-to-r from-emerald-800 to-teal-900 border-b border-white/10 text-center space-y-2">
+      <div class="w-16 h-16 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-center text-3xl text-white mx-auto shadow-lg">
+        <i id="dClubModalIcon" class="fas fa-shield"></i>
+      </div>
+      <h3 id="dClubModalName" class="font-display text-xl font-black text-white uppercase tracking-wider">PAKISTAN GREEN FC</h3>
+      <p id="dClubModalRegion" class="text-[9px] text-emerald-300 font-bold uppercase tracking-widest">ArenaX Registered Franchise</p>
+    </div>
+    
+    <!-- Club details stats & roster -->
+    <div class="p-5 space-y-4">
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
+          <div id="dClubModalSpeed" class="font-mono text-base text-emerald-400 font-extrabold">99</div>
+          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Speed</div>
+        </div>
+        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
+          <div id="dClubModalAttack" class="font-mono text-base text-emerald-400 font-extrabold">99</div>
+          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Attack</div>
+        </div>
+        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
+          <div id="dClubModalDefense" class="font-mono text-base text-emerald-400 font-extrabold">98</div>
+          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Defense</div>
+        </div>
+      </div>
+      
+      <!-- Squad Fuel / Stamina -->
+      <div class="p-3.5 bg-black/40 border border-white/5 rounded-xl space-y-2">
+        <div class="flex justify-between items-center text-[10px]">
+          <span class="font-bold text-t1 uppercase tracking-wider">⚡ Squad Fuel & Stamina</span>
+          <span class="text-emerald-400 font-mono font-bold">100% Boosted</span>
+        </div>
+        <div class="w-full h-2.5 bg-emerald-950/40 rounded-full overflow-hidden p-[1px]">
+          <div class="h-full w-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full animate-pulse"></div>
+        </div>
+      </div>
+
+      <!-- Squad Roster List -->
+      <div class="space-y-2">
+        <h4 class="text-[10px] text-t3 uppercase tracking-wider font-bold">Star Player Lineup</h4>
+        <div class="space-y-1 text-xs">
+          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
+            <span class="font-semibold text-white">⚽ Kamran Khan (ST)</span>
+            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 99</span>
+          </div>
+          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
+            <span class="font-semibold text-white">🛡️ Zain Malik (DEF)</span>
+            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 98</span>
+          </div>
+          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
+            <span class="font-semibold text-white">🧤 Haris Baig (GK)</span>
+            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 99</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1740,6 +2280,28 @@ function boot() {
     }
   }
 
+  // Show/Hide FIFA World Member badge
+  const hasFifaBadge = (userProfile && userProfile.hasFifaTag) || localStorage.getItem('hasFifaTag') === 'true';
+  if (hasFifaBadge) {
+    $('badgeFifa').classList.remove('hidden');
+  } else {
+    $('badgeFifa').classList.add('hidden');
+  }
+
+  // Show/Hide FIFA World Member Campaign Badge
+  const hasFifaWorldMemberBadge = (userProfile && userProfile.hasFifaWorldMemberBadge) || localStorage.getItem('hasFifaWorldMemberBadge') === 'true';
+  if (hasFifaWorldMemberBadge) {
+    $('badgeFifaWorldMember').classList.remove('hidden');
+  } else {
+    $('badgeFifaWorldMember').classList.add('hidden');
+  }
+
+  // Sync and render World Cup campaign tasks on boot
+  setTimeout(async () => {
+    await checkAndSyncWorldCupTasks();
+    renderWorldCupCampaignQuests();
+  }, 100);
+
   // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
   if (userProfile) {
     $('referralLinkInput').value = 'https://kpllahore123-maker.github.io/arenaX?ref=' + userProfile.uid;
@@ -1841,6 +2403,18 @@ onAuthStateChanged(auth, async (fireUser) => {
         userProfile = { id: fireUser.uid, ...snap.data() };
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
+
+        // Sync shootout balls and charge times if present
+        if (userProfile.shootoutBalls !== undefined) {
+          shootoutBalls = userProfile.shootoutBalls;
+          localStorage.setItem('shootoutBalls', shootoutBalls.toString());
+        }
+        if (userProfile.lastBallChargeTime !== undefined) {
+          lastBallChargeTime = userProfile.lastBallChargeTime;
+          localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
+        }
+        checkAndRechargeBalls();
+        updateBallsUI();
         
         // Full Ban checker block
         if (userProfile.banned && userProfile.banType === 'full') {
@@ -2577,6 +3151,21 @@ $('tregSubmit').addEventListener('click', async () => {
       submittedAt: serverTimestamp()
     });
 
+    // Update user profile and complete Task 2
+    if (userProfile && userProfile.uid) {
+      try {
+        await updateDoc(doc(db, 'users', userProfile.uid), {
+          hasSubmittedRegistration: true
+        });
+        userProfile.hasSubmittedRegistration = true;
+      } catch (e) {
+        console.error("Error setting hasSubmittedRegistration in Firestore:", e);
+      }
+    }
+    completeFootballMission(2);
+    await checkAndSyncWorldCupTasks();
+    renderWorldCupCampaignQuests();
+
     $('tregStep3').classList.add('hidden');
     $('tregStep4').classList.remove('hidden');
   } catch (err) {
@@ -3202,6 +3791,11 @@ $('payConfirmBtn').addEventListener('click', async () => {
       submittedAt: serverTimestamp()
     });
 
+    // Check if deposit is >= 100 AX Coins to complete the daily mission
+    if (finalAX >= 100) {
+      completeFootballMission(6);
+    }
+
     $('mPayment').classList.add('hidden');
     $('payAmtInp').value = '';
     $('payTxnId').value = '';
@@ -3644,6 +4238,7 @@ $('bSaveCustomize').addEventListener('click', async () => {
   try {
     await updateDoc(doc(db, 'users', userProfile.uid), updateData);
     $('mCustomize').classList.add('hidden');
+    completeFootballMission(4);
     alert('Profile customizations saved successfully! ✅');
   } catch (err) {
     alert(err.message);
@@ -3973,15 +4568,22 @@ function renderGlobalMessages(list) {
     const isMe = msg.userId === currentUid;
     msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
     
+    const isGoldFootball = msg.avatarFrame === 'gold_football';
+    const avatarBorder = isGoldFootball 
+      ? 'border-2 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-pulse' 
+      : 'border border-bdr';
+
     msgDiv.innerHTML = `
       <img
         src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
         alt="Avatar"
-        class="w-7 h-7 rounded-full border border-bdr bg-panel shrink-0"
+        class="w-7 h-7 rounded-full bg-panel shrink-0 object-cover ${avatarBorder}"
       />
       <div>
-        <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''}">
+        <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
           ${msg.userName || 'Anonymous'}
+          ${msg.hasFifaTag ? `<span class="bg-gradient-to-r from-emerald-500 to-teal-400 text-bg text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider leading-none shadow-[0_0_6px_rgba(16,185,129,0.3)]"><i class="fas fa-futbol text-[6px]"></i> FIFA MEMBER</span>` : ''}
+          ${msg.hasFifaWorldMemberBadge ? `<span class="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-bg text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider leading-none shadow-[0_0_8px_rgba(245,158,11,0.45)] flex items-center gap-0.5 animate-pulse"><i class="fas fa-medal text-[7px]"></i> FIFA WORLD MEMBER</span>` : ''}
         </div>
         <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
           ${msg.text || ''}
@@ -4114,6 +4716,19 @@ $('globalChatForm').addEventListener('submit', async (e) => {
   const input = $('globalChatInput');
   const text = input.value.trim();
   if (!text) return;
+
+  // Complete daily mission "Chat in Global"
+  completeFootballMission(5);
+
+  // Complete Task 5 if message contains "GOAL" (case-insensitive)
+  if (text.toUpperCase().includes('GOAL')) {
+    localStorage.setItem('campaign_task5', 'true');
+    setTimeout(async () => {
+      await checkAndSyncWorldCupTasks();
+      renderWorldCupCampaignQuests();
+    }, 100);
+  }
+
   input.value = '';
 
   // Cancel typing status immediately
@@ -4143,6 +4758,9 @@ $('globalChatForm').addEventListener('submit', async (e) => {
       text: filtered,
       originalText: text,
       isAbusive: isAbusive,
+      hasFifaTag: (profile.hasFifaTag || localStorage.getItem('hasFifaTag') === 'true'),
+      hasFifaWorldMemberBadge: (profile.hasFifaWorldMemberBadge || localStorage.getItem('hasFifaWorldMemberBadge') === 'true'),
+      avatarFrame: (profile.avatarFrame || localStorage.getItem('selectedAvatarFrame') || 'none'),
       createdAt: serverTimestamp()
     });
 
@@ -4839,6 +5457,1224 @@ $('bClosePrivacy').addEventListener('click', () => $('mPrivacy').classList.add('
 document.querySelector('.ni[data-t="Support"]').addEventListener('click', () => {
   loadLiveSupportChat();
 });
+
+// ==================== ARENAX STADIUM SYNTH AUDIO ENGINE ====================
+class ArenaAudioEngine {
+  constructor() {
+    this.ctx = null;
+  }
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+  // Synthesize stadium referee whistle sweep
+  playWhistle() {
+    try {
+      this.init();
+      const ctx = this.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(3200, ctx.currentTime + 0.12);
+      osc.frequency.setValueAtTime(2600, ctx.currentTime + 0.12);
+      osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.35);
+      
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  }
+  // Synthesize custom crowd cheer roar
+  playCrowdRoar() {
+    try {
+      this.init();
+      const ctx = this.ctx;
+      const bufferSize = ctx.sampleRate * 2.5;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noiseNode = ctx.createBufferSource();
+      noiseNode.buffer = buffer;
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(320, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.7);
+      filter.frequency.exponentialRampToValueAtTime(260, ctx.currentTime + 2.2);
+      filter.Q.value = 1.0;
+      
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.4);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.4);
+      
+      noiseNode.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      
+      noiseNode.start();
+      noiseNode.stop(ctx.currentTime + 2.4);
+    } catch(e) {}
+  }
+  // Play stadium soccer ball kick thump sound
+  playKick() {
+    try {
+      this.init();
+      const ctx = this.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch(e) {}
+  }
+  // Victory fanfare song arpeggio for rewards
+  playVictory() {
+    try {
+      this.init();
+      const ctx = this.ctx;
+      const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+        
+        gain.gain.setValueAtTime(0.04, ctx.currentTime + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.4);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(ctx.currentTime + idx * 0.1);
+        osc.stop(ctx.currentTime + idx * 0.1 + 0.45);
+      });
+    } catch(e) {}
+  }
+  // Crystal coin chime
+  playChime() {
+    try {
+      this.init();
+      const ctx = this.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+      osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.08);
+      
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  }
+}
+const stadiumAudio = new ArenaAudioEngine();
+
+// Confetti Particle Burst System
+function spawnConfetti(colors) {
+  try {
+    const root = document.body;
+    const count = 35;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'fixed w-2.5 h-2.5 rounded-full pointer-events-none z-[9999] transition-all duration-1000 ease-out';
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      p.style.left = '50vw';
+      p.style.top = '60vh';
+      root.appendChild(p);
+      
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 60 + Math.random() * 180;
+      const tx = Math.cos(angle) * distance;
+      const ty = Math.sin(angle) * distance - (120 + Math.random() * 120);
+      
+      setTimeout(() => {
+        p.style.transform = `translate(${tx}px, ${ty}px) scale(0.5) rotate(${Math.random() * 360}deg)`;
+        p.style.opacity = '0';
+      }, 10);
+      
+      setTimeout(() => p.remove(), 1100);
+    }
+  } catch(e) {}
+}
+
+// ==================== ARENAX FOOTBALL GROUND SYSTEM ====================
+const FOOTBALL_TEAMS = [
+  { id: 'pak_green', name: 'Pakistan Green FC', flag: '🇵🇰', speed: 99, attack: 99, defense: 98, color: 'from-emerald-600 to-teal-500', icon: 'fa-moon', emblemColor: 'text-emerald-400', colors: ['#10b981', '#ffffff'] },
+  { id: 'real_madrid', name: 'Real Madrid CF', flag: '🇪🇸', speed: 95, attack: 95, defense: 93, color: 'from-blue-600 to-indigo-700', icon: 'fa-crown', emblemColor: 'text-yellow-400', colors: ['#3b82f6', '#f59e0b'] },
+  { id: 'barcelona', name: 'FC Barcelona', flag: '🇪🇸', speed: 93, attack: 94, defense: 91, color: 'from-red-600 to-blue-700', icon: 'fa-shield-halved', emblemColor: 'text-red-400', colors: ['#ef4444', '#3b82f6'] },
+  { id: 'man_united', name: 'Manchester United', flag: '🇬🇧', speed: 91, attack: 91, defense: 90, color: 'from-red-700 to-amber-600', icon: 'fa-fire', emblemColor: 'text-orange-400', colors: ['#dc2626', '#ffffff'] },
+  { id: 'brazil', name: 'Brazil Canarinho', flag: '🇧🇷', speed: 96, attack: 96, defense: 92, color: 'from-yellow-500 to-emerald-600', icon: 'fa-star', emblemColor: 'text-yellow-300', colors: ['#eab308', '#22c55e'] },
+  { id: 'argentina', name: 'Argentina Albiceleste', flag: '🇦🇷', speed: 94, attack: 95, defense: 92, color: 'from-sky-400 to-blue-500', icon: 'fa-sun', emblemColor: 'text-sky-300', colors: ['#06b6d4', '#ffffff'] }
+];
+
+let currentFootballTeam = localStorage.getItem('selectedFootballTeam') || null;
+let footballMissions = JSON.parse(localStorage.getItem('footballMissions') || '{"1":false,"2":false,"3":false,"4":false,"5":false,"6":false}');
+let shootoutScore = parseInt(localStorage.getItem('shootoutGoals') || '0');
+let shootoutMissed = 0;
+let shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
+let lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
+
+function checkAndRechargeBalls() {
+  const now = Date.now();
+  const chargeDuration = 30 * 60 * 1000; // 30 minutes in ms
+  if (shootoutBalls < 5) {
+    const elapsedMs = now - lastBallChargeTime;
+    if (elapsedMs >= chargeDuration) {
+      const earned = Math.floor(elapsedMs / chargeDuration);
+      shootoutBalls = Math.min(5, shootoutBalls + earned);
+      lastBallChargeTime = lastBallChargeTime + (earned * chargeDuration);
+      localStorage.setItem('shootoutBalls', shootoutBalls.toString());
+      localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
+      
+      if (userProfile && userProfile.uid) {
+        updateDoc(doc(db, 'users', userProfile.uid), {
+          shootoutBalls: shootoutBalls,
+          lastBallChargeTime: lastBallChargeTime
+        }).catch(console.warn);
+      }
+    }
+  } else {
+    lastBallChargeTime = now;
+    localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
+  }
+}
+
+function getNextChargeCountdown() {
+  if (shootoutBalls >= 5) return "";
+  const now = Date.now();
+  const chargeDuration = 30 * 60 * 1000;
+  const elapsedMs = now - lastBallChargeTime;
+  const remainingMs = chargeDuration - (elapsedMs % chargeDuration);
+  
+  const minutes = Math.floor(remainingMs / 60000);
+  const seconds = Math.floor((remainingMs % 60000) / 1000);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function useBall() {
+  checkAndRechargeBalls();
+  if (shootoutBalls <= 0) {
+    return false;
+  }
+  
+  if (shootoutBalls === 5) {
+    lastBallChargeTime = Date.now();
+    localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
+  }
+  
+  shootoutBalls--;
+  localStorage.setItem('shootoutBalls', shootoutBalls.toString());
+  
+  if (userProfile && userProfile.uid) {
+    updateDoc(doc(db, 'users', userProfile.uid), {
+      shootoutBalls: shootoutBalls,
+      lastBallChargeTime: lastBallChargeTime
+    }).catch(console.warn);
+  }
+  
+  updateBallsUI();
+  return true;
+}
+
+function updateBallsUI() {
+  const countEl = $('dShootoutBallsLeft');
+  const timerEl = $('dShootoutBallsTimer');
+  const rechargeContainer = $('dShootoutBallsRechargeContainer');
+  
+  if (countEl) {
+    countEl.textContent = `${shootoutBalls}/5`;
+  }
+  
+  if (shootoutBalls < 5) {
+    if (rechargeContainer) rechargeContainer.classList.remove('hidden');
+    if (timerEl) {
+      timerEl.textContent = getNextChargeCountdown();
+    }
+  } else {
+    if (rechargeContainer) rechargeContainer.classList.add('hidden');
+  }
+}
+
+// Setup Topbar and Footer Event Listeners
+$('bFootballGround').addEventListener('click', () => openFootballGround());
+document.querySelector('.ni[data-t="Football"]').addEventListener('click', () => openFootballGround());
+
+function openFootballGround() {
+  const loader = $('mFootballGroundLoader');
+  const bar = $('dFootballLoaderBar');
+  const status = $('dFootballLoaderStatus');
+  
+  stadiumAudio.playWhistle();
+  stadiumAudio.playCrowdRoar();
+  
+  loader.classList.remove('hidden');
+  bar.style.width = '0%';
+  
+  let progress = 0;
+  const statuses = [
+    "Initializing Turf Pitch...",
+    "Setting up Floodlights...",
+    "Aligning Goalposts...",
+    "Entering Football Ground!"
+  ];
+  
+  const interval = setInterval(() => {
+    progress += 25;
+    bar.style.width = `${progress}%`;
+    status.textContent = statuses[Math.floor(progress / 25) - 1] || statuses[statuses.length - 1];
+    
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        switchTab('Football');
+        initFootballGroundUI();
+      }, 300);
+    }
+  }, 400);
+}
+
+function initFootballGroundUI() {
+  if (!currentFootballTeam) {
+    $('dFootballChooseTeam').classList.remove('hidden');
+    $('dFootballActiveGround').classList.add('hidden');
+    renderFootballTeams();
+    return;
+  }
+
+  $('dFootballChooseTeam').classList.add('hidden');
+  $('dFootballActiveGround').classList.remove('hidden');
+
+  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
+  
+  // Set scoreboard title to match team
+  const shortName = team.name.slice(0, 3).toUpperCase();
+  $('scoreboardTeamName').textContent = shortName;
+
+  renderFootballMissions();
+  updateFootballProgress();
+  setupTasksDrawerListeners();
+}
+
+function renderFootballTeams() {
+  const grid = $('dFootballTeamGrid');
+  if (!grid) return;
+  grid.innerHTML = FOOTBALL_TEAMS.map(team => `
+    <div id="card-outer-${team.id}" class="perspective-800 h-32 relative cursor-pointer group" onclick="selectFootballClub('${team.id}')">
+      <div id="card-inner-${team.id}" class="card-inner w-full h-full relative">
+        <!-- Front of Card -->
+        <div class="card-front bg-card border border-bdr hover:border-emerald-500/50 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 shadow-lg">
+          <div class="w-10 h-10 bg-gradient-to-br ${team.color} rounded-xl flex items-center justify-center text-lg text-white shadow-md relative overflow-hidden">
+            <span class="absolute top-0 right-0 text-[10px] p-0.5 animate-flag-wave">${team.flag}</span>
+            <i class="fas ${team.icon}"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-black text-white text-[11px] uppercase tracking-wide leading-none">${team.name}</h4>
+            <p class="text-[8px] text-t3 uppercase mt-1">SPD: ${team.speed} | ATK: ${team.attack} | DEF: ${team.defense}</p>
+          </div>
+        </div>
+        <!-- Back of Card -->
+        <div class="card-back bg-gradient-to-tr ${team.color} border-2 border-emerald-400 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-1 shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+          <span class="text-3xl animate-flag-wave">${team.flag}</span>
+          <span class="text-[10px] font-black text-white uppercase tracking-widest">SELECTED!</span>
+          <span class="text-[8px] font-mono text-white/80 uppercase">Entering Arena...</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.selectFootballClub = function(teamId) {
+  const team = FOOTBALL_TEAMS.find(t => t.id === teamId) || FOOTBALL_TEAMS[0];
+  
+  // Play country-specific stadium roar
+  stadiumAudio.playCrowdRoar();
+  stadiumAudio.playWhistle();
+  
+  // Spawn flag color confetti
+  spawnConfetti(team.colors);
+  
+  // Flip the clicked country card 3D
+  const innerCard = document.getElementById(`card-inner-${teamId}`);
+  if (innerCard) {
+    innerCard.classList.add('card-flipped');
+  }
+  
+  setTimeout(async () => {
+    localStorage.setItem('selectedFootballTeam', teamId);
+    currentFootballTeam = teamId;
+    
+    // Team Selected
+    
+    if (userProfile && userProfile.uid) {
+      try {
+        await updateDoc(doc(db, 'users', userProfile.uid), {
+          worldCupTeam: teamId
+        });
+        userProfile.worldCupTeam = teamId;
+      } catch (e) {
+        console.error("Error saving worldCupTeam in Firestore:", e);
+      }
+    }
+    
+    await checkAndSyncWorldCupTasks();
+    renderWorldCupCampaignQuests();
+    
+    initFootballGroundUI();
+  }, 1000);
+};
+
+function setupTasksDrawerListeners() {
+  // Bind Tasks Drawer Open
+  const bOpen = $('bShowStadiumTasks');
+  if (bOpen) {
+    bOpen.onclick = () => {
+      stadiumAudio.playChime();
+      const drawer = $('dFootballTasksDrawer');
+      drawer.classList.remove('hidden');
+      setTimeout(() => {
+        drawer.classList.remove('translate-x-full');
+      }, 10);
+    };
+  }
+
+  // Bind Tasks Drawer Close
+  const bClose = $('bCloseTasksDrawer');
+  if (bClose) {
+    bClose.onclick = () => {
+      stadiumAudio.playChime();
+      const drawer = $('dFootballTasksDrawer');
+      drawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        drawer.classList.add('hidden');
+      }, 300);
+    };
+  }
+}
+
+window.kickStadiumBall = function() {
+  stadiumAudio.playKick();
+  const ball = $('stadiumFloatingBall');
+  if (ball) {
+    ball.classList.add('animate-ping');
+    setTimeout(() => {
+      ball.classList.remove('animate-ping');
+    }, 300);
+  }
+  
+  // Random scoreboards updates
+  const teamScore = Math.floor(Math.random() * 4);
+  const oppScore = Math.floor(Math.random() * 3);
+  $('scoreboardMatchScore').textContent = `${teamScore} - ${oppScore}`;
+  
+  // Confetti explosion
+  spawnConfetti(['#10b981', '#ffffff', '#eab308']);
+};
+
+window.showClubProfileModal = function() {
+  stadiumAudio.playChime();
+  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
+  
+  $('dClubModalName').textContent = team.name;
+  $('dClubModalIcon').className = `fas ${team.icon}`;
+  $('dClubModalHeader').className = `p-6 bg-gradient-to-r ${team.color} border-b border-white/10 text-center space-y-2`;
+  
+  $('dClubModalSpeed').textContent = team.speed;
+  $('dClubModalAttack').textContent = team.attack;
+  $('dClubModalDefense').textContent = team.defense;
+  
+  $('mFootballClubModal').classList.remove('hidden');
+};
+
+function renderFootballMissions() {
+  const container = $('dFootballMissionsContainer');
+  if (!container) return;
+
+  const missionDetails = [
+    { id: 1, title: "5 Missions Completed (Master)", desc: "Complete all other 5 daily missions.", reward: 50, actionText: "Auto-Claims", action: "void(0)" },
+    { id: 2, title: "Goal 3 Times", desc: `Score 3 goals in Penalty Shootout (Current: <span class="text-gold font-bold font-mono">${shootoutScore}</span>).`, reward: 15, actionText: "Play Shootout", action: "openPenaltyShootout()" },
+    { id: 3, title: "Goal 5 Times", desc: `Score 5 goals in Penalty Shootout (Current: <span class="text-gold font-bold font-mono">${shootoutScore}</span>).`, reward: 25, actionText: "Play Shootout", action: "openPenaltyShootout()" },
+    { id: 4, title: "Customize Your Profile", desc: "Save profile customizations in Profile tab.", reward: 10, actionText: "Customize", action: "switchTab('Profile'); document.getElementById('mCustomize').classList.remove('hidden'); loadBannerThemeSelector(); loadNameColorSelector(); loadAvatarPickerGrid();" },
+    { id: 5, title: "Chat in Global", desc: "Send any message in Global Chat.", reward: 10, actionText: "Go Chat", action: "switchTab('Chat')" },
+    { id: 6, title: "Deposit 100 AX Coins", desc: "Deposit 100 AX Coins or more in your wallet.", reward: 30, actionText: "Deposit", action: "switchTab('Wallet')" }
+  ];
+
+  container.innerHTML = missionDetails.map(m => {
+    const isCompleted = footballMissions[m.id];
+    return `
+      <div class="p-3 bg-card border ${isCompleted ? 'border-emerald-500/25 bg-emerald-500/[0.02]' : 'border-bdr'} rounded-xl flex items-center justify-between gap-3 transition">
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full ${isCompleted ? 'bg-emerald-500/15 text-emerald-400' : 'bg-ele text-t3'} flex items-center justify-center text-[9px] font-bold">
+              ${isCompleted ? '<i class="fas fa-check"></i>' : m.id}
+            </span>
+            <h5 class="font-bold text-xs ${isCompleted ? 'text-emerald-400 line-through opacity-70' : 'text-white'}">${m.title}</h5>
+          </div>
+          <p class="text-[10px] text-t2 pl-5 font-sans leading-tight">${m.desc}</p>
+          <div class="text-[9px] pl-5 text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+            <i class="fas fa-coins text-[8px] text-gold"></i> +${m.reward} AX Coins Reward
+          </div>
+        </div>
+        <div>
+          ${isCompleted ? `
+            <span class="text-[10px] text-emerald-400/80 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">Done</span>
+          ` : `
+            <button onclick="${m.action}" class="px-3 py-1.5 bg-ele hover:bg-gold hover:text-bg text-t1 text-[10px] font-bold rounded-lg border border-bdr hover:border-gold transition cursor-pointer shrink-0">${m.actionText}</button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.completeFootballMission = function(missionId) {
+  footballMissions[missionId] = true;
+  localStorage.setItem('footballMissions', JSON.stringify(footballMissions));
+  
+  if (missionId !== 1) {
+    if (footballMissions["2"] && footballMissions["3"] && footballMissions["4"] && footballMissions["5"] && footballMissions["6"]) {
+      footballMissions["1"] = true;
+      localStorage.setItem('footballMissions', JSON.stringify(footballMissions));
+    }
+  }
+
+  renderFootballMissions();
+  updateFootballProgress();
+};
+
+function updateFootballProgress() {
+  const completedCount = Object.values(footballMissions).filter(Boolean).length;
+  $('dFootballProgressText').textContent = `${completedCount} / 6 Completed`;
+  const pct = (completedCount / 6) * 100;
+  $('dFootballProgressBar').style.width = `${pct}%`;
+
+  if (completedCount === 6) {
+    const claimed = localStorage.getItem('claimedFootballGifts') === 'true';
+    if (!claimed) {
+      $('dFootballClaimPanel').classList.remove('hidden');
+    } else {
+      $('dFootballClaimPanel').classList.add('hidden');
+    }
+  } else {
+    $('dFootballClaimPanel').classList.add('hidden');
+  }
+}
+
+window.copyFootballInvite = function() {
+  const uid = userProfile ? userProfile.uid : 'guest';
+  navigator.clipboard.writeText('Join my ArenaX Football ground squad: https://arenax.com/ground?ref=' + uid);
+  alert('📋 Invite link copied! Share with your friends to complete the mission.');
+  completeFootballMission(5);
+};
+
+window.buyStadiumTicket = function() {
+  const balance = userProfile ? (userProfile.balance || 0) : 50;
+  if (balance < 5) {
+    alert('❌ Insufficient balance! You need at least 5 AX Coins.');
+    return;
+  }
+  if (confirm('Spend 5 AX Coins to purchase the VIP Stadium Ticket?')) {
+    if (userProfile && userProfile.uid) {
+      updateDoc(doc(db, 'users', userProfile.uid), {
+        balance: balance - 5
+      }).then(() => {
+        userProfile.balance = balance - 5;
+        boot();
+        completeFootballMission(7);
+      });
+    } else {
+      completeFootballMission(7);
+    }
+  }
+};
+
+window.castElClasicoVote = function() {
+  const vote = prompt("Predict the El Clásico Winner!\nType 'REAL' for Real Madrid CF or 'BARCA' for FC Barcelona:");
+  if (!vote) return;
+  const clean = vote.toUpperCase().trim();
+  if (clean === 'REAL' || clean === 'BARCA') {
+    alert(`🗳️ Prediction recorded successfully for ${clean === 'REAL' ? 'Real Madrid CF' : 'FC Barcelona'}!`);
+    completeFootballMission(8);
+  } else {
+    alert("Please enter either 'REAL' or 'BARCA' to submit your prediction.");
+  }
+};
+
+window.drinkEnergyPotion = function() {
+  alert("🔋 Energy fully restored! Speed & stamina boosted.");
+  completeFootballMission(9);
+};
+
+let shootoutBallsInterval = null;
+window.openPenaltyShootout = function() {
+  checkAndRechargeBalls();
+  updateBallsUI();
+
+  if (shootoutBallsInterval) clearInterval(shootoutBallsInterval);
+  shootoutBallsInterval = setInterval(() => {
+    checkAndRechargeBalls();
+    updateBallsUI();
+  }, 1000);
+
+  $('mFootballShootout').classList.remove('hidden');
+  $('dShootoutScore').textContent = shootoutScore;
+  $('dShootoutMissed').textContent = shootoutMissed;
+  $('dShootoutResult').textContent = "Ready to take the shot...";
+  
+  // Reset elements
+  const ball = $('dShootoutBall');
+  ball.style.top = '';
+  ball.style.left = '50%';
+  ball.style.transform = 'translateX(-50%) scale(1)';
+  
+  const keeper = $('dShootoutKeeper');
+  keeper.style.left = '50%';
+  keeper.style.transform = 'translateX(-50%)';
+};
+
+$('bCloseShootout').addEventListener('click', () => {
+  if (shootoutBallsInterval) {
+    clearInterval(shootoutBallsInterval);
+    shootoutBallsInterval = null;
+  }
+  $('mFootballShootout').classList.add('hidden');
+});
+
+document.querySelectorAll('.shoot-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const aim = btn.dataset.aim;
+    shootPenalty(aim);
+  });
+});
+
+function shootPenalty(aim) {
+  checkAndRechargeBalls();
+  if (shootoutBalls <= 0) {
+    const timeText = getNextChargeCountdown();
+    alert(`❌ No balls left! Next ball will recharge in ${timeText || '30:00'}. Please wait or try again later.`);
+    return;
+  }
+
+  useBall();
+
+  const resultText = $('dShootoutResult');
+  resultText.textContent = "Kicking...";
+  
+  // Synthesize kick sound and referee whistle!
+  stadiumAudio.playKick();
+  stadiumAudio.playWhistle();
+  
+  const ball = $('dShootoutBall');
+  const keeper = $('dShootoutKeeper');
+  
+  document.querySelectorAll('.shoot-btn').forEach(b => b.disabled = true);
+  
+  const options = ['left', 'center', 'right'];
+  const keeperAim = options[Math.floor(Math.random() * options.length)];
+  
+  // Animate GK
+  if (keeperAim === 'left') {
+    keeper.style.left = '20%';
+    keeper.style.transform = 'translateX(-50%) rotate(-15deg)';
+  } else if (keeperAim === 'right') {
+    keeper.style.left = '80%';
+    keeper.style.transform = 'translateX(-50%) rotate(15deg)';
+  } else {
+    keeper.style.left = '50%';
+    keeper.style.transform = 'translateX(-50%) scale(1.1)';
+  }
+  
+  // Animate Ball
+  if (aim === 'left') {
+    ball.style.top = '12%';
+    ball.style.left = '25%';
+  } else if (aim === 'right') {
+    ball.style.top = '12%';
+    ball.style.left = '75%';
+  } else {
+    ball.style.top = '12%';
+    ball.style.left = '50%';
+  }
+  ball.style.transform = 'scale(0.5) rotate(360deg)';
+  
+  setTimeout(() => {
+    if (aim === keeperAim) {
+      shootoutMissed++;
+      $('dShootoutMissed').textContent = shootoutMissed;
+      resultText.textContent = "❌ SAVED BY THE GOALKEEPER!";
+      stadiumAudio.playWhistle();
+    } else {
+      shootoutScore++;
+      localStorage.setItem('shootoutGoals', shootoutScore.toString());
+      $('dShootoutScore').textContent = shootoutScore;
+      resultText.textContent = "⚽ GOOOAAALLLL!!! UNBELIEVABLE STRIKE!";
+      
+      // Play crowd roar and spawn goal confetti!
+      stadiumAudio.playCrowdRoar();
+      spawnConfetti(['#10b981', '#3b82f6', '#f59e0b', '#ffffff']);
+      
+      if (shootoutScore >= 3) completeFootballMission(2);
+      if (shootoutScore >= 5) completeFootballMission(3);
+
+      // Async Firestore update and World Cup Campaign task check
+      setTimeout(async () => {
+        if (userProfile && userProfile.uid) {
+          try {
+            await updateDoc(doc(db, 'users', userProfile.uid), {
+              shootoutGoals: shootoutScore
+            });
+            userProfile.shootoutGoals = shootoutScore;
+          } catch (e) {
+            console.error("Error updating shootoutGoals in Firestore:", e);
+          }
+        }
+        await checkAndSyncWorldCupTasks();
+        renderWorldCupCampaignQuests();
+      }, 50);
+    }
+    
+    setTimeout(() => {
+      ball.style.top = '';
+      ball.style.left = '50%';
+      ball.style.transform = 'translateX(-50%) scale(1)';
+      
+      keeper.style.left = '50%';
+      keeper.style.transform = 'translateX(-50%)';
+      
+      document.querySelectorAll('.shoot-btn').forEach(b => b.disabled = false);
+      resultText.textContent = "Aim and shoot next penalty!";
+    }, 1800);
+  }, 700);
+}
+
+window.simulateGrandFinal = function() {
+  const completedCount = Object.values(footballMissions).filter(Boolean).length;
+  if (completedCount < 9) {
+    alert("🔒 Complete all other 9 missions first to unlock the Grand Arena Finale match!");
+    return;
+  }
+  
+  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
+  const opponent = "World All-Stars XI";
+  
+  stadiumAudio.playWhistle();
+  stadiumAudio.playCrowdRoar();
+  
+  alert(`⚔️ Entering Grand Finale: ${team.name} vs ${opponent}!\n\nClick OK to simulate the final match!`);
+  
+  const commentary = [
+    "15' Match starts with intense back-and-forth action in midfield...",
+    "34' AMAZING SAVE by your goalkeeper to keep it 0-0!",
+    "55' Yellow card issued to opponent defender for tackle...",
+    "78' GOOOAL! Opponent scores with a lucky header. 0 - 1.",
+    "85' EQUALIZER! Your striker scores absolute worldie from 30 yards! 1 - 1.",
+    "90' PENALTY GIVEN to your team! Last minute drama!",
+    "92' GOOOAL! You score from the spot! The stadium goes absolutely wild!"
+  ];
+  
+  let commentIdx = 0;
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[700] flex flex-col items-center justify-center p-6 text-center space-y-4';
+  modal.innerHTML = `
+    <div class="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center text-4xl text-emerald-400 animate-bounce">
+      <i class="fas fa-trophy"></i>
+    </div>
+    <h3 class="font-display text-xl font-bold text-white uppercase tracking-wider">GRAND ARENA FINALE SIMULATOR</h3>
+    <div class="w-full max-w-sm bg-card border border-bdr rounded-2xl p-5 space-y-3">
+      <div class="flex justify-between items-center text-xs font-mono border-b border-bdr pb-2 text-t2">
+        <span>${team.name}</span>
+        <span class="text-white font-extrabold" id="finalScore">0 - 0</span>
+        <span>${opponent}</span>
+      </div>
+      <p id="finalCommentary" class="text-xs text-emerald-400 font-sans italic min-h-[40px] flex items-center justify-center">Kickoff commencing shortly...</p>
+    </div>
+    <div class="w-48 h-1 bg-emerald-950 rounded-full overflow-hidden">
+      <div id="finalProg" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  const interval = setInterval(() => {
+    if (commentIdx < commentary.length) {
+      const commentaryEl = modal.querySelector('#finalCommentary');
+      const scoreEl = modal.querySelector('#finalScore');
+      const progEl = modal.querySelector('#finalProg');
+      
+      commentaryEl.textContent = commentary[commentIdx];
+      progEl.style.width = `${(commentIdx / (commentary.length - 1)) * 100}%`;
+      
+      stadiumAudio.playWhistle();
+      stadiumAudio.playKick();
+      
+      if (commentIdx === 3 || commentIdx === 4 || commentIdx === 6) {
+        stadiumAudio.playCrowdRoar();
+        spawnConfetti(team.colors);
+      }
+      
+      if (commentIdx === 3) {
+        scoreEl.textContent = "0 - 1";
+      } else if (commentIdx === 4) {
+        scoreEl.textContent = "1 - 1";
+      } else if (commentIdx === 6) {
+        scoreEl.textContent = "2 - 1";
+      }
+      commentIdx++;
+    } else {
+      clearInterval(interval);
+      stadiumAudio.playVictory();
+      
+      setTimeout(() => {
+        modal.innerHTML = `
+          <div class="w-24 h-24 bg-gold/10 border border-gold/30 rounded-full flex items-center justify-center text-5xl text-gold animate-pulse">
+            <i class="fas fa-crown"></i>
+          </div>
+          <h3 class="font-display text-2xl font-black text-gold uppercase tracking-widest">🏆 CHAMPIONS OF ARENAX!</h3>
+          <p class="text-sm text-t1 max-w-sm leading-relaxed">${team.name} defeated ${opponent} 2-1 in a historic match! You have completed the 10th and final mission!</p>
+          <button id="bCloseFinalSim" class="px-6 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer">Return To Ground</button>
+        `;
+        modal.querySelector('#bCloseFinalSim').addEventListener('click', () => {
+          modal.remove();
+          completeFootballMission(10);
+        });
+      }, 1500);
+    }
+  }, 1500);
+};
+
+$('bFootballClaimGifts').addEventListener('click', async () => {
+  const claimed = localStorage.getItem('claimedFootballGifts') === 'true';
+  if (claimed) {
+    alert("You have already claimed your ultimate gifts!");
+    return;
+  }
+
+  const currentBalance = userProfile ? (userProfile.balance || 0) : 100;
+  const newBalance = currentBalance + 250;
+  
+  stadiumAudio.playVictory();
+  
+  try {
+    if (userProfile && userProfile.uid) {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        balance: newBalance,
+        hasFifaTag: true,
+        av: `https://api.dicebear.com/7.x/bottts/svg?seed=futbol`
+      });
+      userProfile.balance = newBalance;
+      userProfile.hasFifaTag = true;
+      userProfile.av = `https://api.dicebear.com/7.x/bottts/svg?seed=futbol`;
+      boot();
+    }
+    
+    localStorage.setItem('claimedFootballGifts', 'true');
+    localStorage.setItem('hasFifaTag', 'true');
+    
+    alert("🏆 CONGRATULATIONS CHAMPION!\n\n🎁 Gifts Claimed Successfully:\n1. 250 AX Coins added to your wallet!\n2. Unlocked 'FIFA WORLD MEMBER' Name Tag!\n3. Unlocked Exclusive Football Avatar!\n\nYour profile has been upgraded. Go check your new premium tag in global chat!");
+    
+    $('dFootballClaimPanel').classList.add('hidden');
+    
+    const badgeFifa = $('badgeFifa');
+    if (badgeFifa) {
+      badgeFifa.classList.remove('hidden');
+    }
+    
+    // Elegant fireworks / floating items
+    for (let i = 0; i < 40; i++) {
+      const item = document.createElement('div');
+      item.className = 'fixed text-2xl z-[9999] pointer-events-none animate-bounce';
+      item.style.left = `${Math.random() * 100}vw`;
+      item.style.top = `${Math.random() * 100}vh`;
+      item.innerHTML = Math.random() > 0.5 ? '⚽' : '⭐';
+      document.body.appendChild(item);
+      setTimeout(() => item.remove(), 3500);
+    }
+    
+  } catch (err) {
+    console.error("Error claiming gifts:", err);
+    alert("Failed to claim gifts. Please try again.");
+  }
+});
+
+// ==================== WORLD CUP CAMPAIGN EVENTS & STATE ====================
+let worldCupCampaignTasks = {
+  "1": false,
+  "2": false,
+  "3": false,
+  "4": false,
+  "5": false
+};
+
+const WORLD_CUP_QUESTS = [
+  { id: 1, title: "Select a Football Team", desc: "Select your favorite stadium country card from team selector.", key: "1" },
+  { id: 2, title: "Submit Tournament Registration", desc: "Fill out and submit any live or upcoming tournament entry.", key: "2" },
+  { id: 3, title: "3 Consecutive Days Login", desc: "Log in to ArenaX for 3 consecutive days to build up your streak.", key: "3" },
+  { id: 4, title: "Score 10 Penalty Goals", desc: "Reach at least 10 total goals in the Shootout mini-game.", key: "4" },
+  { id: 5, title: "Chant 'GOAL' in Chat", desc: "Send any chat message containing the word 'GOAL' in Global Chat.", key: "5" }
+];
+
+window.checkAndSyncWorldCupTasks = async function() {
+  const profile = userProfile || guestProfile;
+  
+  // Task 1
+  const t1 = (currentFootballTeam || (profile && profile.worldCupTeam)) ? true : false;
+  if (t1) localStorage.setItem('campaign_task1', 'true');
+
+  // Task 2
+  const t2 = (profile?.hasSubmittedRegistration || localStorage.getItem('campaign_task2') === 'true') ? true : false;
+  if (t2) localStorage.setItem('campaign_task2', 'true');
+
+  // Task 3: check consecutive logins
+  let isTask3Completed = localStorage.getItem('campaign_task3') === 'true';
+  if (!isTask3Completed) {
+    if (userProfile) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastLoginDate = userProfile.lastLoginDate || '';
+      let consecutiveLoginDays = userProfile.consecutiveLoginDays || 0;
+
+      if (!lastLoginDate) {
+        consecutiveLoginDays = 1;
+        try {
+          await updateDoc(doc(db, 'users', userProfile.uid), {
+            lastLoginDate: todayStr,
+            consecutiveLoginDays: 1
+          });
+          userProfile.lastLoginDate = todayStr;
+          userProfile.consecutiveLoginDays = 1;
+        } catch (e) {
+          console.warn(e);
+        }
+      } else if (lastLoginDate === todayStr) {
+        if (consecutiveLoginDays >= 3) {
+          isTask3Completed = true;
+        }
+      } else {
+        try {
+          const lastDate = new Date(lastLoginDate + 'T00:00:00');
+          const currDate = new Date(todayStr + 'T00:00:00');
+          const diffTime = currDate.getTime() - lastDate.getTime();
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            consecutiveLoginDays += 1;
+          } else if (diffDays > 1) {
+            consecutiveLoginDays = 1;
+          }
+
+          await updateDoc(doc(db, 'users', userProfile.uid), {
+            lastLoginDate: todayStr,
+            consecutiveLoginDays: consecutiveLoginDays
+          });
+          userProfile.lastLoginDate = todayStr;
+          userProfile.consecutiveLoginDays = consecutiveLoginDays;
+
+          if (consecutiveLoginDays >= 3) {
+            isTask3Completed = true;
+          }
+        } catch (e) {
+          console.error("Error updating consecutive logins:", e);
+        }
+      }
+    } else {
+      // Guest consecutive check
+      const guestLastLogin = localStorage.getItem('guest_lastLoginDate') || '';
+      let guestConsecutive = parseInt(localStorage.getItem('guest_consecutiveLoginDays') || '0');
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (!guestLastLogin) {
+        localStorage.setItem('guest_lastLoginDate', todayStr);
+        localStorage.setItem('guest_consecutiveLoginDays', '1');
+        guestConsecutive = 1;
+      } else if (guestLastLogin !== todayStr) {
+        const lastDate = new Date(guestLastLogin + 'T00:00:00');
+        const currDate = new Date(todayStr + 'T00:00:00');
+        const diffTime = currDate.getTime() - lastDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          guestConsecutive += 1;
+        } else if (diffDays > 1) {
+          guestConsecutive = 1;
+        }
+        localStorage.setItem('guest_lastLoginDate', todayStr);
+        localStorage.setItem('guest_consecutiveLoginDays', guestConsecutive.toString());
+      }
+      if (guestConsecutive >= 3) {
+        isTask3Completed = true;
+      }
+    }
+  }
+  if (isTask3Completed) {
+    localStorage.setItem('campaign_task3', 'true');
+  }
+
+  // Task 4
+  const currentGoals = parseInt(localStorage.getItem('shootoutGoals') || '0');
+  const t4 = (currentGoals >= 10 || profile?.shootoutGoals >= 10 || localStorage.getItem('campaign_task4') === 'true') ? true : false;
+  if (t4) {
+    localStorage.setItem('campaign_task4', 'true');
+  }
+
+  // Sync state
+  worldCupCampaignTasks["1"] = localStorage.getItem('campaign_task1') === 'true';
+  worldCupCampaignTasks["2"] = localStorage.getItem('campaign_task2') === 'true';
+  worldCupCampaignTasks["3"] = localStorage.getItem('campaign_task3') === 'true';
+  worldCupCampaignTasks["4"] = localStorage.getItem('campaign_task4') === 'true';
+  worldCupCampaignTasks["5"] = localStorage.getItem('campaign_task5') === 'true';
+};
+
+window.renderWorldCupCampaignQuests = function() {
+  const container = $('worldCupCampaignQuestsContainer');
+  if (!container) return;
+
+  const currentGoals = parseInt(localStorage.getItem('shootoutGoals') || '0');
+  const profile = userProfile || guestProfile;
+
+  container.innerHTML = WORLD_CUP_QUESTS.map(q => {
+    let isCompleted = worldCupCampaignTasks[q.key];
+    
+    // Fallbacks
+    if (q.key === "1" && (currentFootballTeam || profile?.worldCupTeam)) isCompleted = true;
+    if (q.key === "2" && (profile?.hasSubmittedRegistration)) isCompleted = true;
+    if (q.key === "4" && (currentGoals >= 10 || profile?.shootoutGoals >= 10)) isCompleted = true;
+
+    let subText = q.desc;
+    if (q.key === "4") {
+      subText = `Reach at least 10 goals in Shootout mini-game (Current: <span class="text-gold font-bold font-mono">${currentGoals}</span> / 10).`;
+    } else if (q.key === "3") {
+      let streak = profile?.consecutiveLoginDays || parseInt(localStorage.getItem('guest_consecutiveLoginDays') || '0');
+      subText = `Log in for 3 consecutive days (Current streak: <span class="text-gold font-bold font-mono">${streak}</span> / 3).`;
+    }
+
+    return `
+      <div class="p-2 bg-black/60 border ${isCompleted ? 'border-amber-500/30 bg-amber-500/[0.01]' : 'border-bdr/40'} rounded-xl flex items-center justify-between gap-2.5 text-[10px] transition font-sans">
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3.5 h-3.5 rounded-full ${isCompleted ? 'bg-amber-500/20 text-gold font-bold' : 'bg-ele text-t3'} flex items-center justify-center text-[8px]">
+              ${isCompleted ? '<i class="fas fa-check text-[7px]"></i>' : q.id}
+            </span>
+            <span class="font-bold ${isCompleted ? 'text-gold line-through opacity-80' : 'text-white'}">${q.title}</span>
+          </div>
+          <p class="text-[9px] text-t3 pl-5 leading-tight font-sans">${subText}</p>
+        </div>
+        <div>
+          ${isCompleted ? `
+            <span class="text-[8px] text-gold/95 bg-gold/15 border border-gold/30 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">Done</span>
+          ` : `
+            <span class="text-[8px] text-t3 bg-ele/40 border border-bdr/40 px-1.5 py-0.5 rounded font-bold uppercase">Pending</span>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Check if all 5 are completed!
+  const totalCompleted = WORLD_CUP_QUESTS.filter(q => {
+    let isCompleted = worldCupCampaignTasks[q.key];
+    if (q.key === "1" && (currentFootballTeam || profile?.worldCupTeam)) isCompleted = true;
+    if (q.key === "2" && (profile?.hasSubmittedRegistration)) isCompleted = true;
+    if (q.key === "4" && (currentGoals >= 10 || profile?.shootoutGoals >= 10)) isCompleted = true;
+    return isCompleted;
+  }).length;
+
+  const claimBtn = $('bClaimWorldCupGifts');
+  if (claimBtn) {
+    if (totalCompleted === 5) {
+      const alreadyClaimed = localStorage.getItem('claimedWorldCupGifts') === 'true' || profile?.hasFifaWorldMemberBadge === true;
+      if (alreadyClaimed) {
+        claimBtn.classList.add('hidden');
+      } else {
+        claimBtn.classList.remove('hidden');
+        claimBtn.classList.add('animate-pulse');
+      }
+    } else {
+      claimBtn.classList.add('hidden');
+    }
+  }
+};
+
+window.claimWorldCupCampaignGifts = async function() {
+  const profile = userProfile || guestProfile;
+  stadiumAudio.playVictory();
+
+  // Calculate 7 days from now
+  const prmExpiry = new Date();
+  prmExpiry.setDate(prmExpiry.getDate() + 7);
+
+  try {
+    if (userProfile && userProfile.uid) {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        premium: true,
+        premiumExpiresAt: prmExpiry.toISOString(),
+        hasFifaWorldMemberBadge: true,
+        avatarFrame: 'gold_football'
+      });
+      userProfile.premium = true;
+      userProfile.premiumExpiresAt = prmExpiry.toISOString();
+      userProfile.hasFifaWorldMemberBadge = true;
+      userProfile.avatarFrame = 'gold_football';
+    }
+
+    localStorage.setItem('claimedWorldCupGifts', 'true');
+    localStorage.setItem('hasFifaWorldMemberBadge', 'true');
+    localStorage.setItem('selectedAvatarFrame', 'gold_football');
+    selectedAvatarFrame = 'gold_football';
+
+    // Refresh UI elements
+    boot();
+
+    // Trigger full screen custom gold celebration modal
+    showWorldCupCelebrationModal();
+
+  } catch (err) {
+    console.error("Error claiming World Cup campaign rewards:", err);
+    alert("Failed to claim campaign rewards. Please try again.");
+  }
+};
+
+function showWorldCupCelebrationModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-hidden animate-fade-in';
+  modal.style.background = 'radial-gradient(circle, rgba(20,15,5,1) 0%, rgba(5,5,5,1) 100%)';
+  
+  // Custom Styles for animations
+  const styleTag = document.createElement('style');
+  styleTag.innerHTML = `
+    @keyframes slow-drop {
+      0% { transform: translateY(-120vh) rotate(0deg); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0.2; }
+    }
+    @keyframes glow-pulse {
+      0%, 100% { filter: drop-shadow(0 0 15px rgba(245,158,11,0.6)); }
+      50% { filter: drop-shadow(0 0 35px rgba(245,158,11,0.9)); }
+    }
+    .floating-item {
+      position: absolute;
+      animation: slow-drop 7s linear infinite;
+      pointer-events: none;
+    }
+  `;
+  document.head.appendChild(styleTag);
+
+  // Spawn falling gold footballs and stars in slow motion
+  for (let i = 0; i < 40; i++) {
+    const item = document.createElement('div');
+    item.className = 'floating-item text-3xl';
+    item.style.left = `${Math.random() * 100}vw`;
+    item.style.top = `-10vh`;
+    // Stagger animation
+    item.style.animationDelay = `${Math.random() * 6}s`;
+    item.style.animationDuration = `${6 + Math.random() * 5}s`;
+    item.innerHTML = Math.random() > 0.5 ? '⚽' : '⭐';
+    modal.appendChild(item);
+  }
+
+  modal.innerHTML += `
+    <!-- Glowing Badge Container (Badge drop simulation) -->
+    <div class="relative mb-6 flex flex-col items-center">
+      <div class="w-28 h-28 bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.5)] border-4 border-yellow-300 animate-bounce" style="animation-duration: 2.5s; animation-name: glow-pulse;">
+        <i class="fas fa-medal text-white text-6xl"></i>
+      </div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-gold/30 rounded-full animate-ping pointer-events-none" style="animation-duration: 3s;"></div>
+    </div>
+
+    <!-- CONGRATULATIONS big text with glow -->
+    <h1 class="font-display font-black text-4xl sm:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-200 uppercase tracking-widest drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] animate-pulse">
+      CONGRATULATIONS!
+    </h1>
+
+    <h2 class="font-display font-extrabold text-base text-white/90 uppercase tracking-wider mt-2">
+      FIFA World Cup 2026 Champion
+    </h2>
+
+    <p class="text-xs text-t2 max-w-md leading-relaxed mt-3 font-sans">
+      You have successfully accomplished all <strong class="text-gold font-extrabold">5 World Cup campaign quests</strong>! Your legendary rewards have been unlocked and applied:
+    </p>
+
+    <!-- Perks list visual box -->
+    <div class="w-full max-w-sm bg-black/60 border border-gold/35 rounded-2xl p-4 space-y-3.5 my-5 shadow-[0_0_20px_rgba(245,158,11,0.1)] font-sans">
+      <div class="flex items-center gap-3 text-left">
+        <div class="w-8 h-8 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-sm border border-gold/20 shrink-0">🏅</div>
+        <div>
+          <h4 class="font-bold text-xs text-white uppercase leading-none">FIFA World Member Badge</h4>
+          <p class="text-[9px] text-t3 mt-1">Exclusive permanent title displayed on your chat & profile cards!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-left">
+        <div class="w-8 h-8 rounded-lg bg-purple/10 text-purple flex items-center justify-center text-sm border border-purple/20 shrink-0">👑</div>
+        <div>
+          <h4 class="font-bold text-xs text-white uppercase leading-none">7 Days VIP Premium Pass</h4>
+          <p class="text-[9px] text-t3 mt-1">Direct messaging, name colors, and banner themes fully activated!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-left">
+        <div class="w-8 h-8 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-sm border border-gold/20 shrink-0">🖼️</div>
+        <div>
+          <h4 class="font-bold text-xs text-white uppercase leading-none">Special Gold Football Avatar Frame</h4>
+          <p class="text-[9px] text-t3 mt-1">A glowing, animated high-contrast frame circling your profile!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dismiss button -->
+    <button id="bCloseCampaignCelebration" class="px-8 py-3 bg-gradient-to-r from-gold via-yellow-400 to-gold text-bg font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.4)] transition hover:scale-105 active:scale-95 cursor-pointer">
+      Proceed to Arena
+    </button>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Play fireworks in background
+  const fworkInterval = setInterval(() => {
+    spawnConfetti(['#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#ffffff']);
+  }, 1000);
+
+  modal.querySelector('#bCloseCampaignCelebration').addEventListener('click', () => {
+    clearInterval(fworkInterval);
+    modal.remove();
+  });
+}
+
+// Bind Claim World Cup Campaign click
+setTimeout(() => {
+  const bWCClaim = $('bClaimWorldCupGifts');
+  if (bWCClaim) {
+    bWCClaim.addEventListener('click', claimWorldCupCampaignGifts);
+  }
+}, 500);
 
 // Under Development Popup modal listeners
 $('bCloseUnderDev').addEventListener('click', () => {
