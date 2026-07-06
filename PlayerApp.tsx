@@ -33,7 +33,7 @@ import {
   Transaction
 } from '../types';
 import { ReportModal } from './ReportModal';
-import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener } from '../fcm';
+import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener, autoRequestPermission } from '../fcm';
 
 interface PlayerAppProps {
   onSwitchToAdmin: () => void;
@@ -237,6 +237,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     });
     return () => unsub();
   }, [isGuest]);
+
+  // Automatically ask for notification permission as soon as the app opens
+  useEffect(() => {
+    autoRequestPermission().catch(console.error);
+  }, []);
 
   // Request FCM Notification Permission and Save token when User logs in
   useEffect(() => {
