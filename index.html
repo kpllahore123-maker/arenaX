@@ -2080,7 +2080,6 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
 // Setup credentials
 const firebaseConfig = {
@@ -2113,20 +2112,26 @@ if ('serviceWorker' in navigator) {
       
       // Initialize messaging and setup foreground notification listener
       try {
-        messaging = getMessaging(app);
-        onMessage(messaging, (payload) => {
-          console.log('FCM: Foreground message received:', payload);
-          // Show foreground notification as browser notification if possible
-          if (Notification.permission === 'granted') {
-            const title = payload.notification?.title || 'ArenaX Tournament Alert';
-            const options = {
-              body: payload.notification?.body || '',
-              icon: payload.notification?.icon || '/assets/icon.png',
-              data: payload.data
-            };
-            new Notification(title, options);
-          }
-        });
+        const { getMessaging, onMessage, isSupported } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+        const supported = await isSupported();
+        if (supported) {
+          messaging = getMessaging(app);
+          onMessage(messaging, (payload) => {
+            console.log('FCM: Foreground message received:', payload);
+            // Show foreground notification as browser notification if possible
+            if (Notification.permission === 'granted') {
+              const title = payload.notification?.title || 'ArenaX Tournament Alert';
+              const options = {
+                body: payload.notification?.body || '',
+                icon: payload.notification?.icon || '/assets/icon.png',
+                data: payload.data
+              };
+              new Notification(title, options);
+            }
+          });
+        } else {
+          console.log('FCM is not supported in this browser environment.');
+        }
       } catch (fcmErr) {
         console.error('FCM: Failed to initialize messaging after SW registration:', fcmErr);
       }
@@ -2152,6 +2157,13 @@ async function requestFCMToken(showSuccessAlert = false) {
     
     if (permission !== 'granted') {
       showDiagnosticError("Failed to retrieve token: Permission denied by browser settings. Please allow notifications.");
+      return;
+    }
+    
+    const { getMessaging, getToken, isSupported } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+    const supported = await isSupported();
+    if (!supported) {
+      showDiagnosticError("FCM is not supported in this browser environment.");
       return;
     }
     
