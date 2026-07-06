@@ -2309,6 +2309,8 @@ let userProfileTransactionsList = [];
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
+let shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
+let lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
 
 // Customization States
 let selectedBannerTheme = 'dark';
@@ -5900,8 +5902,8 @@ let currentFootballTeam = localStorage.getItem('selectedFootballTeam') || null;
 let footballMissions = JSON.parse(localStorage.getItem('footballMissions') || '{"1":false,"2":false,"3":false,"4":false,"5":false,"6":false}');
 let shootoutScore = parseInt(localStorage.getItem('shootoutGoals') || '0');
 let shootoutMissed = 0;
-let shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
-let lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
+shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
+lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
 
 function checkAndRechargeBalls() {
   const now = Date.now();
