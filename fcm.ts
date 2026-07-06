@@ -51,6 +51,24 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
+export async function autoRequestPermission(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+
+  if (!('Notification' in window)) {
+    console.warn("This browser does not support notifications.");
+    return null;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    console.log("Auto requested notification permission. Result:", permission);
+    return permission;
+  } catch (error) {
+    console.error("Error auto requesting notification permission:", error);
+    return null;
+  }
+}
+
 export async function requestNotificationPermissionAndGetToken(uid: string): Promise<string | null> {
   if (typeof window === 'undefined') return null;
 
@@ -78,6 +96,9 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
       // Register service worker explicitly to guarantee it resolves correctly in container/iframe environments
       const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log("Service Worker registered successfully:", reg);
+      
+      // Explicitly wait until the service worker registration is active
+      await navigator.serviceWorker.ready;
       
       const token = await getToken(messaging, { 
         serviceWorkerRegistration: reg,
