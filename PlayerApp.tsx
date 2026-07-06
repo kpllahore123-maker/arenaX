@@ -240,13 +240,31 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Automatically ask for notification permission as soon as the app opens
   useEffect(() => {
-    autoRequestPermission().catch(console.error);
+    console.log("FCM: Triggering automatic permission request on app startup...");
+    autoRequestPermission()
+      .then((permission) => {
+        console.log("FCM: Auto-request permission complete. Permission level:", permission);
+      })
+      .catch((err) => {
+        console.error("FCM: Auto-request permission failed:", err);
+      });
   }, []);
 
   // Request FCM Notification Permission and Save token when User logs in
   useEffect(() => {
     if (currentUser && currentUser.uid && !isGuest) {
-      requestNotificationPermissionAndGetToken(currentUser.uid).catch(console.error);
+      console.log("FCM: User logged in and currentUser is available. UID:", currentUser.uid);
+      console.log("FCM: Calling requestNotificationPermissionAndGetToken(uid) now...");
+      requestNotificationPermissionAndGetToken(currentUser.uid)
+        .then((token) => {
+          console.log("FCM: requestNotificationPermissionAndGetToken resolved successfully.");
+          console.log("FCM: Token value obtained:", token);
+        })
+        .catch((err) => {
+          console.error("FCM: Error while calling requestNotificationPermissionAndGetToken:", err);
+        });
+    } else {
+      console.log("FCM: Hook skipped. currentUser:", currentUser ? "Available" : "Null", "UID:", currentUser?.uid, "isGuest:", isGuest);
     }
   }, [currentUser?.uid, isGuest]);
 
