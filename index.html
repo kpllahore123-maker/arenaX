@@ -1504,6 +1504,57 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       </div>
     </div>
 
+    <!-- FCM Notification Diagnostics -->
+    <div class="space-y-3 border-t border-bdr/40 pt-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold flex items-center gap-1.5">
+        <i class="fas fa-satellite-dish animate-pulse"></i> Firebase Notification Diagnostics
+      </h4>
+      <div class="space-y-2.5 bg-card border border-bdr p-3 rounded-xl text-xs">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-t3">Browser Permission:</span>
+          <span id="diagnosticPermission" class="font-bold px-1.5 py-0.5 rounded text-[10px] uppercase bg-ele text-t3 border border-bdr">
+            default
+          </span>
+        </div>
+
+        <div id="diagnosticErrorDiv" class="bg-red-500/5 border border-red-500/20 rounded p-2 text-[10px] text-red-500 hidden break-all select-text">
+          <!-- Error message goes here -->
+        </div>
+
+        <!-- If blocked or default and not allowed -->
+        <div id="diagnosticPermissionRequestBox" class="bg-red-500/5 border border-red-500/20 rounded p-2.5 space-y-1.5 hidden">
+          <p class="text-[10px] text-red-500 leading-snug">
+            ⚠️ <strong>Notifications are blocked/not allowed.</strong> Please click the lock icon next to the browser URL and allow notifications.
+          </p>
+          <button id="btnRequestFcmPermission" onclick="window.requestFCMToken(true)" class="w-full py-1 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded transition flex items-center justify-center gap-1 cursor-pointer">
+            <i class="fas fa-bell"></i> Allow & Request Token
+          </button>
+        </div>
+
+        <!-- Token display and generation -->
+        <div id="diagnosticTokenSection" class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-t3 font-medium">Your FCM Token:</span>
+            <button id="btnCopyFcmToken" onclick="window.copyFCMToken()" class="text-[10px] text-gold hover:underline flex items-center gap-1 font-semibold hidden cursor-pointer">
+              <i class="fas fa-copy"></i> Copy Token
+            </button>
+          </div>
+          
+          <div id="diagnosticTokenBox" class="p-2 bg-bg border border-bdr rounded font-mono text-[9px] text-t3 break-all select-all max-h-[60px] overflow-y-auto hidden select-all">
+            <!-- Token value goes here -->
+          </div>
+          
+          <button id="btnGenerateFcmToken" onclick="window.requestFCMToken(true)" class="w-full py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-bold rounded transition cursor-pointer">
+            Generate Token
+          </button>
+          
+          <p class="text-[9px] text-t3 leading-snug mt-1">
+            ℹ️ Copy this token and paste it under <strong>Firebase Console &gt; Cloud Messaging &gt; Test message</strong> to test sending notification!
+          </p>
+        </div>
+      </div>
+    </div>
+
     <div class="flex gap-2 border-t border-bdr/40 pt-3">
       <button id="bSaveSettings" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">Save Settings</button>
       <button id="bCloseSettings" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
@@ -2029,6 +2080,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
 // Setup credentials
 const firebaseConfig = {
@@ -2047,15 +2099,37 @@ const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Register Service Worker for FCM dynamically with directory path context
+let messaging = null;
+
 if ('serviceWorker' in navigator) {
   const registerSW = async () => {
     try {
       const currentPath = window.location.pathname;
-      const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) || '/';
-      const swPath = dirPath + 'firebase-messaging-sw.js';
+      const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+      const swPath = (dirPath && dirPath !== '/') ? (dirPath + 'firebase-messaging-sw.js') : '/firebase-messaging-sw.js';
       console.log('Registering Service Worker for ArenaX at:', swPath);
       const reg = await navigator.serviceWorker.register(swPath);
       console.log('Service Worker registered successfully with scope:', reg.scope);
+      
+      // Initialize messaging and setup foreground notification listener
+      try {
+        messaging = getMessaging(app);
+        onMessage(messaging, (payload) => {
+          console.log('FCM: Foreground message received:', payload);
+          // Show foreground notification as browser notification if possible
+          if (Notification.permission === 'granted') {
+            const title = payload.notification?.title || 'ArenaX Tournament Alert';
+            const options = {
+              body: payload.notification?.body || '',
+              icon: payload.notification?.icon || '/assets/icon.png',
+              data: payload.data
+            };
+            new Notification(title, options);
+          }
+        });
+      } catch (fcmErr) {
+        console.error('FCM: Failed to initialize messaging after SW registration:', fcmErr);
+      }
     } catch (err) {
       console.error('Service Worker registration failed:', err);
     }
@@ -2067,6 +2141,139 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', registerSW);
   }
 }
+
+// FCM Diagnostic Methods
+async function requestFCMToken(showSuccessAlert = false) {
+  showDiagnosticError(null);
+  try {
+    console.log("FCM: Requesting permission...");
+    const permission = await Notification.requestPermission();
+    updateDiagnosticUI();
+    
+    if (permission !== 'granted') {
+      showDiagnosticError("Failed to retrieve token: Permission denied by browser settings. Please allow notifications.");
+      return;
+    }
+    
+    if (!messaging) {
+      messaging = getMessaging(app);
+    }
+    
+    const currentPath = window.location.pathname;
+    const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+    const swPath = (dirPath && dirPath !== '/') ? (dirPath + 'firebase-messaging-sw.js') : '/firebase-messaging-sw.js';
+    const reg = await navigator.serviceWorker.register(swPath);
+    
+    const token = await getToken(messaging, {
+      vapidKey: "BDdgfDjDrlojgRVmno7aaRuIpUyZMBI7Dh-EnXLBvXzXMsIsvojEag3SvYX63M67MtIClFHUMkyiCmmIwA00FEM",
+      serviceWorkerRegistration: reg
+    });
+    
+    if (token) {
+      console.log("FCM: Manual token success:", token);
+      localStorage.setItem('fcm_token_arena_x', token);
+      updateDiagnosticUI();
+      
+      const user = auth.currentUser;
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          fcmToken: token,
+          fcmTokenUpdatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log("FCM: Saved token to user profile in Firestore");
+      }
+      if (showSuccessAlert) {
+        alert("🎉 FCM Token generated and saved successfully!");
+      }
+    } else {
+      showDiagnosticError("Failed to retrieve token. No token returned from FCM.");
+    }
+  } catch (err) {
+    console.error("FCM: Error requesting token:", err);
+    showDiagnosticError("FCM Error: " + (err.message || String(err)));
+  }
+}
+
+function copyFCMToken() {
+  const token = localStorage.getItem('fcm_token_arena_x');
+  if (token) {
+    navigator.clipboard.writeText(token)
+      .then(() => alert('📋 FCM Token copied to clipboard!'))
+      .catch(() => alert('Failed to copy. Please manually select the token and copy it.'));
+  }
+}
+
+function updateDiagnosticUI() {
+  const perm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  
+  const permEl = $('diagnosticPermission');
+  if (permEl) {
+    permEl.textContent = perm;
+    if (perm === 'granted') {
+      permEl.className = 'font-bold px-1.5 py-0.5 rounded text-[10px] uppercase bg-green-500/10 text-green-500 border border-green-500/20';
+    } else if (perm === 'denied') {
+      permEl.className = 'font-bold px-1.5 py-0.5 rounded text-[10px] uppercase bg-red-500/10 text-red-500 border border-red-500/20';
+    } else {
+      permEl.className = 'font-bold px-1.5 py-0.5 rounded text-[10px] uppercase bg-ele text-t3 border border-bdr';
+    }
+  }
+
+  const reqBox = $('diagnosticPermissionRequestBox');
+  if (reqBox) {
+    if (perm !== 'granted') {
+      reqBox.classList.remove('hidden');
+    } else {
+      reqBox.classList.add('hidden');
+    }
+  }
+
+  const token = localStorage.getItem('fcm_token_arena_x');
+  const tokenBox = $('diagnosticTokenBox');
+  const copyBtn = $('btnCopyFcmToken');
+  const genBtn = $('btnGenerateFcmToken');
+
+  if (token) {
+    if (tokenBox) {
+      tokenBox.textContent = token;
+      tokenBox.classList.remove('hidden');
+    }
+    if (copyBtn) {
+      copyBtn.classList.remove('hidden');
+    }
+    if (genBtn) {
+      genBtn.textContent = 'Regenerate Token';
+      genBtn.className = 'w-full py-1.5 bg-ele text-t2 hover:text-white text-[10px] font-bold rounded transition cursor-pointer';
+    }
+  } else {
+    if (tokenBox) {
+      tokenBox.classList.add('hidden');
+    }
+    if (copyBtn) {
+      copyBtn.classList.add('hidden');
+    }
+    if (genBtn) {
+      genBtn.textContent = 'Generate Token';
+      genBtn.className = 'w-full py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-bold rounded transition cursor-pointer';
+    }
+  }
+}
+
+function showDiagnosticError(msg) {
+  const errDiv = $('diagnosticErrorDiv');
+  if (errDiv) {
+    if (msg) {
+      errDiv.textContent = msg;
+      errDiv.classList.remove('hidden');
+    } else {
+      errDiv.classList.add('hidden');
+    }
+  }
+}
+
+// Expose FCM methods to window
+window.requestFCMToken = requestFCMToken;
+window.copyFCMToken = copyFCMToken;
+window.updateDiagnosticUI = updateDiagnosticUI;
 
 // Staff Access logic
 const ADMIN_UIDS = ['xDa31jOrsoQC2HxjSheO3wBqyII2', 'lCNKrLAliFSvuML6Nwrr6YlNOtG3'];
@@ -5463,6 +5670,9 @@ $('bTopbarSupport').addEventListener('click', () => {
 // Settings Modal Triggers
 $('bSettings').addEventListener('click', () => {
   $('mSettings').classList.remove('hidden');
+  if (typeof window.updateDiagnosticUI === 'function') {
+    window.updateDiagnosticUI();
+  }
 });
 $('bCloseSettingsCross').addEventListener('click', () => $('mSettings').classList.add('hidden'));
 $('bCloseSettings').addEventListener('click', () => $('mSettings').classList.add('hidden'));
