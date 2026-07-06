@@ -2046,6 +2046,22 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
+// Register Service Worker for FCM dynamically with directory path context
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const currentPath = window.location.pathname;
+      const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) || '/';
+      const swPath = dirPath + 'firebase-messaging-sw.js';
+      console.log('Registering Service Worker for ArenaX at:', swPath);
+      const reg = await navigator.serviceWorker.register(swPath);
+      console.log('Service Worker registered successfully with scope:', reg.scope);
+    } catch (err) {
+      console.error('Service Worker registration failed:', err);
+    }
+  });
+}
+
 // Staff Access logic
 const ADMIN_UIDS = ['xDa31jOrsoQC2HxjSheO3wBqyII2', 'lCNKrLAliFSvuML6Nwrr6YlNOtG3'];
 
