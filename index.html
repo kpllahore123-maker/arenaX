@@ -212,7 +212,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 
       <!-- Terms & Conditions and Privacy Policy agreement -->
       <div class="flex items-start gap-2.5 p-3 bg-card border border-bdr rounded-lg">
-        <input id="termsCheckbox" type="checkbox" class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
+        <input id="termsCheckbox" type="checkbox" checked class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
         <label for="termsCheckbox" class="text-[11px] text-t2 leading-snug cursor-pointer select-none">
           I agree to the <span class="text-white font-medium hover:underline cursor-pointer" id="lnkTerms">Terms & Conditions</span> and <span class="text-white font-medium hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span> of ArenaX.
         </label>
@@ -2588,7 +2588,11 @@ $('bEmail').addEventListener('click', async () => {
         const dName = em.split('@')[0];
         await updateProfile(cred.user, { displayName: dName });
       } catch (signUpErr) {
-        $('loginErr').textContent = signUpErr.message;
+        if (signUpErr.code === 'auth/email-already-in-use') {
+          $('loginErr').textContent = '⚠️ Incorrect password for this email address. Please try again.';
+        } else {
+          $('loginErr').textContent = signUpErr.message;
+        }
         $('loginErr').classList.remove('hidden');
       }
     } else {
