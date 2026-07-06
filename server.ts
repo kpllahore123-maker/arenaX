@@ -103,6 +103,18 @@ Be human-like, supportive, and extremely clear.`;
     }
   });
 
+  // Middleware to handle subpath rewrites (like /arenax/ or /arenaX/)
+  app.use((req, res, next) => {
+    const subpathRegex = /^\/(arenax|arenaX)(\/|$)/i;
+    if (subpathRegex.test(req.url)) {
+      const originalUrl = req.url;
+      req.url = req.url.replace(subpathRegex, '/');
+      req.originalUrl = req.url;
+      console.log(`Rewrote subpath request from ${originalUrl} to ${req.url}`);
+    }
+    next();
+  });
+
   // Serve static files and support Vite in Dev
   if (process.env.NODE_ENV !== "production") {
     // Serve compiled assets as fallback in development to support cached production pages
