@@ -93,8 +93,13 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
     if (permission === 'granted') {
       const messaging = getMessaging(app);
       
-      // Register service worker explicitly to guarantee it resolves correctly in container/iframe environments
-      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      // Register service worker dynamically based on the current location to support custom subdirectories (like /arenaX on GitHub Pages)
+      const currentPath = window.location.pathname;
+      const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) || '/';
+      const swPath = dirPath + 'firebase-messaging-sw.js';
+      
+      console.log("Registering Service Worker from path:", swPath);
+      const reg = await navigator.serviceWorker.register(swPath);
       console.log("Service Worker registered successfully:", reg);
       
       // Explicitly wait until the service worker registration is active
