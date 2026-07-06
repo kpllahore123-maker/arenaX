@@ -172,7 +172,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [notifAnnounce, setNotifAnnounce] = useState(true);
   const [notifFriends, setNotifFriends] = useState(true);
   const [notifTours, setNotifTours] = useState(true);
@@ -624,7 +624,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           
           // Profile doc will be bootstrapped by onAuthStateChanged
         } catch (signUpErr: any) {
-          setAuthError(signUpErr.message);
+          if (signUpErr.code === 'auth/email-already-in-use') {
+            setAuthError('⚠️ Incorrect password for this email address. Please try again.');
+          } else {
+            setAuthError(signUpErr.message);
+          }
         }
       } else {
         setAuthError(signInErr.message);
