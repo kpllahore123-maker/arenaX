@@ -2048,7 +2048,7 @@ const googleProvider = new GoogleAuthProvider();
 
 // Register Service Worker for FCM dynamically with directory path context
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
+  const registerSW = async () => {
     try {
       const currentPath = window.location.pathname;
       const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) || '/';
@@ -2059,7 +2059,13 @@ if ('serviceWorker' in navigator) {
     } catch (err) {
       console.error('Service Worker registration failed:', err);
     }
-  });
+  };
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    registerSW();
+  } else {
+    window.addEventListener('load', registerSW);
+  }
 }
 
 // Staff Access logic
