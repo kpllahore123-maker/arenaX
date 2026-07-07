@@ -707,44 +707,8 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       </div>
     </section>
 
-    <!-- ── LIVE SUPPORT TAB ── -->
-    <section id="tSupport" class="tab space-y-4 hidden">
-      <div class="font-display text-xl font-bold flex items-center gap-2">
-        <i class="fas fa-headset text-gold"></i> Live Support Chat
-      </div>
-
-      <div id="sLock" class="p-6 bg-card border border-bdr rounded-xl text-center space-y-3 hidden">
-        <i class="fas fa-lock text-t3 text-3xl"></i>
-        <p class="text-xs text-t2">Live support chat not available for Guest accounts.</p>
-        <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile to access real-time live support chat.')">Link Account</button>
-      </div>
-
-      <div id="chatBox" class="bg-card border border-bdr rounded-2xl flex flex-col h-[340px] overflow-hidden">
-        <!-- Messages -->
-        <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-          <!-- Welcome message -->
-          <div class="flex gap-2">
-            <div class="w-7 h-7 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs flex-shrink-0">
-              <i class="fas fa-robot"></i>
-            </div>
-            <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
-              <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
-              <div class="flex flex-wrap gap-1.5 pt-1.5">
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Input -->
-        <div class="p-3 border-t border-bdr/40 flex gap-2">
-          <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#111420] border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
-          <button id="chatSend" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
-        </div>
-      </div>
-    </section>
+    <!-- Dummy Support Tab (Logic moved to Support Side Drawer) -->
+    <div id="tSupport" class="tab hidden"></div>
 
     <!-- ── FOOTBALL GROUND TAB ── -->
     <section id="tFootball" class="tab space-y-4 hidden flex flex-col relative">
@@ -994,6 +958,143 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <i class="fas fa-headset text-base"></i><span>Support</span>
     </button>
   </nav>
+</div>
+
+<!-- ==================== SUPPORT SIDE DRAWER ==================== -->
+<!-- Drawer Backdrop -->
+<div id="mSupportDrawerBackdrop" class="fixed inset-0 bg-black/75 z-[240] hidden opacity-0 transition-opacity duration-300"></div>
+
+<!-- Drawer Panel (occupies less than half screen: w-[410px]) -->
+<div id="dSupportDrawer" class="fixed inset-y-0 right-0 w-[410px] max-w-[85vw] h-full bg-[#0d0f1a]/95 backdrop-blur-md border-l border-bdr shadow-[0_0_50px_rgba(0,0,0,0.85)] z-[250] transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+  <!-- Drawer Header -->
+  <div class="p-4 border-b border-bdr flex items-center justify-between bg-card/50 flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs">
+        <i class="fas fa-headset"></i>
+      </div>
+      <div>
+        <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">ArenaX Help Desk</h3>
+        <p class="text-[9px] text-t3">Live Chat, Cheater Ban & Support</p>
+      </div>
+    </div>
+    <button id="bCloseSupportDrawer" class="w-8 h-8 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Drawer Body (Scrollable container for our 3-slab layout) -->
+  <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+    <!-- 3 Slab Selector -->
+    <div class="flex bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full flex-shrink-0">
+      <button id="bSubSlabSupport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-bg bg-gold transition flex items-center justify-center gap-1.5 cursor-pointer">
+        <i class="fas fa-comments"></i> Support
+      </button>
+      <button id="bSubSlabRedReport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
+        <i class="fas fa-flag-checkered text-red"></i> Red Report
+      </button>
+      <button id="bSubSlabFAQ" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
+        <i class="fas fa-info-circle"></i> FAQ Guide
+      </button>
+    </div>
+
+    <!-- Live Support Chat Slab content -->
+    <div id="dSupportChatContent" class="space-y-4">
+      <div class="font-display text-[11px] font-extrabold uppercase tracking-wider text-t2 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Support System
+      </div>
+
+      <div id="sLock" class="p-6 bg-card border border-bdr rounded-xl text-center space-y-3 hidden">
+        <i class="fas fa-lock text-t3 text-3xl"></i>
+        <p class="text-xs text-t2">Live support chat not available for Guest accounts.</p>
+        <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile to access real-time live support chat.')">Link Account</button>
+      </div>
+
+      <div id="chatBox" class="bg-card border border-bdr rounded-2xl flex flex-col h-[380px] overflow-hidden">
+        <!-- Messages -->
+        <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+          <!-- Welcome message -->
+          <div class="flex gap-2">
+            <div class="w-7 h-7 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs flex-shrink-0">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
+              <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
+              <div class="flex flex-wrap gap-1.5 pt-1.5">
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="p-3 border-t border-bdr/40 flex gap-2">
+          <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#111420] border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
+          <button id="chatSend" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Red Report Slab content -->
+    <div id="dRedReportContent" class="space-y-4 hidden">
+      <div class="bg-gradient-to-r from-red-950/20 to-neutral-950/20 border border-red/25 rounded-xl p-4 flex flex-col items-center justify-between gap-3 text-center sm:text-left">
+        <div class="w-full">
+          <h3 class="font-display text-xs font-black text-red uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
+            <i class="fas fa-gavel"></i> Red Report Portal
+          </h3>
+          <p class="text-[10px] text-t3 mt-1 leading-normal">Report hacks, cheats, or match collusion directly. Admins review match logs and evidence to issue bans. ✅</p>
+        </div>
+        <button id="bFileRedReport" class="w-full px-4 py-2 bg-red hover:bg-[#cc3540] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition whitespace-nowrap active:scale-95 cursor-pointer">
+          <i class="fas fa-plus"></i> File Red Report
+        </button>
+      </div>
+
+      <!-- 3-segment switcher (sub-slabs) for Red Reports -->
+      <div class="flex bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full">
+        <button id="bRedSubOpen" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-white bg-red/20 transition flex items-center justify-center gap-0.5 cursor-pointer">
+          📂 Open <span id="openReportsCount" class="bg-red/25 px-1 rounded-full text-[9px] text-red-400 font-mono ml-0.5">0</span>
+        </button>
+        <button id="bRedSubClosed" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
+          🔒 Closed <span id="closedReportsCount" class="bg-emerald-500/10 px-1 rounded-full text-[9px] text-emerald-400 font-mono ml-0.5">0</span>
+        </button>
+        <button id="bRedSubMy" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
+          👤 Mine <span id="myReportsCount" class="bg-gold/10 px-1 rounded-full text-[9px] text-gold font-mono ml-0.5">0</span>
+        </button>
+      </div>
+
+      <!-- Reports list container -->
+      <div id="dRedReportsList" class="space-y-3 pr-1">
+        <p class="text-center text-xs text-t3 py-8">Loading reports...</p>
+      </div>
+    </div>
+
+    <!-- Support FAQ / Guide Slab content -->
+    <div id="dSupportFAQContent" class="space-y-4 hidden">
+      <div class="bg-[#111420] border border-bdr rounded-2xl p-4 space-y-4">
+        <h3 class="font-display text-xs font-bold text-white uppercase tracking-wider border-b border-bdr/40 pb-2 flex items-center gap-1.5">
+          <i class="fas fa-book-reader text-gold"></i> ArenaX Support Guide
+        </h3>
+        
+        <div class="space-y-3 text-[11px] leading-relaxed">
+          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
+            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-coins text-xs"></i> Deposit / Recharge Coins?</h4>
+            <p class="text-t2">Send PKR to JazzCash (0302-4686897) or EasyPaisa (0315-9876543), then head to Wallet -> Recharge. Enter PKR amount & TXN ID. Verified in 15-30 mins!</p>
+          </div>
+
+          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
+            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-clock"></i> Withdrawal Speed?</h4>
+            <p class="text-t2">Processed securely within 24 to 48 hours directly to your designated JazzCash or EasyPaisa account.</p>
+          </div>
+
+          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
+            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-gavel"></i> Red Report Program</h4>
+            <p class="text-t2">We freeze cheater balances permanently. Report players utilizing hacks or illegal scripts with video links or uploaded evidence right here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== UNDER DEVELOPMENT POPUP MODAL ==================== -->
@@ -1865,57 +1966,101 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
   </div>
 </div>
 
-<!-- ==================== CHEAT REPORT MODAL ==================== -->
-<div id="mReportCheat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4">
+<!-- ==================== FILE RED REPORT MODAL ==================== -->
+<div id="mFileRedReport" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-flag"></i></div>
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-gavel"></i></div>
       <div>
-        <h3 class="font-display text-lg font-bold text-white leading-tight">Report Hack / Cheat</h3>
-        <p id="repEventName" class="text-xs text-t3">Event Name</p>
+        <h3 class="font-display text-base font-black text-white uppercase tracking-wider">File Red Report</h3>
+        <p class="text-[10px] text-t3">ArenaX Cheater & Hack Prevention System</p>
       </div>
     </div>
 
-    <div class="space-y-3 text-xs">
+    <div class="space-y-3.5 text-xs">
       <div>
-        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Your Name</label>
-        <input id="repYourName" type="text" disabled class="w-full bg-card/60 border border-bdr rounded-lg px-3 py-2 text-t3 font-semibold outline-none cursor-not-allowed"/>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Your Profile</label>
+        <input id="rrYourName" type="text" disabled class="w-full bg-card/60 border border-bdr rounded-lg px-3 py-2 text-t3 font-semibold outline-none cursor-not-allowed"/>
       </div>
-      <div class="grid grid-cols-2 gap-3">
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player Name *</label>
-          <input id="repPlayerName" type="text" placeholder="e.g. CheaterName" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+          <input id="rrPlayerName" type="text" placeholder="e.g. HackerName" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
         </div>
         <div>
-          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player UID *</label>
-          <input id="repPlayerUID" type="text" placeholder="UID exactly" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Game UID (if have)</label>
+          <input id="rrPlayerUID" type="text" placeholder="e.g. 1948204" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
         </div>
       </div>
+
       <div>
-        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Type of Cheat / Hack *</label>
-        <select id="repHackType" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold">
-          <option value="Aimbot / Auto-Aim">Aimbot / Auto-Aim</option>
-          <option value="Wallhack / ESP / X-Ray">Wallhack / ESP / X-Ray</option>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Cheating Type *</label>
+        <select id="rrCheatCategory" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition">
+          <option value="Aimbot / Headshot Lock">Aimbot / Headshot Lock</option>
+          <option value="ESP / Wallhack / Wireframe">ESP / Wallhack / Wireframe</option>
           <option value="Speedhack / Fast Movement">Speedhack / Fast Movement</option>
-          <option value="Fly Hack / No Gravity">Fly Hack / No Gravity</option>
+          <option value="Fly Hack / Gravity Modify">Fly Hack / Gravity Modify</option>
           <option value="No Recoil / Magic Bullet">No Recoil / Magic Bullet</option>
-          <option value="High Damage / Instakill">High Damage / Instakill</option>
-          <option value="Other Advantage">Other Advantage</option>
+          <option value="Under-map Glitch / Invisible">Under-map Glitch / Invisible</option>
+          <option value="Fake Results / Match Collusion">Fake Results / Match Collusion</option>
+          <option value="Other Illegal Hacks">Other Illegal Hacks</option>
         </select>
       </div>
+
       <div>
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Detailed Description *</label>
-        <textarea id="repReason" rows="3" placeholder="Explain how and when cheating occurred..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold resize-none"></textarea>
+        <textarea id="rrDescription" rows="3" placeholder="Explain the cheating incident with exact match details..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition resize-none"></textarea>
       </div>
+
       <div>
-        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Evidence Video URL (YouTube, Drive...)</label>
-        <input id="repVideoUrl" type="url" placeholder="Paste link (Highly Recommended)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold"/>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Evidence URL (YouTube, Drive, Streamable etc.)</label>
+        <input id="rrProofUrl" type="url" placeholder="Paste external link" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
+      </div>
+
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">OR Upload File Evidence (Direct)</label>
+        <div id="rrUploadArea" class="border-2 border-dashed border-bdr/60 hover:border-red-500/50 rounded-lg p-4 text-center cursor-pointer transition bg-card/40">
+          <i class="fas fa-cloud-upload-alt text-xl text-t3 mb-1"></i>
+          <p id="rrUploadTitle" class="text-[10px] text-t2 font-medium">Click or Drag & Drop File</p>
+          <p class="text-[9px] text-t3">Images or short videos supported</p>
+          <input type="file" id="rrFileInput" accept="image/*,video/*" class="hidden" />
+          <div id="rrUploadProgress" class="text-[10px] text-gold hidden mt-1 flex items-center justify-center gap-1">
+            <i class="fas fa-spinner animate-spin"></i> Uploading file... please wait
+          </div>
+          <div id="rrUploadSuccess" class="text-[10px] text-emerald-400 hidden mt-1">✓ File uploaded successfully!</div>
+        </div>
       </div>
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button id="bCloseReportCheat" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
-      <button id="bSubmitReportCheat" class="flex-1 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Submit Report</button>
+      <button id="bCloseRedReportModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSubmitRedReport" class="flex-1 py-2.5 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ADMIN REVIEW REPORT MODAL ==================== -->
+<div id="mReviewRedReport" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-emerald-500/10 border border-emerald-500/25 rounded-full flex items-center justify-center text-emerald-400 text-lg"><i class="fas fa-shield-alt"></i></div>
+      <div>
+        <h3 class="font-display text-base font-black text-white uppercase tracking-wider">Moderator Review</h3>
+        <p id="revPlayerTitle" class="text-[10px] text-t3">Reviewing Player</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Admin Verdict & Decision *</label>
+        <textarea id="revVerdict" rows="3" placeholder="Enter decision (e.g., Checked logs. Ban issued / Insufficient evidence.)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 transition resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseReviewModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSubmitReview" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition">Close & Save Verdict</button>
     </div>
   </div>
 </div>
@@ -2573,6 +2718,12 @@ function boot() {
 
 // Navigation Tab controls
 function switchTab(tabId) {
+  if (tabId === 'Support') {
+    if (typeof window.openSupportDrawer === 'function') {
+      window.openSupportDrawer();
+    }
+    return;
+  }
   activeMainTab = tabId;
   document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
   $('t' + tabId).classList.remove('hidden');
@@ -2679,7 +2830,7 @@ onAuthStateChanged(auth, async (fireUser) => {
         boot();
       } else {
         // Bootstrap new user in Firestore
-        const defaultName = fireUser.displayName || fireUser.email.split('@')[0];
+        const defaultName = fireUser.displayName || (fireUser.email ? fireUser.email.split('@')[0] : 'ArenaX Player');
         const defaultHandle = '@' + defaultName.toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4);
         const defaultAv = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
 
@@ -3138,14 +3289,11 @@ function renderTournaments() {
         ` : ''}
 
         <div class="pt-2 flex gap-2 flex-wrap relative z-10">
-          <button class="b-part flex-1 min-w-[100px] py-1.5 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <button class="b-part flex-1 min-w-[120px] py-1.5 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-users mr-1"></i> Slots
           </button>
-          <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <button class="b-leaderboard flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-list-ol mr-1"></i> Standings
-          </button>
-          <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-            <i class="fas fa-flag mr-1"></i> Report
           </button>
         </div>
       `;
@@ -3210,27 +3358,19 @@ function renderTournaments() {
         ` : ''}
 
         <div class="pt-2 flex gap-2 flex-wrap">
-          <button class="b-part flex-1 min-w-[100px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <button class="b-part flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-users mr-1"></i> Slots
           </button>
-          <button class="b-leaderboard flex-1 min-w-[100px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+          <button class="b-leaderboard flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-list-ol mr-1"></i> Leaderboard
-          </button>
-          <button class="b-report flex-1 min-w-[100px] py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-            <i class="fas fa-flag mr-1"></i> Report
           </button>
         </div>
       `;
     }
 
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.b-report') || e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
+      if (e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
       handleTourCardClick(t);
-    });
-
-    card.querySelector('.b-report').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openReportCheat(t.id, t.name);
     });
 
     card.querySelector('.b-part').addEventListener('click', (e) => {
@@ -3433,62 +3573,428 @@ $('tregSubmit').addEventListener('click', async () => {
 
 $('tregDone').addEventListener('click', () => $('mTourDetail').classList.add('hidden'));
 
-// ── CHEAT REPORTING WINDOW ──
-let activeReportTourId = '';
-function openReportCheat(tourId, tourName) {
-  if (guestProfile) {
-    alert('Guest profiles are restricted from filing tournament reports.');
-    return;
-  }
-  activeReportTourId = tourId;
-  $('repEventName').textContent = tourName;
-  $('repYourName').value = userProfile.name;
-  
-  $('repPlayerName').value = '';
-  $('repPlayerUID').value = '';
-  $('repReason').value = '';
-  $('repVideoUrl').value = '';
+// ── RED REPORT SYSTEM LOGIC ──
+window.activeRedReportSlab = 'Support'; // 'Support', 'RedReport', 'FAQ'
+window.activeRedReportFilter = 'open'; // 'open', 'closed', 'my'
+window.uploadedEvidenceUrl = '';
+window.uploadedEvidenceType = 'link'; // 'link', 'image', 'video'
+window.activeReviewReportId = '';
 
-  $('mReportCheat').classList.remove('hidden');
+// Support Drawer Controls
+window.openSupportDrawer = function() {
+  const drawer = $('dSupportDrawer');
+  const backdrop = $('mSupportDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+
+  drawer.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+
+  setTimeout(() => {
+    drawer.classList.remove('translate-x-full');
+    backdrop.classList.remove('opacity-0');
+    backdrop.classList.add('opacity-100');
+  }, 20);
+
+  if (window.activeRedReportSlab === 'Support') {
+    loadLiveSupportChat();
+  } else if (window.activeRedReportSlab === 'RedReport') {
+    initRedReportsListener();
+  }
+};
+
+window.closeSupportDrawer = function() {
+  const drawer = $('dSupportDrawer');
+  const backdrop = $('mSupportDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+
+  drawer.classList.add('translate-x-full');
+  backdrop.classList.remove('opacity-100');
+  backdrop.classList.add('opacity-0');
+
+  setTimeout(() => {
+    drawer.classList.add('hidden');
+    backdrop.classList.add('hidden');
+  }, 300);
+};
+
+$('bCloseSupportDrawer').addEventListener('click', () => closeSupportDrawer());
+$('mSupportDrawerBackdrop').addEventListener('click', () => closeSupportDrawer());
+
+// Setup Sub-Slab Navigation inside Support
+window.switchSupportSubSlab = function(slab) {
+  window.activeRedReportSlab = slab;
+  
+  // Update Slabs styling
+  const subBtns = document.querySelectorAll('.sub-slab-btn');
+  subBtns.forEach(btn => {
+    btn.classList.remove('bg-gold', 'text-bg');
+    btn.classList.add('text-t3', 'hover:text-white');
+  });
+
+  // Hide all sections
+  $('dSupportChatContent').classList.add('hidden');
+  $('dRedReportContent').classList.add('hidden');
+  $('dSupportFAQContent').classList.add('hidden');
+
+  if (slab === 'Support') {
+    $('bSubSlabSupport').classList.add('bg-gold', 'text-bg');
+    $('bSubSlabSupport').classList.remove('text-t3', 'hover:text-white');
+    $('dSupportChatContent').classList.remove('hidden');
+  } else if (slab === 'RedReport') {
+    $('bSubSlabRedReport').classList.add('bg-gold', 'text-bg');
+    $('bSubSlabRedReport').classList.remove('text-t3', 'hover:text-white');
+    $('dRedReportContent').classList.remove('hidden');
+    initRedReportsListener();
+  } else if (slab === 'FAQ') {
+    $('bSubSlabFAQ').classList.add('bg-gold', 'text-bg');
+    $('bSubSlabFAQ').classList.remove('text-t3', 'hover:text-white');
+    $('dSupportFAQContent').classList.remove('hidden');
+  }
 }
 
-$('bCloseReportCheat').addEventListener('click', () => $('mReportCheat').classList.add('hidden'));
-$('bSubmitReportCheat').addEventListener('click', async () => {
-  const repName = $('repPlayerName').value.trim();
-  const repUID = $('repPlayerUID').value.trim();
-  const reason = $('repReason').value.trim();
-  const vidUrl = $('repVideoUrl').value.trim();
+$('bSubSlabSupport').addEventListener('click', () => switchSupportSubSlab('Support'));
+$('bSubSlabRedReport').addEventListener('click', () => switchSupportSubSlab('RedReport'));
+$('bSubSlabFAQ').addEventListener('click', () => switchSupportSubSlab('FAQ'));
 
-  if (!repName || !repUID || !reason) {
-    alert('Please complete all required fields (*)!');
+// Setup sub-filter switching for Red Reports
+window.switchRedReportFilter = function(filter) {
+  window.activeRedReportFilter = filter;
+  
+  const tabs = document.querySelectorAll('.red-sub-tab');
+  tabs.forEach(tab => {
+    tab.classList.remove('bg-red/20', 'text-white');
+    tab.classList.add('text-t3', 'hover:text-white');
+  });
+
+  if (filter === 'open') {
+    $('bRedSubOpen').classList.add('bg-red/20', 'text-white');
+    $('bRedSubOpen').classList.remove('text-t3');
+  } else if (filter === 'closed') {
+    $('bRedSubClosed').classList.add('bg-red/20', 'text-white');
+    $('bRedSubClosed').classList.remove('text-t3');
+  } else if (filter === 'my') {
+    $('bRedSubMy').classList.add('bg-red/20', 'text-white');
+    $('bRedSubMy').classList.remove('text-t3');
+  }
+
+  renderRedReports();
+}
+
+$('bRedSubOpen').addEventListener('click', () => switchRedReportFilter('open'));
+$('bRedSubClosed').addEventListener('click', () => switchRedReportFilter('closed'));
+$('bRedSubMy').addEventListener('click', () => switchRedReportFilter('my'));
+
+// New File Upload & Evidence management
+const fileInput = $('rrFileInput');
+$('rrUploadArea').addEventListener('click', () => fileInput.click());
+
+// Drag and drop event listeners
+$('rrUploadArea').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  $('rrUploadArea').classList.add('border-red-500');
+});
+$('rrUploadArea').addEventListener('dragleave', () => {
+  $('rrUploadArea').classList.remove('border-red-500');
+});
+$('rrUploadArea').addEventListener('drop', (e) => {
+  e.preventDefault();
+  $('rrUploadArea').classList.remove('border-red-500');
+  if (e.dataTransfer.files.length > 0) {
+    fileInput.files = e.dataTransfer.files;
+    handleEvidenceFileSelection(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    handleEvidenceFileSelection(e.target.files[0]);
+  }
+});
+
+function handleEvidenceFileSelection(file) {
+  if (!file) return;
+  
+  if (file.size > 20 * 1024 * 1024) { // 20MB max
+    alert('Evidence file size exceeds the 20MB limit!');
     return;
   }
 
-  $('bSubmitReportCheat').disabled = true;
-  $('bSubmitReportCheat').textContent = 'Submitting...';
+  $('rrUploadProgress').classList.remove('hidden');
+  $('rrUploadSuccess').classList.add('hidden');
+  $('rrUploadTitle').classList.add('hidden');
+
+  const storageRef = ref(storage, 'red_reports/' + Date.now() + '_' + file.name);
+  uploadBytes(storageRef, file).then(async (snapshot) => {
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+    window.uploadedEvidenceUrl = downloadUrl;
+    window.uploadedEvidenceType = file.type.startsWith('image/') ? 'image' : 'video';
+    $('rrUploadProgress').classList.add('hidden');
+    $('rrUploadSuccess').classList.remove('hidden');
+    $('rrUploadSuccess').textContent = `✓ Uploaded: ${file.name}`;
+    $('rrProofUrl').value = downloadUrl; // Autofill pasted link just in case
+  }).catch(err => {
+    console.error(err);
+    $('rrUploadProgress').classList.add('hidden');
+    $('rrUploadTitle').classList.remove('hidden');
+    alert('Upload error: ' + err.message);
+  });
+}
+
+// Open modal to file new red report
+$('bFileRedReport').addEventListener('click', () => {
+  if (guestProfile) {
+    alert('Guest profiles are restricted from filing Red Reports.');
+    return;
+  }
+  
+  window.uploadedEvidenceUrl = '';
+  window.uploadedEvidenceType = 'link';
+  
+  $('rrYourName').value = userProfile.name;
+  $('rrPlayerName').value = '';
+  $('rrPlayerUID').value = '';
+  $('rrCheatCategory').value = 'Aimbot / Headshot Lock';
+  $('rrDescription').value = '';
+  $('rrProofUrl').value = '';
+  
+  // Reset upload area state
+  $('rrUploadProgress').classList.add('hidden');
+  $('rrUploadSuccess').classList.add('hidden');
+  $('rrUploadTitle').classList.remove('hidden');
+  
+  $('mFileRedReport').classList.remove('hidden');
+});
+
+$('bCloseRedReportModal').addEventListener('click', () => {
+  $('mFileRedReport').classList.add('hidden');
+});
+
+$('bSubmitRedReport').addEventListener('click', async () => {
+  const reportedName = $('rrPlayerName').value.trim();
+  const reportedUID = $('rrPlayerUID').value.trim();
+  const cheatType = $('rrCheatCategory').value;
+  const description = $('rrDescription').value.trim();
+  let finalEvidenceUrl = $('rrProofUrl').value.trim();
+
+  if (!reportedName || !description) {
+    alert('Please fill out all required fields marked with *!');
+    return;
+  }
+
+  // Use uploaded file URL if we uploaded one
+  if (window.uploadedEvidenceUrl) {
+    finalEvidenceUrl = window.uploadedEvidenceUrl;
+  }
+
+  $('bSubmitRedReport').disabled = true;
+  $('bSubmitRedReport').textContent = 'Submitting report...';
 
   try {
-    await addDoc(collection(db, 'tournament_reports'), {
-      tournamentId: activeReportTourId,
-      tournamentName: $('repEventName').textContent,
+    await addDoc(collection(db, 'red_reports'), {
       reporterId: userProfile.uid,
       reporterName: userProfile.name,
-      reportedName: repName,
-      reportedUID: repUID,
-      hackType: $('repHackType').value,
-      reason: reason,
-      videoUrl: vidUrl,
+      reporterHandle: userProfile.handle || '@player',
+      reportedName: reportedName,
+      reportedUID: reportedUID || 'Not Provided',
+      cheatingType: cheatType,
+      description: description,
+      evidenceUrl: finalEvidenceUrl || '',
+      evidenceType: window.uploadedEvidenceUrl ? window.uploadedEvidenceType : 'link',
       status: 'open',
-      createdAt: serverTimestamp()
+      verdict: '',
+      createdAt: serverTimestamp(),
+      closedAt: null
     });
 
-    $('mReportCheat').classList.add('hidden');
-    alert('Cheat report submitted successfully! Live moderators will review the match logs and logs evidence within 24 hours. Verified reporting reduces unfair matches. ✅');
+    $('mFileRedReport').classList.add('hidden');
+    alert('Red Report filed successfully! 🚨\n\nIt is now live in the Open Reports section. Staff and moderators will inspect logs and evidence within 12 hours.');
   } catch (err) {
-    alert('Reporting Error: ' + err.message);
+    alert('Submission error: ' + err.message);
   } finally {
-    $('bSubmitReportCheat').disabled = false;
-    $('bSubmitReportCheat').textContent = 'Submit Report';
+    $('bSubmitRedReport').disabled = false;
+    $('bSubmitRedReport').textContent = 'Submit Report';
+  }
+});
+
+// Real-time listener for red reports
+window.redReportsUnsub = null;
+window.allRedReports = [];
+
+window.initRedReportsListener = function() {
+  if (window.redReportsUnsub) return; // Keep active subscription
+  
+  const q = query(collection(db, 'red_reports'), orderBy('createdAt', 'desc'));
+  window.redReportsUnsub = onSnapshot(q, (snapshot) => {
+    window.allRedReports = [];
+    snapshot.forEach(doc => {
+      window.allRedReports.push({ id: doc.id, ...doc.data() });
+    });
+    renderRedReports();
+    updateRedReportTabsCount();
+  }, (err) => {
+    console.error('Red Reports database error:', err);
+  });
+}
+
+window.updateRedReportTabsCount = function() {
+  const openCount = window.allRedReports.filter(r => r.status === 'open').length;
+  const closedCount = window.allRedReports.filter(r => r.status === 'closed').length;
+  const myCount = window.allRedReports.filter(r => r.reporterId === userProfile?.uid).length;
+
+  $('openReportsCount').textContent = openCount;
+  $('closedReportsCount').textContent = closedCount;
+  $('myReportsCount').textContent = myCount;
+}
+
+window.renderRedReports = function() {
+  const container = $('dRedReportsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  let filtered = [];
+  if (window.activeRedReportFilter === 'open') {
+    filtered = window.allRedReports.filter(r => r.status === 'open');
+  } else if (window.activeRedReportFilter === 'closed') {
+    filtered = window.allRedReports.filter(r => r.status === 'closed');
+  } else if (window.activeRedReportFilter === 'my') {
+    filtered = window.allRedReports.filter(r => r.reporterId === userProfile?.uid);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-10 text-t3 text-xs space-y-2">
+        <i class="fas fa-folder-open text-2xl opacity-40"></i>
+        <p>No reports found in this category.</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'p-4 bg-card border border-bdr rounded-xl space-y-3';
+    
+    const formattedDate = r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleString() : 'Just now';
+    
+    // Check if current user is admin to show Review button
+    const isAdminUser = ADMIN_UIDS.includes(userProfile?.uid);
+    const showReviewBtn = r.status === 'open' && isAdminUser;
+
+    let mediaHTML = '';
+    if (r.evidenceUrl) {
+      if (r.evidenceType === 'image') {
+        mediaHTML = `
+          <div class="mt-2.5">
+            <img src="${r.evidenceUrl}" class="rounded-lg max-h-48 object-cover border border-bdr cursor-zoom-in active:scale-95 transition" onclick="window.open('${r.evidenceUrl}', '_blank')" alt="evidence-proof" referrerPolicy="no-referrer"/>
+            <span class="text-[9px] text-t3 block mt-1"><i class="fas fa-search-plus mr-1"></i> Click to enlarge image</span>
+          </div>
+        `;
+      } else if (r.evidenceType === 'video') {
+        mediaHTML = `
+          <div class="mt-2.5">
+            <video src="${r.evidenceUrl}" controls class="rounded-lg max-h-48 border border-bdr w-full"></video>
+          </div>
+        `;
+      } else if (r.evidenceUrl.startsWith('http')) {
+        mediaHTML = `
+          <div class="mt-2">
+            <a href="${r.evidenceUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[11px] font-bold rounded-lg transition">
+              <i class="fas fa-external-link-alt"></i> Open Proof Evidence Link
+            </a>
+          </div>
+        `;
+      }
+    }
+
+    let verdictHTML = '';
+    if (r.status === 'closed') {
+      const closedDate = r.closedAt ? new Date(r.closedAt.seconds * 1000).toLocaleString() : 'Recently';
+      verdictHTML = `
+        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs mt-2.5 space-y-1">
+          <div class="font-extrabold text-[10px] uppercase text-emerald-400 tracking-wider flex items-center gap-1">
+            <i class="fas fa-check-circle"></i> MODERATOR VERDICT
+          </div>
+          <p class="text-t2 leading-relaxed">${r.verdict || 'Decision closed without specific comment.'}</p>
+          <span class="text-[9px] text-t3 block font-mono">Resolved: ${closedDate}</span>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start gap-2">
+        <div>
+          <h4 class="text-white text-sm font-bold flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full ${r.status === 'open' ? 'bg-red animate-pulse' : 'bg-emerald-400'}"></span>
+            ${r.reportedName}
+          </h4>
+          <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mt-0.5">${r.cheatingType}</p>
+        </div>
+        <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider ${r.status === 'open' ? 'bg-red/10 text-red border border-red/25' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'}">
+          ${r.status === 'open' ? 'Open' : 'Closed'}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-t3 font-medium border-t border-b border-bdr/40 py-2">
+        <span><i class="fas fa-id-card text-t2 mr-1"></i> Player UID: <strong class="text-t2">${r.reportedUID}</strong></span>
+        <span><i class="fas fa-user-circle text-t2 mr-1"></i> Reported By: <strong class="text-t2">${r.reporterName}</strong></span>
+        <span><i class="fas fa-calendar-alt text-t2 mr-1"></i> Filed Date: <strong class="text-t2">${formattedDate}</strong></span>
+      </div>
+
+      <div class="text-xs text-t2 leading-relaxed">
+        <p class="whitespace-pre-line">${r.description}</p>
+      </div>
+
+      ${mediaHTML}
+      ${verdictHTML}
+
+      ${showReviewBtn ? `
+        <button class="w-full mt-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition active:scale-95 flex items-center justify-center gap-1.5" onclick="openReviewReportModal('${r.id}', '${r.reportedName}')">
+          <i class="fas fa-shield-alt"></i> Add Verdict & Close Report
+        </button>
+      ` : ''}
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// Admin verdict / review actions
+window.openReviewReportModal = function(id, name) {
+  window.activeReviewReportId = id;
+  $('revPlayerTitle').textContent = `Reviewing Player: ${name}`;
+  $('revVerdict').value = '';
+  $('mReviewRedReport').classList.remove('hidden');
+};
+
+$('bCloseReviewModal').addEventListener('click', () => {
+  $('mReviewRedReport').classList.add('hidden');
+});
+
+$('bSubmitReview').addEventListener('click', async () => {
+  const verdict = $('revVerdict').value.trim();
+  if (!verdict) {
+    alert('Please write a detailed verdict explaining the moderator action!');
+    return;
+  }
+
+  $('bSubmitReview').disabled = true;
+  $('bSubmitReview').textContent = 'Saving decision...';
+
+  try {
+    const reportRef = doc(db, 'red_reports', window.activeReviewReportId);
+    await updateDoc(reportRef, {
+      status: 'closed',
+      verdict: verdict,
+      closedAt: serverTimestamp()
+    });
+
+    $('mReviewRedReport').classList.add('hidden');
+    alert('Report closed and verdict published successfully! ✅');
+  } catch (err) {
+    alert('Error submitting verdict: ' + err.message);
+  } finally {
+    $('bSubmitReview').disabled = false;
+    $('bSubmitReview').textContent = 'Close & Save Verdict';
   }
 });
 
@@ -5675,10 +6181,11 @@ $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
 $('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
 $('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('hidden'));
 
-// Topbar Support Click Handler
+// Topbar Support Click Handler (Opens Support Side Drawer)
 $('bTopbarSupport').addEventListener('click', () => {
-  switchTab('Support');
-  loadLiveSupportChat();
+  if (typeof window.openSupportDrawer === 'function') {
+    window.openSupportDrawer();
+  }
 });
 
 // Settings Modal Triggers
@@ -5712,9 +6219,14 @@ $('lnkPrivacy').addEventListener('click', (e) => {
 $('bClosePrivacy').addEventListener('click', () => $('mPrivacy').classList.add('hidden'));
 
 // Trigger and launch support chat connection listener when support tab mounts
-document.querySelector('.ni[data-t="Support"]').addEventListener('click', () => {
-  loadLiveSupportChat();
-});
+const navSupportBtn = document.querySelector('.ni[data-t="Support"]');
+if (navSupportBtn) {
+  navSupportBtn.addEventListener('click', () => {
+    if (typeof window.openSupportDrawer === 'function') {
+      window.openSupportDrawer();
+    }
+  });
+}
 
 // ==================== ARENAX STADIUM SYNTH AUDIO ENGINE ====================
 class ArenaAudioEngine {
