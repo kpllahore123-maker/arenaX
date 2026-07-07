@@ -984,12 +984,12 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 
   <!-- Drawer Body (Scrollable container for our 3-slab layout) -->
   <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-    <!-- 3 Slab Selector (Red Report button hidden as requested) -->
+    <!-- 3 Slab Selector -->
     <div class="flex bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full flex-shrink-0">
       <button id="bSubSlabSupport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-bg bg-gold transition flex items-center justify-center gap-1.5 cursor-pointer">
         <i class="fas fa-comments"></i> Support
       </button>
-      <button id="bSubSlabRedReport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer hidden">
+      <button id="bSubSlabRedReport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
         <i class="fas fa-flag-checkered text-red"></i> Red Report
       </button>
       <button id="bSubSlabFAQ" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -2247,26 +2247,6 @@ try {
 }
 const localStorage = storageAccessor;
 
-// Global error handlers to self-disclose and render diagnostic information on screen
-window.addEventListener('error', function(e) {
-  console.error("GLOBAL RUNTIME ERROR DETECTED:", e.message, "at", e.filename, "line", e.lineno);
-  const errDiv = document.getElementById('loginErr');
-  if (errDiv) {
-    errDiv.textContent = `❌ Runtime Error: ${e.message} (Line ${e.lineno})`;
-    errDiv.classList.remove('hidden');
-  }
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-  console.error("GLOBAL PROMISE REJECTION DETECTED:", e.reason);
-  const errDiv = document.getElementById('loginErr');
-  if (errDiv) {
-    const msg = e.reason ? (e.reason.message || e.reason) : 'Unknown promise rejection';
-    errDiv.textContent = `❌ Auth/Database Promise Rejection: ${msg}`;
-    errDiv.classList.remove('hidden');
-  }
-});
-
 // Setup credentials
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
@@ -2948,7 +2928,16 @@ onAuthStateChanged(auth, async (fireUser) => {
           .catch(err => console.error('Bootstrap profile error: ', err));
       }
     }, (err) => {
-      console.warn("Firestore user profile snapshot listener warning (non-fatal):", err);
+      console.error("Firestore user profile snapshot listener error:", err);
+      signOut(auth).catch(() => {});
+      userProfile = null;
+      goTo('sLogin');
+      
+      const errDiv = document.getElementById('loginErr');
+      if (errDiv) {
+        errDiv.textContent = `⚠️ Connection error or session expired. Please sign in again or continue as guest.`;
+        errDiv.classList.remove('hidden');
+      }
     });
   } else if (!guestProfile) {
     userProfile = null;
