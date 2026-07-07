@@ -2226,6 +2226,27 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPasswor
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
+// Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
+let localMemoryStorage = {};
+let storageAccessor;
+try {
+  const testKey = '__storage_test__';
+  window.localStorage.setItem(testKey, testKey);
+  window.localStorage.removeItem(testKey);
+  storageAccessor = window.localStorage;
+} catch (e) {
+  console.warn("Window localStorage is blocked or throws an error. Shadowing with in-memory storage fallback.");
+  storageAccessor = {
+    getItem: (key) => (key in localMemoryStorage ? localMemoryStorage[key] : null),
+    setItem: (key, val) => { localMemoryStorage[key] = String(val); },
+    removeItem: (key) => { delete localMemoryStorage[key]; },
+    clear: () => { localMemoryStorage = {}; },
+    key: (i) => Object.keys(localMemoryStorage)[i] || null,
+    get length() { return Object.keys(localMemoryStorage).length; }
+  };
+}
+const localStorage = storageAccessor;
+
 // Global error handlers to self-disclose and render diagnostic information on screen
 window.addEventListener('error', function(e) {
   console.error("GLOBAL RUNTIME ERROR DETECTED:", e.message, "at", e.filename, "line", e.lineno);
