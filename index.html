@@ -243,10 +243,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         <div class="flex-1 h-[1px] bg-bdr"></div>
       </div>
 
-      <button id="bSandboxLogin" class="w-full py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition active:scale-[0.98]">
-        <i class="fas fa-flask animate-pulse text-emerald-400 mr-1.5"></i> Fast Sandbox Login (VIP Admin)
-      </button>
-
       <button id="bGuest" class="w-full py-3 bg-transparent hover:border-gold hover:text-gold border border-bdr text-t2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition">
         <i class="fas fa-user-secret"></i> Continue as Guest
       </button>
@@ -2930,6 +2926,17 @@ onAuthStateChanged(auth, async (fireUser) => {
           })
           .catch(err => console.error('Bootstrap profile error: ', err));
       }
+    }, (err) => {
+      console.error("Firestore user profile snapshot listener error:", err);
+      signOut(auth).catch(() => {});
+      userProfile = null;
+      goTo('sLogin');
+      
+      const errDiv = document.getElementById('loginErr');
+      if (errDiv) {
+        errDiv.textContent = `⚠️ Connection error or session expired. Please sign in again or continue as guest.`;
+        errDiv.classList.remove('hidden');
+      }
     });
   } else if (!guestProfile) {
     userProfile = null;
@@ -2996,42 +3003,6 @@ $('bEmail').addEventListener('click', async () => {
       $('loginErr').classList.remove('hidden');
     }
   }
-});
-
-// Fast Sandbox Bypass Sign In Flow for local/AI Studio preview testing
-$('bSandboxLogin').addEventListener('click', () => {
-  if (!$('termsCheckbox').checked) {
-    $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
-    $('loginErr').classList.remove('hidden');
-    return;
-  }
-  
-  // Set up a highly polished premium VIP testing profile instantly
-  userProfile = {
-    uid: 'sandbox_tester_vip_99',
-    name: 'ArenaX VIP Admin',
-    handle: '@viptester',
-    av: 'https://api.dicebear.com/7.x/bottts/svg?seed=viptester',
-    email: 'tester@arenax.com',
-    premium: true,
-    banned: false,
-    balance: 5000,
-    badge: '👑 ArenaX Elite Admin',
-    bio: 'Official premium sandbox profile for testing and evaluation!',
-    country: 'PK',
-    favoriteGame: 'Grand RP',
-    gameUID: '786110999',
-    socialDiscord: 'arenax_vip',
-    socialInstagram: 'arenax_official',
-    socialYoutube: 'https://youtube.com',
-    worldCupTeam: 'PK',
-    hasFifaTag: true,
-    hasFifaWorldMemberBadge: true
-  };
-  guestProfile = null;
-  
-  // Launch dashboard
-  boot();
 });
 
 // Guest Sign In Flow
