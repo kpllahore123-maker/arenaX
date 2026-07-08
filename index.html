@@ -3,6 +3,23 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<!-- PWA (Progressive Web App) Meta Tags & Manifest -->
+<link rel="manifest" href="/arenaX/manifest.json"/>
+<meta name="theme-color" content="#f0c040"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="ArenaX"/>
+<link rel="apple-touch-icon" href="/arenaX/icon-192.png"/>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/arenaX/sw.js')
+      .then(reg => console.log('Service Worker registered successfully!', reg))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+</script>
 <title>ArenaX — Play & Dominate</title>
 <!-- Google Fonts (Rajdhani & Inter) -->
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -1012,6 +1029,17 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <div>
         <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📋 Patch Note</h4>
         <p class="text-[9px] text-t3 mt-0.5">View latest game updates</p>
+      </div>
+    </div>
+
+    <!-- PWA Install Card -->
+    <div id="btnHubInstallApp" class="bg-card hover:bg-ele/60 border border-emerald-500/20 hover:border-emerald-400/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] hidden">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
+        <i class="fas fa-download"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📲 Install App</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Install on home screen</p>
       </div>
     </div>
   </div>
@@ -6389,6 +6417,43 @@ $('bClosePatchNotes').addEventListener('click', () => {
 
 $('bClosePatchNotesCross').addEventListener('click', () => {
   $('mPatchNotes').classList.add('hidden');
+});
+
+// PWA Installation Flow
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const installBtn = $('btnHubInstallApp');
+  if (installBtn) {
+    installBtn.classList.remove('hidden');
+  }
+});
+
+const installBtn = $('btnHubInstallApp');
+if (installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      if (typeof window.closeRedReportHubDrawer === 'function') {
+        window.closeRedReportHubDrawer();
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to install prompt: ${outcome}`);
+      deferredPrompt = null;
+      installBtn.classList.add('hidden');
+    }
+  });
+}
+
+window.addEventListener('appinstalled', (event) => {
+  console.log('App successfully installed:', event);
+  deferredPrompt = null;
+  const installBtn = $('btnHubInstallApp');
+  if (installBtn) {
+    installBtn.classList.add('hidden');
+  }
+  alert('ArenaX Esports installed successfully! 🎉');
 });
 
 // Settings Modal Triggers
