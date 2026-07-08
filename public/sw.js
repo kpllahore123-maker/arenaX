@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arenax-cache-v1';
+const CACHE_NAME = 'arenax-cache-v5';
 const ASSETS = [
   './',
   'index.html',
@@ -52,6 +52,24 @@ self.addEventListener('fetch', event => {
     url.includes('identitytoolkit') ||
     url.includes('/api/')
   ) {
+    return;
+  }
+
+  // Network-First for HTML/document pages so updates are immediate
+  if (event.request.mode === 'navigate' || url.endsWith('index.html') || url.endsWith('/') || url.endsWith('./')) {
+    event.respondWith(
+      fetch(event.request).then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match(event.request);
+      })
+    );
     return;
   }
 
