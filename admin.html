@@ -937,6 +937,40 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== STAFF RED REPORT VERDICT MODAL ==================== -->
+<div id="mVerdict" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-gavel"></i></div>
+      <div>
+        <h3 class="font-display text-base font-black text-white uppercase tracking-wider">Resolve Red Report</h3>
+        <p id="verdictReportTitle" class="text-[11px] text-t3 font-mono">Report Info</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Select Verdict Category *</label>
+        <select id="verdictCategory" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-red">
+          <option value="Confirmed Cheat">Confirmed Cheat 🚨</option>
+          <option value="Not Enough Evidence">Not Enough Evidence 📁</option>
+          <option value="False Report">False Report 🏳️</option>
+          <option value="Custom Verdict">Custom Verdict 💬</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Verdict Explanation / Comments *</label>
+        <textarea id="verdictText" rows="4" placeholder="Write custom verdict description, reasons, or action logs..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-red resize-none font-medium"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseVerdictModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSubmitVerdictAction" class="flex-1 py-2.5 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Submit Verdict</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== STAFF SUPPORT LIVE CHAT MODAL ==================== -->
 <div id="mSupportChat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl w-full max-w-[480px] h-[520px] flex flex-col overflow-hidden shadow-2xl">
@@ -1152,20 +1186,32 @@ function loadRealtimeDatabase() {
   });
 
   // 2. Listen Tournaments
-  const qTours = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+  const qTours = query(collection(db, 'tournaments'));
   onSnapshot(qTours, (snap) => {
     tournaments = [];
     snap.forEach(d => tournaments.push({ id: d.id, ...d.data() }));
+    // Client-side sort by createdAt descending
+    tournaments.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || a.createdAt || 0;
+      const timeB = b.createdAt?.seconds || b.createdAt || 0;
+      return timeB - timeA;
+    });
     renderTournaments();
   }, (err) => {
     console.warn("Failed to listen to tournaments:", err);
   });
 
   // 3. Listen Registrations
-  const qRegs = query(collection(db, 'tournament_registrations'), orderBy('submittedAt', 'desc'));
+  const qRegs = query(collection(db, 'tournament_registrations'));
   onSnapshot(qRegs, (snap) => {
     registrations = [];
     snap.forEach(d => registrations.push({ id: d.id, ...d.data() }));
+    // Client-side sort by submittedAt descending
+    registrations.sort((a, b) => {
+      const timeA = a.submittedAt?.seconds || a.submittedAt || 0;
+      const timeB = b.submittedAt?.seconds || b.submittedAt || 0;
+      return timeB - timeA;
+    });
     
     const pendings = registrations.filter(r => r.status === 'pending');
     $('statRegs').textContent = pendings.length;
@@ -1183,12 +1229,18 @@ function loadRealtimeDatabase() {
   });
 
   // 4. Listen Cheat Reports
-  const qReports = query(collection(db, 'tournament_reports'), orderBy('createdAt', 'desc'));
+  const qReports = query(collection(db, 'red_reports'));
   onSnapshot(qReports, (snap) => {
     reports = [];
     snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+    // Client-side sort by createdAt descending
+    reports.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || a.createdAt || 0;
+      const timeB = b.createdAt?.seconds || b.createdAt || 0;
+      return timeB - timeA;
+    });
     
-    const openReports = reports.filter(r => r.status === 'open');
+    const openReports = reports.filter(r => r.status === 'created');
     $('statReports').textContent = openReports.length;
     if (openReports.length > 0) {
       $('repOpenCount').textContent = openReports.length;
@@ -1203,10 +1255,16 @@ function loadRealtimeDatabase() {
   });
 
   // 5. Listen Support Tickets
-  const qTickets = query(collection(db, 'support_tickets'), orderBy('updatedAt', 'desc'));
+  const qTickets = query(collection(db, 'support_tickets'));
   onSnapshot(qTickets, (snap) => {
     tickets = [];
     snap.forEach(d => tickets.push({ id: d.id, ...d.data() }));
+    // Client-side sort by updatedAt descending
+    tickets.sort((a, b) => {
+      const timeA = a.updatedAt?.seconds || a.updatedAt || 0;
+      const timeB = b.updatedAt?.seconds || b.updatedAt || 0;
+      return timeB - timeA;
+    });
     
     const opens = tickets.filter(t => t.status === 'open');
     if (opens.length > 0) {
@@ -2459,6 +2517,91 @@ $('bSendNotif').addEventListener('click', async () => {
   }
 });
 
+// ── RED REPORT VERDICT MODAL CONTROLS ──
+let activeVerdictReportId = null;
+
+window.openVerdictModal = function(id, categoryPrefill) {
+  const rep = reports.find(r => r.id === id);
+  if (!rep) return;
+  
+  activeVerdictReportId = id;
+  $('verdictReportTitle').textContent = `Reporter: ${rep.reporterName || 'N/A'} | Accused: ${rep.reportedNickname || 'N/A'}`;
+  $('verdictCategory').value = categoryPrefill;
+  
+  // Set prefill comment text
+  let defaultComment = '';
+  if (categoryPrefill === 'Confirmed Cheat') {
+    defaultComment = `Verified cheat violation (${rep.cheatType || 'N/A'}). Action has been taken against the player account.`;
+  } else if (categoryPrefill === 'Not Enough Evidence') {
+    defaultComment = `The submitted proof/link does not clearly confirm the cheat violation. Report closed due to insufficient evidence.`;
+  } else if (categoryPrefill === 'False Report') {
+    defaultComment = `No cheat detected. This report appears to be incorrect or malicious.`;
+  } else {
+    defaultComment = '';
+  }
+  
+  $('verdictText').value = defaultComment;
+  $('mVerdict').classList.remove('hidden');
+};
+
+$('bCloseVerdictModal').addEventListener('click', () => {
+  $('mVerdict').classList.add('hidden');
+  activeVerdictReportId = null;
+});
+
+$('verdictCategory').addEventListener('change', (e) => {
+  const rep = reports.find(r => r.id === activeVerdictReportId);
+  if (!rep) return;
+  
+  const cat = e.target.value;
+  let defaultComment = '';
+  if (cat === 'Confirmed Cheat') {
+    defaultComment = `Verified cheat violation (${rep.cheatType || 'N/A'}). Action has been taken against the player account.`;
+  } else if (cat === 'Not Enough Evidence') {
+    defaultComment = `The submitted proof/link does not clearly confirm the cheat violation. Report closed due to insufficient evidence.`;
+  } else if (cat === 'False Report') {
+    defaultComment = `No cheat detected. This report appears to be incorrect or malicious.`;
+  } else {
+    defaultComment = '';
+  }
+  $('verdictText').value = defaultComment;
+});
+
+$('bSubmitVerdictAction').addEventListener('click', async () => {
+  if (!activeVerdictReportId) return;
+  
+  const category = $('verdictCategory').value;
+  const text = $('verdictText').value.trim();
+  
+  if (!text) {
+    alert('Please enter a verdict explanation or comment!');
+    return;
+  }
+  
+  const btn = $('bSubmitVerdictAction');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  
+  try {
+    await updateDoc(doc(db, 'red_reports', activeVerdictReportId), {
+      status: 'reviewed',
+      verdict: category,
+      verdictComment: text,
+      closedAt: serverTimestamp()
+    });
+    
+    alert(`Verdict "${category}" submitted successfully! ✅`);
+    logAdminActivity('Red Report Resolved', activeVerdictReportId, `Verdict given: ${category}. Comments: ${text}`);
+    $('mVerdict').classList.add('hidden');
+    activeVerdictReportId = null;
+  } catch (err) {
+    alert('Failed to submit verdict: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Verdict';
+  }
+});
+
 // ── TOURNAMENTS EVENTS RENDER ──
 function renderTournaments() {
   const container = $('toursTableBody');
@@ -3030,48 +3173,74 @@ function renderReports() {
   reports.forEach(rep => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-white/[0.01] align-top';
+    
+    let evidenceHTML = '';
+    if (rep.evidenceUrl) {
+      evidenceHTML = `<a href="${rep.evidenceUrl}" target="_blank" class="text-blue font-bold hover:underline text-[10px] inline-flex items-center gap-1 bg-blue/10 border border-blue/20 px-2 py-1 rounded"><i class="fas fa-external-link-alt"></i> Proof Evidence</a>`;
+    } else {
+      evidenceHTML = `<span class="text-t3 text-[10px]">No link/file</span>`;
+    }
+
+    let statusHTML = '';
+    if (rep.status === 'created') {
+      statusHTML = `<span class="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded text-[9px] font-bold uppercase tracking-wide">Created</span>`;
+    } else {
+      let verdictColor = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+      if (rep.verdict === 'Confirmed Cheat') {
+        verdictColor = 'text-red bg-red/10 border border-red/20';
+      } else if (rep.verdict === 'False Report') {
+        verdictColor = 'text-slate-400 bg-slate-500/10 border border-slate-500/20';
+      }
+      statusHTML = `
+        <div class="space-y-1">
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[9px] font-bold uppercase tracking-wide">Reviewed</span>
+          <div class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${verdictColor}">${rep.verdict || 'No Verdict'}</div>
+          ${rep.verdictComment ? `<div class="text-[9px] text-t3 leading-normal max-w-[150px] whitespace-pre-line border border-bdr bg-black/20 p-1.5 rounded font-medium mt-1 select-text">Comment: ${rep.verdictComment}</div>` : ''}
+        </div>
+      `;
+    }
+
+    let actionButtonsHTML = '';
+    if (rep.status === 'created') {
+      actionButtonsHTML = `
+        <div class="flex flex-col gap-1 w-full max-w-[120px] mx-auto">
+          <button class="b-verdict-cheat text-[9px] font-bold px-2 py-1 bg-red/10 border border-red/25 hover:bg-red text-red hover:text-white rounded transition font-display">Confirmed Cheat</button>
+          <button class="b-verdict-evidence text-[9px] font-bold px-2 py-1 bg-gold/10 border border-gold/25 hover:bg-gold text-gold hover:text-bg rounded transition font-display">Not Enough Evidence</button>
+          <button class="b-verdict-false text-[9px] font-bold px-2 py-1 bg-slate-700/30 border border-slate-600/30 hover:bg-slate-600 text-t2 hover:text-white rounded transition font-display">False Report</button>
+        </div>
+      `;
+    } else {
+      actionButtonsHTML = `
+        <button class="b-delReport mx-auto w-full max-w-[120px] px-2 py-1 bg-ele border border-bdr text-t3 hover:text-red hover:border-red/30 rounded text-[10px] font-bold transition flex items-center justify-center gap-1 font-display">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      `;
+    }
+
     tr.innerHTML = `
       <td class="p-4">
-        <div class="font-bold text-white text-xs">${rep.reporterName}</div>
-        <div class="text-[9px] text-t3 font-mono">UID: ${rep.reporterId}</div>
+        <div class="font-bold text-white text-xs">${rep.reporterName || 'Anonymous'}</div>
+        <div class="text-[9px] text-t3 font-mono">UID: ${rep.reporterUid || 'N/A'}</div>
       </td>
       <td class="p-4 text-red font-bold text-xs">
-        <div>${rep.reportedName}</div>
-        <div class="text-[9px] text-t3 font-mono font-bold block mt-0.5">UID: ${rep.reportedUID}</div>
-        <span class="mt-1 px-1.5 py-0.5 bg-red/10 text-red text-[9px] font-bold border border-red/20 rounded inline-block uppercase">${rep.hackType}</span>
+        <div>${rep.reportedNickname || 'N/A'}</div>
+        <div class="text-[9px] text-t3 font-mono font-bold block mt-0.5">UID: ${rep.gameUID || 'N/A'}</div>
+        <span class="mt-1 px-1.5 py-0.5 bg-red/10 text-red text-[9px] font-bold border border-red/20 rounded inline-block uppercase">${rep.cheatType || 'N/A'}</span>
       </td>
-      <td class="p-4 text-gold font-bold text-xs">${rep.tournamentName}</td>
-      <td class="p-4 max-w-[200px] text-t2 leading-relaxed">
-        <p>${rep.reason}</p>
-        ${rep.videoUrl ? `<a href="${rep.videoUrl}" target="_blank" class="text-blue font-bold hover:underline text-[10px] block mt-1"><i class="fas fa-video mr-1"></i> Proof Evidence</a>` : ''}
+      <td class="p-4">${evidenceHTML}</td>
+      <td class="p-4 max-w-[200px] text-t2 leading-relaxed select-text font-medium text-xs">
+        <p>${rep.description || 'No description'}</p>
       </td>
-      <td class="p-4">
-        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${rep.status === 'open' ? 'bg-red/15 text-red border border-red/20' : 'bg-green/15 text-green border border-green/20'}">
-          ${rep.status}
-        </span>
-      </td>
-      <td class="p-4 space-y-1 block text-center font-semibold text-xs">
-        ${rep.status === 'open' ? `
-          <button class="b-res w-full px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded block">Resolve</button>
-          <button class="b-banHacker w-full px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded block">Ban Hacker</button>
-        ` : `
-          <button class="b-delReport w-full px-2 py-1 bg-ele border border-bdr text-t3 rounded block">Delete</button>
-        `}
+      <td class="p-4">${statusHTML}</td>
+      <td class="p-4 text-center font-semibold text-xs">
+        ${actionButtonsHTML}
       </td>
     `;
 
-    if (rep.status === 'open') {
-      tr.querySelector('.b-res').addEventListener('click', () => resolveReport(rep.id));
-      tr.querySelector('.b-banHacker').addEventListener('click', () => {
-        // Find user by accused reported UID
-        const uObj = users.find(x => x.uid === rep.reportedUID);
-        if (uObj) {
-          openBanModal(uObj);
-          $('banReason').value = `Verified hack/cheating reports in Match event: ${rep.tournamentName}`;
-        } else {
-          alert(`Reported hacker UID (${rep.reportedUID}) is not configured inside the user base index, but you can block them under tournament logs.`);
-        }
-      });
+    if (rep.status === 'created') {
+      tr.querySelector('.b-verdict-cheat').addEventListener('click', () => openVerdictModal(rep.id, 'Confirmed Cheat'));
+      tr.querySelector('.b-verdict-evidence').addEventListener('click', () => openVerdictModal(rep.id, 'Not Enough Evidence'));
+      tr.querySelector('.b-verdict-false').addEventListener('click', () => openVerdictModal(rep.id, 'False Report'));
     } else {
       tr.querySelector('.b-delReport').addEventListener('click', () => deleteReport(rep.id));
     }
@@ -3080,19 +3249,10 @@ function renderReports() {
   });
 }
 
-async function resolveReport(id) {
-  try {
-    await updateDoc(doc(db, 'tournament_reports', id), { status: 'resolved' });
-    alert('Report status resolved! ✅');
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
 async function deleteReport(id) {
   if (confirm('Delete this cheat report permanently from logs?')) {
     try {
-      await deleteDoc(doc(db, 'tournament_reports', id));
+      await deleteDoc(doc(db, 'red_reports', id));
       alert('Report removed.');
     } catch (err) {
       alert(err.message);
