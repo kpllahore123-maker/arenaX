@@ -4,19 +4,32 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <!-- PWA (Progressive Web App) Meta Tags & Manifest -->
-<link rel="manifest" href="/arenaX/manifest.json"/>
+<link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#f0c040"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
-<link rel="apple-touch-icon" href="/arenaX/icon-192.png"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
 
 <script>
+window.getAppBasePath = function() {
+  const isGitHubPages = window.location.hostname.includes('github.io') || window.location.pathname.startsWith('/arenaX');
+  return isGitHubPages ? '/arenaX/' : '/';
+};
+
+// Dynamically adjust manifest and apple-touch-icon links based on host environment
+(function() {
+  const basePath = window.getAppBasePath();
+  document.write('<link rel="manifest" href="' + basePath + 'manifest.json">');
+  document.write('<link rel="apple-touch-icon" href="' + basePath + 'icon-192.png">');
+})();
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/arenaX/sw.js')
-      .then(reg => console.log('Service Worker registered successfully!', reg))
-      .catch(err => console.error('Service Worker registration failed:', err));
+    const basePath = window.getAppBasePath();
+    navigator.serviceWorker.register(basePath + 'sw.js')
+      .then(reg => console.log('PWA Service Worker registered successfully!', reg))
+      .catch(err => console.error('PWA Service Worker registration failed:', err));
   });
 }
 </script>
@@ -2410,9 +2423,8 @@ let messaging = null;
 if ('serviceWorker' in navigator) {
   const registerSW = async () => {
     try {
-      const currentPath = window.location.pathname;
-      const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-      const swPath = (dirPath && dirPath !== '/') ? (dirPath + 'firebase-messaging-sw.js') : '/firebase-messaging-sw.js';
+      const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+      const swPath = basePath + 'firebase-messaging-sw.js';
       console.log('Registering Service Worker for ArenaX at:', swPath);
       const reg = await navigator.serviceWorker.register(swPath);
       console.log('Service Worker registered successfully with scope:', reg.scope);
@@ -2478,9 +2490,8 @@ async function requestFCMToken(showSuccessAlert = false) {
       messaging = getMessaging(app);
     }
     
-    const currentPath = window.location.pathname;
-    const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-    const swPath = (dirPath && dirPath !== '/') ? (dirPath + 'firebase-messaging-sw.js') : '/firebase-messaging-sw.js';
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+    const swPath = basePath + 'firebase-messaging-sw.js';
     const reg = await navigator.serviceWorker.register(swPath);
     
     const token = await getToken(messaging, {
