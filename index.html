@@ -1266,7 +1266,8 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         (function() {
           var img = document.getElementById('eventBannerImg');
           if (img) {
-            img.src = 'event_banner_1783187383925.jpg';
+            var basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+            img.src = basePath + 'event_banner_1783187383925.jpg';
           }
         })();
       </script>
@@ -2439,9 +2440,10 @@ if ('serviceWorker' in navigator) {
             // Show foreground notification as browser notification if possible
             if (Notification.permission === 'granted') {
               const title = payload.notification?.title || 'ArenaX Tournament Alert';
+              const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
               const options = {
                 body: payload.notification?.body || '',
-                icon: payload.notification?.icon || '/assets/icon.png',
+                icon: payload.notification?.icon || basePath + 'icon-192.png',
                 data: payload.data
               };
               new Notification(title, options);
