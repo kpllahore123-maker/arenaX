@@ -298,10 +298,9 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
       </button>
 
-      <!-- Topbar Support -->
-      <button id="bTopbarSupport" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Support Chat">
-        <i class="fas fa-headset"></i>
-        <i class="fas fa-futbol absolute -bottom-1 -right-1 text-[9px] text-emerald-400 bg-panel rounded-full p-[1px]"></i>
+      <!-- Topbar Menu Button (Hamburger) -->
+      <button id="bTopbarMenu" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Menu Hub">
+        <i class="fas fa-bars"></i>
       </button>
 
       <!-- Notification Bell -->
@@ -960,6 +959,118 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
   </nav>
 </div>
 
+<!-- ==================== FLOATING RED REPORT & SUPPORT BUTTON ==================== -->
+<button id="bFloatingReportHub" class="fixed bottom-[80px] right-4 w-12 h-12 bg-red hover:bg-[#cc3540] text-white rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(232,64,74,0.3)] z-[230] transition active:scale-95 cursor-pointer" title="Report & Support Hub">
+  <i class="fas fa-flag text-lg"></i>
+</button>
+
+<!-- ==================== RED REPORT & SUPPORT HUB DRAWER ==================== -->
+<!-- Drawer Backdrop -->
+<div id="mRedReportHubDrawerBackdrop" class="fixed inset-0 bg-black/60 z-[235] hidden opacity-0 transition-opacity duration-300"></div>
+
+<!-- Drawer Panel (occupies max-width: 280px) -->
+<div id="dRedReportHubDrawer" class="fixed inset-y-0 right-0 w-[280px] max-w-[80vw] h-full bg-[#0d0f1a] border-l border-bdr shadow-[0_0_40px_rgba(0,0,0,0.8)] z-[238] transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+  <!-- Drawer Header -->
+  <div class="p-4 border-b border-bdr flex items-center justify-between bg-card/50 flex-shrink-0">
+    <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">ArenaX Menu</h3>
+    <button id="bCloseRedReportHubDrawer" class="w-7 h-7 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <!-- Drawer Body -->
+  <div class="flex-1 p-4 space-y-3 overflow-y-auto">
+    <p class="text-[10px] text-t3 uppercase font-bold tracking-wider">Select Option</p>
+    
+    <!-- Red Report Card -->
+    <div id="btnHubRedReport" class="bg-card hover:bg-ele/60 border border-bdr hover:border-red/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-red/10 text-red border border-red/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-flag"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🚨 Red Report</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Report hackers & cheats</p>
+      </div>
+    </div>
+
+    <!-- Support Card -->
+    <div id="btnHubSupport" class="bg-card hover:bg-ele/60 border border-bdr hover:border-gold/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-comments"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">💬 Support</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Contact Help Desk</p>
+      </div>
+    </div>
+
+    <!-- Patch Note Card -->
+    <div id="btnHubPatchNotes" class="bg-card hover:bg-ele/60 border border-bdr hover:border-blue/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-blue/10 text-blue border border-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📋 Patch Note</h4>
+        <p class="text-[9px] text-t3 mt-0.5">View latest game updates</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ARENAX PATCH NOTES MODAL ==================== -->
+<div id="mPatchNotes" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full flex flex-col max-h-[85vh] shadow-2xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-sm">
+          <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">ArenaX Patch Notes</h3>
+          <p class="text-[9px] text-t3 font-mono">Current Version: v2.4.0</p>
+        </div>
+      </div>
+      <button id="bClosePatchNotesCross" class="text-t3 hover:text-white transition cursor-pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto py-4 pr-1 space-y-4 text-xs">
+      <div class="space-y-1.5 border-b border-bdr/30 pb-3.5">
+        <div class="flex justify-between items-center">
+          <span class="text-[9px] font-bold text-gold uppercase bg-gold/10 border border-gold/20 px-2 py-0.5 rounded font-mono">v2.4.0</span>
+          <span class="text-[9px] text-t3 font-mono">July 8, 2026</span>
+        </div>
+        <h4 class="text-white font-bold text-xs">🚨 Red Report & Support Menu Upgrade</h4>
+        <ul class="list-disc list-inside text-t2 space-y-1 pl-1">
+          <li>Replaced support button with custom Hamburger Menu.</li>
+          <li>Unified Red Report system with created & reviewed filters.</li>
+          <li>Added custom admin comments & verdict tags.</li>
+          <li>Added native Patch Notes reader panel.</li>
+        </ul>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex justify-between items-center">
+          <span class="text-[9px] font-bold text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">v2.3.0</span>
+          <span class="text-[9px] text-t3 font-mono">June 20, 2026</span>
+        </div>
+        <h4 class="text-white font-bold text-xs">⚽ Stadium Ground & Mini-Games</h4>
+        <ul class="list-disc list-inside text-t2 space-y-1 pl-1">
+          <li>Launched interactive football pitch mini-game.</li>
+          <li>Introduced live tournament participation queues.</li>
+          <li>Optimized chat rooms with auto-scroll.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="pt-3 border-t border-bdr/40 flex justify-end flex-shrink-0">
+      <button id="bClosePatchNotes" class="px-5 py-2 bg-ele border border-bdr text-t1 text-xs font-bold rounded-xl hover:bg-white/5 active:scale-[0.98] transition cursor-pointer">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== SUPPORT SIDE DRAWER ==================== -->
 <!-- Drawer Backdrop -->
 <div id="mSupportDrawerBackdrop" class="fixed inset-0 bg-black/75 z-[240] hidden opacity-0 transition-opacity duration-300"></div>
@@ -1050,16 +1161,19 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         </button>
       </div>
 
-      <!-- 3-segment switcher (sub-slabs) for Red Reports -->
-      <div class="flex bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full">
-        <button id="bRedSubOpen" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-white bg-red/20 transition flex items-center justify-center gap-0.5 cursor-pointer">
-          📂 Open <span id="openReportsCount" class="bg-red/25 px-1 rounded-full text-[9px] text-red-400 font-mono ml-0.5">0</span>
+      <!-- 4-segment switcher (sub-slabs) for Red Reports -->
+      <div class="grid grid-cols-2 gap-1 bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full">
+        <button id="bRedSubAll" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-white bg-red/20 transition flex items-center justify-center gap-0.5 cursor-pointer">
+          All Reports <span id="allReportsCount" class="bg-white/10 px-1.5 py-0.5 rounded text-[8px] text-t2 font-mono ml-1">0</span>
         </button>
-        <button id="bRedSubClosed" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
-          🔒 Closed <span id="closedReportsCount" class="bg-emerald-500/10 px-1 rounded-full text-[9px] text-emerald-400 font-mono ml-0.5">0</span>
+        <button id="bRedSubCreated" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
+          Created <span id="createdReportsCount" class="bg-red/25 px-1.5 py-0.5 rounded text-[8px] text-red-400 font-mono ml-1">0</span>
         </button>
-        <button id="bRedSubMy" class="red-sub-tab flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
-          👤 Mine <span id="myReportsCount" class="bg-gold/10 px-1 rounded-full text-[9px] text-gold font-mono ml-0.5">0</span>
+        <button id="bRedSubReviewed" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
+          Reviewed <span id="reviewedReportsCount" class="bg-emerald-500/10 px-1.5 py-0.5 rounded text-[8px] text-emerald-400 font-mono ml-1">0</span>
+        </button>
+        <button id="bRedSubFromMe" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
+          From Me <span id="fromMeReportsCount" class="bg-gold/10 px-1.5 py-0.5 rounded text-[8px] text-gold font-mono ml-1">0</span>
         </button>
       </div>
 
@@ -1985,26 +2099,25 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player Name *</label>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player Nickname *</label>
           <input id="rrPlayerName" type="text" placeholder="e.g. HackerName" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
         </div>
         <div>
-          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Game UID (if have)</label>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Game UID of Hacker *</label>
           <input id="rrPlayerUID" type="text" placeholder="e.g. 1948204" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
         </div>
       </div>
 
       <div>
-        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Cheating Type *</label>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Type of Cheating *</label>
         <select id="rrCheatCategory" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition">
-          <option value="Aimbot / Headshot Lock">Aimbot / Headshot Lock</option>
-          <option value="ESP / Wallhack / Wireframe">ESP / Wallhack / Wireframe</option>
-          <option value="Speedhack / Fast Movement">Speedhack / Fast Movement</option>
-          <option value="Fly Hack / Gravity Modify">Fly Hack / Gravity Modify</option>
-          <option value="No Recoil / Magic Bullet">No Recoil / Magic Bullet</option>
-          <option value="Under-map Glitch / Invisible">Under-map Glitch / Invisible</option>
-          <option value="Fake Results / Match Collusion">Fake Results / Match Collusion</option>
-          <option value="Other Illegal Hacks">Other Illegal Hacks</option>
+          <option value="Aimbot">Aimbot</option>
+          <option value="Wallhack">Wallhack</option>
+          <option value="Speed Hack">Speed Hack</option>
+          <option value="Teaming">Teaming</option>
+          <option value="Toxic Behavior">Toxic Behavior</option>
+          <option value="Fake Screenshot">Fake Screenshot</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
@@ -2928,16 +3041,7 @@ onAuthStateChanged(auth, async (fireUser) => {
           .catch(err => console.error('Bootstrap profile error: ', err));
       }
     }, (err) => {
-      console.error("Firestore user profile snapshot listener error:", err);
-      signOut(auth).catch(() => {});
-      userProfile = null;
-      goTo('sLogin');
-      
-      const errDiv = document.getElementById('loginErr');
-      if (errDiv) {
-        errDiv.textContent = `⚠️ Connection error or session expired. Please sign in again or continue as guest.`;
-        errDiv.classList.remove('hidden');
-      }
+      console.warn("Firestore user profile snapshot listener warning (non-fatal):", err);
     });
   } else if (!guestProfile) {
     userProfile = null;
@@ -3652,6 +3756,49 @@ window.closeSupportDrawer = function() {
 $('bCloseSupportDrawer').addEventListener('click', () => closeSupportDrawer());
 $('mSupportDrawerBackdrop').addEventListener('click', () => closeSupportDrawer());
 
+// Floating Red Report & Support Hub Drawer Controls
+window.openRedReportHubDrawer = function() {
+  const drawer = $('dRedReportHubDrawer');
+  const backdrop = $('mRedReportHubDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+  drawer.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  setTimeout(() => {
+    drawer.classList.remove('translate-x-full');
+    backdrop.classList.remove('opacity-0');
+    backdrop.classList.add('opacity-100');
+  }, 20);
+};
+
+window.closeRedReportHubDrawer = function() {
+  const drawer = $('dRedReportHubDrawer');
+  const backdrop = $('mRedReportHubDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+  drawer.classList.add('translate-x-full');
+  backdrop.classList.remove('opacity-100');
+  backdrop.classList.add('opacity-0');
+  setTimeout(() => {
+    drawer.classList.add('hidden');
+    backdrop.classList.add('hidden');
+  }, 300);
+};
+
+$('bFloatingReportHub').addEventListener('click', () => openRedReportHubDrawer());
+$('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
+$('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
+
+$('btnHubSupport').addEventListener('click', () => {
+  closeRedReportHubDrawer();
+  switchSupportSubSlab('Support');
+  openSupportDrawer();
+});
+
+$('btnHubRedReport').addEventListener('click', () => {
+  closeRedReportHubDrawer();
+  switchSupportSubSlab('RedReport');
+  openSupportDrawer();
+});
+
 // Setup Sub-Slab Navigation inside Support
 window.switchSupportSubSlab = function(slab) {
   window.activeRedReportSlab = slab;
@@ -3689,6 +3836,7 @@ $('bSubSlabRedReport').addEventListener('click', () => switchSupportSubSlab('Red
 $('bSubSlabFAQ').addEventListener('click', () => switchSupportSubSlab('FAQ'));
 
 // Setup sub-filter switching for Red Reports
+window.activeRedReportFilter = 'all';
 window.switchRedReportFilter = function(filter) {
   window.activeRedReportFilter = filter;
   
@@ -3698,23 +3846,27 @@ window.switchRedReportFilter = function(filter) {
     tab.classList.add('text-t3', 'hover:text-white');
   });
 
-  if (filter === 'open') {
-    $('bRedSubOpen').classList.add('bg-red/20', 'text-white');
-    $('bRedSubOpen').classList.remove('text-t3');
-  } else if (filter === 'closed') {
-    $('bRedSubClosed').classList.add('bg-red/20', 'text-white');
-    $('bRedSubClosed').classList.remove('text-t3');
-  } else if (filter === 'my') {
-    $('bRedSubMy').classList.add('bg-red/20', 'text-white');
-    $('bRedSubMy').classList.remove('text-t3');
+  if (filter === 'all') {
+    $('bRedSubAll').classList.add('bg-red/20', 'text-white');
+    $('bRedSubAll').classList.remove('text-t3');
+  } else if (filter === 'created') {
+    $('bRedSubCreated').classList.add('bg-red/20', 'text-white');
+    $('bRedSubCreated').classList.remove('text-t3');
+  } else if (filter === 'reviewed') {
+    $('bRedSubReviewed').classList.add('bg-red/20', 'text-white');
+    $('bRedSubReviewed').classList.remove('text-t3');
+  } else if (filter === 'from_me') {
+    $('bRedSubFromMe').classList.add('bg-red/20', 'text-white');
+    $('bRedSubFromMe').classList.remove('text-t3');
   }
 
   renderRedReports();
 }
 
-$('bRedSubOpen').addEventListener('click', () => switchRedReportFilter('open'));
-$('bRedSubClosed').addEventListener('click', () => switchRedReportFilter('closed'));
-$('bRedSubMy').addEventListener('click', () => switchRedReportFilter('my'));
+$('bRedSubAll').addEventListener('click', () => switchRedReportFilter('all'));
+$('bRedSubCreated').addEventListener('click', () => switchRedReportFilter('created'));
+$('bRedSubReviewed').addEventListener('click', () => switchRedReportFilter('reviewed'));
+$('bRedSubFromMe').addEventListener('click', () => switchRedReportFilter('from_me'));
 
 // New File Upload & Evidence management
 const fileInput = $('rrFileInput');
@@ -3808,7 +3960,7 @@ $('bSubmitRedReport').addEventListener('click', async () => {
   const description = $('rrDescription').value.trim();
   let finalEvidenceUrl = $('rrProofUrl').value.trim();
 
-  if (!reportedName || !description) {
+  if (!reportedName || !reportedUID || !description) {
     alert('Please fill out all required fields marked with *!');
     return;
   }
@@ -3823,23 +3975,21 @@ $('bSubmitRedReport').addEventListener('click', async () => {
 
   try {
     await addDoc(collection(db, 'red_reports'), {
-      reporterId: userProfile.uid,
+      reporterUid: userProfile.uid,
       reporterName: userProfile.name,
-      reporterHandle: userProfile.handle || '@player',
-      reportedName: reportedName,
-      reportedUID: reportedUID || 'Not Provided',
-      cheatingType: cheatType,
+      reportedNickname: reportedName,
+      gameUID: reportedUID,
+      cheatType: cheatType,
       description: description,
       evidenceUrl: finalEvidenceUrl || '',
       evidenceType: window.uploadedEvidenceUrl ? window.uploadedEvidenceType : 'link',
-      status: 'open',
+      status: 'created',
       verdict: '',
-      createdAt: serverTimestamp(),
-      closedAt: null
+      createdAt: serverTimestamp()
     });
 
     $('mFileRedReport').classList.add('hidden');
-    alert('Red Report filed successfully! 🚨\n\nIt is now live in the Open Reports section. Staff and moderators will inspect logs and evidence within 12 hours.');
+    alert('Red Report filed successfully! 🚨\n\nIt is now live under the Created tab. Staff and moderators will inspect logs and evidence within 12 hours.');
   } catch (err) {
     alert('Submission error: ' + err.message);
   } finally {
@@ -3869,13 +4019,15 @@ window.initRedReportsListener = function() {
 }
 
 window.updateRedReportTabsCount = function() {
-  const openCount = window.allRedReports.filter(r => r.status === 'open').length;
-  const closedCount = window.allRedReports.filter(r => r.status === 'closed').length;
-  const myCount = window.allRedReports.filter(r => r.reporterId === userProfile?.uid).length;
+  const allCount = window.allRedReports.length;
+  const createdCount = window.allRedReports.filter(r => r.status === 'created').length;
+  const reviewedCount = window.allRedReports.filter(r => r.status === 'reviewed').length;
+  const fromMeCount = window.allRedReports.filter(r => r.reporterUid === userProfile?.uid).length;
 
-  $('openReportsCount').textContent = openCount;
-  $('closedReportsCount').textContent = closedCount;
-  $('myReportsCount').textContent = myCount;
+  $('allReportsCount').textContent = allCount;
+  $('createdReportsCount').textContent = createdCount;
+  $('reviewedReportsCount').textContent = reviewedCount;
+  $('fromMeReportsCount').textContent = fromMeCount;
 }
 
 window.renderRedReports = function() {
@@ -3884,12 +4036,14 @@ window.renderRedReports = function() {
   container.innerHTML = '';
 
   let filtered = [];
-  if (window.activeRedReportFilter === 'open') {
-    filtered = window.allRedReports.filter(r => r.status === 'open');
-  } else if (window.activeRedReportFilter === 'closed') {
-    filtered = window.allRedReports.filter(r => r.status === 'closed');
-  } else if (window.activeRedReportFilter === 'my') {
-    filtered = window.allRedReports.filter(r => r.reporterId === userProfile?.uid);
+  if (window.activeRedReportFilter === 'all') {
+    filtered = window.allRedReports;
+  } else if (window.activeRedReportFilter === 'created') {
+    filtered = window.allRedReports.filter(r => r.status === 'created');
+  } else if (window.activeRedReportFilter === 'reviewed') {
+    filtered = window.allRedReports.filter(r => r.status === 'reviewed');
+  } else if (window.activeRedReportFilter === 'from_me') {
+    filtered = window.allRedReports.filter(r => r.reporterUid === userProfile?.uid);
   }
 
   if (filtered.length === 0) {
@@ -3908,10 +4062,6 @@ window.renderRedReports = function() {
     
     const formattedDate = r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleString() : 'Just now';
     
-    // Check if current user is admin to show Review button
-    const isAdminUser = ADMIN_UIDS.includes(userProfile?.uid);
-    const showReviewBtn = r.status === 'open' && isAdminUser;
-
     let mediaHTML = '';
     if (r.evidenceUrl) {
       if (r.evidenceType === 'image') {
@@ -3939,15 +4089,26 @@ window.renderRedReports = function() {
     }
 
     let verdictHTML = '';
-    if (r.status === 'closed') {
-      const closedDate = r.closedAt ? new Date(r.closedAt.seconds * 1000).toLocaleString() : 'Recently';
+    let statusBadgeHTML = '';
+    if (r.status === 'created') {
+      statusBadgeHTML = `<span class="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded text-[9px] font-bold uppercase tracking-wider">Created</span>`;
+    } else {
+      let verdictColorClass = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+      if (r.verdict === 'Confirmed Cheat') {
+        verdictColorClass = 'text-red bg-red/10 border border-red/20';
+      } else if (r.verdict === 'False Report') {
+        verdictColorClass = 'text-slate-400 bg-slate-500/10 border border-slate-500/20';
+      }
+      
+      statusBadgeHTML = `<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[9px] font-bold uppercase tracking-wider">Reviewed</span>`;
+      
       verdictHTML = `
-        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs mt-2.5 space-y-1">
-          <div class="font-extrabold text-[10px] uppercase text-emerald-400 tracking-wider flex items-center gap-1">
-            <i class="fas fa-check-circle"></i> MODERATOR VERDICT
+        <div class="p-2.5 ${verdictColorClass} rounded-lg text-xs mt-2.5 space-y-1">
+          <div class="font-extrabold text-[9px] uppercase tracking-wider flex items-center gap-1">
+            <i class="fas fa-gavel"></i> VERDICT: ${r.verdict || 'Reviewed'}
           </div>
-          <p class="text-t2 leading-relaxed">${r.verdict || 'Decision closed without specific comment.'}</p>
-          <span class="text-[9px] text-t3 block font-mono">Resolved: ${closedDate}</span>
+          ${r.verdictComment ? `<p class="text-[11px] text-t2 font-medium leading-relaxed bg-black/20 p-2 rounded border border-white/5 mt-1 select-text">${r.verdictComment}</p>` : ''}
+          <span class="text-[9px] text-t3 block font-mono">Resolved: ${r.closedAt ? new Date(r.closedAt.seconds * 1000).toLocaleString() : 'Recently'}</span>
         </div>
       `;
     }
@@ -3956,34 +4117,26 @@ window.renderRedReports = function() {
       <div class="flex justify-between items-start gap-2">
         <div>
           <h4 class="text-white text-sm font-bold flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full ${r.status === 'open' ? 'bg-red animate-pulse' : 'bg-emerald-400'}"></span>
-            ${r.reportedName}
+            <span class="w-1.5 h-1.5 rounded-full ${r.status === 'created' ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-400'}"></span>
+            ${r.reportedNickname || 'N/A'}
           </h4>
-          <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mt-0.5">${r.cheatingType}</p>
+          <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mt-0.5">${r.cheatType || 'N/A'}</p>
         </div>
-        <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider ${r.status === 'open' ? 'bg-red/10 text-red border border-red/25' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'}">
-          ${r.status === 'open' ? 'Open' : 'Closed'}
-        </span>
+        ${statusBadgeHTML}
       </div>
 
       <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-t3 font-medium border-t border-b border-bdr/40 py-2">
-        <span><i class="fas fa-id-card text-t2 mr-1"></i> Player UID: <strong class="text-t2">${r.reportedUID}</strong></span>
-        <span><i class="fas fa-user-circle text-t2 mr-1"></i> Reported By: <strong class="text-t2">${r.reporterName}</strong></span>
+        <span><i class="fas fa-id-card text-t2 mr-1"></i> Player UID: <strong class="text-t2">${r.gameUID || 'N/A'}</strong></span>
+        <span><i class="fas fa-user-circle text-t2 mr-1"></i> Reported By: <strong class="text-t2">${r.reporterName || 'N/A'}</strong></span>
         <span><i class="fas fa-calendar-alt text-t2 mr-1"></i> Filed Date: <strong class="text-t2">${formattedDate}</strong></span>
       </div>
 
       <div class="text-xs text-t2 leading-relaxed">
-        <p class="whitespace-pre-line">${r.description}</p>
+        <p class="whitespace-pre-line">${r.description || ''}</p>
       </div>
 
       ${mediaHTML}
       ${verdictHTML}
-
-      ${showReviewBtn ? `
-        <button class="w-full mt-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition active:scale-95 flex items-center justify-center gap-1.5" onclick="openReviewReportModal('${r.id}', '${r.reportedName}')">
-          <i class="fas fa-shield-alt"></i> Add Verdict & Close Report
-        </button>
-      ` : ''}
     `;
 
     container.appendChild(card);
@@ -6215,11 +6368,27 @@ $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
 $('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
 $('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('hidden'));
 
-// Topbar Support Click Handler (Opens Support Side Drawer)
-$('bTopbarSupport').addEventListener('click', () => {
-  if (typeof window.openSupportDrawer === 'function') {
-    window.openSupportDrawer();
+// Topbar Menu Click Handler (Opens Menu Hub Drawer)
+$('bTopbarMenu').addEventListener('click', () => {
+  if (typeof window.openRedReportHubDrawer === 'function') {
+    window.openRedReportHubDrawer();
   }
+});
+
+// Patch Notes Modal Handlers
+$('btnHubPatchNotes').addEventListener('click', () => {
+  if (typeof window.closeRedReportHubDrawer === 'function') {
+    window.closeRedReportHubDrawer();
+  }
+  $('mPatchNotes').classList.remove('hidden');
+});
+
+$('bClosePatchNotes').addEventListener('click', () => {
+  $('mPatchNotes').classList.add('hidden');
+});
+
+$('bClosePatchNotesCross').addEventListener('click', () => {
+  $('mPatchNotes').classList.add('hidden');
 });
 
 // Settings Modal Triggers
