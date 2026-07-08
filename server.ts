@@ -115,6 +115,15 @@ Be human-like, supportive, and extremely clear.`;
     next();
   });
 
+  // Explicit route handlers for Admin Panel
+  app.get(["/admin", "/admin.html"], (req, res) => {
+    if (process.env.NODE_ENV !== "production") {
+      res.sendFile(path.join(process.cwd(), "admin.html"));
+    } else {
+      res.sendFile(path.join(process.cwd(), "dist", "admin.html"));
+    }
+  });
+
   // Serve static files and support Vite in Dev
   if (process.env.NODE_ENV !== "production") {
     // Serve compiled assets as fallback in development to support cached production pages
