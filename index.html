@@ -4,12 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <!-- PWA (Progressive Web App) Meta Tags & Manifest -->
-<link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#f0c040"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
-<link rel="apple-touch-icon" href="/icon-192.png"/>
 
 <script>
 window.getAppBasePath = function() {
@@ -17,11 +15,12 @@ window.getAppBasePath = function() {
   return isGitHubPages ? '/arenaX/' : '/';
 };
 
-// Dynamically adjust manifest and apple-touch-icon links based on host environment
+// Dynamically adjust manifest, icon, and favicon links based on host environment
 (function() {
   const basePath = window.getAppBasePath();
   document.write('<link rel="manifest" href="' + basePath + 'manifest.json">');
   document.write('<link rel="apple-touch-icon" href="' + basePath + 'icon-192.png">');
+  document.write('<link rel="icon" type="image/x-icon" href="' + basePath + 'favicon.ico">');
 })();
 
 if ('serviceWorker' in navigator) {
