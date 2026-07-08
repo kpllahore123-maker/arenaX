@@ -26,8 +26,24 @@ window.getAppBasePath = function() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const basePath = window.getAppBasePath();
+    
+    // Force-delete older caches on startup to prevent stale pages in dev preview
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        for (let name of names) {
+          if (name !== 'arenax-cache-v5') {
+            caches.delete(name).then(() => console.log('Deleted old cache:', name));
+          }
+        }
+      });
+    }
+
     navigator.serviceWorker.register(basePath + 'sw.js')
-      .then(reg => console.log('PWA Service Worker registered successfully!', reg))
+      .then(reg => {
+        console.log('PWA Service Worker registered successfully!', reg);
+        // Force check for updates immediately
+        reg.update();
+      })
       .catch(err => console.error('PWA Service Worker registration failed:', err));
   });
 }
@@ -968,9 +984,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Tour">
       <i class="fas fa-trophy text-base"></i><span>Events</span>
     </button>
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Rules">
-      <i class="fas fa-book-open text-base"></i><span>Rules</span>
-    </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
       <i class="fas fa-wallet text-base"></i><span>Wallet</span>
     </button>
@@ -989,7 +1002,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 </div>
 
 <!-- ==================== FLOATING RED REPORT & SUPPORT BUTTON ==================== -->
-<button id="bFloatingReportHub" class="fixed bottom-[80px] right-4 w-12 h-12 bg-red hover:bg-[#cc3540] text-white rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(232,64,74,0.3)] z-[230] transition active:scale-95 cursor-pointer" title="Report & Support Hub">
+<button id="bFloatingReportHub" class="hidden" style="display: none !important;" title="Report & Support Hub">
   <i class="fas fa-flag text-lg"></i>
 </button>
 
@@ -1010,6 +1023,17 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
   <!-- Drawer Body -->
   <div class="flex-1 p-4 space-y-3 overflow-y-auto">
     <p class="text-[10px] text-t3 uppercase font-bold tracking-wider">Select Option</p>
+    
+    <!-- Rules Card -->
+    <div id="btnHubRules" class="bg-card hover:bg-ele/60 border border-bdr hover:border-gold/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📖 Rules & Regulations</h4>
+        <p class="text-[9px] text-t3 mt-0.5">View tournament guidelines</p>
+      </div>
+    </div>
     
     <!-- Red Report Card -->
     <div id="btnHubRedReport" class="bg-card hover:bg-ele/60 border border-bdr hover:border-red/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
@@ -3826,6 +3850,11 @@ window.closeRedReportHubDrawer = function() {
 $('bFloatingReportHub').addEventListener('click', () => openRedReportHubDrawer());
 $('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
 $('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
+
+$('btnHubRules').addEventListener('click', () => {
+  closeRedReportHubDrawer();
+  switchTab('Rules');
+});
 
 $('btnHubSupport').addEventListener('click', () => {
   closeRedReportHubDrawer();
