@@ -2,19 +2,19 @@
   "name": "ArenaX Esports",
   "short_name": "ArenaX",
   "description": "Compete · Rise · Dominate",
-  "start_url": "/arenaX/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0a0c12",
   "theme_color": "#f0c040",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/arenaX/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/arenaX/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
