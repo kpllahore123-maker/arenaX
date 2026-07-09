@@ -975,6 +975,73 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== STAFF MAIL & BADGE GIFT MODAL ==================== -->
+<div id="mGiftMail" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 text-lg">
+        <i class="fas fa-gift"></i>
+      </div>
+      <div>
+        <h3 id="giftModalTitle" class="font-display text-sm font-black text-white uppercase tracking-wider">Gift Mail / Award Badge</h3>
+        <p id="giftModalSubtitle" class="text-[10px] text-t3 font-mono">Recipient: Player</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Mail Subject / Title *</label>
+        <input id="giftMailTitle" type="text" placeholder="e.g. Special Achievement, Welcome Gift..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-emerald-500 font-semibold"/>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Mail Message *</label>
+        <textarea id="giftMailBody" rows="3" placeholder="Type message for the player..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-emerald-500 resize-none"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Select Badge to Gift</label>
+          <select id="giftBadgeSelect" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 font-semibold">
+            <option value="none">None (Plain Message)</option>
+            <option value="champion">🏆 Arena Champion</option>
+            <option value="veteran">🛡️ Veteran Warrior</option>
+            <option value="moderator">👑 Staff Moderator</option>
+            <option value="sniper">🎯 Sharp Shooter</option>
+            <option value="mvp">✨ Most Valuable Player</option>
+            <option value="vip">⚡ VIP Premium Member</option>
+            <option value="supporter">💖 Platform Supporter</option>
+            <option value="high_roller">🪙 High Roller</option>
+            <option value="early_bird">⏰ Early Bird Access</option>
+            <option value="fair_play">😊 Fair Play Hero</option>
+            <option value="helper">💬 Community Helper</option>
+            <option value="tactician">📊 Master Tactician</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Awarding Method</label>
+          <select id="giftMethodSelect" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 font-semibold" disabled>
+            <option value="mail">Gift via Mail (Player collects)</option>
+            <option value="direct">Direct Grant (Instant active)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live Preview of Selected Badge -->
+      <div id="badgePreviewContainer" class="p-3 bg-card/60 border border-bdr rounded-xl flex items-center gap-3 hidden">
+        <div class="text-[10px] text-t3 uppercase font-bold font-mono">Preview:</div>
+        <div id="badgePreviewEl" class="px-2.5 py-1 text-[10px] font-bold rounded-lg border flex items-center gap-1.5 uppercase font-mono">
+          <i id="badgePreviewIcon" class="fas"></i>
+          <span id="badgePreviewName"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseGiftModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSendGift" class="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-bg text-xs font-bold rounded-lg transition">Send Mail & Gift</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== STAFF RED REPORT VERDICT MODAL ==================== -->
 <div id="mVerdict" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl">
@@ -1885,10 +1952,11 @@ function renderUsers() {
       </td>
       <td class="p-4 font-mono font-bold text-gold text-xs">${(u.balance || 0).toLocaleString()} AX</td>
       <td class="p-4">${tag}</td>
-      <td class="p-4 space-x-1 text-xs font-semibold font-sans">
+      <td class="p-4 space-x-1 text-xs font-semibold font-sans flex flex-wrap gap-1">
         <button class="b-coins px-2 py-1 bg-ele border border-bdr hover:border-white text-white rounded hover:bg-card transition">Coins</button>
         <button class="b-vip px-2 py-1 bg-purple/10 border border-purple/20 hover:bg-purple/20 text-purple rounded transition">${u.premium ? 'Revoke VIP' : 'Give VIP'}</button>
         <button class="b-notify px-2 py-1 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 rounded transition"><i class="fas fa-bell"></i> Notify</button>
+        <button class="b-gift px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 rounded transition"><i class="fas fa-gift"></i> Gift Mail/Badge</button>
         ${u.banned ? `
           <button class="b-unban px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Lift Ban</button>
         ` : `
@@ -1900,6 +1968,7 @@ function renderUsers() {
     tr.querySelector('.b-coins').addEventListener('click', () => adjustCoins(u));
     tr.querySelector('.b-vip').addEventListener('click', () => togglePremium(u));
     tr.querySelector('.b-notify').addEventListener('click', () => openNotifModal('single', u));
+    tr.querySelector('.b-gift').addEventListener('click', () => openGiftMailModal(u));
     if (u.banned) {
       tr.querySelector('.b-unban').addEventListener('click', () => liftBan(u));
     } else {
@@ -3871,6 +3940,141 @@ $('bSaveLeadEntry').addEventListener('click', async () => {
     alert('Failed to save rank record: ' + err.message);
   } finally {
     $('bSaveLeadEntry').disabled = false;
+  }
+});
+
+// ==========================================
+// ── ADMIN STAFF MAIL & BADGES GIFT SYSTEM ──
+// ==========================================
+const PREDEFINED_BADGES = [
+  { id: 'champion', name: "Arena Champion", description: "Earned by winning a premier ArenaX tournament.", icon: "fa-trophy", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  { id: 'veteran', name: "Veteran Warrior", description: "Assigned to players with exceptional career activity.", icon: "fa-shield-halved", color: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10" },
+  { id: 'moderator', name: "Staff Moderator", description: "Authorized ArenaX moderator and community manager.", icon: "fa-crown", color: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
+  { id: 'sniper', name: "Sharp Shooter", description: "Exemplary performance and precision in gaming tournaments.", icon: "fa-crosshairs", color: "text-red-400 border-red-500/30 bg-red-500/10" },
+  { id: 'mvp', name: "Most Valuable Player", description: "Awarded for exceptional skill and turning the tides of battle.", icon: "fa-wand-magic-sparkles", color: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
+  { id: 'vip', name: "VIP Premium Member", description: "Exclusive gold membership tier for valued subscribers.", icon: "fa-bolt", color: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" },
+  { id: 'supporter', name: "Platform Supporter", description: "Contributed to the growth and development of ArenaX.", icon: "fa-heart", color: "text-rose-400 border-rose-500/30 bg-rose-500/10" },
+  { id: 'high_roller', name: "High Roller", description: "Demonstrated bold wagers and high-stakes deposit records.", icon: "fa-coins", color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  { id: 'early_bird', name: "Early Bird Access", description: "Joined the ArenaX alpha/beta test phase early on.", icon: "fa-clock", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  { id: 'fair_play', name: "Fair Play Hero", description: "Exceptional sportsmanship and clean report card.", icon: "fa-face-smile", color: "text-green-400 border-green-500/30 bg-green-500/10" },
+  { id: 'helper', name: "Community Helper", description: "Helped other players and was highly rated in live chats.", icon: "fa-comment-dots", color: "text-lime-400 border-lime-500/30 bg-lime-500/10" },
+  { id: 'tactician', name: "Master Tactician", description: "Acknowledged for deep strategic planning and tournament setup.", icon: "fa-layer-group", color: "text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-500/10" }
+];
+
+let activeGiftUser = null;
+
+window.openGiftMailModal = function(user) {
+  activeGiftUser = user;
+  $('giftModalSubtitle').textContent = `Recipient: ${user.name} (${user.handle})`;
+  
+  // Reset Form
+  $('giftMailTitle').value = '';
+  $('giftMailBody').value = '';
+  $('giftBadgeSelect').value = 'none';
+  $('giftMethodSelect').value = 'mail';
+  $('giftMethodSelect').disabled = true;
+  
+  $('badgePreviewContainer').classList.add('hidden');
+  $('mGiftMail').classList.remove('hidden');
+};
+
+$('giftBadgeSelect').addEventListener('change', (e) => {
+  const badgeId = e.target.value;
+  const container = $('badgePreviewContainer');
+  const el = $('badgePreviewEl');
+  const icon = $('badgePreviewIcon');
+  const name = $('badgePreviewName');
+
+  if (badgeId === 'none') {
+    container.classList.add('hidden');
+    $('giftMethodSelect').value = 'mail';
+    $('giftMethodSelect').disabled = true;
+  } else {
+    container.classList.remove('hidden');
+    $('giftMethodSelect').disabled = false;
+    const badge = PREDEFINED_BADGES.find(b => b.id === badgeId);
+    if (badge) {
+      el.className = `px-2.5 py-1 text-[10px] font-bold rounded-lg border flex items-center gap-1.5 uppercase font-mono ${badge.color}`;
+      icon.className = `fas ${badge.icon}`;
+      name.textContent = badge.name;
+    }
+  }
+});
+
+$('bCloseGiftModal').addEventListener('click', () => {
+  $('mGiftMail').classList.add('hidden');
+  activeGiftUser = null;
+});
+
+$('bSendGift').addEventListener('click', async () => {
+  if (!activeGiftUser) return;
+
+  const title = $('giftMailTitle').value.trim();
+  const body = $('giftMailBody').value.trim();
+  const badgeId = $('giftBadgeSelect').value;
+  const method = $('giftMethodSelect').value;
+
+  if (!title || !body) {
+    alert('Please enter both Mail Subject/Title and Message Body!');
+    return;
+  }
+
+  $('bSendGift').disabled = true;
+  $('bSendGift').textContent = 'Processing...';
+
+  try {
+    const userDocRef = doc(db, 'users', activeGiftUser.id);
+    const mailsColRef = collection(db, 'users', activeGiftUser.id, 'mails');
+
+    const mailData = {
+      title: title,
+      body: body,
+      read: false,
+      createdAt: serverTimestamp(),
+      sender: 'Staff Admin'
+    };
+
+    if (badgeId !== 'none') {
+      mailData.giftBadgeId = badgeId;
+      
+      if (method === 'direct') {
+        // Direct Grant Option:
+        // 1. Add directly to player badges array
+        await updateDoc(userDocRef, {
+          badges: arrayUnion(badgeId)
+        });
+        
+        // 2. Mark the gift as already claimed in mail
+        mailData.collected = true;
+        mailData.read = false;
+      } else {
+        // Gift Option (Player claims):
+        mailData.collected = false;
+        mailData.read = false;
+      }
+    }
+
+    // Write mail document to subcollection
+    await addDoc(mailsColRef, mailData);
+
+    // Also send standard system notification as back-up trigger
+    await addDoc(collection(db, 'notifications'), {
+      userId: activeGiftUser.id,
+      title: "New Mail Received 📩",
+      body: `You have received a new staff message: "${title}"`,
+      type: 'custom',
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    alert(`Success! Mail sent to ${activeGiftUser.name} successfully. ${badgeId !== 'none' ? `[Badge: ${badgeId} gifted via ${method} grant]` : ''} ✅`);
+    $('mGiftMail').classList.add('hidden');
+    activeGiftUser = null;
+  } catch (err) {
+    alert('Failed to send mail gift: ' + err.message);
+  } finally {
+    $('bSendGift').disabled = false;
+    $('bSendGift').textContent = 'Send Mail & Gift';
   }
 });
 
