@@ -41,12 +41,31 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "rating", "createdAt"]
+    },
+    "Mail": {
+      "title": "Player Mail",
+      "description": "An inbox mail message or gifted badge sent from administrative staff to a player",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "giftBadgeId": { "type": "string" },
+        "collected": { "type": "boolean" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "sender": { "type": "string" }
+      },
+      "required": ["title", "body", "read", "createdAt", "sender"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile documents"
+    },
+    "/users/{userId}/mails/{mailId}": {
+      "schema": "Mail",
+      "description": "Sub-collection of emails and badge gifts assigned to a user"
     },
     "/support_requests/{requestId}": {
       "schema": "SupportRequest",
