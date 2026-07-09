@@ -331,22 +331,60 @@ tailwind.config = {
       </section>
 
       <!-- ── SUPPORT TICKETS CHANNEL PAGE ── -->
-      <section id="pSupport" class="page space-y-4 hidden">
-        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
-          <table class="w-full text-left text-xs">
-            <thead>
-              <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
-                <th class="p-4">Customer User</th>
-                <th class="p-4">Last Logged message</th>
-                <th class="p-4">Last Update</th>
-                <th class="p-4">Status</th>
-                <th class="p-4">Action Channels</th>
-              </tr>
-            </thead>
-            <tbody id="ticketsTableBody" class="divide-y divide-bdr/30">
-              <!-- Populated dynamically -->
-            </tbody>
-          </table>
+      <section id="pSupport" class="page space-y-6 hidden">
+        <!-- Live Admin Support Queue -->
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden shadow-lg">
+          <div class="px-5 py-4 border-b border-bdr bg-gradient-to-r from-red/10 to-transparent flex justify-between items-center">
+            <div>
+              <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red animate-pulse"></span> Live Admin Support Queue
+              </h4>
+              <p class="text-[10px] text-t2 mt-0.5">Real-time incoming client requests waiting for live staff connection</p>
+            </div>
+            <span id="liveQueueCount" class="bg-red/15 text-red border border-red/25 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">0 Users Waiting</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Customer Name</th>
+                  <th class="p-4">Requested Time</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Assigned Admin</th>
+                  <th class="p-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="liveQueueTableBody" class="divide-y divide-bdr/30">
+                <tr><td colSpan="5" class="p-8 text-center text-t3">No active live requests in the queue. All quiet! ☕</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Archival Tickets -->
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden shadow-lg">
+          <div class="px-5 py-4 border-b border-bdr bg-panel/30">
+            <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider">
+              📂 Ticket Logs & Archive History
+            </h4>
+            <p class="text-[10px] text-t2 mt-1">History of chatbot logs, ticket trails, and resolved moderator channels</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Customer User</th>
+                  <th class="p-4">Last Logged message</th>
+                  <th class="p-4">Last Update</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Action Channels</th>
+                </tr>
+              </thead>
+              <tbody id="ticketsTableBody" class="divide-y divide-bdr/30">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -980,7 +1018,12 @@ tailwind.config = {
         <h4 id="supChatUser" class="text-xs font-bold text-white">Live Support Client</h4>
         <span class="text-[9px] text-red uppercase font-bold tracking-wider">Staff Moderator Panel</span>
       </div>
-      <button id="bCloseSupChat" class="text-t2 hover:text-red transition text-lg"><i class="fas fa-times"></i></button>
+      <div class="flex items-center gap-2.5">
+        <button id="bAdminEndSession" class="px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer">
+          <i class="fas fa-times-circle"></i> End Session
+        </button>
+        <button id="bCloseSupChat" class="text-t2 hover:text-red transition text-lg ml-1.5"><i class="fas fa-times"></i></button>
+      </div>
     </div>
 
     <!-- Live conversation messages logs -->
@@ -1023,6 +1066,8 @@ let tournaments = [];
 let registrations = [];
 let reports = [];
 let tickets = [];
+let supportRequests = [];
+let activeLiveRequestUserId = null;
 let deposits = [];
 let depositFilter = 'pending';
 let adminLogs = [];
@@ -1277,6 +1322,28 @@ function loadRealtimeDatabase() {
     renderTickets();
   }, (err) => {
     console.warn("Failed to listen to tickets:", err);
+  });
+
+  // 5b. Listen Real-Time Live Support Requests Queue
+  const qRequests = query(collection(db, 'support_requests'));
+  onSnapshot(qRequests, (snap) => {
+    supportRequests = [];
+    snap.forEach(d => supportRequests.push({ id: d.id, ...d.data() }));
+    
+    // Sort by createdAt descending
+    supportRequests.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || a.createdAt || 0;
+      const timeB = b.createdAt?.seconds || b.createdAt || 0;
+      return timeB - timeA;
+    });
+
+    // Update the live waiting badge count
+    const waitingUsers = supportRequests.filter(r => r.status === 'waiting');
+    $('liveQueueCount').textContent = `${waitingUsers.length} Users Waiting`;
+
+    renderLiveQueue();
+  }, (err) => {
+    console.warn("Failed to listen to support requests:", err);
   });
 
   // 6. Listen Deposit Requests
@@ -3305,6 +3372,183 @@ async function deleteSupportTicket(ticketId) {
     alert('Failed to delete support chat: ' + err.message);
   }
 }
+
+// ── CUSTOMER LIVE SUPPORT QUEUE ──
+function renderLiveQueue() {
+  const container = $('liveQueueTableBody');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (supportRequests.length === 0) {
+    container.innerHTML = `<tr><td colSpan="5" class="p-8 text-center text-t3">No active live requests in the queue. All quiet! ☕</td></tr>`;
+    return;
+  }
+
+  supportRequests.forEach(req => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    
+    // Format timestamp
+    const reqTime = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleTimeString() : 'TBA';
+    
+    let statusBadge = '';
+    if (req.status === 'waiting') {
+      statusBadge = `<span class="px-2 py-0.5 bg-amber-500/15 text-amber-500 border border-amber-500/20 text-[9px] font-bold uppercase rounded animate-pulse">⏳ Waiting</span>`;
+    } else if (req.status === 'connected') {
+      statusBadge = `<span class="px-2 py-0.5 bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 text-[9px] font-bold uppercase rounded">🟢 Connected</span>`;
+    } else if (req.status === 'ended') {
+      statusBadge = `<span class="px-2 py-0.5 bg-neutral-800 text-t3 border border-neutral-700 text-[9px] font-bold uppercase rounded">⏹️ Ended</span>`;
+    }
+
+    const assignedAdmin = req.adminName || '-';
+
+    tr.innerHTML = `
+      <td class="p-4 font-bold text-white text-xs">${req.userName}</td>
+      <td class="p-4 text-[10px] text-t3 font-mono">${reqTime}</td>
+      <td class="p-4">${statusBadge}</td>
+      <td class="p-4 text-xs text-t2 font-semibold">${assignedAdmin}</td>
+      <td class="p-4 space-x-1.5 font-semibold text-xs">
+        ${req.status === 'waiting' 
+          ? `<button class="b-joinQueue px-2.5 py-1 bg-red hover:bg-[#cc3540] text-white rounded transition">Join Chat</button>`
+          : `<button class="b-openChat px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Open Chat</button>`
+        }
+      </td>
+    `;
+
+    if (req.status === 'waiting') {
+      tr.querySelector('.b-joinQueue').addEventListener('click', () => joinLiveSupportChat(req));
+    } else {
+      tr.querySelector('.b-openChat').addEventListener('click', () => openLiveSupportChat(req));
+    }
+
+    container.appendChild(tr);
+  });
+}
+
+// Admin joins a waiting chat
+async function joinLiveSupportChat(req) {
+  const currentAdminEmail = auth.currentUser ? auth.currentUser.email : 'Staff Admin';
+  const currentAdminUid = auth.currentUser ? auth.currentUser.uid : 'admin_staff';
+  
+  try {
+    // 1. Update support_requests state to connected
+    await updateDoc(doc(db, 'support_requests', req.userId), {
+      status: 'connected',
+      adminId: currentAdminUid,
+      adminName: currentAdminEmail
+    });
+
+    // 2. Open chat window
+    openLiveSupportChat(req);
+
+    // 3. Post a message saying admin joined
+    const ticketId = req.userId + '_ticket';
+    const messagesCol = collection(db, 'support', ticketId, 'messages');
+    await addDoc(messagesCol, {
+      text: `👋 Live moderator joined the conversation. Support Administrator (${currentAdminEmail}) is now connected!`,
+      sender: 'bot',
+      senderName: 'Support Bot',
+      createdAt: serverTimestamp()
+    });
+
+  } catch (err) {
+    alert('Failed to join chat: ' + err.message);
+  }
+}
+
+// Opens the chat window for live support
+function openLiveSupportChat(req) {
+  const ticketId = req.userId + '_ticket';
+  
+  // Save active ticket globally
+  activeTicketId = ticketId;
+  activeLiveRequestUserId = req.userId; // Save live user ID to end session
+
+  $('supChatUser').textContent = `${req.userName} (Live Chat)`;
+  $('supChatMsgs').innerHTML = '<div class="text-center text-xs text-t3 py-4 animate-pulse">Connecting live database...</div>';
+  $('mSupportChat').classList.remove('hidden');
+
+  if (chatWindowUnsub) {
+    chatWindowUnsub();
+    chatWindowUnsub = null;
+  }
+
+  // Live listen support messages
+  const q = query(collection(db, 'support', ticketId, 'messages'), orderBy('createdAt', 'asc'));
+  chatWindowUnsub = onSnapshot(q, (snap) => {
+    const listEl = $('supChatMsgs');
+    listEl.innerHTML = '';
+
+    snap.forEach(d => {
+      const m = d.data();
+      const isMe = m.sender === 'admin';
+      const isBot = m.sender === 'bot';
+      
+      let bgCls = 'bg-card border-bdr text-t1 rounded-tl-none';
+      let flexCls = '';
+      let label = m.senderName || 'Client';
+
+      if (isMe) {
+        bgCls = 'bg-red/15 border-red/25 text-red rounded-tr-none font-medium';
+        flexCls = 'flex-row-reverse';
+        label = 'You (Admin Staff)';
+      } else if (isBot) {
+        bgCls = 'bg-ele border-bdr text-t2 rounded-tl-none italic';
+        label = 'Support Bot Response';
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
+      bubble.innerHTML = `
+        <div class="min-w-0 flex-1">
+          <span class="text-[9px] text-t3 uppercase font-bold tracking-wider block mb-0.5 ${isMe ? 'text-right' : ''}">${label}</span>
+          <div class="p-2.5 border rounded-xl text-xs leading-relaxed break-words ${bgCls}">
+            ${m.text}
+          </div>
+        </div>
+      `;
+      listEl.appendChild(bubble);
+    });
+
+    listEl.scrollTop = listEl.scrollHeight;
+  }, (err) => {
+    console.warn("Failed to listen to live messages:", err);
+  });
+}
+
+// Admin ends the live session
+$('bAdminEndSession').addEventListener('click', async () => {
+  if (!activeLiveRequestUserId) return;
+  if (!confirm('Are you sure you want to end this live support session? This will redirect the user to rate their experience.')) return;
+
+  try {
+    // 1. Update the request state to ended
+    await updateDoc(doc(db, 'support_requests', activeLiveRequestUserId), {
+      status: 'ended',
+      endedAt: serverTimestamp()
+    });
+
+    // 2. Add system message
+    const messagesCol = collection(db, 'support', activeTicketId, 'messages');
+    await addDoc(messagesCol, {
+      text: '⏹️ This live support session has been ended by the Support Administrator.',
+      sender: 'bot',
+      senderName: 'Support Bot',
+      createdAt: serverTimestamp()
+    });
+
+    // Close chat modal
+    $('mSupportChat').classList.add('hidden');
+    if (chatWindowUnsub) {
+      chatWindowUnsub();
+      chatWindowUnsub = null;
+    }
+
+    alert('Live support session ended successfully! ✅');
+  } catch (err) {
+    alert('Failed to end live support session: ' + err.message);
+  }
+});
 
 // Live Chat moderator replies
 let chatWindowUnsub = null;
