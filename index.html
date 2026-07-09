@@ -1001,11 +1001,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
   </nav>
 </div>
 
-<!-- ==================== FLOATING RED REPORT & SUPPORT BUTTON ==================== -->
-<button id="bFloatingReportHub" class="hidden" style="display: none !important;" title="Report & Support Hub">
-  <i class="fas fa-flag text-lg"></i>
-</button>
-
 <!-- ==================== RED REPORT & SUPPORT HUB DRAWER ==================== -->
 <!-- Drawer Backdrop -->
 <div id="mRedReportHubDrawerBackdrop" class="fixed inset-0 bg-black/60 z-[235] hidden opacity-0 transition-opacity duration-300"></div>
@@ -1185,6 +1180,20 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       </div>
 
       <div id="chatBox" class="bg-card border border-bdr rounded-2xl flex flex-col h-[380px] overflow-hidden">
+        <!-- Support Header / Status Bar -->
+        <div id="chatStatusHeader" class="bg-ele/40 border-b border-bdr/40 px-3 py-2 flex items-center justify-between text-[10px] font-bold flex-shrink-0">
+          <span id="supportStatusLabel" class="text-t2 flex items-center gap-1.5">
+            <span id="statusIndicatorDot" class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            <span id="statusIndicatorText">AI Chatbot Active</span>
+          </span>
+          <button id="bConnectAdmin" class="px-2.5 py-1 bg-red hover:bg-[#cc3540] text-white text-[9px] font-black rounded-lg transition flex items-center gap-1 cursor-pointer">
+            <i class="fas fa-headset"></i> 🔴 Connect with Admin
+          </button>
+          <button id="bEndChat" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-t2 hover:text-white text-[9px] font-bold rounded-lg transition flex items-center gap-1 cursor-pointer hidden">
+            <i class="fas fa-times-circle"></i> End Session
+          </button>
+        </div>
+
         <!-- Messages -->
         <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
           <!-- Welcome message -->
@@ -1195,9 +1204,10 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
             <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
               <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
               <div class="flex flex-wrap gap-1.5 pt-1.5">
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to deposit?">How to deposit?</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to register for tournament?">Tournament Registration</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to withdraw?">How to withdraw?</button>
+                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Account banned?">Account Banned?</button>
               </div>
             </div>
           </div>
@@ -1208,6 +1218,35 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
           <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#111420] border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
           <button id="chatSend" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
         </div>
+      </div>
+
+      <!-- Rating Box -->
+      <div id="ratingBox" class="bg-card border border-bdr rounded-2xl p-6 text-center space-y-4 hidden h-[380px] flex flex-col justify-center items-center">
+        <div class="w-12 h-12 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xl">
+          <i class="fas fa-star-half-alt"></i>
+        </div>
+        <div>
+          <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider">Session Ended</h4>
+          <p class="text-[11px] text-t3 mt-1">Rate your experience with our Support Administrator</p>
+        </div>
+        
+        <!-- 5 Star Rating Button Row -->
+        <div class="flex gap-2 justify-center py-2">
+          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="1"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="2"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="3"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="4"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="5"><i class="fas fa-star"></i></button>
+        </div>
+        
+        <!-- Feedback Textarea -->
+        <div class="w-full max-w-[280px]">
+          <textarea id="feedbackText" placeholder="Add optional comments or feedback..." class="w-full h-16 bg-[#111420] border border-bdr rounded-xl px-3 py-2 text-xs text-t1 outline-none focus:border-gold transition resize-none"></textarea>
+        </div>
+        
+        <button id="bSubmitRating" class="w-full max-w-[280px] py-2 bg-gold text-bg font-bold text-xs rounded-xl hover:bg-[#e8b830] transition active:scale-95">
+          Submit Rating
+        </button>
       </div>
     </div>
 
@@ -3847,7 +3886,6 @@ window.closeRedReportHubDrawer = function() {
   }, 300);
 };
 
-$('bFloatingReportHub').addEventListener('click', () => openRedReportHubDrawer());
 $('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
 $('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
 
@@ -5944,8 +5982,11 @@ async function sendDirectMessage() {
 
 // ── CUSTOMER SUPPORT CHAT FIX & BOT SYNC ──
 let supportUnsub = null;
+let supportRequestUnsub = null;
 let currentSupportMessages = [];
 let supportEscalated = false;
+let activeAdminId = "none";
+let selectedRating = 5;
 
 function loadLiveSupportChat() {
   const profile = userProfile || guestProfile;
@@ -5958,6 +5999,57 @@ function loadLiveSupportChat() {
     supportUnsub();
     supportUnsub = null;
   }
+  if (supportRequestUnsub) {
+    supportRequestUnsub();
+    supportRequestUnsub = null;
+  }
+
+  // Real-time listen to user's live support admin request status
+  supportRequestUnsub = onSnapshot(doc(db, 'support_requests', uid), (docSnap) => {
+    const chatBox = $('chatBox');
+    const ratingBox = $('ratingBox');
+    const statusText = $('statusIndicatorText');
+    const statusDot = $('statusIndicatorDot');
+    const bConnectAdmin = $('bConnectAdmin');
+    const bEndChat = $('bEndChat');
+
+    if (!docSnap.exists()) {
+      // Normal state / No request active (AI Chatbot)
+      statusText.textContent = "AI Chatbot Active";
+      statusDot.className = "w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse";
+      bConnectAdmin.classList.remove('hidden');
+      bEndChat.classList.add('hidden');
+      chatBox.classList.remove('hidden');
+      ratingBox.classList.add('hidden');
+    } else {
+      const data = docSnap.data();
+      const status = data.status;
+      const adminName = data.adminName || "Admin";
+      activeAdminId = data.adminId || "none";
+
+      if (status === 'waiting') {
+        statusText.textContent = "⏳ Waiting for Admin...";
+        statusDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse";
+        bConnectAdmin.classList.add('hidden');
+        bEndChat.classList.remove('hidden');
+        chatBox.classList.remove('hidden');
+        ratingBox.classList.add('hidden');
+      } else if (status === 'connected') {
+        statusText.textContent = `🟢 Connected with Admin (${adminName})`;
+        statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+        bConnectAdmin.classList.add('hidden');
+        bEndChat.classList.remove('hidden');
+        chatBox.classList.remove('hidden');
+        ratingBox.classList.add('hidden');
+      } else if (status === 'ended') {
+        // Show Rating Screen!
+        chatBox.classList.add('hidden');
+        ratingBox.classList.remove('hidden');
+      }
+    }
+  }, (err) => {
+    console.warn("Error listening to support request status:", err);
+  });
 
   // Persist escalation status from database
   getDoc(doc(db, 'support_tickets', ticketId)).then((ticketDoc) => {
@@ -6028,9 +6120,10 @@ function loadLiveSupportChat() {
           <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
             <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
             <div class="flex flex-wrap gap-1.5 pt-1.5">
-              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Match cheat report">Cheat Report</button>
-              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Recharge wallet error">Recharge Help</button>
-              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Connect with human agent">Live Agent</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to deposit?">How to deposit?</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to register for tournament?">Tournament Registration</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to withdraw?">How to withdraw?</button>
+              <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Account banned?">Account Banned?</button>
             </div>
           </div>
         </div>`;
@@ -6052,12 +6145,123 @@ $('chatIn').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendSupportMessage();
 });
 
+// Connect with Admin Button Handler
+$('bConnectAdmin').addEventListener('click', async () => {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+  const uid = profile.uid || profile.id;
+  const ticketId = uid + '_ticket';
+
+  try {
+    // 1. Save to support_requests collection
+    await setDoc(doc(db, 'support_requests', uid), {
+      userId: uid,
+      userName: userProfile.name || 'Player',
+      status: 'waiting',
+      createdAt: serverTimestamp()
+    });
+
+    // 2. Add message logs to chat messages to keep record
+    const messagesCol = collection(db, 'support', ticketId, 'messages');
+    await addDoc(messagesCol, {
+      text: '⏳ Connecting you to a live agent... Please wait while an administrator joins the chat.',
+      sender: 'bot',
+      senderName: 'Support Bot',
+      createdAt: serverTimestamp()
+    });
+
+    // Update the support ticket status
+    await setDoc(doc(db, 'support_tickets', ticketId), {
+      id: ticketId,
+      ticketId: ticketId,
+      uid: uid,
+      userName: userProfile.name || 'Player',
+      userHandle: userProfile.handle || 'player',
+      lastMsg: '[Bot]: Connecting live agent...',
+      status: 'open',
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+  } catch (err) {
+    console.error('Error connecting to admin:', err);
+  }
+});
+
+// End Chat Button Handler
+$('bEndChat').addEventListener('click', async () => {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+  const uid = profile.uid || profile.id;
+
+  if (confirm('Are you sure you want to end this live support session?')) {
+    try {
+      await updateDoc(doc(db, 'support_requests', uid), {
+        status: 'ended',
+        endedAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error('Error ending chat:', err);
+    }
+  }
+});
+
+// Star buttons click interactions for feedback
+document.querySelectorAll('.star-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const val = parseInt(btn.dataset.val);
+    selectedRating = val;
+    document.querySelectorAll('.star-btn').forEach(star => {
+      const starVal = parseInt(star.dataset.val);
+      if (starVal <= val) {
+        star.classList.add('text-gold');
+        star.classList.remove('text-t3');
+      } else {
+        star.classList.remove('text-gold');
+        star.classList.add('text-t3');
+      }
+    });
+  });
+});
+
+// Submit Rating Handler
+$('bSubmitRating').addEventListener('click', async () => {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) return;
+  const uid = profile.uid || profile.id;
+
+  try {
+    // 1. Save rating to Firestore support_ratings
+    await addDoc(collection(db, 'support_ratings'), {
+      userId: uid,
+      adminId: activeAdminId || 'none',
+      rating: selectedRating,
+      feedback: $('feedbackText').value.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    // 2. Delete support request document to completely reset status
+    await deleteDoc(doc(db, 'support_requests', uid));
+
+    // Clear feedback input and reset stars
+    $('feedbackText').value = '';
+    selectedRating = 5;
+    document.querySelectorAll('.star-btn').forEach(star => {
+      star.classList.add('text-gold');
+      star.classList.remove('text-t3');
+    });
+
+    alert('Thank you for your feedback! Your rating was submitted successfully. ✅');
+  } catch (err) {
+    console.error('Error submitting rating:', err);
+  }
+});
+
 // Sync both user message and automatic bot responses into Firestore!
 const BOT_AUTO_ANSWERS = [
-  { keys: ['cheat', 'report', 'hack'], ans: 'To report a cheater, click the "Report Hack/Cheat" button under the tournament card. Provide reported name, UID, and screen record proof links.' },
-  { keys: ['recharge', 'coins', 'deposit', 'wallet'], ans: 'Go to Wallet → Deposit, choose JazzCash or EasyPaisa, send money to the listed agent, and enter amount PKR to credit your balance!' },
-  { keys: ['withdraw'], ans: 'To withdraw earnings, click Withdraw in Wallet, enter amount AX Coins & receive agent mobile number. Transfers settle within 48 hours.' },
-  { keys: ['premium', 'upgrade', 'vip'], ans: 'Go to Profile → Customize, or click Upgrade in Premium plans to purchase VIP privileges.' },
+  { keys: ['deposit', 'recharge', 'pay', 'paisa'], ans: '💰 To deposit funds, go to the Wallet tab, click "Recharge", send PKR to JazzCash (0302-4686897) or EasyPaisa (0315-9876543), and submit your TXN ID. Admin will credit your AX Coins within 15-30 minutes!' },
+  { keys: ['register', 'join', 'tournament', 'slot'], ans: '🏆 To register for a tournament, browse available tournaments on the Dashboard, select one, click "Register / Join Slot", and fill in your game profile details. Waiting for admin approval takes around 10-15 mins.' },
+  { keys: ['withdraw', 'cashout', 'earnings'], ans: '💸 To withdraw your AX Coins, head to Wallet -> Withdraw, input your desired cashout amount and JazzCash or EasyPaisa account details. Approved withdrawals are processed within 24-48 hours.' },
+  { keys: ['ban', 'suspend', 'block', 'cheat'], ans: '🚫 If your account is banned or you have reports of illegal scripts, our Anti-Cheat system issues permanent locks. You can file a "Red Report" under the Help Desk or contact our support staff for manual verification.' },
 ];
 
 async function sendSupportMessage(customTxt) {
@@ -6100,20 +6304,16 @@ async function sendSupportMessage(customTxt) {
     
     // Explicit escalation keywords
     if (['agent', 'human', 'mod', 'admin', 'connect'].some(k => lower.includes(k))) {
-      supportEscalated = true;
       setTimeout(async () => {
         await addDoc(messagesCol, {
-          text: 'Connecting to human agent moderator... Your ticket has been marked priority. Please wait while administrators join the chat!',
+          text: 'Connecting you to a live agent... Click the "🔴 Connect with Admin" button above or let me queue you automatically!',
           sender: 'bot',
           senderName: 'Support Bot',
           createdAt: serverTimestamp()
         });
-        await updateDoc(doc(db, 'support_tickets', ticketId), {
-          status: 'escalated',
-          lastMsg: '[Bot]: Connecting live agent...',
-          updatedAt: serverTimestamp()
-        });
-      }, 700);
+        // Automatically click connect to admin button to trigger queueing
+        $('bConnectAdmin').click();
+      }, 500);
       return;
     }
 
@@ -7758,6 +7958,7 @@ setTimeout(() => {
 // Under Development Popup modal listeners
 $('bCloseUnderDev').addEventListener('click', () => {
   $('mUnderDevPopup').classList.add('hidden');
+  openFootballGround();
 });
 $('bCloseUnderDevCross').addEventListener('click', () => {
   $('mUnderDevPopup').classList.add('hidden');
