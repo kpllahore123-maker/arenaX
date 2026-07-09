@@ -11,8 +11,8 @@
 
 <script>
 window.getAppBasePath = function() {
-  const isGitHubPages = window.location.hostname.includes('github.io') || window.location.pathname.startsWith('/arenaX');
-  return isGitHubPages ? '/arenaX/' : '/';
+  const isSubdirectory = window.location.pathname.startsWith('/arenaX') || window.location.pathname.startsWith('/arenax') || window.location.pathname.includes('/arenaX/') || window.location.pathname.includes('/arenax/');
+  return isSubdirectory ? '/arenaX/' : '/';
 };
 
 // Dynamically adjust manifest, icon, and favicon links based on host environment
@@ -409,6 +409,8 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
             <span id="badgeFifa" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-emerald-500/20 to-teal-400/20 text-emerald-400 rounded border border-emerald-500/35 uppercase hidden"><i class="fas fa-futbol mr-1"></i> FIFA Member</span>
             <span id="badgeFifaWorldMember" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-600/20 text-gold rounded border border-gold/45 uppercase hidden"><i class="fas fa-medal mr-1"></i> FIFA World Member</span>
           </div>
+          <!-- Custom Earned Badges Container -->
+          <div id="userEarnedBadges" class="flex flex-wrap gap-1.5 mt-1.5 w-full"></div>
         </div>
       </div>
 
@@ -1063,6 +1065,18 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       </div>
     </div>
 
+    <!-- Inbox & Badges Card -->
+    <div id="btnHubInbox" class="bg-card hover:bg-ele/60 border border-bdr hover:border-emerald-500/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] relative">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-envelope"></i>
+      </div>
+      <div class="flex-1">
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📩 Inbox & Badges</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Collect gifts & view badges</p>
+      </div>
+      <span id="inboxBadgeCount" class="absolute top-2 right-2 w-5 h-5 bg-red text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+    </div>
+
     <!-- PWA Install Card -->
     <div id="btnHubInstallApp" class="bg-card hover:bg-ele/60 border border-emerald-500/20 hover:border-emerald-400/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] hidden">
       <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
@@ -1071,6 +1085,57 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <div>
         <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📲 Install App</h4>
         <p class="text-[9px] text-t3 mt-0.5">Install on home screen</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ARENAX INBOX & BADGES MODAL ==================== -->
+<div id="mInboxBadges" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[245] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[500px] w-full flex flex-col max-h-[85vh] shadow-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 text-sm">
+          <i class="fas fa-envelope-open-text"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Player Hub</h3>
+          <p class="text-[9px] text-t3 font-mono">Collect gifts & view credentials</p>
+        </div>
+      </div>
+      <button id="bCloseInboxBadges" class="text-t3 hover:text-white transition cursor-pointer text-sm w-7 h-7 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Tab Selectors -->
+    <div class="flex border-b border-bdr/20 bg-card/25 p-1 rounded-lg mt-3 flex-shrink-0">
+      <button id="tabMailInbox" class="flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-white bg-emerald-500/15 border border-emerald-500/20">
+        <i class="fas fa-envelope mr-1.5 text-emerald-400"></i>Inbox Mails
+      </button>
+      <button id="tabBadgeCollection" class="flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-t3 hover:text-white hover:bg-white/5">
+        <i class="fas fa-medal mr-1.5"></i>My Badges
+      </button>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="flex-1 overflow-y-auto mt-4 pr-1">
+      <!-- ── SECTION 1: INBOX MAILS ── -->
+      <div id="secMailInbox" class="space-y-3">
+        <!-- Dynamically Populated Mails List -->
+        <div id="inboxMailsList" class="space-y-3"></div>
+      </div>
+
+      <!-- ── SECTION 2: BADGE INVENTORY ── -->
+      <div id="secBadgeCollection" class="hidden space-y-4">
+        <div class="p-3 bg-card/40 border border-bdr rounded-xl">
+          <p class="text-[10px] text-t3 leading-relaxed">
+            <i class="fas fa-info-circle text-gold mr-1"></i> Admin can gift you exclusive medals and custom badges via mail. Click "Collect" inside the email to add them to your active profile credentials!
+          </p>
+        </div>
+
+        <div id="badgesGrid" class="grid grid-cols-2 gap-2.5">
+          <!-- Dynamically populated 12 badges -->
+        </div>
       </div>
     </div>
   </div>
@@ -2440,7 +2505,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
@@ -2796,6 +2861,9 @@ function boot() {
     $('pBadge').classList.add('hidden');
   }
 
+  // Render player-owned custom premium badges
+  renderEarnedBadgesUI();
+
   // 5. Bio Description
   if (profile.bio) {
     $('pBio').textContent = profile.bio;
@@ -2937,7 +3005,7 @@ function boot() {
 
   // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
   if (userProfile) {
-    $('referralLinkInput').value = 'https://kpllahore123-maker.github.io/arenaX?ref=' + userProfile.uid;
+    $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
   } else {
     $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
   }
@@ -3021,6 +3089,10 @@ onAuthStateChanged(auth, async (fireUser) => {
     depositUnsub();
     depositUnsub = null;
   }
+  if (window.userMailsUnsub) {
+    window.userMailsUnsub();
+    window.userMailsUnsub = null;
+  }
   if (fireUser && !guestProfile) {
     // Start real-time deposit listener for user
     const qDeposits = query(
@@ -3034,6 +3106,32 @@ onAuthStateChanged(auth, async (fireUser) => {
       });
       userDepositsList = list;
       mergeAndRenderTransactions();
+    });
+
+    // Start real-time mails listener for user
+    const qMails = query(
+      collection(db, 'users', fireUser.uid, 'mails'),
+      orderBy('createdAt', 'desc')
+    );
+    window.userMailsUnsub = onSnapshot(qMails, (mSnap) => {
+      let list = [];
+      let uncollectedCount = 0;
+      mSnap.forEach(mDoc => {
+        const d = mDoc.data();
+        list.push({ id: mDoc.id, ...d });
+        if (!d.read) {
+          uncollectedCount++;
+        } else if (d.giftBadgeId && !d.collected) {
+          uncollectedCount++;
+        }
+      });
+      window.userMails = list;
+      if ($('mInboxBadges') && !$('mInboxBadges').classList.contains('hidden')) {
+        renderInboxUI();
+      }
+      updateInboxNotificationBadge(uncollectedCount);
+    }, (err) => {
+      console.error("Error fetching player mails: ", err);
     });
 
     // Read and listen to Firestore User Profile in real time!
@@ -7966,6 +8064,265 @@ $('bCloseUnderDevCross').addEventListener('click', () => {
 
 // Initial bootstrapper loads
 loadAvatarPickerGrid();
+
+// ==========================================
+// ── ARENAX CUSTOM BADGE & MAIL SYSTEM ──
+// ==========================================
+const PREDEFINED_BADGES = [
+  { id: 'champion', name: "Arena Champion", description: "Earned by winning a premier ArenaX tournament.", icon: "fa-trophy", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  { id: 'veteran', name: "Veteran Warrior", description: "Assigned to players with exceptional career activity.", icon: "fa-shield-halved", color: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10" },
+  { id: 'moderator', name: "Staff Moderator", description: "Authorized ArenaX moderator and community manager.", icon: "fa-crown", color: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
+  { id: 'sniper', name: "Sharp Shooter", description: "Exemplary performance and precision in gaming tournaments.", icon: "fa-crosshairs", color: "text-red-400 border-red-500/30 bg-red-500/10" },
+  { id: 'mvp', name: "Most Valuable Player", description: "Awarded for exceptional skill and turning the tides of battle.", icon: "fa-wand-magic-sparkles", color: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
+  { id: 'vip', name: "VIP Premium Member", description: "Exclusive gold membership tier for valued subscribers.", icon: "fa-bolt", color: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" },
+  { id: 'supporter', name: "Platform Supporter", description: "Contributed to the growth and development of ArenaX.", icon: "fa-heart", color: "text-rose-400 border-rose-500/30 bg-rose-500/10" },
+  { id: 'high_roller', name: "High Roller", description: "Demonstrated bold wagers and high-stakes deposit records.", icon: "fa-coins", color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  { id: 'early_bird', name: "Early Bird Access", description: "Joined the ArenaX alpha/beta test phase early on.", icon: "fa-clock", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  { id: 'fair_play', name: "Fair Play Hero", description: "Exceptional sportsmanship and clean report card.", icon: "fa-face-smile", color: "text-green-400 border-green-500/30 bg-green-500/10" },
+  { id: 'helper', name: "Community Helper", description: "Helped other players and was highly rated in live chats.", icon: "fa-comment-dots", color: "text-lime-400 border-lime-500/30 bg-lime-500/10" },
+  { id: 'tactician', name: "Master Tactician", description: "Acknowledged for deep strategic planning and tournament setup.", icon: "fa-layer-group", color: "text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-500/10" }
+];
+
+window.PREDEFINED_BADGES = PREDEFINED_BADGES;
+
+function renderEarnedBadgesUI() {
+  const container = $('userEarnedBadges');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const profile = userProfile || guestProfile;
+  if (!profile || !profile.badges || !Array.isArray(profile.badges)) return;
+
+  profile.badges.forEach(badgeId => {
+    const badge = PREDEFINED_BADGES.find(b => b.id === badgeId);
+    if (badge) {
+      const el = document.createElement('span');
+      el.className = `px-2 py-0.5 text-[9px] font-bold rounded border uppercase flex items-center gap-1 cursor-pointer transition ${badge.color}`;
+      el.title = badge.description;
+      el.innerHTML = `<i class="fas ${badge.icon}"></i> ${badge.name}`;
+      
+      el.addEventListener('click', () => {
+        alert(`🎖️ Badge: ${badge.name}\n\nDescription: ${badge.description}\n\nYou own this active profile credential!`);
+      });
+
+      container.appendChild(el);
+    }
+  });
+}
+
+window.renderEarnedBadgesUI = renderEarnedBadgesUI;
+
+// Bind Inbox Drawer & Modal Listeners
+$('btnHubInbox').addEventListener('click', () => {
+  if (typeof window.closeRedReportHubDrawer === 'function') {
+    window.closeRedReportHubDrawer();
+  }
+  openInboxBadgesModal();
+});
+
+$('bCloseInboxBadges').addEventListener('click', () => {
+  $('mInboxBadges').classList.add('hidden');
+});
+
+$('tabMailInbox').addEventListener('click', () => {
+  switchInboxSubtab('mail');
+});
+
+$('tabBadgeCollection').addEventListener('click', () => {
+  switchInboxSubtab('badge');
+});
+
+function switchInboxSubtab(tab) {
+  if (tab === 'mail') {
+    $('tabMailInbox').className = "flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-white bg-emerald-500/15 border border-emerald-500/20";
+    $('tabBadgeCollection').className = "flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-t3 hover:text-white hover:bg-white/5";
+    $('secMailInbox').classList.remove('hidden');
+    $('secBadgeCollection').classList.add('hidden');
+  } else {
+    $('tabMailInbox').className = "flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-t3 hover:text-white hover:bg-white/5";
+    $('tabBadgeCollection').className = "flex-1 py-1.5 text-center text-xs font-bold rounded-md transition text-white bg-emerald-500/15 border border-emerald-500/20";
+    $('secMailInbox').classList.add('hidden');
+    $('secBadgeCollection').classList.remove('hidden');
+    renderBadgesGridUI();
+  }
+}
+
+function openInboxBadgesModal() {
+  $('mInboxBadges').classList.remove('hidden');
+  switchInboxSubtab('mail');
+  renderInboxUI();
+}
+
+function renderInboxUI() {
+  const container = $('inboxMailsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const mails = window.userMails || [];
+  if (mails.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center text-t3 space-y-2">
+        <i class="fas fa-envelope-open text-3xl opacity-40"></i>
+        <p class="text-xs">Your Inbox is currently empty!</p>
+      </div>`;
+    return;
+  }
+
+  mails.forEach(mail => {
+    // Mark unread mail as read after 1.5 seconds automatically
+    if (!mail.read && userProfile) {
+      setTimeout(async () => {
+        try {
+          const mRef = doc(db, 'users', userProfile.uid, 'mails', mail.id);
+          await updateDoc(mRef, { read: true });
+        } catch (e) {
+          console.error("Error marking mail as read:", e);
+        }
+      }, 1500);
+    }
+
+    const dateStr = mail.createdAt ? new Date(mail.createdAt.seconds ? mail.createdAt.seconds * 1000 : mail.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now';
+
+    let giftBlock = '';
+    if (mail.giftBadgeId) {
+      const giftBadge = PREDEFINED_BADGES.find(b => b.id === mail.giftBadgeId);
+      if (giftBadge) {
+        if (mail.collected) {
+          giftBlock = `
+            <div class="mt-3 p-2.5 bg-green-500/5 border border-green-500/20 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-[9px] font-bold rounded border uppercase ${giftBadge.color}">
+                  <i class="fas ${giftBadge.icon} mr-1"></i> ${giftBadge.name}
+                </span>
+                <span class="text-[9px] text-t3">Claimed successfully</span>
+              </div>
+              <span class="text-[10px] text-green-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Collected</span>
+            </div>`;
+        } else {
+          giftBlock = `
+            <div class="mt-3 p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-[9px] font-bold rounded border uppercase ${giftBadge.color}">
+                  <i class="fas ${giftBadge.icon} mr-1"></i> ${giftBadge.name}
+                </span>
+              </div>
+              <button class="b-collect-gift px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-bg font-black text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-badge-id="${giftBadge.id}">
+                Collect Gift!
+              </button>
+            </div>`;
+        }
+      }
+    }
+
+    const card = document.createElement('div');
+    card.className = `p-4 bg-card border ${mail.read ? 'border-bdr/50' : 'border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]'} rounded-xl relative overflow-hidden transition duration-150`;
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <span class="text-[9px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-mono">
+          <i class="fas fa-user-shield mr-1"></i> ${mail.sender || 'Admin Staff'}
+        </span>
+        <span class="text-[9px] text-t3 font-mono">${dateStr}</span>
+      </div>
+      <h4 class="font-display font-bold text-xs text-white mt-2 leading-snug flex items-center gap-1.5">
+        ${!mail.read ? '<span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse flex-shrink-0"></span>' : ''}
+        ${mail.title}
+      </h4>
+      <p class="text-[10px] text-t2 mt-1 leading-relaxed whitespace-pre-wrap font-sans">${mail.body}</p>
+      ${giftBlock}
+    `;
+
+    const collectBtn = card.querySelector('.b-collect-gift');
+    if (collectBtn) {
+      collectBtn.addEventListener('click', async (e) => {
+        const mailId = e.target.dataset.mailId;
+        const badgeId = e.target.dataset.badgeId;
+        e.target.disabled = true;
+        e.target.textContent = 'Collecting...';
+        await claimMailGift(mailId, badgeId, e.target);
+      });
+    }
+
+    container.appendChild(card);
+  });
+}
+
+async function claimMailGift(mailId, badgeId, buttonEl) {
+  if (!userProfile) return;
+  try {
+    const userDocRef = doc(db, 'users', userProfile.uid);
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+
+    // 1. Add badge to user's badges array in Firestore
+    await updateDoc(userDocRef, {
+      badges: arrayUnion(badgeId)
+    });
+
+    // 2. Mark mail as collected
+    await updateDoc(mailDocRef, {
+      collected: true,
+      read: true
+    });
+
+    alert('🎁 Congratulations! Your gifted badge has been successfully added to your profile credentials!');
+    renderInboxUI();
+  } catch (e) {
+    alert('Failed to collect gift: ' + e.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Collect Gift!';
+    }
+  }
+}
+
+function renderBadgesGridUI() {
+  const container = $('badgesGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const profile = userProfile || guestProfile;
+  const userBadges = (profile && profile.badges) || [];
+
+  PREDEFINED_BADGES.forEach(badge => {
+    const isEarned = userBadges.includes(badge.id);
+
+    const card = document.createElement('div');
+    card.className = `p-3 bg-card border ${isEarned ? 'border-gold/30 shadow-[0_0_15px_rgba(192,160,48,0.05)]' : 'border-bdr/40 opacity-40 grayscale'} rounded-xl flex flex-col items-center text-center space-y-1.5 relative overflow-hidden transition hover:scale-[1.02] cursor-pointer`;
+    card.innerHTML = `
+      ${!isEarned ? '<div class="absolute top-1.5 right-1.5 text-[8px] text-t3 bg-white/5 w-4 h-4 rounded-full flex items-center justify-center border border-bdr"><i class="fas fa-lock"></i></div>' : ''}
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg ${badge.color} border border-current/20">
+        <i class="fas ${badge.icon}"></i>
+      </div>
+      <div class="text-[10px] font-black uppercase text-white tracking-wide">${badge.name}</div>
+      <p class="text-[8px] text-t3 leading-normal max-w-[130px] font-medium font-sans">${badge.description}</p>
+      <div class="text-[8px] font-bold uppercase ${isEarned ? 'text-gold' : 'text-t3'} pt-0.5 font-mono">
+        ${isEarned ? '<i class="fas fa-check-circle mr-0.5"></i> Earned' : 'Locked'}
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      alert(`🎖️ ${badge.name}\n\nDescription: ${badge.description}\n\nStatus: ${isEarned ? '✓ Earned' : '🔒 Locked (Must be gifted by Admin Staff)'}`);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function updateInboxNotificationBadge(uncollectedCount) {
+  const indicator = $('inboxBadgeCount');
+  if (indicator) {
+    if (uncollectedCount > 0) {
+      indicator.textContent = uncollectedCount;
+      indicator.classList.remove('hidden');
+    } else {
+      indicator.classList.add('hidden');
+    }
+  }
+}
+
+window.renderInboxUI = renderInboxUI;
+window.claimMailGift = claimMailGift;
+window.renderBadgesGridUI = renderBadgesGridUI;
+window.updateInboxNotificationBadge = updateInboxNotificationBadge;
 
 </script>
 </body>
