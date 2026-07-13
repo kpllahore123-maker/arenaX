@@ -7811,6 +7811,12 @@ $('btnNotifAllow').addEventListener('click', async () => {
               notificationPermission: 'granted',
               notificationGrantedAt: new Date().toISOString()
             });
+            
+            // Register service worker, fetch the real FCM Token, and save it to Firestore
+            if (typeof window.requestFCMToken === 'function') {
+              console.log("FCM: Registering and requesting token automatically...");
+              await window.requestFCMToken(false);
+            }
           } catch (fErr) {
             console.error("Failed to update notification settings in user profile:", fErr);
           }
