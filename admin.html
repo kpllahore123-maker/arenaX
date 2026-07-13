@@ -927,6 +927,20 @@ tailwind.config = {
         </select>
       </div>
       <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Specific Rule Violated *</label>
+        <select id="banViolatedRule" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red font-medium">
+          <option value="Rule 1.1: Cheating / Third-Party software">Rule 1.1: Cheating / Third-Party software</option>
+          <option value="Rule 1.2: Account Sharing / Boost">Rule 1.2: Account Sharing / Boost</option>
+          <option value="Rule 1.3: Collusion / Match Fixing">Rule 1.3: Collusion / Match Fixing</option>
+          <option value="Rule 2.1: Fake Deposit / Fake TXN Submission">Rule 2.1: Fake Deposit / Fake TXN Submission</option>
+          <option value="Rule 2.3: Entry Fee / Prize disputes violation">Rule 2.3: Entry Fee / Prize disputes violation</option>
+          <option value="Rule 3.1: Toxicity / Harassment / Hate Speech">Rule 3.1: Toxicity / Harassment / Hate Speech</option>
+          <option value="Rule 3.2: Impersonation of admin/players">Rule 3.2: Impersonation of admin/players</option>
+          <option value="Rule 4.1: Multi-accounting / Referral farming">Rule 4.1: Multi-accounting / Referral farming</option>
+          <option value="Rule 4.2: Emulator or peripheral bypass">Rule 4.2: Emulator or peripheral bypass</option>
+        </select>
+      </div>
+      <div>
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Detailed Violation Reason *</label>
         <textarea id="banReason" rows="3" placeholder="Reason for ban (e.g., Verified aimbot cheating reported in Event Sunday Cup...)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red resize-none"></textarea>
       </div>
@@ -1124,6 +1138,20 @@ tailwind.config = {
           <option value="Not Enough Evidence">Not Enough Evidence 📁</option>
           <option value="False Report">False Report 🏳️</option>
           <option value="Custom Verdict">Custom Verdict 💬</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Citable Rule Reference</label>
+        <select id="verdictViolatedRule" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-red">
+          <option value="Rule 1.1: Cheating / Third-Party software">Rule 1.1: Cheating / Third-Party software</option>
+          <option value="Rule 1.2: Account Sharing / Boost">Rule 1.2: Account Sharing / Boost</option>
+          <option value="Rule 1.3: Collusion / Match Fixing">Rule 1.3: Collusion / Match Fixing</option>
+          <option value="Rule 2.1: Fake Deposit / Fake TXN Submission">Rule 2.1: Fake Deposit / Fake TXN Submission</option>
+          <option value="Rule 2.3: Entry Fee / Prize disputes violation">Rule 2.3: Entry Fee / Prize disputes violation</option>
+          <option value="Rule 3.1: Toxicity / Harassment / Hate Speech">Rule 3.1: Toxicity / Harassment / Hate Speech</option>
+          <option value="Rule 3.2: Impersonation of admin/players">Rule 3.2: Impersonation of admin/players</option>
+          <option value="Rule 4.1: Multi-accounting / Referral farming">Rule 4.1: Multi-accounting / Referral farming</option>
+          <option value="Rule 4.2: Emulator or peripheral bypass">Rule 4.2: Emulator or peripheral bypass</option>
         </select>
       </div>
       <div>
@@ -2655,6 +2683,7 @@ $('bProcessBan').addEventListener('click', async () => {
 
   const type = $('banType').value;
   const dur = $('banDuration').value;
+  const rule = $('banViolatedRule').value;
   const expiry = dur === 'permanent' ? null : new Date(Date.now() + parseInt(dur) * 24 * 60 * 60 * 1000).toISOString();
 
   try {
@@ -2662,7 +2691,19 @@ $('bProcessBan').addEventListener('click', async () => {
       banned: true,
       banType: type,
       banReason: reason,
+      banRule: rule,
       banUntil: expiry
+    });
+
+    // Send a notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: banTargetUser.id,
+      title: '⚠️ Penalty Warning: Rule Violation!',
+      body: `You have been blocked/restricted for violating ${rule}. Action: ${type === 'full' ? 'Standard Entire Account Ban' : 'Tournament Match Ban'}. Reason: ${reason}`,
+      message: `You have been blocked/restricted for violating ${rule}. Action: ${type === 'full' ? 'Standard Entire Account Ban' : 'Tournament Match Ban'}. Reason: ${reason}`,
+      type: 'ban',
+      read: false,
+      createdAt: new Date().toISOString()
     });
 
     $('mBan').classList.add('hidden');
@@ -3015,6 +3056,7 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
       
       if (punishment !== 'none' && matchedUser) {
         const userId = matchedUser.id || matchedUser.uid;
+        const selectedRule = $('verdictViolatedRule').value;
         let updateFields = {};
         let logAction = '';
         let logDetails = '';
@@ -3029,11 +3071,12 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
           updateFields = {
             banned: true,
             banType: 'full',
+            banRule: selectedRule,
             banReason: `[Auto punishment via Red Report #${activeVerdictReportId}]: ${text}`,
             banUntil: expiry
           };
           logAction = 'Player Banned';
-          logDetails = `Full Account ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Reason: ${text}`;
+          logDetails = `Full Account ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Rule: ${selectedRule}. Reason: ${text}`;
         } else if (punishment.startsWith('tour_')) {
           let duration = punishment.split('_')[1];
           let expiry = null;
@@ -3044,11 +3087,12 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
           updateFields = {
             banned: true,
             banType: 'tournament',
+            banRule: selectedRule,
             banReason: `[Auto punishment via Red Report #${activeVerdictReportId}]: ${text}`,
             banUntil: expiry
           };
           logAction = 'Player Tournament Banned';
-          logDetails = `Tournament match ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Reason: ${text}`;
+          logDetails = `Tournament match ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Rule: ${selectedRule}. Reason: ${text}`;
         } else if (punishment.startsWith('mute_')) {
           let duration = punishment.split('_')[1];
           let expiry = null;
@@ -3066,6 +3110,17 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
         
         await updateDoc(doc(db, 'users', userId), updateFields);
         logAdminActivity(logAction, userId, logDetails);
+
+        // Send warning notification
+        await addDoc(collection(db, 'notifications'), {
+          userId: userId,
+          title: '⚠️ Red Report Penalty Warning!',
+          body: `You have been penalized under ${selectedRule}. Action: ${punishment.startsWith('full_') ? 'Account Suspended' : punishment.startsWith('tour_') ? 'Tournament Block' : 'Mute Penalty'}. Explanation: ${text}`,
+          message: `You have been penalized under ${selectedRule}. Action: ${punishment.startsWith('full_') ? 'Account Suspended' : punishment.startsWith('tour_') ? 'Tournament Block' : 'Mute Penalty'}. Explanation: ${text}`,
+          type: 'ban',
+          read: false,
+          createdAt: new Date().toISOString()
+        });
       }
     }
 
