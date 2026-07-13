@@ -587,32 +587,61 @@ tailwind.config = {
       </div>
 
       <div class="space-y-2.5">
-        <!-- Accordion 1 -->
+        <!-- Accordion 1 (Anti-Cheat & Integrity) -->
         <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
           <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(0)">
-            <span><i class="fas fa-gavel text-gold mr-2.5"></i> General Rules</span>
+            <span><i class="fas fa-shield-alt text-red mr-2.5"></i> Article 1: Tournament Integrity & Anti-Cheat</span>
             <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
           </button>
-          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden">
-            <ul class="space-y-2 text-xs text-t2">
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Must register before tournament deadline — slots are limited.</li>
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Check in 10 minutes prior to the live match timer.</li>
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Ensure in-game name matches registration form exactly.</li>
-            </ul>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden space-y-3">
+            <div class="pt-2 text-xs text-t2 space-y-2">
+              <p><strong class="text-white">Rule 1.1: No Cheating or Third-Party Software</strong><br/>Using any illegal hacks, modifications, game-engine exploits, aimbots, wallhacks, macros, or external scripts is strictly forbidden. Automatic and manual monitoring is active.</p>
+              <p><strong class="text-white">Rule 1.2: Account Sharing & Boosting</strong><br/>Players must play on their registered ArenaX account and game UID only. Playing on another player's behalf or account sharing will result in tournament bans.</p>
+              <p><strong class="text-white">Rule 1.3: Collusion & Match-Fixing</strong><br/>Collusion, teaming up in solo modes, trading kills, or intentionally throwing matches is highly illegal and leads to immediate prize forfeiture and ban.</p>
+            </div>
           </div>
         </div>
-        <!-- Accordion 2 -->
+
+        <!-- Accordion 2 (Wallet & Payment) -->
         <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
           <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(1)">
-            <span><i class="fas fa-shield-alt text-gold mr-2.5"></i> Anti-Cheat & Ban Policy</span>
+            <span><i class="fas fa-wallet text-gold mr-2.5"></i> Article 2: Financial, Wallet & Payment Integrity</span>
             <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
           </button>
-          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden">
-            <ul class="space-y-2 text-xs text-t2">
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Using third-party cheats (aimbot, wallhack, speedhack) yields a permanent ban.</li>
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Teaming or collusion results in zero prize distribution.</li>
-              <li class="flex gap-2"><i class="fas fa-circle text-[6px] text-gold mt-1.5 flex-shrink-0"></i> Report cheats via "Report Cheat" with screen recording links.</li>
-            </ul>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden space-y-3">
+            <div class="pt-2 text-xs text-t2 space-y-2">
+              <p><strong class="text-white">Rule 2.1: Fake Deposit Submissions</strong><br/>Entering fake transaction IDs (TXN) or uploading mock payment receipts is considered fraud and will trigger an immediate permanent account ban.</p>
+              <p><strong class="text-white">Rule 2.2: Withdrawal Timelines</strong><br/>All withdrawals are processed securely within 24 to 48 hours. Flooding support tickets with status checks slows queue processing.</p>
+              <p><strong class="text-white">Rule 2.3: Entry Fee & Prize Disputes</strong><br/>Entry fees are non-refundable once the tournament starts. Prizes are distributed according to verified server logs and official admin decisions.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 3 (Chat & Community) -->
+        <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
+          <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(2)">
+            <span><i class="fas fa-comments text-emerald-400 mr-2.5"></i> Article 3: Chat & Community Guidelines</span>
+            <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
+          </button>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden space-y-3">
+            <div class="pt-2 text-xs text-t2 space-y-2">
+              <p><strong class="text-white">Rule 3.1: Toxicity & Harassment</strong><br/>Toxicity, toxic comments in chat rooms, hate speech, spamming, or abuse directed toward players or ArenaX staff members will lead to temporary/permanent mute.</p>
+              <p><strong class="text-white">Rule 3.2: Staff & Player Impersonation</strong><br/>Impersonating ArenaX administrators, game moderators, or other high-profile players to gain benefits is strictly banned.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 4 (Device & Network) -->
+        <div class="ai bg-card border border-bdr rounded-xl overflow-hidden">
+          <button class="ah w-full px-4 py-3 text-left font-semibold text-sm flex items-center justify-between text-t1 hover:bg-ele transition" onclick="toggleAccordion(3)">
+            <span><i class="fas fa-laptop text-blue mr-2.5"></i> Article 4: Device & Network Regulations</span>
+            <i class="fas fa-chevron-down text-xs text-t3 transition-transform duration-200"></i>
+          </button>
+          <div class="ab px-4 pb-4 pt-1 border-t border-bdr/30 hidden space-y-3">
+            <div class="pt-2 text-xs text-t2 space-y-2">
+              <p><strong class="text-white">Rule 4.1: Single Account Limit</strong><br/>Each player is permitted only one ArenaX account. Creating multiple accounts to farm referrals, coupons, or exploit sign-up benefits will result in all related accounts being blocked.</p>
+              <p><strong class="text-white">Rule 4.2: Emulator & Hardware Bypass</strong><br/>All tournaments are mobile-only unless specified. Emulating phone environments or using external mouse/keyboard adapters to play in mobile brackets is illegal.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -2040,6 +2069,10 @@ tailwind.config = {
             <input id="tregCheck2" type="checkbox" class="mt-0.5 accent-gold"/>
             <span>I understand registration reviews can take up to 24 hours.</span>
           </label>
+          <label class="flex items-start gap-2.5 text-[11px] text-t2 leading-relaxed cursor-pointer">
+            <input id="tregCheckRules" type="checkbox" class="mt-0.5 accent-gold"/>
+            <span class="text-white font-bold">I have read the rules and agree to follow them. *</span>
+          </label>
         </div>
       </div>
 
@@ -3063,7 +3096,8 @@ onAuthStateChanged(auth, async (fireUser) => {
         
         // Full Ban checker block
         if (userProfile.banned && userProfile.banType === 'full') {
-          alert(`❌ Account Banned!\n\nReason: ${userProfile.banReason || 'Rule Violations'}\nContact support@arenax.com if you feel this is unfair.`);
+          const ruleInfo = userProfile.banRule ? `\nViolation Reference: ${userProfile.banRule}` : '';
+          alert(`❌ Account Banned!\n\nReason: ${userProfile.banReason || 'Rule Violations'}${ruleInfo}\n\nContact support@arenax.com if you feel this is unfair.`);
           signOut(auth);
           userProfile = null;
           goTo('sLogin');
@@ -3858,11 +3892,16 @@ document.querySelectorAll('.fb').forEach(btn => {
 
 // Click card tournament detail & rules lock checkers
 function handleTourCardClick(tour) {
+  if (tour.isComingSoon) {
+    alert("This tournament is coming soon!");
+    return;
+  }
   const profile = userProfile || guestProfile;
   
   // 1. Check if user is banned from tournaments (onlyBan) or overall banned
   if (profile && (profile.banType === 'tournament' || profile.banned)) {
-    alert(`❌ Tournament Access Blocked!\n\nYou are banned from participating in tournaments.\n\nReason: ${profile.banReason || 'Unspecified Rule Violations'}\n\nIf you feel this is unfair, try contacting live support.`);
+    const ruleInfo = profile.banRule ? `\n\nRule Violation: ${profile.banRule}` : '';
+    alert(`❌ Tournament Access Blocked!\n\nYou are banned from participating in tournaments.\n\nReason: ${profile.banReason || 'Unspecified Rule Violations'}${ruleInfo}\n\nIf you feel this is unfair, try contacting live support.`);
     return;
   }
 
@@ -3921,6 +3960,10 @@ $('tregDecline').addEventListener('click', () => $('mTourDetail').classList.add(
 $('tregAgree').addEventListener('click', () => {
   if (!$('tregRealName').value.trim() || !$('tregGameName').value.trim() || !$('tregUID').value.trim() || !$('tregAge').value.trim()) {
     alert('Please fill out all required fields!');
+    return;
+  }
+  if (!$('tregCheckRules').checked) {
+    alert('You must read and agree to the ArenaX rules to participate in tournaments!');
     return;
   }
   if (!$('tregCheck1').checked || !$('tregCheck2').checked) {
