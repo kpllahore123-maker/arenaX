@@ -699,6 +699,12 @@ tailwind.config = {
           <option value="ice">Oceanic Ice (Blue)</option>
         </select>
       </div>
+      <div>
+        <label class="flex items-center gap-2 text-[10px] uppercase font-bold text-t2 cursor-pointer mt-2">
+          <input id="tIsWeeklyFree" type="checkbox" class="w-4 h-4 rounded bg-card border border-bdr text-red accent-red focus:ring-0"/>
+          <span>Mark as Weekly Free Tournament (Launch Fest Hub link)</span>
+        </label>
+      </div>
     </div>
 
     <div class="flex gap-3 pt-2">
@@ -946,6 +952,41 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== STAFF REVOKE SLOT MODAL ==================== -->
+<div id="mRevokeSlot" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg">
+        <i class="fas fa-user-minus"></i>
+      </div>
+      <div>
+        <h3 class="font-display text-lg font-bold text-white">Revoke Slot & Refund</h3>
+        <p id="revokePlayerLabel" class="text-xs text-t2 font-medium">Player: Loading...</p>
+        <p id="revokeTournamentLabel" class="text-[10px] text-t3 font-bold uppercase tracking-wider mt-0.5">Tournament: Loading...</p>
+      </div>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reason for Revocation *</label>
+        <textarea id="revokeReason" rows="3" placeholder="Provide reason (e.g. Incomplete transaction, player request, incorrect game UID...)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red resize-none font-medium"></textarea>
+      </div>
+      <div class="flex items-center gap-2.5 p-2.5 bg-black/20 border border-white/5 rounded-lg">
+        <input type="checkbox" id="revokeRefundToggle" class="w-4 h-4 rounded border-bdr bg-card text-gold focus:ring-0 accent-gold" checked />
+        <div>
+          <label for="revokeRefundToggle" class="block text-[11px] font-bold text-white select-none cursor-pointer">Automatically Refund Entry Fee</label>
+          <span id="revokeFeeText" class="text-[9px] text-t3 font-mono block">Refundable amount: 0 AX Coins</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseRevokeModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bProcessRevoke" class="flex-1 py-2 bg-red hover:bg-[#cc3540] text-white text-xs font-bold rounded-lg transition">Confirm Slot Revocation</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== STAFF NOTIFICATION MODAL ==================== -->
 <div id="mNotif" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
@@ -1067,6 +1108,21 @@ tailwind.config = {
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Verdict Explanation / Comments *</label>
         <textarea id="verdictText" rows="4" placeholder="Write custom verdict description, reasons, or action logs..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-red resize-none font-medium"></textarea>
       </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Direct Punishment Action</label>
+        <select id="verdictPunishment" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-red">
+          <option value="none">None (No direct ban/penalty)</option>
+          <option value="full_perm">🚫 Permanent Account Ban (Full Lockout)</option>
+          <option value="full_30d">🚫 30 Days Account Ban (Full Lockout)</option>
+          <option value="full_7d">🚫 7 Days Account Ban (Full Lockout)</option>
+          <option value="tour_perm">⛔ Permanent Tournament Ban (Block Matches)</option>
+          <option value="tour_14d">⛔ 14 Days Tournament Ban (Block Matches)</option>
+          <option value="tour_7d">⛔ 7 Days Tournament Ban (Block Matches)</option>
+          <option value="mute_perm">🔇 Permanent Chat Mute</option>
+          <option value="mute_24h">🔇 24 Hours Chat Mute</option>
+        </select>
+        <div id="verdictMatchedUserStatus" class="text-[9px] mt-1 text-t3 font-medium"></div>
+      </div>
     </div>
 
     <div class="flex gap-3 pt-2">
@@ -1102,6 +1158,108 @@ tailwind.config = {
     <div class="p-3 bg-card border-t border-bdr/40 flex gap-2">
       <input id="supChatIn" type="text" placeholder="Type staff reply..." class="flex-1 bg-ele border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-red transition"/>
       <button id="supChatSendBtn" class="w-9 h-9 bg-red hover:bg-[#cc3540] text-white rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LIVE TOURNAMENT TRACKER MODAL ==================== -->
+<div id="mTourTracker" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[640px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-3 border-b border-bdr flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg">
+          <i class="fas fa-satellite-dish animate-pulse"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-base font-black uppercase text-white tracking-wider">Live Match Player Tracker</h3>
+          <p id="mTrackerTourName" class="text-xs text-t2 font-semibold">Tournament Name</p>
+        </div>
+      </div>
+      <button id="bCloseTrackerModal" class="text-t3 hover:text-white transition p-1"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Quick Stats at Top -->
+    <div class="bg-card/60 p-4 border border-bdr/50 rounded-xl space-y-3">
+      <div class="flex justify-between items-center text-xs">
+        <div class="flex gap-4">
+          <span class="font-bold text-green flex items-center gap-1.5">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-green animate-ping"></span>
+            Alive: <span id="mTrackerAliveCount">0</span>
+          </span>
+          <span class="font-bold text-red flex items-center gap-1.5">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red"></span>
+            Eliminated: <span id="mTrackerDeadCount">0</span>
+          </span>
+        </div>
+        <div class="text-t3 font-mono font-bold text-[10px]">
+          Total Players: <span id="mTrackerTotalCount">0</span>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full h-3 bg-red/20 rounded-full overflow-hidden flex border border-bdr/30">
+        <div id="mTrackerProgressBar" class="h-full bg-green transition-all duration-500" style="width: 100%;"></div>
+      </div>
+
+      <div class="flex justify-between items-center pt-1">
+        <span class="text-[10px] text-t3 font-semibold uppercase tracking-wider">Survivor Ratio Progress</span>
+        <button id="bTrackerAnnounceWinner" class="px-3 py-1.5 bg-gold text-bg text-xs font-black uppercase tracking-wider rounded-lg hover:bg-yellow-400 transition flex items-center gap-1.5">
+          <i class="fas fa-trophy"></i> Announce Winner
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Tracker Controls: Player list -->
+    <div class="flex-1 overflow-y-auto min-h-0 bg-card/20 border border-bdr/30 rounded-xl p-3">
+      <h4 class="text-[10px] uppercase font-black text-t3 tracking-wider mb-2 flex items-center justify-between">
+        <span>Registered Participants Status</span>
+        <span class="font-mono text-t2 font-bold" id="mTrackerCountHeader">0 Players loaded</span>
+      </h4>
+      <div class="overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-panel/40 border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+              <th class="p-2">Player Name / UID</th>
+              <th class="p-2">In-Game Details</th>
+              <th class="p-2">Live Status</th>
+              <th class="p-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="mTrackerTableBody" class="divide-y divide-bdr/20">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== ANNOUNCE WINNER SUB-MODAL ==================== -->
+<div id="mAnnounceWinner" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[230] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[400px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-trophy"></i></div>
+      <div>
+        <h3 class="font-display text-base font-black uppercase text-white tracking-wider">Announce Match Winner</h3>
+        <p class="text-[10px] text-t2 font-semibold">Select the sole survivor to end the tournament</p>
+      </div>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Select Winner (From Alive Survivors)</label>
+        <select id="wWinnerSelect" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-gold">
+          <!-- Populated dynamically with alive players -->
+        </select>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button id="bCloseWinnerModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Dismiss</button>
+      <button id="bConfirmWinner" class="flex-1 py-2 bg-gold text-bg text-xs font-black uppercase tracking-wider rounded-lg transition">Confirm Winner & End</button>
     </div>
   </div>
 </div>
@@ -2663,6 +2821,7 @@ window.openVerdictModal = function(id, categoryPrefill) {
   activeVerdictReportId = id;
   $('verdictReportTitle').textContent = `Reporter: ${rep.reporterName || 'N/A'} | Accused: ${rep.reportedNickname || 'N/A'}`;
   $('verdictCategory').value = categoryPrefill;
+  $('verdictPunishment').value = 'none';
   
   // Set prefill comment text
   let defaultComment = '';
@@ -2677,6 +2836,39 @@ window.openVerdictModal = function(id, categoryPrefill) {
   }
   
   $('verdictText').value = defaultComment;
+  
+  // Look up accused player in our real-time users array
+  const reportedNameLower = (rep.reportedNickname || '').toLowerCase().replace(/^@/, '');
+  const reportedUID = rep.gameUID;
+  
+  const matchedUser = users.find(u => {
+    const uId = (u.id || '').toLowerCase();
+    const uUid = (u.uid || '').toLowerCase();
+    const uGameUID = (u.gameUID || '').toLowerCase();
+    const uName = (u.name || '').toLowerCase();
+    const uHandle = (u.handle || '').toLowerCase();
+    
+    return (
+      (reportedUID && (uId === reportedUID.toLowerCase() || uUid === reportedUID.toLowerCase() || uGameUID === reportedUID.toLowerCase())) ||
+      (reportedNameLower && (uName === reportedNameLower || uHandle === reportedNameLower))
+    );
+  });
+  
+  const statusDiv = $('verdictMatchedUserStatus');
+  if (matchedUser) {
+    statusDiv.className = 'text-[9px] mt-1 text-emerald-400 font-semibold flex items-center gap-1';
+    statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Linked Account: <strong class="text-white">${matchedUser.name}</strong> (@${matchedUser.handle || 'no-handle'}) - UID: ${matchedUser.id || matchedUser.uid}`;
+    if (categoryPrefill === 'Confirmed Cheat') {
+      $('verdictPunishment').value = 'full_perm';
+    } else {
+      $('verdictPunishment').value = 'none';
+    }
+  } else {
+    statusDiv.className = 'text-[9px] mt-1 text-yellow-500 font-semibold flex items-center gap-1';
+    statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Account not found in active cache. Punishment cannot be automated.`;
+    $('verdictPunishment').value = 'none';
+  }
+  
   $('mVerdict').classList.remove('hidden');
 };
 
@@ -2714,11 +2906,88 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
     return;
   }
   
+  const punishment = $('verdictPunishment').value;
+  
   const btn = $('bSubmitVerdictAction');
   btn.disabled = true;
   btn.textContent = 'Submitting...';
   
   try {
+    const rep = reports.find(r => r.id === activeVerdictReportId);
+    if (rep) {
+      // Find matched user
+      const reportedNameLower = (rep.reportedNickname || '').toLowerCase().replace(/^@/, '');
+      const reportedUID = rep.gameUID;
+      
+      const matchedUser = users.find(u => {
+        const uId = (u.id || '').toLowerCase();
+        const uUid = (u.uid || '').toLowerCase();
+        const uGameUID = (u.gameUID || '').toLowerCase();
+        const uName = (u.name || '').toLowerCase();
+        const uHandle = (u.handle || '').toLowerCase();
+        
+        return (
+          (reportedUID && (uId === reportedUID.toLowerCase() || uUid === reportedUID.toLowerCase() || uGameUID === reportedUID.toLowerCase())) ||
+          (reportedNameLower && (uName === reportedNameLower || uHandle === reportedNameLower))
+        );
+      });
+      
+      if (punishment !== 'none' && matchedUser) {
+        const userId = matchedUser.id || matchedUser.uid;
+        let updateFields = {};
+        let logAction = '';
+        let logDetails = '';
+        
+        if (punishment.startsWith('full_')) {
+          let duration = punishment.split('_')[1];
+          let expiry = null;
+          if (duration !== 'perm') {
+            let days = parseInt(duration);
+            expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+          }
+          updateFields = {
+            banned: true,
+            banType: 'full',
+            banReason: `[Auto punishment via Red Report #${activeVerdictReportId}]: ${text}`,
+            banUntil: expiry
+          };
+          logAction = 'Player Banned';
+          logDetails = `Full Account ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Reason: ${text}`;
+        } else if (punishment.startsWith('tour_')) {
+          let duration = punishment.split('_')[1];
+          let expiry = null;
+          if (duration !== 'perm') {
+            let days = parseInt(duration);
+            expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+          }
+          updateFields = {
+            banned: true,
+            banType: 'tournament',
+            banReason: `[Auto punishment via Red Report #${activeVerdictReportId}]: ${text}`,
+            banUntil: expiry
+          };
+          logAction = 'Player Tournament Banned';
+          logDetails = `Tournament match ban applied (${duration === 'perm' ? 'Permanent' : duration + ' days'}). Reason: ${text}`;
+        } else if (punishment.startsWith('mute_')) {
+          let duration = punishment.split('_')[1];
+          let expiry = null;
+          if (duration !== 'perm') {
+            expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+          }
+          updateFields = {
+            muted: true,
+            muteReason: `[Auto punishment via Red Report #${activeVerdictReportId}]: ${text}`,
+            muteUntil: expiry
+          };
+          logAction = 'Player Muted';
+          logDetails = `Chat/Support Mute applied (${duration === 'perm' ? 'Permanent' : '24 Hours'}). Reason: ${text}`;
+        }
+        
+        await updateDoc(doc(db, 'users', userId), updateFields);
+        logAdminActivity(logAction, userId, logDetails);
+      }
+    }
+
     await updateDoc(doc(db, 'red_reports', activeVerdictReportId), {
       status: 'reviewed',
       verdict: category,
@@ -2726,7 +2995,7 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
       closedAt: serverTimestamp()
     });
     
-    alert(`Verdict "${category}" submitted successfully! ✅`);
+    alert(`Verdict "${category}" submitted successfully! ✅${punishment !== 'none' ? ' Direct punishment applied to the player!' : ''}`);
     logAdminActivity('Red Report Resolved', activeVerdictReportId, `Verdict given: ${category}. Comments: ${text}`);
     $('mVerdict').classList.add('hidden');
     activeVerdictReportId = null;
@@ -2755,6 +3024,7 @@ function renderTournaments() {
       <td class="p-4">
         <div class="font-bold text-white text-xs">${t.name}</div>
         <div class="text-[9px] text-t3">${t.date} · ${t.time}</div>
+        ${t.isWeeklyFree ? `<span class="mt-1 inline-block px-1.5 py-0.5 bg-green-500/15 border border-green-500/30 text-green-400 rounded text-[7px] font-black uppercase tracking-wider">⚡ WEEKLY FREE</span>` : ''}
       </td>
       <td class="p-4 text-t2 font-medium">${t.game || 'Grand RP Mobile'}</td>
       <td class="p-4 text-purple font-semibold font-mono">${t.teamType || 'Solo'}</td>
@@ -2768,6 +3038,7 @@ function renderTournaments() {
       <td class="p-4 space-x-1 font-semibold text-xs flex items-center">
         <button class="b-edit px-2 py-1 bg-ele border border-bdr text-white hover:bg-card rounded transition">Edit</button>
         <button class="b-leaderboard px-2 py-1 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded transition">Leaderboard</button>
+        ${t.status === 'live' ? `<button class="b-tracker px-2 py-1 bg-red text-white hover:bg-[#d63b44] rounded transition flex items-center gap-1 font-bold animate-pulse"><i class="fas fa-satellite-dish text-[10px]"></i> Tracker</button>` : ''}
         ${(t.status === 'upcoming' || t.status === 'live') ? `<button class="b-cancel px-2 py-1 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/35 text-amber-400 rounded border border-amber-500/20 transition">Cancel</button>` : ''}
         <button class="b-del px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Delete</button>
       </td>
@@ -2775,6 +3046,9 @@ function renderTournaments() {
 
     tr.querySelector('.b-edit').addEventListener('click', () => openTourModal(t));
     tr.querySelector('.b-leaderboard').addEventListener('click', () => openManageLeaderboard(t));
+    if (t.status === 'live') {
+      tr.querySelector('.b-tracker').addEventListener('click', () => openLiveTrackerModal(t));
+    }
     if (t.status === 'upcoming' || t.status === 'live') {
       tr.querySelector('.b-cancel').addEventListener('click', () => openCancelTourModal(t));
     }
@@ -2799,6 +3073,7 @@ function openTourModal(tour = null) {
     $('tLiveMessage').value = tour.liveMessage || '';
     $('tYoutubeLink').value = tour.youtubeLink || '';
     $('tAccentTheme').value = tour.accentTheme || 'default';
+    $('tIsWeeklyFree').checked = !!tour.isWeeklyFree;
   } else {
     $('tourModalTitle').textContent = 'Configure New Event Match';
     $('tName').value = '';
@@ -2813,6 +3088,7 @@ function openTourModal(tour = null) {
     $('tLiveMessage').value = '';
     $('tYoutubeLink').value = '';
     $('tAccentTheme').value = 'default';
+    $('tIsWeeklyFree').checked = false;
   }
   $('mEditTour').classList.remove('hidden');
 }
@@ -2827,6 +3103,7 @@ $('bSaveTour').addEventListener('click', async () => {
   const date = $('tDate').value.trim();
   const time = $('tTime').value.trim();
   const max = parseInt($('tMax').value);
+  const isWeeklyFree = $('tIsWeeklyFree').checked;
 
   if (!name || !prize || !date || !time || isNaN(max)) {
     alert('Please complete all required fields (*)!');
@@ -2845,7 +3122,8 @@ $('bSaveTour').addEventListener('click', async () => {
     status: $('tStatus').value,
     liveMessage: $('tLiveMessage').value.trim(),
     youtubeLink: $('tYoutubeLink').value.trim(),
-    accentTheme: $('tAccentTheme').value
+    accentTheme: $('tAccentTheme').value,
+    isWeeklyFree: isWeeklyFree
   };
 
   try {
@@ -2951,6 +3229,16 @@ function parseEntryFee(feeStr) {
 
 // Bind modal listeners
 $('bCloseCancelModal').addEventListener('click', () => $('mCancelTour').classList.add('hidden'));
+
+// Revoke Slot modal bindings
+$('bCloseRevokeModal').addEventListener('click', () => {
+  $('mRevokeSlot').classList.add('hidden');
+  activeRevokeReg = null;
+});
+
+$('bProcessRevoke').addEventListener('click', () => {
+  processRevokeSlot();
+});
 
 document.getElementsByName('refundStrategy').forEach(radio => {
   radio.addEventListener('change', (e) => {
@@ -3104,6 +3392,7 @@ function renderRegistrations() {
       <td class="p-4">
         <div class="font-bold text-white text-xs">${reg.realName}</div>
         <div class="text-[9px] text-t3">UID: ${reg.userId} · Age: ${reg.age}</div>
+        ${reg.revokeReason ? `<div class="text-[9px] text-red mt-0.5 max-w-[150px] whitespace-normal">Revoked: ${reg.revokeReason}</div>` : ''}
       </td>
       <td class="p-4 text-gold font-bold text-xs">${reg.tournamentName}</td>
       <td class="p-4 text-t2 font-medium">
@@ -3115,7 +3404,7 @@ function renderRegistrations() {
         ${reg.screenshot ? `<a href="${reg.screenshot}" target="_blank" class="text-[9px] text-t3 underline hover:text-gold block mt-0.5">Receipt Link</a>` : ''}
       </td>
       <td class="p-4">
-        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${reg.status === 'approved' ? 'bg-green/15 text-green' : reg.status === 'rejected' ? 'bg-red/15 text-red' : 'bg-gold/15 text-gold animate-pulse'}">
+        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${reg.status === 'approved' ? 'bg-green/15 text-green' : reg.status === 'rejected' ? 'bg-red/15 text-red' : reg.status === 'cancelled' ? 'bg-amber-500/15 text-amber-400' : 'bg-gold/15 text-gold animate-pulse'}">
           ${reg.status}
         </span>
       </td>
@@ -3124,10 +3413,15 @@ function renderRegistrations() {
           <button class="b-app px-2 py-1 bg-green/10 border border-green/20 hover:bg-green/20 text-green rounded transition">Approve</button>
           <button class="b-dec px-2 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded transition">Decline</button>
         ` : reg.status === 'approved' ? `
-          <button class="b-add-lead px-2.5 py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded text-[10px] transition flex items-center gap-1 font-bold">
-            <i class="fas fa-trophy text-[9px]"></i> Add to Leaderboard
-          </button>
-        ` : `<span class="text-t3">-</span>`}
+          <div class="flex flex-col gap-1.5 max-w-[140px]">
+            <button class="b-add-lead px-2.5 py-1 bg-gold/10 border border-gold/20 hover:bg-gold/20 text-gold rounded text-[10px] transition flex items-center justify-center gap-1 font-bold">
+              <i class="fas fa-trophy text-[9px]"></i> Add to Leaderboard
+            </button>
+            <button class="b-revoke px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/20 text-red rounded text-[10px] transition flex items-center justify-center gap-1 font-bold">
+              <i class="fas fa-user-minus text-[9px]"></i> Revoke Slot
+            </button>
+          </div>
+        ` : `<span class="text-t3 font-mono text-[10px]">${reg.status}</span>`}
       </td>
     `;
 
@@ -3136,6 +3430,7 @@ function renderRegistrations() {
       tr.querySelector('.b-dec').addEventListener('click', () => rejectRegistration(reg));
     } else if (reg.status === 'approved') {
       tr.querySelector('.b-add-lead').addEventListener('click', () => manuallyAddToLeaderboard(reg));
+      tr.querySelector('.b-revoke').addEventListener('click', () => openRevokeModal(reg));
     }
     container.appendChild(tr);
   });
@@ -3255,6 +3550,126 @@ async function rejectRegistration(reg) {
   }
 }
 
+let activeRevokeReg = null;
+
+async function openRevokeModal(reg) {
+  activeRevokeReg = reg;
+  $('revokeReason').value = '';
+  $('revokeRefundToggle').checked = true;
+  $('revokePlayerLabel').textContent = `Player: ${reg.realName || 'No Name'} (@${reg.userHandle || 'anonymous'})`;
+  $('revokeTournamentLabel').textContent = `Tournament: ${reg.tournamentName}`;
+  
+  $('revokeFeeText').textContent = 'Calculating refundable amount...';
+  
+  try {
+    const tourDoc = await getDoc(doc(db, 'tournaments', reg.tournamentId));
+    if (tourDoc.exists()) {
+      const feeAmount = parseEntryFee(tourDoc.data().entryFee);
+      $('revokeFeeText').textContent = `Refundable amount: ${feeAmount} AX Coins`;
+    } else {
+      $('revokeFeeText').textContent = 'Refundable amount: 0 AX Coins';
+    }
+  } catch (err) {
+    console.warn("Error loading tournament fee for revocation modal:", err);
+    $('revokeFeeText').textContent = 'Refundable amount: 0 AX Coins';
+  }
+  
+  $('mRevokeSlot').classList.remove('hidden');
+}
+
+async function processRevokeSlot() {
+  if (!activeRevokeReg) return;
+  const reason = $('revokeReason').value.trim();
+  if (!reason) {
+    alert("Please specify a reason for revoking this slot!");
+    return;
+  }
+  const refundEnabled = $('revokeRefundToggle').checked;
+
+  $('bProcessRevoke').disabled = true;
+  $('bProcessRevoke').textContent = 'Revoking...';
+
+  try {
+    const reg = activeRevokeReg;
+    
+    // Find entry fee of tournament
+    const tourDoc = await getDoc(doc(db, 'tournaments', reg.tournamentId));
+    let feeAmount = 0;
+    if (tourDoc.exists()) {
+      feeAmount = parseEntryFee(tourDoc.data().entryFee);
+    }
+
+    // 1. If refund is enabled and fee is > 0, refund user
+    if (refundEnabled && feeAmount > 0) {
+      await updateDoc(doc(db, 'users', reg.userId), {
+        balance: increment(feeAmount)
+      });
+
+      // Write deposit request log for refund
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: reg.userId,
+        userName: reg.userName || '',
+        userEmail: '',
+        type: 'deposit',
+        method: 'Tournament Fee Refund (Revoked)',
+        amountPKR: 0,
+        amountAX: feeAmount,
+        txnId: 'REF-' + Math.floor(100000 + Math.random() * 900000),
+        status: 'approved',
+        submittedAt: serverTimestamp()
+      });
+    }
+
+    // 2. Set registration status to 'cancelled' (or 'revoked')
+    await updateDoc(doc(db, 'tournament_registrations', reg.id), {
+      status: 'cancelled',
+      revokedAt: serverTimestamp(),
+      revokeReason: reason,
+      refundedAmount: refundEnabled ? feeAmount : 0
+    });
+
+    // 3. Decrement registered slot count in tournament
+    await updateDoc(doc(db, 'tournaments', reg.tournamentId), {
+      registered: increment(-1)
+    });
+
+    // 4. Remove from Leaderboards collection
+    try {
+      const leadQuery = query(
+        collection(db, 'leaderboards'),
+        where('tournamentId', '==', reg.tournamentId),
+        where('userId', '==', reg.userId)
+      );
+      const leadSnap = await getDocs(leadQuery);
+      for (const d of leadSnap.docs) {
+        await deleteDoc(doc(db, 'leaderboards', d.id));
+      }
+    } catch (leadErr) {
+      console.error('Error removing player from leaderboard on revoke:', leadErr);
+    }
+
+    // 5. Send Notification
+    await addDoc(collection(db, 'notifications'), {
+      userId: reg.userId,
+      message: `🚨 Your registered slot for "${reg.tournamentName}" has been revoked by administration. Reason: "${reason}".${refundEnabled && feeAmount > 0 ? ` Refunded ${feeAmount} AX Coins to your wallet.` : ''}`,
+      type: 'rejected',
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    // 6. Log admin activity
+    await logAdminActivity('Revoke Slot', reg.realName, `Revoked slot for "${reg.tournamentName}". Reason: "${reason}". Refunded: ${refundEnabled ? feeAmount : 0} AX Coins.`);
+
+    alert(`Slot successfully revoked!${refundEnabled && feeAmount > 0 ? ` ${feeAmount} AX Coins refunded.` : ''} ✅`);
+    $('mRevokeSlot').classList.add('hidden');
+  } catch (err) {
+    alert("Error revoking slot: " + err.message);
+  } finally {
+    $('bProcessRevoke').disabled = false;
+    $('bProcessRevoke').textContent = 'Confirm Slot Revocation';
+  }
+}
+
 async function manuallyAddToLeaderboard(reg) {
   try {
     // Check if they are already in the leaderboard
@@ -3365,7 +3780,43 @@ function renderReports() {
       </td>
       <td class="p-4">${evidenceHTML}</td>
       <td class="p-4 max-w-[200px] text-t2 leading-relaxed select-text font-medium text-xs">
-        <p>${rep.description || 'No description'}</p>
+        <p class="font-bold text-white text-[11px] mb-1">Reason/Description:</p>
+        <p class="mb-3 text-t3 text-[11px] bg-black/10 p-1.5 rounded border border-white/5 select-text whitespace-pre-line">${rep.description || 'No description'}</p>
+        ${rep.defendantComment ? `
+          <div class="mt-2.5 p-2 bg-amber-500/10 border border-amber-500/20 rounded text-[11px]">
+            <span class="block font-bold text-amber-400 uppercase text-[9px] tracking-wider"><i class="fas fa-shield-alt"></i> Accused Player's Defense:</span>
+            <p class="text-t1 font-medium mt-1 whitespace-pre-line leading-normal select-text">${rep.defendantComment}</p>
+            <span class="text-[8px] text-t3 block font-mono mt-1">Submitted: ${rep.defendantCommentAt ? (rep.defendantCommentAt.seconds ? new Date(rep.defendantCommentAt.seconds * 1000).toLocaleString() : new Date(rep.defendantCommentAt).toLocaleString()) : 'Recently'}</span>
+          </div>
+        ` : `
+          <div class="mt-2 text-[9px] text-t3 bg-card border border-bdr/40 p-1.5 rounded flex items-center gap-1"><i class="fas fa-hourglass-half text-amber-500/80"></i> No defense submitted by player yet.</div>
+        `}
+        ${(() => {
+          const comments = rep.comments || [];
+          if (comments.length === 0) return '';
+          return `
+            <div class="mt-3 pt-2.5 border-t border-bdr/40 space-y-2">
+              <span class="block font-extrabold text-gold uppercase text-[9px] tracking-wider"><i class="fas fa-comments"></i> Discussion Logs (${comments.length}):</span>
+              <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                ${comments.map(c => {
+                  let badge = '';
+                  if (c.role === 'accused') badge = `<span class="px-1 py-0 bg-red/15 text-red border border-red/30 rounded text-[7px] font-black uppercase">Accused</span>`;
+                  else if (c.role === 'reporter') badge = `<span class="px-1 py-0 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[7px] font-black uppercase">Reporter</span>`;
+                  else if (c.role === 'moderator' || c.role === 'admin') badge = `<span class="px-1 py-0 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[7px] font-black uppercase">Staff</span>`;
+                  return `
+                    <div class="p-1.5 bg-black/30 border border-bdr/50 rounded text-[10px] space-y-0.5">
+                      <div class="flex justify-between items-center text-[8px] text-t3">
+                        <span class="font-extrabold text-white">${c.authorName} ${badge}</span>
+                        <span class="font-mono text-[7px]">${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ''}</span>
+                      </div>
+                      <p class="text-t2 font-medium leading-normal whitespace-pre-wrap select-text">${c.text}</p>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        })()}
       </td>
       <td class="p-4">${statusHTML}</td>
       <td class="p-4 text-center font-semibold text-xs">
@@ -4077,6 +4528,317 @@ $('bSendGift').addEventListener('click', async () => {
     $('bSendGift').textContent = 'Send Mail & Gift';
   }
 });
+
+// ==================== LIVE TOURNAMENT TRACKER SYSTEM ====================
+let activeTrackerTour = null;
+let trackerUnsubRegs = null;
+let trackerUnsubTour = null;
+let trackerRegs = [];
+
+async function openLiveTrackerModal(tour) {
+  activeTrackerTour = tour;
+  $('mTrackerTourName').textContent = tour.name;
+  
+  // Open modal
+  $('mTourTracker').classList.remove('hidden');
+  
+  // Set placeholder loading states
+  $('mTrackerTotalCount').textContent = "...";
+  $('mTrackerAliveCount').textContent = "...";
+  $('mTrackerDeadCount').textContent = "...";
+  $('mTrackerProgressBar').style.width = '100%';
+  $('mTrackerTableBody').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-t3 text-xs"><i class="fas fa-spinner animate-spin"></i> Loading survivor status...</td></tr>`;
+
+  try {
+    // 1. Fetch current approved registrations to initialize stats if they don't exist
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', tour.id),
+      where('status', '==', 'approved')
+    );
+    const regsSnap = await getDocs(q);
+    const approvedRegs = [];
+    regsSnap.forEach(d => approvedRegs.push({ id: d.id, ...d.data() }));
+
+    const total = approvedRegs.length;
+    const dead = approvedRegs.filter(r => r.aliveStatus === 'eliminated').length;
+    const alive = total - dead;
+
+    // Initialize/Self-heal database fields if missing on tournament doc
+    const tourRef = doc(db, 'tournaments', tour.id);
+    const snap = await getDoc(tourRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.totalPlayers === undefined || data.alivePlayers === undefined || data.eliminatedPlayers === undefined) {
+        await updateDoc(tourRef, {
+          totalPlayers: total,
+          alivePlayers: alive,
+          eliminatedPlayers: dead
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Failed initializing tracker stats:", err);
+  }
+
+  // 2. Real-time subscription to tournament statistics
+  if (trackerUnsubTour) trackerUnsubTour();
+  trackerUnsubTour = onSnapshot(doc(db, 'tournaments', tour.id), (docSnap) => {
+    if (!docSnap.exists()) return;
+    const tData = docSnap.data();
+    activeTrackerTour = { id: docSnap.id, ...tData };
+    
+    // Update Stats Card UI
+    const total = tData.totalPlayers !== undefined ? tData.totalPlayers : (tData.registered || 0);
+    const alive = tData.alivePlayers !== undefined ? tData.alivePlayers : total;
+    const dead = tData.eliminatedPlayers !== undefined ? tData.eliminatedPlayers : 0;
+    
+    $('mTrackerTotalCount').textContent = total;
+    $('mTrackerAliveCount').textContent = alive;
+    $('mTrackerDeadCount').textContent = dead;
+    
+    const percent = total > 0 ? (alive / total) * 100 : 0;
+    $('mTrackerProgressBar').style.width = `${percent}%`;
+  }, (err) => {
+    console.error("Tournament snapshot error:", err);
+  });
+
+  // 3. Real-time subscription to registrations player list
+  if (trackerUnsubRegs) trackerUnsubRegs();
+  const qRegs = query(
+    collection(db, 'tournament_registrations'),
+    where('tournamentId', '==', tour.id),
+    where('status', '==', 'approved')
+  );
+  
+  trackerUnsubRegs = onSnapshot(qRegs, (regsSnap) => {
+    trackerRegs = [];
+    regsSnap.forEach(d => {
+      trackerRegs.push({ id: d.id, ...d.data() });
+    });
+    
+    // Render Player status list
+    renderTrackerPlayers();
+  }, (err) => {
+    console.error("Registrations snapshot error:", err);
+  });
+}
+
+function renderTrackerPlayers() {
+  const container = $('mTrackerTableBody');
+  container.innerHTML = '';
+  
+  $('mTrackerCountHeader').textContent = `${trackerRegs.length} Participants`;
+  
+  if (trackerRegs.length === 0) {
+    container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-t3">No approved players registered for this tournament.</td></tr>`;
+    return;
+  }
+  
+  trackerRegs.forEach(reg => {
+    const isEliminated = reg.aliveStatus === 'eliminated';
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-white/[0.01]';
+    tr.innerHTML = `
+      <td class="p-2 font-bold text-white text-xs">
+        <div>${reg.realName || 'No Name'}</div>
+        <div class="text-[9px] text-t3 font-mono">UID: ${reg.userId.slice(-6)} · @${reg.userHandle || 'anonymous'}</div>
+      </td>
+      <td class="p-2 text-t2">
+        <div class="font-bold">${reg.gameName || 'IGN'}</div>
+        <div class="text-[9px] text-t3 font-mono font-bold">UID: ${reg.gameUID || 'N/A'}</div>
+      </td>
+      <td class="p-2">
+        <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wide ${isEliminated ? 'bg-red-500/15 text-red border border-red-500/25' : 'bg-green-500/15 text-green border border-green-500/25'}">
+          ${isEliminated ? '💀 Dead' : '🟢 Alive'}
+        </span>
+      </td>
+      <td class="p-2 text-right">
+        ${isEliminated ? `
+          <button class="b-restore px-2.5 py-1 bg-green-500/15 border border-green-500/20 text-green hover:bg-green-500/25 rounded text-[10px] font-bold transition">
+            <i class="fas fa-undo"></i> Restore
+          </button>
+        ` : `
+          <button class="b-eliminate px-2.5 py-1 bg-red/15 border border-red/20 text-red hover:bg-red/25 rounded text-[10px] font-bold transition">
+            ☠️ Eliminate
+          </button>
+        `}
+      </td>
+    `;
+    
+    if (isEliminated) {
+      tr.querySelector('.b-restore').addEventListener('click', () => restorePlayer(reg));
+    } else {
+      tr.querySelector('.b-eliminate').addEventListener('click', () => eliminatePlayer(reg));
+    }
+    
+    container.appendChild(tr);
+  });
+}
+
+async function eliminatePlayer(reg) {
+  if (!activeTrackerTour) return;
+  try {
+    // 1. Update registration status to eliminated
+    await updateDoc(doc(db, 'tournament_registrations', reg.id), {
+      aliveStatus: 'eliminated'
+    });
+    
+    // 2. Atomically adjust counters on the tournament doc
+    const tRef = doc(db, 'tournaments', activeTrackerTour.id);
+    const snap = await getDoc(tRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentAlive = data.alivePlayers !== undefined ? data.alivePlayers : trackerRegs.length;
+      const currentDead = data.eliminatedPlayers !== undefined ? data.eliminatedPlayers : 0;
+      
+      await updateDoc(tRef, {
+        alivePlayers: Math.max(0, currentAlive - 1),
+        eliminatedPlayers: currentDead + 1
+      });
+    }
+  } catch (err) {
+    alert("Failed to eliminate player: " + err.message);
+  }
+}
+
+async function restorePlayer(reg) {
+  if (!activeTrackerTour) return;
+  try {
+    // 1. Update registration status back to alive
+    await updateDoc(doc(db, 'tournament_registrations', reg.id), {
+      aliveStatus: 'alive'
+    });
+    
+    // 2. Atomically adjust counters on the tournament doc
+    const tRef = doc(db, 'tournaments', activeTrackerTour.id);
+    const snap = await getDoc(tRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentAlive = data.alivePlayers !== undefined ? data.alivePlayers : trackerRegs.length;
+      const currentDead = data.eliminatedPlayers !== undefined ? data.eliminatedPlayers : 0;
+      
+      await updateDoc(tRef, {
+        alivePlayers: currentAlive + 1,
+        eliminatedPlayers: Math.max(0, currentDead - 1)
+      });
+    }
+  } catch (err) {
+    alert("Failed to restore player: " + err.message);
+  }
+}
+
+function openAnnounceWinnerModal() {
+  if (!activeTrackerTour) return;
+  
+  // Filter for currently alive players
+  const alivePlayers = trackerRegs.filter(r => r.aliveStatus !== 'eliminated');
+  const select = $('wWinnerSelect');
+  select.innerHTML = '';
+  
+  if (alivePlayers.length === 0) {
+    select.innerHTML = `<option value="">-- No Alive Players Remaining! --</option>`;
+  } else {
+    alivePlayers.forEach(p => {
+      const option = document.createElement('option');
+      option.value = p.userId;
+      option.setAttribute('data-name', p.gameName || p.realName || 'Anonymous');
+      option.textContent = `${p.gameName || p.realName} (UID: ${p.userId.slice(-6)})`;
+      select.appendChild(option);
+    });
+  }
+  
+  $('mAnnounceWinner').classList.remove('hidden');
+}
+
+// Bind modal closing actions and announce winner confirmers
+$('bCloseTrackerModal').addEventListener('click', () => {
+  $('mTourTracker').classList.add('hidden');
+  if (trackerUnsubRegs) trackerUnsubRegs();
+  if (trackerUnsubTour) trackerUnsubTour();
+  activeTrackerTour = null;
+});
+
+$('bTrackerAnnounceWinner').addEventListener('click', () => {
+  openAnnounceWinnerModal();
+});
+
+$('bCloseWinnerModal').addEventListener('click', () => {
+  $('mAnnounceWinner').classList.add('hidden');
+});
+
+$('bConfirmWinner').addEventListener('click', async () => {
+  if (!activeTrackerTour) return;
+  const select = $('wWinnerSelect');
+  const winnerId = select.value;
+  if (!winnerId) {
+    alert("Please select a valid winner!");
+    return;
+  }
+  
+  const selectedOption = select.options[select.selectedIndex];
+  const winnerName = selectedOption.getAttribute('data-name');
+  
+  const btn = $('bConfirmWinner');
+  btn.disabled = true;
+  btn.textContent = 'Ending Tournament...';
+  
+  try {
+    // 1. Update tournament status to 'ended', set winner details, reset alive to 0
+    await updateDoc(doc(db, 'tournaments', activeTrackerTour.id), {
+      status: 'ended',
+      winnerId: winnerId,
+      winnerName: winnerName,
+      alivePlayers: 0
+    });
+    
+    // Log moderator action
+    await logAdminActivity('Announce Winner', activeTrackerTour.name, `Announced winner ${winnerName} (${winnerId}) and ended tournament.`);
+    
+    // 2. Notify all registered players of the match ending & winner declaration
+    const qRegs = query(
+      collection(db, 'tournament_registrations'),
+      where('tournamentId', '==', activeTrackerTour.id)
+    );
+    const snap = await getDocs(qRegs);
+    const notifyPromises = [];
+    const notifiedUsers = new Set();
+    
+    snap.forEach(regDoc => {
+      const regData = regDoc.data();
+      if (regData.userId && !notifiedUsers.has(regData.userId)) {
+        notifiedUsers.add(regData.userId);
+        notifyPromises.push(
+          addDoc(collection(db, 'notifications'), {
+            userId: regData.userId,
+            title: '🏆 Tournament Winner Announced!',
+            body: `The winner of "${activeTrackerTour.name}" is ${winnerName}! Thank you all for participating. Check the Leaderboard for full rankings!`,
+            message: `🏆 The winner of "${activeTrackerTour.name}" is ${winnerName}! Thank you all for participating. Check the Leaderboard for full rankings!`,
+            type: 'winner',
+            read: false,
+            createdAt: serverTimestamp()
+          })
+        );
+      }
+    });
+    
+    await Promise.all(notifyPromises);
+    
+    // Close modals
+    $('mAnnounceWinner').classList.add('hidden');
+    $('mTourTracker').classList.add('hidden');
+    
+    alert(`Tournament ended! Winner ${winnerName} announced and notification sent to all participants successfully. 🏆`);
+    
+  } catch (err) {
+    alert("Failed to announce winner: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm Winner & End';
+  }
+});
+
+window.openLiveTrackerModal = openLiveTrackerModal;
 
 </script>
 </body>
