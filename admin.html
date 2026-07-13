@@ -622,7 +622,7 @@ tailwind.config = {
 
 <!-- ==================== ADD / EDIT TOURNAMENT EVENT MODAL ==================== -->
 <div id="mEditTour" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[220] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4 max-h-[90vh] overflow-y-auto">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-red/10 border border-red/20 rounded-full flex items-center justify-center text-red text-lg"><i class="fas fa-trophy"></i></div>
       <h3 id="tourModalTitle" class="font-display text-lg font-bold text-white">Configure Event Match</h3>
@@ -688,6 +688,16 @@ tailwind.config = {
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">YouTube Live Stream Link (Optional)</label>
         <input id="tYoutubeLink" type="url" placeholder="e.g. https://www.youtube.com/watch?v=..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
       </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Map Location (Optional)</label>
+          <input id="tMap" type="text" placeholder="e.g. Los Santos / Erangel" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Per Kill Prize (Optional)</label>
+          <input id="tPerKill" type="text" placeholder="e.g. Rs 5 or 2 Coins" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red"/>
+        </div>
+      </div>
       <div>
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Card Accent Theme (Color Customize)</label>
         <select id="tAccentTheme" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
@@ -703,6 +713,18 @@ tailwind.config = {
         <label class="flex items-center gap-2 text-[10px] uppercase font-bold text-t2 cursor-pointer mt-2">
           <input id="tIsWeeklyFree" type="checkbox" class="w-4 h-4 rounded bg-card border border-bdr text-red accent-red focus:ring-0"/>
           <span>Mark as Weekly Free Tournament (Launch Fest Hub link)</span>
+        </label>
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-[10px] uppercase font-bold text-t2 cursor-pointer mt-1">
+          <input id="tIsComingSoon" type="checkbox" class="w-4 h-4 rounded bg-card border border-bdr text-red accent-red focus:ring-0"/>
+          <span>Mark as Coming Soon (lock tournament)</span>
+        </label>
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-[10px] uppercase font-bold text-t2 cursor-pointer mt-1">
+          <input id="tIsLaunchFest" type="checkbox" class="w-4 h-4 rounded bg-card border border-bdr text-red accent-red focus:ring-0"/>
+          <span>Mark as LaunchFest (Tactile Jelly Theme & Animations)</span>
         </label>
       </div>
     </div>
@@ -3133,6 +3155,10 @@ function openTourModal(tour = null) {
     $('tYoutubeLink').value = tour.youtubeLink || '';
     $('tAccentTheme').value = tour.accentTheme || 'default';
     $('tIsWeeklyFree').checked = !!tour.isWeeklyFree;
+    $('tMap').value = tour.map || '';
+    $('tPerKill').value = tour.perKill || '';
+    $('tIsComingSoon').checked = !!tour.isComingSoon;
+    $('tIsLaunchFest').checked = !!tour.isLaunchFest;
   } else {
     $('tourModalTitle').textContent = 'Configure New Event Match';
     $('tName').value = '';
@@ -3148,6 +3174,10 @@ function openTourModal(tour = null) {
     $('tYoutubeLink').value = '';
     $('tAccentTheme').value = 'default';
     $('tIsWeeklyFree').checked = false;
+    $('tMap').value = '';
+    $('tPerKill').value = '';
+    $('tIsComingSoon').checked = false;
+    $('tIsLaunchFest').checked = false;
   }
   $('mEditTour').classList.remove('hidden');
 }
@@ -3163,6 +3193,10 @@ $('bSaveTour').addEventListener('click', async () => {
   const time = $('tTime').value.trim();
   const max = parseInt($('tMax').value);
   const isWeeklyFree = $('tIsWeeklyFree').checked;
+  const map = $('tMap').value.trim();
+  const perKill = $('tPerKill').value.trim();
+  const isComingSoon = $('tIsComingSoon').checked;
+  const isLaunchFest = $('tIsLaunchFest').checked;
 
   if (!name || !prize || !date || !time || isNaN(max)) {
     alert('Please complete all required fields (*)!');
@@ -3182,7 +3216,11 @@ $('bSaveTour').addEventListener('click', async () => {
     liveMessage: $('tLiveMessage').value.trim(),
     youtubeLink: $('tYoutubeLink').value.trim(),
     accentTheme: $('tAccentTheme').value,
-    isWeeklyFree: isWeeklyFree
+    isWeeklyFree: isWeeklyFree,
+    map: map,
+    perKill: perKill,
+    isComingSoon: isComingSoon,
+    isLaunchFest: isLaunchFest
   };
 
   try {
