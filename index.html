@@ -1535,6 +1535,86 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ==================== ENABLE PUSH NOTIFICATIONS POPUP ==================== -->
+<div id="mEnableNotifications" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[310] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-5 relative animate-scale-in flex flex-col shadow-2xl">
+    <!-- Header visual with bouncing icon -->
+    <div class="flex flex-col items-center text-center space-y-3">
+      <div class="w-14 h-14 bg-gold/10 border border-gold/30 rounded-full flex items-center justify-center text-gold text-2xl relative shadow-lg shadow-gold/5">
+        <i class="fas fa-bell animate-pulse"></i>
+        <!-- Glowing pulse indicator -->
+        <span class="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-gold"></span>
+        </span>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-display text-xl font-black text-white tracking-wide uppercase">Enable Notifications</h3>
+        <p class="text-[10px] text-t3 uppercase font-semibold tracking-wider">Never miss an arena event</p>
+      </div>
+    </div>
+    
+    <!-- Stay updated benefits list -->
+    <div class="space-y-3 text-xs text-t2">
+      <p class="text-center text-t2 font-sans font-medium px-4 leading-relaxed">
+        Receive instant, real-time alerts directly in your browser. Stay updated on:
+      </p>
+      
+      <div class="bg-card/40 border border-bdr/50 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 bg-gold/10 border border-gold/25 rounded-lg flex items-center justify-center text-gold text-xs flex-shrink-0 mt-0.5">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div>
+            <p class="text-white font-bold text-xs">Tournament results & brackets</p>
+            <p class="text-[10px] text-t3">Know immediately when matchups change or bracket stages advance.</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 bg-gold/10 border border-gold/25 rounded-lg flex items-center justify-center text-gold text-xs flex-shrink-0 mt-0.5">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div>
+            <p class="text-white font-bold text-xs">Registration approvals</p>
+            <p class="text-[10px] text-t3">Receive alerts when admins approve your slot registrations.</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 bg-gold/10 border border-gold/25 rounded-lg flex items-center justify-center text-gold text-xs flex-shrink-0 mt-0.5">
+            <i class="fas fa-calendar-plus"></i>
+          </div>
+          <div>
+            <p class="text-white font-bold text-xs">New tournaments</p>
+            <p class="text-[10px] text-t3">Get early access when high-prize tournaments are posted.</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 bg-gold/10 border border-gold/25 rounded-lg flex items-center justify-center text-gold text-xs flex-shrink-0 mt-0.5">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div>
+            <p class="text-white font-bold text-xs">AX Coin rewards & bonuses</p>
+            <p class="text-[10px] text-t3">Stay notified of daily task claims and referral credits.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Action buttons -->
+    <div class="flex gap-3">
+      <button id="btnNotifNotNow" class="flex-1 py-3 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white text-xs font-bold rounded-xl transition duration-150">
+        Not Now
+      </button>
+      <button id="btnNotifAllow" class="flex-1 py-3 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10">
+        Allow
+      </button>
+    </div>
+  </div>
+</div>
+
 
 
 
@@ -2698,6 +2778,7 @@ let userProfileTransactionsList = [];
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
+let notifPopupShownThisSession = false;
 
 // Customization States
 let selectedBannerTheme = 'dark';
@@ -2955,6 +3036,26 @@ function boot() {
   if (!devPopupShownThisSession) {
     $('mUnderDevPopup').classList.remove('hidden');
     devPopupShownThisSession = true;
+    
+    // Listen for the under-dev popup closing, then trigger notifications permission check
+    const onDevClose = () => {
+      setTimeout(() => {
+        if (typeof window.checkAndShowNotificationPopup === 'function') {
+          window.checkAndShowNotificationPopup();
+        }
+      }, 500);
+      $('bCloseUnderDev').removeEventListener('click', onDevClose);
+      $('bCloseUnderDevCross').removeEventListener('click', onDevClose);
+    };
+    $('bCloseUnderDev').addEventListener('click', onDevClose);
+    $('bCloseUnderDevCross').addEventListener('click', onDevClose);
+  } else {
+    // If developer popup is already shown this session, show notifications permission popup directly
+    setTimeout(() => {
+      if (typeof window.checkAndShowNotificationPopup === 'function') {
+        window.checkAndShowNotificationPopup();
+      }
+    }, 1200);
   }
 }
 
@@ -7657,6 +7758,82 @@ $('bCloseUnderDev').addEventListener('click', () => {
 });
 $('bCloseUnderDevCross').addEventListener('click', () => {
   $('mUnderDevPopup').classList.add('hidden');
+});
+
+// ==================== BROWSER PUSH NOTIFICATIONS SYSTEM ====================
+window.checkAndShowNotificationPopup = function() {
+  if (notifPopupShownThisSession) return;
+  
+  // 1. Check if browser notifications are already granted
+  if (window.Notification && Notification.permission === 'granted') {
+    return;
+  }
+  
+  // 2. Only show for fully logged-in user, not guests
+  if (guestProfile || !userProfile) {
+    return;
+  }
+  
+  // 3. Check localStorage cooldown: ask again after 3 days
+  const lastAsked = localStorage.getItem('notifAsked');
+  if (lastAsked) {
+    const timestamp = parseInt(lastAsked, 10);
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    if (Date.now() - timestamp < threeDaysMs) {
+      return;
+    }
+  }
+  
+  // Show the popup!
+  $('mEnableNotifications').classList.remove('hidden');
+  notifPopupShownThisSession = true;
+};
+
+// Event listeners for Push Notification Popup buttons
+$('btnNotifNotNow').addEventListener('click', () => {
+  $('mEnableNotifications').classList.add('hidden');
+  // Close popup and save ask time to localStorage to ask again after 3 days
+  localStorage.setItem('notifAsked', Date.now().toString());
+});
+
+$('btnNotifAllow').addEventListener('click', async () => {
+  $('mEnableNotifications').classList.add('hidden');
+  
+  if (window.Notification) {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Save FCM/permission status to Firestore under user profile
+        if (userProfile && userProfile.uid) {
+          try {
+            await updateDoc(doc(db, 'users', userProfile.uid), {
+              notificationsEnabled: true,
+              notificationPermission: 'granted',
+              notificationGrantedAt: new Date().toISOString()
+            });
+          } catch (fErr) {
+            console.error("Failed to update notification settings in user profile:", fErr);
+          }
+        }
+        
+        // Show success toast
+        showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
+        
+        // Trigger a real browser notification to let the user see it's active
+        new Notification("ArenaX Notifications Active!", {
+          body: "You've successfully enabled real-time esports notifications!",
+          icon: "/favicon.ico"
+        });
+      } else {
+        // If they denied, treat it like "Not Now" / record cooldown so we don't spam
+        localStorage.setItem('notifAsked', Date.now().toString());
+      }
+    } catch (e) {
+      console.error("Error requesting notification permission:", e);
+    }
+  } else {
+    showToastNotification('⚠️ Unsupported Browser', 'Push notifications are not supported in your browser.');
+  }
 });
 
 // Initial bootstrapper loads
