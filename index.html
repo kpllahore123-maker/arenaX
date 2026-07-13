@@ -83,12 +83,6 @@ tailwind.config = {
 }
 </script>
 <style>
-/* Custom CSS Selector for active football ground backdrop as requested by user */
-div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7) > div#dFootballActiveGround:nth-of-type(3) {
-  background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop') !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -111,15 +105,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 #curR { position: fixed; width: 30px; height: 30px; border: 1.5px solid rgba(240, 192, 64, 0.5); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: left 0.1s ease, top 0.1s ease, width 0.2s, height 0.2s, border-color 0.2s; }
 .hv-hover #curR { width: 44px; height: 44px; border-color: #f0c040; }
 
-/* Football Pitch Moving Background Keyframes */
-@keyframes pitch-pan {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
-  100% { transform: translateY(0); }
-}
-.animate-pitch-pan {
-  animation: pitch-pan 22s ease-in-out infinite;
-}
+
 
 @keyframes float-slow {
   0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
@@ -166,24 +152,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
   animation: sweep-right 13s ease-in-out infinite;
 }
 
-/* New Football Event Styles */
-@keyframes flag-wave {
-  0% { transform: skewY(0deg) scaleX(1); }
-  50% { transform: skewY(3deg) scaleX(0.97) translateY(1px); }
-  100% { transform: skewY(0deg) scaleX(1); }
-}
-.animate-flag-wave {
-  animation: flag-wave 3s ease-in-out infinite;
-}
 
-@keyframes camera-flash {
-  0%, 93%, 97%, 100% { opacity: 0; }
-  94%, 96% { opacity: 1; }
-  95% { opacity: 0.8; }
-}
-.animate-camera-flash {
-  animation: camera-flash 4s infinite;
-}
 
 @keyframes gold-glow {
   0%, 100% { text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3); }
@@ -221,6 +190,11 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 .card-back {
   transform: rotateY(180deg);
 }
+@keyframes loading-bar {
+  0% { transform: translateX(-110%); }
+  50% { transform: translateX(110%); }
+  100% { transform: translateX(-110%); }
+}
 </style>
 
 </head>
@@ -230,8 +204,30 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 <div id="cur" class="hidden md:block"></div>
 <div id="curR" class="hidden md:block"></div>
 
+<!-- ==================== SPLASH / LOADING SCREEN ==================== -->
+<div id="sSplash" class="fixed inset-0 bg-[#060b09] z-[200] flex flex-col items-center justify-center p-4">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-[130px]"></div>
+  </div>
+  <div class="relative text-center space-y-6">
+    <div class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-[#10b981] rounded-3xl flex items-center justify-center text-4xl text-bg mx-auto shadow-[0_0_50px_rgba(16,185,129,0.4)] animate-pulse">
+      <i class="fas fa-futbol text-white animate-spin-slow"></i>
+    </div>
+    <div class="space-y-2">
+      <h1 class="font-display text-4xl font-extrabold tracking-wider text-white">Arena<span class="text-emerald-400">X</span></h1>
+      <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">Compete · Rise · Dominate</p>
+    </div>
+    <div class="flex flex-col items-center gap-2.5 pt-4">
+      <div class="w-24 h-1 bg-neutral-800 rounded-full overflow-hidden relative">
+        <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-300 rounded-full animate-[loading-bar_1.5s_infinite_linear]" style="width: 50%;"></div>
+      </div>
+      <span class="text-[9px] text-t3 uppercase font-black tracking-widest font-mono">Entering Arena...</span>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== SIGN IN SCREEN ==================== -->
-<div id="sLogin" class="fixed inset-0 bg-[#060b09] z-[100] flex items-center justify-center p-4">
+<div id="sLogin" class="fixed inset-0 bg-[#060b09] z-[100] flex items-center justify-center p-4 hidden">
   <div class="absolute inset-0 pointer-events-none overflow-hidden">
     <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-[130px]"></div>
     <div class="absolute bottom-[-15%] right-[-15%] w-[450px] h-[450px] bg-emerald-500/5 rounded-full filter blur-[110px]"></div>
@@ -337,15 +333,15 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <i class="fas fa-trophy text-gold mr-2"></i>Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
-      <!-- Football Ground Access -->
-      <button id="bFootballGround" class="relative w-9 h-9 bg-card border border-emerald-500/30 rounded-full flex items-center justify-center text-sm text-emerald-400 hover:text-emerald-300 hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(16,185,129,0.3)] transition" title="Football Ground">
-        <i class="fas fa-futbol"></i>
-        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
-      </button>
-
       <!-- Topbar Menu Button (Hamburger) -->
       <button id="bTopbarMenu" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Menu Hub">
         <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- Launch Fest Event Button -->
+      <button id="bLaunchFest" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-gold hover:text-white hover:border-gold/50 transition" title="Launch Fest Hub">
+        <i class="fas fa-rocket animate-pulse text-gold"></i>
+        <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red rounded-full ring-1 ring-panel animate-pulse"></span>
       </button>
 
       <!-- Notification Bell -->
@@ -406,8 +402,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
             <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 uppercase hidden">
               <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
             </span>
-            <span id="badgeFifa" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-emerald-500/20 to-teal-400/20 text-emerald-400 rounded border border-emerald-500/35 uppercase hidden"><i class="fas fa-futbol mr-1"></i> FIFA Member</span>
-            <span id="badgeFifaWorldMember" class="px-2 py-0.5 text-[9px] font-bold bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-600/20 text-gold rounded border border-gold/45 uppercase hidden"><i class="fas fa-medal mr-1"></i> FIFA World Member</span>
           </div>
           <!-- Custom Earned Badges Container -->
           <div id="userEarnedBadges" class="flex flex-wrap gap-1.5 mt-1.5 w-full"></div>
@@ -448,53 +442,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         </div>
       </div>
 
-      <!-- LIVE EVENT PROMO CARD -->
-      <div class="p-4 bg-gradient-to-br from-gold/15 via-[#f0c040]/5 to-transparent border border-gold/25 rounded-xl space-y-3 relative overflow-hidden">
-        <div class="absolute -right-6 -bottom-6 opacity-10 text-gold text-7xl select-none pointer-events-none">
-          <i class="fas fa-trophy"></i>
-        </div>
-        
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 bg-gold/10 rounded-lg flex items-center justify-center text-gold border border-gold/20 flex-shrink-0">
-            <i class="fas fa-futbol"></i>
-          </div>
-          <div>
-            <h4 class="font-display font-black text-gold text-sm uppercase tracking-wider">FIFA World Cup Squad Event!</h4>
-            <p class="text-[10px] text-t3">ArenaX Exclusive Dual-Action Hybrid Tournament</p>
-          </div>
-        </div>
-        
-        <div class="space-y-2 text-xs text-t2">
-          <p class="leading-relaxed text-[11px]">
-            Welcome to the ultimate hybrid battleground of the season! Watch or compete as a player runs and plays football while facing armed players shooting in real combat.
-          </p>
-          
-          <div class="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-bdr/40">
-            <div class="flex items-center gap-1.5 text-t2">
-              <i class="fas fa-calendar-alt text-gold w-3.5"></i>
-              <span>Date: <strong>July 15, 2026</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 text-t2">
-              <i class="fas fa-clock text-gold w-3.5"></i>
-              <span>Time: <strong>08:00 PM PKT</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 text-t2">
-              <i class="fas fa-coins text-gold w-3.5"></i>
-              <span>Prize: <strong class="text-gold">50,000 AX Coins</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 text-t2">
-              <i class="fas fa-users text-gold w-3.5"></i>
-              <span>Format: <strong>Squad (4v4)</strong></span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="pt-1">
-          <button onclick="goTo('sDash'); switchTab('Tour');" class="w-full py-2 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-black uppercase tracking-widest rounded-lg transition duration-150">
-            <i class="fas fa-trophy mr-1"></i> Join & Register Now
-          </button>
-        </div>
-      </div>
+
       
       <!-- EXTRA DETAILS -->
       <div id="pDetailsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-3 hidden">
@@ -560,23 +508,49 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       </div>
     </section>
 
-    <!-- ── TOURNAMENTS TAB ── -->
     <section id="tTour" class="tab space-y-4 hidden">
-      <div class="font-display text-xl font-bold flex items-center gap-2">
-        <i class="fas fa-gamepad text-gold"></i> Tournaments
-      </div>
+      <style>
+        @keyframes floatSlow {
+          0%, 100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0.4; }
+          50% { transform: translateY(-12px) scale(1.1) rotate(180deg); opacity: 0.8; }
+        }
+        @keyframes floatMedium {
+          0%, 100% { transform: translateY(0) scale(1.1) rotate(0deg); opacity: 0.5; }
+          50% { transform: translateY(-18px) scale(0.9) rotate(120deg); opacity: 0.9; }
+        }
+        @keyframes floatFast {
+          0%, 100% { transform: translateY(0) scale(0.9) rotate(0deg); opacity: 0.3; }
+          50% { transform: translateY(-22px) scale(1.2) rotate(240deg); opacity: 0.7; }
+        }
+        .animate-float-slow {
+          animation: floatSlow 5s infinite ease-in-out;
+        }
+        .animate-float-medium {
+          animation: floatMedium 3.5s infinite ease-in-out;
+        }
+        .animate-float-fast {
+          animation: floatFast 2.5s infinite ease-in-out;
+        }
+      </style>
 
-      <!-- Filters -->
-      <div class="flex gap-2 overflow-x-auto pb-1">
-        <button class="fb on px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="all">All</button>
-        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="live">🔴 Live</button>
-        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="upcoming">Upcoming</button>
-        <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="ended">Ended</button>
-      </div>
+      <!-- ── ORIGINAL TOURNAMENTS WRAPPER ── -->
+      <div id="toursWrapper" class="space-y-4">
+        <div class="font-display text-base font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+          <i class="fas fa-gamepad text-gold"></i> Live Tournaments
+        </div>
 
-      <!-- Tournament Cards Grid -->
-      <div id="tList" class="space-y-3">
-        <!-- Rendered dynamically -->
+        <!-- Filters -->
+        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button class="fb on px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="all">All</button>
+          <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="live">🔴 Live</button>
+          <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="upcoming">Upcoming</button>
+          <button class="fb px-4 py-1.5 bg-card border border-bdr text-t2 text-xs font-semibold rounded-full hover:border-gold hover:text-gold transition whitespace-nowrap" data-f="ended">Ended</button>
+        </div>
+
+        <!-- Tournament Cards Grid -->
+        <div id="tList" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
       </div>
     </section>
 
@@ -756,225 +730,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
     <!-- Dummy Support Tab (Logic moved to Support Side Drawer) -->
     <div id="tSupport" class="tab hidden"></div>
 
-    <!-- ── FOOTBALL GROUND TAB ── -->
-    <section id="tFootball" class="tab space-y-4 hidden flex flex-col relative">
-      <div class="font-display text-xl font-bold flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-futbol text-emerald-400 animate-spin-slow"></i> 
-          <span class="text-white">ArenaX Football Ground</span>
-        </div>
-        <span class="text-xs px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full font-sans uppercase font-bold tracking-wider animate-pulse flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Stadium
-        </span>
-      </div>
-
-      <!-- CHOOSE FOOTBALL TEAM SCREEN -->
-      <div id="dFootballChooseTeam" class="space-y-4">
-        <div class="bg-gradient-to-r from-emerald-950/20 to-teal-950/20 border border-emerald-500/15 rounded-xl p-4 text-center">
-          <h3 class="font-display text-base font-black text-emerald-400 uppercase tracking-widest">Select Your Football Team</h3>
-          <p class="text-[11px] text-t2 mt-1">Choose your franchise club to unlock the 10 daily stadium missions & win the ultimate FIFA tag!</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4" id="dFootballTeamGrid">
-          <!-- Team Cards will be rendered dynamically -->
-        </div>
-      </div>
-
-      <!-- ACTIVE GROUND & MISSIONS SCREEN -->
-      <div id="dFootballActiveGround" style="background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop'); background-size: cover; background-position: center;" class="space-y-4 hidden relative p-4 rounded-2xl border border-emerald-500/30 overflow-hidden min-h-[560px] flex flex-col justify-between">
-        
-        <!-- Live Animated Moving Football Pitch / Turf Backdrop -->
-        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
-          <!-- Slow moving real illuminated stadium background image -->
-          <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center opacity-95 animate-pitch-pan"></div>
-          
-          <!-- Stadium Turf Overlay & Radial Vignette for clear readability -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60"></div>
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.4)_95%)]"></div>
-          
-          <!-- Beautiful Stadium Chalk Markings -->
-          <div class="absolute inset-6 border border-white/5 rounded-sm"></div>
-          <div class="absolute top-1/2 left-6 right-6 h-[1px] bg-white/5"></div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 border border-white/5 rounded-full"></div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/10 rounded-full"></div>
-
-          <!-- Sweeping Floodlights (Atmospheric stadium light beams) -->
-          <div class="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/[0.08] rounded-full filter blur-3xl animate-sweep-left"></div>
-          <div class="absolute -top-12 -right-12 w-64 h-64 bg-teal-500/[0.08] rounded-full filter blur-3xl animate-sweep-right"></div>
-          
-          <!-- Dynamic camera flashes in audience -->
-          <div class="absolute top-[15%] left-[20%] w-1 h-1 bg-white rounded-full animate-camera-flash"></div>
-          <div class="absolute top-[18%] left-[25%] w-1.5 h-1.5 bg-yellow-200 rounded-full animate-camera-flash" style="animation-delay: 1.5s;"></div>
-          <div class="absolute top-[12%] right-[30%] w-1 h-1 bg-white rounded-full animate-camera-flash" style="animation-delay: 0.8s;"></div>
-          <div class="absolute top-[14%] right-[15%] w-1.5 h-1.5 bg-blue-200 rounded-full animate-camera-flash" style="animation-delay: 2.3s;"></div>
-          <div class="absolute top-[22%] left-[45%] w-1 h-1 bg-white rounded-full animate-camera-flash" style="animation-delay: 3s;"></div>
-
-          <!-- Floating soccer particles -->
-          <div class="absolute top-1/3 left-10 w-4 h-4 text-emerald-400/10 text-xs animate-float-slow"><i class="fas fa-futbol"></i></div>
-          <div class="absolute top-2/3 right-12 w-5 h-5 text-emerald-300/10 text-sm animate-float-medium"><i class="fas fa-futbol"></i></div>
-        </div>
-
-        <!-- STADIUM FOREGROUND WIDGETS -->
-        
-        <!-- Scoreboard Widget (Top Left) -->
-        <div class="absolute top-4 left-4 z-20 bg-black/85 backdrop-blur-md border border-emerald-500/30 rounded-xl px-3 py-2 flex items-center gap-3 shadow-2xl">
-          <div class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-            <span class="text-[8px] font-mono font-black text-red-500 tracking-wider">LIVE</span>
-          </div>
-          <div class="h-3 w-[1px] bg-white/20"></div>
-          <div class="text-[10px] font-mono font-black text-white flex items-center gap-2">
-            <span id="scoreboardTeamName" class="text-gold">PAK</span> 
-            <span class="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded text-[9px]" id="scoreboardMatchScore">2 - 1</span> 
-            <span class="text-t3">WLD</span>
-          </div>
-        </div>
-
-        <!-- Stadium Banner Title -->
-        <div class="absolute top-4 right-4 z-20 text-right">
-          <div class="text-[9px] uppercase tracking-widest font-black text-gold animate-gold-glow">WORLD CUP 2026 EVENT</div>
-          <div class="text-[8px] text-t3 uppercase font-semibold">ArenaX Turf Stadium</div>
-        </div>
-
-        <!-- Center Interactive Playing Area -->
-        <div class="flex-1 flex flex-col items-center justify-center min-h-[360px] relative z-10">
-          <!-- Animated Big Headline -->
-          <div class="text-center mb-8 space-y-1 animate-fade-in pointer-events-none select-none">
-            <h4 class="text-white font-display text-[26px] font-black tracking-widest leading-none drop-shadow-md">
-              ARENA X <span class="text-gold animate-gold-glow">WORLD CUP</span>
-            </h4>
-            <p class="text-[10px] text-emerald-400 font-mono tracking-widest uppercase font-black">2026 Grand Championship Edition</p>
-          </div>
-
-          <!-- Bouncing Interactive Soccer Ball on Turf -->
-          <div id="stadiumFloatingBall" class="relative group cursor-pointer transition transform hover:scale-115 active:scale-90" onclick="kickStadiumBall()">
-            <!-- Shadow below ball -->
-            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-2.5 bg-black/50 filter blur-sm rounded-full group-hover:scale-75 transition-all"></div>
-            <!-- Soccer ball itself -->
-            <div class="w-16 h-16 rounded-full shadow-[0_0_25px_rgba(16,185,129,0.6)] flex items-center justify-center select-none animate-bounce" style="animation-duration: 2s;">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" class="w-full h-full object-contain filter drop-shadow-lg" alt="Real Football" />
-            </div>
-            <!-- Help Prompt -->
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 text-gold border border-gold/30 text-[8px] font-bold px-2 py-0.5 rounded uppercase whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none tracking-wider shadow-lg">KICK FOR LUCK!</div>
-          </div>
-        </div>
-
-        <!-- Bottom Controller Panel -->
-        <div class="relative z-20 flex items-center justify-between gap-4 border-t border-white/5 pt-4 bg-black/40 -mx-4 -mb-4 px-4 pb-4">
-          <!-- Left: Club Details Button -->
-          <button id="bShowStadiumClub" class="w-12 h-12 bg-black/80 hover:bg-black border border-white/10 text-emerald-400 rounded-xl shadow-lg flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer" onclick="showClubProfileModal()">
-            <i class="fas fa-shield-halved text-base"></i>
-            <span class="text-[7px] uppercase font-bold tracking-tighter mt-1">Club</span>
-          </button>
-
-          <!-- Center: Play Shootout Action Call -->
-          <button onclick="openPenaltyShootout()" class="px-6 py-2.5 bg-gradient-to-r from-gold via-amber-500 to-gold hover:from-[#e8b830] text-bg font-black rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] flex items-center gap-2 hover:scale-105 active:scale-95 transition cursor-pointer text-xs uppercase tracking-wider border border-white/20">
-            <i class="fas fa-futbol animate-spin-slow"></i> Play Shootout
-          </button>
-
-          <!-- Right: See Tasks Slide drawer button -->
-          <button id="bShowStadiumTasks" class="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-teal-400 text-bg font-black rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/15 animate-pulse">
-            <i class="fas fa-tasks text-base"></i>
-            <span class="text-[7px] uppercase font-bold tracking-tighter mt-1">Tasks</span>
-          </button>
-        </div>
-
-        <!-- DYNAMIC TASKS DRAWER / SLIDE-IN PANEL (Overlaid on Stadium Background) -->
-        <div id="dFootballTasksDrawer" class="absolute inset-y-0 right-0 w-[310px] max-w-full bg-[#05140b]/95 backdrop-blur-md border-l border-emerald-500/20 shadow-[0_0_50px_rgba(0,0,0,0.85)] z-40 transform translate-x-full transition-transform duration-300 flex flex-col hidden">
-          <!-- Drawer Header -->
-          <div class="p-4 border-b border-white/10 flex items-center justify-between bg-black/60">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-trophy text-gold animate-bounce"></i>
-              <span class="font-display font-black text-white text-xs uppercase tracking-widest">STADIUM MISSIONS</span>
-            </div>
-            <button id="bCloseTasksDrawer" class="w-8 h-8 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          
-          <!-- Drawer Content -->
-          <div class="flex-1 overflow-y-auto p-4 space-y-4">
-            <!-- Event Countdown Banner -->
-            <div class="p-3 bg-gradient-to-br from-amber-500/10 to-emerald-500/10 border border-gold/20 rounded-xl space-y-1 relative overflow-hidden">
-              <div class="flex justify-between items-center text-[10px]">
-                <span class="font-bold text-gold uppercase tracking-wider">🏆 Cup Event Finals</span>
-                <span class="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-[8px]" id="dCountdownText">12 Days Left</span>
-              </div>
-              <p class="text-[9px] text-t2 leading-relaxed">Complete all 10 daily missions before the tournament countdown expires!</p>
-            </div>
-
-            <!-- 🏆 SPECIAL 5-QUEST WORLD CUP CAMPAIGN -->
-            <div class="p-4 bg-gradient-to-br from-amber-600/[0.08] via-yellow-500/[0.03] to-black/85 border-2 border-gold/40 rounded-2xl space-y-3 shadow-[0_0_15px_rgba(245,158,11,0.15)] relative overflow-hidden">
-              <div class="absolute -right-6 -top-6 w-16 h-16 bg-gold/10 rounded-full blur-xl pointer-events-none"></div>
-              
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs">🎁</span>
-                  <h4 class="font-display font-black text-[11px] text-gold uppercase tracking-widest leading-none">World Cup Gifts Campaign</h4>
-                </div>
-                <span class="text-[8px] font-mono font-bold bg-gold/20 text-gold px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">5 Quests Event</span>
-              </div>
-
-              <!-- Perks/Rewards Preview -->
-              <div class="p-2.5 bg-black/50 rounded-xl border border-gold/15 flex flex-col gap-1.5 text-[10px]">
-                <div class="text-[9px] text-white/60 font-semibold uppercase tracking-wider mb-0.5">Rewards upon completing all 5:</div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs">🏅</span>
-                  <span class="text-t1 font-bold">"FIFA World Member" <span class="text-gold">Permanent Badge</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs">👑</span>
-                  <span class="text-t1 font-bold">7 Days <span class="text-purple-400 font-extrabold">Free VIP Premium Pass</span></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs">🖼️</span>
-                  <span class="text-t1 font-bold">Special <span class="text-gold font-extrabold">Gold Football Avatar Frame</span></span>
-                </div>
-              </div>
-
-              <!-- Quests List -->
-              <div class="space-y-2" id="worldCupCampaignQuestsContainer">
-                <!-- Quests will be rendered here dynamically -->
-              </div>
-
-              <!-- Claim Rewards Button -->
-              <button id="bClaimWorldCupGifts" class="w-full py-2 bg-gradient-to-r from-gold via-yellow-500 to-gold text-bg font-black rounded-xl text-[10px] tracking-wider uppercase transition shadow-lg hover:brightness-110 active:scale-95 cursor-pointer hidden">
-                🎁 Claim World Cup Rewards!
-              </button>
-            </div>
-
-            <!-- Progress Tracker Bar -->
-            <div class="p-3 bg-black/40 border border-white/5 rounded-xl space-y-2">
-              <div class="flex justify-between items-center text-[10px]">
-                <span class="font-bold text-t1 uppercase tracking-wider flex items-center gap-1">
-                  <i class="fas fa-tasks text-emerald-400"></i> Daily Missions Completion
-                </span>
-                <span class="font-mono text-emerald-400 font-extrabold text-xs" id="dFootballProgressText">0 / 10 Completed</span>
-              </div>
-              <div class="w-full h-2 bg-ele/40 border border-bdr/50 rounded-full overflow-hidden">
-                <div id="dFootballProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <!-- Ultimate Claim Panel (Shows when 10/10 completed) -->
-            <div id="dFootballClaimPanel" class="p-4 bg-gradient-to-r from-amber-500/20 to-gold/20 border border-gold/30 rounded-xl text-center space-y-3 hidden animate-bounce">
-              <h4 class="font-display font-black text-gold text-xs uppercase tracking-widest">🏆 CHAMPIONSHIP UNLOCKED!</h4>
-              <p class="text-[10px] text-t1 leading-relaxed">You have dominated all 10 stadium missions! Claim your champion gifts now.</p>
-              <button id="bFootballClaimGifts" class="w-full py-2 bg-gold hover:bg-[#e8b830] text-bg font-black rounded-lg text-[10px] tracking-widest uppercase transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5">
-                <i class="fas fa-gift text-xs animate-pulse"></i> Claim 250 AX & Tag!
-              </button>
-            </div>
-
-            <!-- Missions List Container -->
-            <div class="space-y-2" id="dFootballMissionsContainer">
-              <!-- Missions will be injected dynamically -->
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
 
   </div>
 
@@ -989,10 +744,6 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
       <i class="fas fa-wallet text-base"></i><span>Wallet</span>
     </button>
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Football">
-      <i class="fas fa-futbol text-emerald-400"></i><span>Football</span>
-      <span class="absolute top-1.5 right-4 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-    </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
       <i class="fas fa-comments text-base"></i><span>Chat</span>
       <span id="chatDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-gold hidden"></span>
@@ -1001,6 +752,313 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <i class="fas fa-headset text-base"></i><span>Support</span>
     </button>
   </nav>
+</div>
+
+<!-- ==================== LAUNCH FEST DRAWER ==================== -->
+<!-- Drawer Backdrop -->
+<div id="mLaunchFestDrawerBackdrop" class="fixed inset-0 bg-black/60 z-[235] hidden opacity-0 transition-opacity duration-300"></div>
+
+<!-- Drawer Panel (occupies max-width: 420px) -->
+<div id="dLaunchFestDrawer" class="fixed inset-y-0 right-0 w-[420px] max-w-[92vw] h-full bg-[#0d0f1a] border-l border-bdr shadow-[0_0_40px_rgba(0,0,0,0.8)] z-[238] transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+  <!-- Drawer Header -->
+  <div class="p-4 border-b border-bdr flex items-center justify-between bg-card/50 flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-rocket text-gold animate-pulse text-xs"></i>
+      <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">Launch Fest Hub</h3>
+    </div>
+    <button id="bCloseLaunchFestDrawer" class="w-7 h-7 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <!-- Drawer Body -->
+  <div class="flex-1 p-4 space-y-4 overflow-y-auto">
+    <!-- ── LAUNCH FEST WRAPPER ── -->
+    <div id="festWrapper" class="space-y-4">
+      <!-- Loading Skeleton -->
+      <div id="festSkeleton" class="space-y-4">
+        <div class="h-32 bg-card border border-bdr/50 rounded-xl animate-pulse flex flex-col justify-center items-center text-t3 text-xs gap-2">
+          <i class="fas fa-spinner animate-spin text-lg text-gold"></i>
+          Loading Launch Fest Content...
+        </div>
+      </div>
+
+      <!-- Real Content (hidden initially until boot / state load) -->
+      <div id="festContent" class="space-y-4 hidden">
+        
+        <!-- SECTION 1: HERO BANNER -->
+        <div class="bg-gradient-to-r from-[#e8404a]/15 via-[#f0c040]/10 to-[#e8404a]/15 border border-[#f0c040]/30 rounded-2xl p-5 text-center relative overflow-hidden shadow-[0_0_20px_rgba(240,192,64,0.06)]">
+          <!-- Animated background confetti particles -->
+          <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+            <div class="w-1.5 h-1.5 bg-gold rounded-full absolute animate-float-slow" style="top: 15%; left: 15%;"></div>
+            <div class="w-2 h-2 bg-red rounded-full absolute animate-float-medium" style="top: 45%; left: 85%;"></div>
+            <div class="w-1.5 h-1.5 bg-green rounded-full absolute animate-float-fast" style="top: 75%; left: 25%;"></div>
+            <div class="w-2 h-2 bg-blue rounded-full absolute animate-float-slow" style="top: 25%; left: 75%;"></div>
+          </div>
+          
+          <span class="inline-block bg-red/95 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-md border border-red-500/20 mb-3 animate-pulse">
+            LIMITED TIME EVENT
+          </span>
+          <h2 class="font-display text-base font-extrabold text-white tracking-tight">🎉 ArenaX Launch Fest</h2>
+          <p class="text-[11px] text-t2 mt-1 max-w-xs mx-auto leading-relaxed">Join the Revolution — Play Free, Win Big!</p>
+          
+          <!-- Countdown -->
+          <div class="grid grid-cols-4 gap-2 mt-4 max-w-[280px] mx-auto" id="festCountdown">
+            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
+              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdDays">00</span>
+              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Days</span>
+            </div>
+            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
+              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdHours">00</span>
+              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Hours</span>
+            </div>
+            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
+              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdMinutes">00</span>
+              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Mins</span>
+            </div>
+            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
+              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdSeconds">00</span>
+              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Secs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: DAILY LOGIN REWARDS -->
+        <div id="secDailyStreak" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <i class="fas fa-fire text-[#f0c040]"></i> Daily Login Streak
+            </h3>
+            <span class="text-[9px] font-bold text-gold uppercase bg-gold/10 px-2 py-0.5 rounded border border-gold/10" id="currentStreakBadge">Streak: 0 Days</span>
+          </div>
+          
+          <!-- 7 Days Scroll -->
+          <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x" id="festStreakDays">
+            <!-- Rendered dynamically -->
+          </div>
+          
+          <button id="btnClaimDailyLogin" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase tracking-wide rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-95 shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fas fa-gift"></i> Claim Today's Reward
+          </button>
+        </div>
+
+        <!-- SECTION 3: WELCOME BONUS (Show if joined < 30 days) -->
+        <div id="secWelcomeBonus" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg hidden">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <i class="fas fa-box-open text-purple"></i> New Player Welcome Pack
+            </h3>
+            <span class="text-[8px] font-bold text-purple uppercase bg-purple/10 px-2 py-0.5 rounded border border-purple/10">30-Day Welcome Pack</span>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[10px] font-bold text-t2">
+              <span>Progress Checklist</span>
+              <span id="welcomeBonusProgressText">0/3 Completed</span>
+            </div>
+            <div class="w-full bg-bdr/20 h-2 rounded-full overflow-hidden">
+              <div id="welcomeBonusProgressBar" class="h-full bg-gradient-to-r from-purple to-pink-500 transition-all duration-500 ease-out" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Task Items -->
+          <div class="space-y-2" id="welcomeBonusTasksContainer">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Pioneer Grand Claim Button -->
+          <div id="welcomeAllClaimContainer" class="pt-2 border-t border-bdr/30 hidden">
+            <button id="btnClaimPioneer" class="w-full py-3 bg-gradient-to-r from-purple via-[#d946ef] to-[#ec4899] hover:opacity-90 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 shadow-xl flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fas fa-rocket"></i> Claim Pioneer Pack (+20 AX & Pioneer Badge)
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 5: DAILY TASKS -->
+        <div id="secDailyQuests" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <i class="fas fa-bolt text-[#3ddc84]"></i> Daily Quests
+            </h3>
+            <span class="text-[8px] font-mono font-bold text-t3 uppercase flex items-center gap-1" id="dailyTasksResetTimer">
+              <i class="fas fa-clock"></i> Reset in 00h 00m
+            </span>
+          </div>
+
+          <div class="space-y-2.5" id="dailyTasksContainer">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Interactive Mini Game: Lucky Spin -->
+          <div id="miniGameCard" class="bg-gradient-to-b from-card/80 to-bg border border-bdr/50 rounded-xl p-3.5 relative overflow-hidden hidden transition-all duration-300">
+            <div class="flex items-center justify-between mb-3 border-b border-bdr/30 pb-2">
+              <div class="flex items-center gap-1.5">
+                <i class="fas fa-circle-notch text-gold animate-spin"></i>
+                <span class="text-[10px] font-black text-white uppercase tracking-wider">AX Lucky Wheel</span>
+              </div>
+              <button id="btnCloseMiniGame" class="text-t3 hover:text-white text-xs cursor-pointer"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex flex-col items-center justify-center space-y-3 py-1 text-center">
+              <div class="relative w-24 h-24 rounded-full border-4 border-gold shadow-[0_0_20px_rgba(240,192,64,0.15)] flex items-center justify-center overflow-hidden transition-transform duration-300" id="wheelSpinner">
+                <div class="absolute inset-0 bg-gradient-to-r from-gold/10 via-transparent to-red/10 animate-spin" style="animation-duration: 8s;"></div>
+                <div class="z-10 text-center font-display flex flex-col items-center justify-center">
+                  <span class="text-sm font-extrabold text-white leading-none font-mono" id="wheelPrizeText">SPIN</span>
+                  <span class="text-[8px] text-gold uppercase tracking-wider font-black mt-1" id="wheelLabelText">Lucky AX</span>
+                </div>
+              </div>
+              <p class="text-[9px] text-t3 leading-normal max-w-xs font-medium">Cost: 10 AX / Spin. Win 0 to 50 AX Coins! First spin of the day is 100% FREE & completes your daily task!</p>
+              <div class="flex gap-2 w-full">
+                <button id="btnSpinFree" class="flex-1 py-1.5 bg-green text-bg font-black uppercase text-[10px] tracking-wider rounded-lg transition hover:scale-[1.02] active:scale-95 cursor-pointer">SPIN FREE</button>
+                <button id="btnSpinPaid" class="flex-1 py-1.5 bg-gold text-bg font-black uppercase text-[10px] tracking-wider rounded-lg transition hover:scale-[1.02] active:scale-95 cursor-pointer">SPIN (10 AX)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: WEEKLY FREE TOURNAMENT -->
+        <div id="secWeeklyTour" class="bg-gradient-to-b from-red/15 to-card border border-red/40 rounded-2xl p-4 space-y-3.5 shadow-[0_0_15px_rgba(232,64,74,0.05)] relative overflow-hidden transition-all duration-300 hidden">
+          <span id="festWeeklyTourSlots" class="absolute top-4 right-4 bg-red text-white text-[8px] font-black px-2 py-0.5 rounded border border-red-400/20 uppercase tracking-wider">
+            32 Players Max
+          </span>
+          <div class="space-y-1">
+            <h3 id="festWeeklyTourName" class="font-display text-sm font-extrabold text-white tracking-wide flex items-center gap-1.5">
+              <i class="fas fa-trophy text-gold"></i> Weekly Free Tournament
+            </h3>
+            <p id="festWeeklyTourTime" class="text-[10px] text-t2 font-medium">Every Sunday 8:00 PM PKT — FREE ENTRY!</p>
+          </div>
+          
+          <!-- Prize Pool -->
+          <div class="bg-black/30 border border-bdr/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-[10px]"><i class="fas fa-trophy"></i></span>
+              <div>
+                <span class="block text-[8px] text-t3 uppercase font-black leading-none">1st Place</span>
+                <span class="font-bold text-white text-[10px]">200 AX + Champion</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-slate-300/10 text-slate-300 flex items-center justify-center text-[10px]"><i class="fas fa-medal"></i></span>
+              <div>
+                <span class="block text-[8px] text-t3 uppercase font-black leading-none">2nd Place</span>
+                <span class="font-bold text-white text-[10px]">100 AX + Runner Up</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-orange-400/10 text-orange-400 flex items-center justify-center text-[10px]"><i class="fas fa-award"></i></span>
+              <div>
+                <span class="block text-[8px] text-t3 uppercase font-black leading-none">3rd Place</span>
+                <span class="font-bold text-white text-[10px]">50 AX Coins</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-green/10 text-green flex items-center justify-center text-[10px]"><i class="fas fa-users"></i></span>
+              <div>
+                <span class="block text-[8px] text-t3 uppercase font-black leading-none">Participation</span>
+                <span class="font-bold text-white text-[10px]">20 AX Coins</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sunday Countdown -->
+          <div class="bg-black/25 border border-bdr/20 rounded-xl p-2.5 flex items-center justify-between text-xs">
+            <span class="text-[9px] text-t2 font-bold uppercase tracking-wider">Next Sunday Match</span>
+            <span class="font-mono text-[10px] font-black text-red uppercase tracking-wider flex items-center gap-1" id="weeklyTourCountdown">
+              <i class="fas fa-hourglass-half"></i> 00h 00m 00s
+            </span>
+          </div>
+
+          <button id="btnRegisterWeeklyTour" class="w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fas fa-check-circle"></i> Register Now
+          </button>
+        </div>
+
+        <!-- SECTION 6: REFERRAL SYSTEM -->
+        <div id="secReferrals" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
+          <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+            <i class="fas fa-users text-gold"></i> Refer Friends — Earn AX!
+          </h3>
+          <p class="text-[10px] text-t2 leading-relaxed">Earn 20 AX instantly for every friend that joins ArenaX using your custom referral code!</p>
+          
+          <div class="bg-black/30 border border-bdr/30 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between text-[10px] text-t3 font-bold uppercase tracking-wider">
+              <span>Your Referral Code</span>
+              <span class="text-gold" id="referralStatsText">Referred 0 friends</span>
+            </div>
+            <div class="flex items-center gap-2 bg-card/80 border border-bdr/50 rounded-lg p-2">
+              <span class="font-mono text-xs text-white font-bold select-all tracking-widest uppercase flex-1" id="refCodeText">--------</span>
+              <button id="btnCopyRefLink" class="text-gold hover:text-white transition px-2 py-1 bg-gold/10 hover:bg-gold/20 text-[9px] font-black rounded uppercase tracking-wider flex items-center gap-1 cursor-pointer">
+                <i class="fas fa-copy"></i> Copy Link
+              </button>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button id="btnShareWhatsApp" class="flex-1 py-2 bg-[#25D366] hover:opacity-90 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fab fa-whatsapp text-xs"></i> Share on WhatsApp
+            </button>
+            <div class="bg-gold/15 border border-gold/10 px-3.5 py-1.5 rounded-xl flex items-center justify-center text-center">
+              <div>
+                <span class="block text-[7px] text-t3 uppercase font-black">Total Earned</span>
+                <span class="font-mono font-black text-gold text-xs" id="refEarnedAX">0 AX</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 7: TOP PLAYERS PODIUM -->
+        <div id="secLeaders" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+              <i class="fas fa-crown text-gold"></i> Launch Fest Leaders
+            </h3>
+            <span class="text-[8px] font-bold text-t3 uppercase tracking-wider">Top 3 Players</span>
+          </div>
+
+          <!-- Podium Visuals -->
+          <div class="flex items-end justify-center pt-8 pb-3 min-h-[140px] max-w-xs mx-auto gap-1">
+            <!-- 2nd Place -->
+            <div class="flex flex-col items-center w-20 group">
+              <div class="relative mb-1">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax2" id="podium2Av" class="w-8 h-8 rounded-full border-2 border-slate-300 bg-black/60 object-cover" referrerPolicy="no-referrer"/>
+                <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 text-slate-300 text-[10px]"><i class="fas fa-medal"></i></span>
+              </div>
+              <div class="text-[9px] font-black text-white text-center truncate max-w-[70px] leading-tight" id="podium2Name">Player 2</div>
+              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium2Bal">0 AX</div>
+              <div class="w-full bg-[#1e2530] border-t-2 border-slate-300/40 rounded-t-lg h-12 flex items-center justify-center text-[10px] font-black text-slate-300">2nd</div>
+            </div>
+
+            <!-- 1st Place (Tallest, Center) -->
+            <div class="flex flex-col items-center w-24 group z-10">
+              <div class="relative mb-1">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax1" id="podium1Av" class="w-10 h-10 rounded-full border-2 border-gold bg-black/60 object-cover shadow-[0_0_12px_rgba(240,192,64,0.2)]" referrerPolicy="no-referrer"/>
+                <span class="absolute -top-4.5 left-1/2 -translate-x-1/2 text-gold text-xs animate-bounce"><i class="fas fa-crown"></i></span>
+              </div>
+              <div class="text-[10px] font-black text-white text-center truncate max-w-[85px] leading-tight" id="podium1Name">Player 1</div>
+              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium1Bal">0 AX</div>
+              <div class="w-full bg-[#272f3d] border-t-2 border-gold rounded-t-lg h-16 flex items-center justify-center text-xs font-black text-gold">1st</div>
+            </div>
+
+            <!-- 3rd Place -->
+            <div class="flex flex-col items-center w-18 group">
+              <div class="relative mb-1">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax3" id="podium3Av" class="w-7 h-7 rounded-full border-2 border-orange-400 bg-black/60 object-cover" referrerPolicy="no-referrer"/>
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-orange-400 text-[9px]"><i class="fas fa-award"></i></span>
+              </div>
+              <div class="text-[9px] font-black text-white text-center truncate max-w-[65px] leading-tight" id="podium3Name">Player 3</div>
+              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium3Bal">0 AX</div>
+              <div class="w-full bg-[#1b202a] border-t-2 border-orange-500/40 rounded-t-lg h-10 flex items-center justify-center text-[10px] font-black text-orange-400">3rd</div>
+            </div>
+          </div>
+
+          <button id="btnViewFullLeaderboard" class="w-full py-2 border border-bdr hover:border-gold hover:text-white text-t2 text-xs font-bold rounded-xl transition cursor-pointer">
+            View Full Leaderboard
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== RED REPORT & SUPPORT HUB DRAWER ==================== -->
@@ -1179,9 +1237,9 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
           <span class="text-[9px] font-bold text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">v2.3.0</span>
           <span class="text-[9px] text-t3 font-mono">June 20, 2026</span>
         </div>
-        <h4 class="text-white font-bold text-xs">⚽ Stadium Ground & Mini-Games</h4>
+        <h4 class="text-white font-bold text-xs">🎮 Esports Hub & Tournaments</h4>
         <ul class="list-disc list-inside text-t2 space-y-1 pl-1">
-          <li>Launched interactive football pitch mini-game.</li>
+          <li>Launched interactive team lobbies.</li>
           <li>Introduced live tournament participation queues.</li>
           <li>Optimized chat rooms with auto-scroll.</li>
         </ul>
@@ -1389,7 +1447,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <img id="eventBannerImg" class="w-full h-full object-cover" alt="FIFA & Battle Royale Hybrid Event" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1540747737956-37872404a8c1?q=80&w=1200&auto=format&fit=crop';" />
+      <img id="eventBannerImg" class="w-full h-full object-cover" alt="ArenaX Live Event" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop';" />
       <script>
         (function() {
           var img = document.getElementById('eventBannerImg');
@@ -1407,216 +1465,29 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
     <div class="p-6 space-y-4 text-center">
       <div class="flex justify-center">
         <span class="px-2.5 py-1 bg-gold/10 border border-gold/30 text-gold text-[10px] font-black uppercase rounded-full tracking-widest animate-pulse">
-          🔥 SPECIAL LIVE EVENT
+          🔥 WELCOME TO ARENAX
         </span>
       </div>
 
       <div class="space-y-2">
         <h3 class="font-display text-xl font-black text-white uppercase tracking-wide">
-          FIFA World Cup Squad Event!
+          ArenaX Esports Center
         </h3>
-        <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto">
-          Welcome to the ultimate ArenaX battleground! Join our exclusive hybrid event where a player plays football while facing shooting/combat players with tactical weapons. 
-          <br><br>
-          Register your <strong>4-player squad</strong> today to secure your slot and compete for the mega prize pool of <strong>50,000 AX Coins</strong>!
+        <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto font-sans">
+          Step into the ultimate gaming ecosystem! Challenge opponents, join matches, participate in premier esports tournaments, and lead your squad to glory on the leaderboards!
         </p>
       </div>
 
       <button id="bCloseUnderDev" class="w-full py-3 bg-gold hover:bg-gold/80 text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10">
-        Enter Arena
+        Let's Play!
       </button>
     </div>
   </div>
 </div>
 
-<!-- ==================== ENTERING GROUND OVERLAY ==================== -->
-<div id="mFootballGroundLoader" class="fixed inset-0 bg-black/95 z-[600] flex flex-col items-center justify-center p-6 space-y-6 text-center hidden">
-  <!-- Glowing green stadium floodlight effect -->
-  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-emerald-500/[0.08] rounded-full filter blur-[100px] pointer-events-none"></div>
 
-  <!-- Big Spinning Football -->
-  <div class="relative">
-    <div class="w-24 h-24 rounded-full bg-emerald-950/20 border border-emerald-500/20 flex items-center justify-center text-5xl text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-spin-slow">
-      <i class="fas fa-futbol"></i>
-    </div>
-    <!-- Spinning satellite border ring -->
-    <div class="absolute inset-x-[-12px] inset-y-[-12px] border-2 border-dashed border-emerald-500/30 rounded-full animate-spin"></div>
-  </div>
 
-  <div class="space-y-2">
-    <h2 class="font-display text-2xl font-black text-white uppercase tracking-widest animate-pulse">Entering The Football Ground</h2>
-    <p class="text-xs text-t2 max-w-xs mx-auto">Connecting to ArenaX Stadium Matchmaking Servers...</p>
-  </div>
 
-  <!-- Simulated Loading Bar -->
-  <div class="w-64 h-2 bg-emerald-950 rounded-full overflow-hidden border border-emerald-500/10 p-[1px]">
-    <div id="dFootballLoaderBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: 0%"></div>
-  </div>
-  
-  <span class="text-[9px] font-mono text-emerald-400/70 uppercase tracking-widest" id="dFootballLoaderStatus">Initializing Turf Pitch...</span>
-</div>
-
-<!-- ==================== PENALTY SHOOTOUT MODAL ==================== -->
-<div id="mFootballShootout" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[500] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl max-w-[420px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
-    <!-- Close Button -->
-    <button id="bCloseShootout" class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-black/60 hover:bg-red/80 text-white transition flex items-center justify-center cursor-pointer">
-      <i class="fas fa-times text-sm"></i>
-    </button>
-
-    <!-- Goalpost Banner / Canvas View -->
-    <div class="relative w-full h-52 overflow-hidden flex flex-col justify-end p-4 border-b border-bdr bg-black">
-      <!-- Real Stadium Background behind Goalposts -->
-      <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504156806644-d9894178301d?q=80&w=800&auto=format&fit=crop')] bg-cover bg-center opacity-85 pointer-events-none"></div>
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none"></div>
-      
-      <!-- Crossbar and Goal Nets -->
-      <div class="absolute left-8 right-8 top-12 bottom-0 border-t-4 border-l-4 border-r-4 border-white/80 rounded-t-lg bg-emerald-950/10 backdrop-blur-[0.5px] flex items-center justify-center">
-        <!-- Net mesh pattern -->
-        <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]"></div>
-        
-        <!-- Goalkeeper -->
-        <div id="dShootoutKeeper" class="absolute bottom-0 w-16 h-20 transition-all duration-300 flex flex-col items-center justify-end">
-          <!-- Keeper icon -->
-          <div class="w-10 h-10 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-bg shadow-md">
-            <i class="fas fa-hands text-sm animate-pulse"></i>
-          </div>
-          <div class="w-14 h-8 bg-amber-600 rounded-t-xl border-x-2 border-white"></div>
-          <span class="text-[7px] bg-black/60 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider mb-1">GK</span>
-        </div>
-      </div>
-
-      <!-- Soccer Ball -->
-      <div id="dShootoutBall" class="absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-2xl transition-all duration-700 z-10 cursor-pointer hover:scale-110">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" class="w-full h-full object-contain filter drop-shadow-md" alt="Shootout Football" />
-      </div>
-
-      <!-- Spot Indicator -->
-      <div class="absolute bottom-7 left-1/2 -translate-x-1/2 w-12 h-4 border border-white/20 rounded-full bg-black/10"></div>
-
-      <!-- Stadium Background Lights -->
-      <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-44 h-44 bg-blue-500/10 rounded-full filter blur-[40px] pointer-events-none"></div>
-    </div>
-
-    <!-- Shootout Controls & Stats -->
-    <div class="p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-bdr/40 pb-3">
-        <div>
-          <h4 class="font-display font-bold text-white text-sm">PENALTY SHOOTOUT</h4>
-          <p class="text-[10px] text-t2">Score past the keeper to complete missions!</p>
-        </div>
-        <div class="flex gap-4 text-center">
-          <div>
-            <div class="font-mono text-xs text-amber-400 font-extrabold" id="dShootoutBallsLeft">5/5</div>
-            <div class="text-[7px] uppercase text-t3 font-bold">Balls Left</div>
-          </div>
-          <div>
-            <div class="font-mono text-xs text-emerald-400 font-extrabold" id="dShootoutScore">0</div>
-            <div class="text-[7px] uppercase text-t3 font-bold">Goals</div>
-          </div>
-          <div>
-            <div class="font-mono text-xs text-red font-extrabold" id="dShootoutMissed">0</div>
-            <div class="text-[7px] uppercase text-t3 font-bold">Saved</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="dShootoutBallsRechargeContainer" class="hidden text-center text-[10px] text-amber-400 font-sans border border-amber-500/20 bg-amber-950/20 py-1.5 rounded-lg animate-pulse">
-        ⚡ Next Ball Recharge in: <span id="dShootoutBallsTimer" class="font-bold font-mono text-gold">29:59</span>
-      </div>
-
-      <div id="dShootoutActionPanel" class="space-y-3">
-        <p class="text-xs text-center text-t1 font-medium">Choose your aim target to shoot the ball:</p>
-        <div class="grid grid-cols-3 gap-2">
-          <button data-aim="left" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
-            <i class="fas fa-arrow-up-left text-sm"></i>
-            <span>Top Left</span>
-          </button>
-          <button data-aim="center" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
-            <i class="fas fa-arrow-up text-sm"></i>
-            <span>Center</span>
-          </button>
-          <button data-aim="right" class="shoot-btn py-2.5 bg-card hover:bg-gold hover:text-bg border border-bdr text-white rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer">
-            <i class="fas fa-arrow-up-right text-sm"></i>
-            <span>Top Right</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Feedbacks / Alerts -->
-      <div id="dShootoutResult" class="text-center py-2 min-h-[36px] flex items-center justify-center text-xs font-bold text-t2 uppercase tracking-wide">
-        Ready to take the shot...
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== SQUAD / CLUB PROFILE MODAL ==================== -->
-<div id="mFootballClubModal" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[500] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-emerald-500/30 rounded-2xl max-w-[420px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
-    <!-- Close Button -->
-    <button id="bCloseClubModal" class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-black/60 hover:bg-emerald-500 hover:text-bg text-white transition flex items-center justify-center cursor-pointer" onclick="document.getElementById('mFootballClubModal').classList.add('hidden')">
-      <i class="fas fa-times text-sm"></i>
-    </button>
-    
-    <!-- Top banner matching selected team color -->
-    <div id="dClubModalHeader" class="p-6 bg-gradient-to-r from-emerald-800 to-teal-900 border-b border-white/10 text-center space-y-2">
-      <div class="w-16 h-16 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-center text-3xl text-white mx-auto shadow-lg">
-        <i id="dClubModalIcon" class="fas fa-shield"></i>
-      </div>
-      <h3 id="dClubModalName" class="font-display text-xl font-black text-white uppercase tracking-wider">PAKISTAN GREEN FC</h3>
-      <p id="dClubModalRegion" class="text-[9px] text-emerald-300 font-bold uppercase tracking-widest">ArenaX Registered Franchise</p>
-    </div>
-    
-    <!-- Club details stats & roster -->
-    <div class="p-5 space-y-4">
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
-          <div id="dClubModalSpeed" class="font-mono text-base text-emerald-400 font-extrabold">99</div>
-          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Speed</div>
-        </div>
-        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
-          <div id="dClubModalAttack" class="font-mono text-base text-emerald-400 font-extrabold">99</div>
-          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Attack</div>
-        </div>
-        <div class="p-2.5 bg-black/40 border border-white/5 rounded-xl">
-          <div id="dClubModalDefense" class="font-mono text-base text-emerald-400 font-extrabold">98</div>
-          <div class="text-[8px] uppercase text-t3 font-bold tracking-wider">Defense</div>
-        </div>
-      </div>
-      
-      <!-- Squad Fuel / Stamina -->
-      <div class="p-3.5 bg-black/40 border border-white/5 rounded-xl space-y-2">
-        <div class="flex justify-between items-center text-[10px]">
-          <span class="font-bold text-t1 uppercase tracking-wider">⚡ Squad Fuel & Stamina</span>
-          <span class="text-emerald-400 font-mono font-bold">100% Boosted</span>
-        </div>
-        <div class="w-full h-2.5 bg-emerald-950/40 rounded-full overflow-hidden p-[1px]">
-          <div class="h-full w-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full animate-pulse"></div>
-        </div>
-      </div>
-
-      <!-- Squad Roster List -->
-      <div class="space-y-2">
-        <h4 class="text-[10px] text-t3 uppercase tracking-wider font-bold">Star Player Lineup</h4>
-        <div class="space-y-1 text-xs">
-          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
-            <span class="font-semibold text-white">⚽ Kamran Khan (ST)</span>
-            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 99</span>
-          </div>
-          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
-            <span class="font-semibold text-white">🛡️ Zain Malik (DEF)</span>
-            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 98</span>
-          </div>
-          <div class="p-2 bg-card border border-bdr rounded-lg flex justify-between items-center">
-            <span class="font-semibold text-white">🧤 Haris Baig (GK)</span>
-            <span class="text-[10px] font-mono text-emerald-400 font-bold">Rating: 99</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ==================== PREMIUM PLAN MODAL ==================== -->
 <div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
@@ -1671,6 +1542,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
           <div>
             <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Display Name</label>
             <input id="custName" type="text" placeholder="Enter display name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
+            <p class="text-[9px] text-t3 mt-1"><i class="fas fa-history mr-1 text-gold/80"></i> Display Name can only be changed once every 14 days.</p>
           </div>
           
           <div class="grid grid-cols-2 gap-3">
@@ -2270,6 +2142,7 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
         <div>
           <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Reported Player Nickname *</label>
           <input id="rrPlayerName" type="text" placeholder="e.g. HackerName" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red-500 transition"/>
+          <div id="rrPlayerNameStatus" class="text-[9px] mt-1 hidden font-semibold"></div>
         </div>
         <div>
           <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Game UID of Hacker *</label>
@@ -2337,6 +2210,21 @@ div#sDash:nth-of-type(5) > div:nth-of-type(6) > section#tFootball:nth-of-type(7)
       <div>
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Admin Verdict & Decision *</label>
         <textarea id="revVerdict" rows="3" placeholder="Enter decision (e.g., Checked logs. Ban issued / Insufficient evidence.)" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 transition resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Direct Punishment Action</label>
+        <select id="revPunishment" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 font-medium">
+          <option value="none">None (No direct ban/penalty)</option>
+          <option value="full_perm">🚫 Permanent Account Ban (Full Lockout)</option>
+          <option value="full_30d">🚫 30 Days Account Ban (Full Lockout)</option>
+          <option value="full_7d">🚫 7 Days Account Ban (Full Lockout)</option>
+          <option value="tour_perm">⛔ Permanent Tournament Ban (Block Matches)</option>
+          <option value="tour_14d">⛔ 14 Days Tournament Ban (Block Matches)</option>
+          <option value="tour_7d">⛔ 7 Days Tournament Ban (Block Matches)</option>
+          <option value="mute_perm">🔇 Permanent Chat Mute</option>
+          <option value="mute_24h">🔇 24 Hours Chat Mute</option>
+        </select>
+        <div id="revMatchedUserStatus" class="text-[9px] mt-1 text-t3 font-medium"></div>
       </div>
     </div>
 
@@ -2756,8 +2644,6 @@ let userProfileTransactionsList = [];
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
-let shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
-let lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
 
 // Customization States
 let selectedBannerTheme = 'dark';
@@ -2799,6 +2685,16 @@ document.addEventListener('mouseup', () => cur.classList.remove('scale-150'));
 function goTo(screenId) {
   document.querySelectorAll('.scr, #sLogin, #sDash').forEach(s => s.classList.add('hidden'));
   $(screenId).classList.remove('hidden');
+
+  // Smoothly fade out splash screen on first resolution
+  const splash = $('sSplash');
+  if (splash && !splash.classList.contains('hidden')) {
+    splash.classList.add('opacity-0');
+    splash.style.transition = 'opacity 0.4s ease-out';
+    setTimeout(() => {
+      splash.classList.add('hidden');
+    }, 400);
+  }
 }
 window.goTo = goTo;
 
@@ -2981,28 +2877,6 @@ function boot() {
     }
   }
 
-  // Show/Hide FIFA World Member badge
-  const hasFifaBadge = (userProfile && userProfile.hasFifaTag) || localStorage.getItem('hasFifaTag') === 'true';
-  if (hasFifaBadge) {
-    $('badgeFifa').classList.remove('hidden');
-  } else {
-    $('badgeFifa').classList.add('hidden');
-  }
-
-  // Show/Hide FIFA World Member Campaign Badge
-  const hasFifaWorldMemberBadge = (userProfile && userProfile.hasFifaWorldMemberBadge) || localStorage.getItem('hasFifaWorldMemberBadge') === 'true';
-  if (hasFifaWorldMemberBadge) {
-    $('badgeFifaWorldMember').classList.remove('hidden');
-  } else {
-    $('badgeFifaWorldMember').classList.add('hidden');
-  }
-
-  // Sync and render World Cup campaign tasks on boot
-  setTimeout(async () => {
-    await checkAndSyncWorldCupTasks();
-    renderWorldCupCampaignQuests();
-  }, 100);
-
   // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
   if (userProfile) {
     $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
@@ -3011,8 +2885,17 @@ function boot() {
   }
 
   loadTournamentsList();
+  // Auto refresh live tournament stats every 3 seconds
+  setInterval(() => {
+    if (typeof renderTournaments === 'function') {
+      renderTournaments();
+    }
+  }, 3000);
   loadLiveNotifications();
   initGlobalChat();
+  if (userProfile) {
+    renderLaunchFestUI();
+  }
   goTo('sDash');
 
   if (!devPopupShownThisSession) {
@@ -3048,6 +2931,20 @@ function switchTab(tabId) {
       unreadGlobal = false;
       updateChatUnreadDot();
       updateSubGlobalDot();
+    }
+  }
+
+  if (tabId === 'Tour') {
+    if (typeof window.renderTournaments === 'function') {
+      window.renderTournaments();
+    }
+    // Set daily tasks visit flag to true
+    if (userProfile) {
+      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      updateDoc(doc(db, 'users', userProfile.uid), {
+        'dailyTasks.visit': true,
+        'dailyTasks.date': todayStr
+      }).catch(e => console.warn(e));
     }
   }
 }
@@ -3106,6 +3003,8 @@ onAuthStateChanged(auth, async (fireUser) => {
       });
       userDepositsList = list;
       mergeAndRenderTransactions();
+    }, (err) => {
+      console.warn("Deposits listen warning:", err);
     });
 
     // Start real-time mails listener for user
@@ -3137,21 +3036,9 @@ onAuthStateChanged(auth, async (fireUser) => {
     // Read and listen to Firestore User Profile in real time!
     onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
       if (snap.exists()) {
-        userProfile = { id: fireUser.uid, ...snap.data() };
+        userProfile = { ...snap.data(), id: fireUser.uid, uid: fireUser.uid };
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
-
-        // Sync shootout balls and charge times if present
-        if (userProfile.shootoutBalls !== undefined) {
-          shootoutBalls = userProfile.shootoutBalls;
-          localStorage.setItem('shootoutBalls', shootoutBalls.toString());
-        }
-        if (userProfile.lastBallChargeTime !== undefined) {
-          lastBallChargeTime = userProfile.lastBallChargeTime;
-          localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
-        }
-        checkAndRechargeBalls();
-        updateBallsUI();
         
         // Full Ban checker block
         if (userProfile.banned && userProfile.banType === 'full') {
@@ -3191,7 +3078,7 @@ onAuthStateChanged(auth, async (fireUser) => {
 
         setDoc(doc(db, 'users', fireUser.uid), newProfile)
           .then(async () => {
-            userProfile = { id: fireUser.uid, ...newProfile };
+            userProfile = { ...newProfile, id: fireUser.uid, uid: fireUser.uid };
 
             // If user has been referred, credit the referrer
             if (refId && refId !== fireUser.uid) {
@@ -3231,6 +3118,14 @@ onAuthStateChanged(auth, async (fireUser) => {
                     createdAt: serverTimestamp(),
                     read: false
                   });
+
+                  // Create a referral tracking record
+                  await addDoc(collection(db, 'referrals'), {
+                    referredBy: refId,
+                    referredUserId: fireUser.uid,
+                    referredUserName: defaultName,
+                    createdAt: serverTimestamp()
+                  });
                 }
               } catch (refErr) {
                 console.error('Failed to reward referrer:', refErr);
@@ -3245,6 +3140,14 @@ onAuthStateChanged(auth, async (fireUser) => {
       console.warn("Firestore user profile snapshot listener warning (non-fatal):", err);
     });
   } else if (!guestProfile) {
+    if (window.unsubReferrals) {
+      try { window.unsubReferrals(); } catch (e) {}
+      window.unsubReferrals = null;
+    }
+    if (window.unsubLaunchFestLeaderboard) {
+      try { window.unsubLaunchFestLeaderboard(); } catch (e) {}
+      window.unsubLaunchFestLeaderboard = null;
+    }
     userProfile = null;
     goTo('sLogin');
   }
@@ -3369,9 +3272,9 @@ function loadTournamentsList() {
       return timeB - timeA;
     });
 
-    // Automatically enforce 'soccer' accentTheme on any FIFA, Soccer, or Football tournaments loaded from database
+    // Automatically enforce 'soccer' accentTheme on any Champions, Soccer, or Football tournaments loaded from database
     toursData.forEach(t => {
-      if (t.name && (t.name.toLowerCase().includes('fifa') || t.name.toLowerCase().includes('soccer') || t.name.toLowerCase().includes('football'))) {
+      if (t.name && (t.name.toLowerCase().includes('champions') || t.name.toLowerCase().includes('soccer') || t.name.toLowerCase().includes('football'))) {
         t.accentTheme = 'soccer';
       }
     });
@@ -3380,11 +3283,11 @@ function loadTournamentsList() {
     if (toursData.length === 0) {
       toursData = [
         {
-          id: 'demo_fifa',
-          name: 'FIFA World Cup',
-          game: 'FIFA Mobile / FC 24',
+          id: 'demo_champions',
+          name: 'ArenaX Champions Cup',
+          game: 'eFootball / FC 24',
           status: 'upcoming',
-          registered: 0,
+          registered: 12,
           maxPlayers: 32,
           prize: '50,000 AX Coins',
           date: 'Jul 15, 2026',
@@ -3423,26 +3326,6 @@ function loadTournamentsList() {
           accentTheme: 'ice'
         }
       ];
-    } else {
-      // Ensure FIFA World Cup is always in the list even if database has some custom tournaments but not FIFA
-      const hasFIFA = toursData.some(t => t.name === 'FIFA World Cup');
-      if (!hasFIFA) {
-        toursData.unshift({
-          id: 'demo_fifa',
-          name: 'FIFA World Cup',
-          game: 'FIFA Mobile / FC 24',
-          status: 'upcoming',
-          registered: 0,
-          maxPlayers: 32,
-          prize: '50,000 AX Coins',
-          date: 'Jul 15, 2026',
-          time: '08:00 PM PKT',
-          entryFee: 'Rs 200',
-          teamType: 'Squad (4 Players)',
-          hasTeams: true,
-          accentTheme: 'soccer'
-        });
-      }
     }
     
     // Listen to user registrations
@@ -3471,11 +3354,11 @@ function loadTournamentsList() {
     // Use fallback demo data on listen failure
     toursData = [
       {
-        id: 'demo_fifa',
-        name: 'FIFA World Cup',
-        game: 'FIFA Mobile / FC 24',
+        id: 'demo_champions',
+        name: 'ArenaX Champions Cup',
+        game: 'eFootball / FC 24',
         status: 'upcoming',
-        registered: 0,
+        registered: 12,
         maxPlayers: 32,
         prize: '50,000 AX Coins',
         date: 'Jul 15, 2026',
@@ -3516,6 +3399,75 @@ function loadTournamentsList() {
     ];
     renderTournaments();
   });
+}
+
+function getLiveTrackerWidgetHTML(t) {
+  if (t.status !== 'live') return '';
+  
+  const total = t.totalPlayers !== undefined ? t.totalPlayers : (t.registered || 0);
+  const alive = t.alivePlayers !== undefined ? t.alivePlayers : total;
+  const dead = t.eliminatedPlayers !== undefined ? t.eliminatedPlayers : 0;
+  
+  const percent = total > 0 ? (alive / total) * 100 : 0;
+  
+  // Choose status message
+  let statusMsg = '';
+  if (alive === 1) {
+    statusMsg = `
+      <div class="mt-2 text-center text-xs font-black text-gold animate-bounce flex items-center justify-center gap-1">
+        <span>🏆 Winner Announced Soon!</span>
+      </div>
+    `;
+  } else if (alive === 0 && t.winnerName) {
+    statusMsg = `
+      <div class="mt-2 text-center p-1.5 bg-gold/15 border border-gold/30 rounded-lg">
+        <div class="text-[9px] uppercase tracking-widest text-gold font-black">MATCH CHAMPION</div>
+        <div class="text-xs font-black text-white flex items-center justify-center gap-1.5 mt-0.5">
+          <i class="fas fa-trophy text-gold"></i> ${t.winnerName}
+        </div>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="bg-[#0b0e17] border border-red/40 rounded-xl p-3.5 space-y-2.5 relative overflow-hidden shadow-[0_0_15px_rgba(232,64,74,0.08)] mb-3">
+      <!-- Glow effect -->
+      <div class="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-red to-transparent"></div>
+      
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-black text-red tracking-wider flex items-center gap-1.5 uppercase">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red"></span>
+          </span>
+          LIVE MATCH IN PROGRESS
+        </span>
+        <span class="text-[9px] text-t3 font-mono font-bold uppercase tracking-wider">Tracker Mode</span>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+        <div class="bg-[#121625]/40 border border-bdr/20 p-2 rounded-lg flex flex-col justify-center">
+          <div class="text-[9px] text-t3 uppercase font-black tracking-wider mb-0.5">Total Players</div>
+          <div class="text-white font-mono font-black text-sm flex items-center gap-1">
+            <i class="fas fa-users text-t3 text-xs"></i> ${total}
+          </div>
+        </div>
+        
+        <div class="bg-[#121625]/40 border border-bdr/20 p-2 rounded-lg space-y-1.5">
+          <div class="flex justify-between text-[9px] font-black uppercase tracking-wider">
+            <span class="text-green">🟢 Alive: ${alive}</span>
+            <span class="text-red">💀 Dead: ${dead}</span>
+          </div>
+          <!-- Mini Progress Bar -->
+          <div class="w-full h-2 bg-red rounded-full overflow-hidden flex border border-bdr/10">
+            <div class="h-full bg-green transition-all duration-500" style="width: ${percent}%;"></div>
+          </div>
+        </div>
+      </div>
+      
+      ${statusMsg}
+    </div>
+  `;
 }
 
 function renderTournaments() {
@@ -3574,6 +3526,8 @@ function renderTournaments() {
           <i class="fas fa-futbol"></i>
         </div>
 
+        ${getLiveTrackerWidgetHTML(t)}
+
         <div class="flex justify-between items-start gap-3 relative z-10">
           <div>
             <div class="flex items-center gap-1.5 mb-1.5">
@@ -3629,13 +3583,21 @@ function renderTournaments() {
           <button class="b-part flex-1 min-w-[120px] py-1.5 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-users mr-1"></i> Slots
           </button>
-          <button class="b-leaderboard flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-            <i class="fas fa-list-ol mr-1"></i> Standings
-          </button>
+          ${t.status === 'ended' ? `
+            <button class="b-result flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+              <i class="fas fa-poll mr-1"></i> Match Result
+            </button>
+          ` : t.status === 'upcoming' ? `
+            <button class="b-register flex-1 min-w-[120px] py-1.5 bg-gold/15 border border-gold/30 hover:bg-gold/25 text-gold text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+              <i class="fas fa-gamepad mr-1"></i> Participate
+            </button>
+          ` : ''}
         </div>
       `;
     } else {
       card.innerHTML = `
+        ${getLiveTrackerWidgetHTML(t)}
+
         <div class="flex justify-between items-start gap-3">
           <div>
             <h4 class="font-display font-bold text-base text-white leading-tight">${t.name}</h4>
@@ -3669,10 +3631,18 @@ function renderTournaments() {
 
         ${reg ? `
           <div class="pt-2 border-t border-bdr/20 flex justify-between items-center text-xs">
-            <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-green':reg.status==='rejected'?'text-red':'text-gold'}">
-              ${reg.status === 'approved' ? 'Slots Verified ✓' : reg.status === 'rejected' ? 'Registration Rejected' : 'Verification Pending...'}
-            </span>
-            <span class="text-[10px] text-t3">TXN: ${reg.txnId}</span>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-green':reg.status==='rejected'?'text-red':reg.status==='cancelled'?'text-t3':'text-gold'}">
+                ${reg.status === 'approved' ? 'Slots Verified ✓' : reg.status === 'rejected' ? 'Registration Rejected' : reg.status==='cancelled'?'Slot Cancelled ✕':'Verification Pending...'}
+              </span>
+              ${reg.revokeReason ? `<span class="text-[9px] text-red leading-tight max-w-[150px] whitespace-normal">Reason: ${reg.revokeReason}</span>` : ''}
+              <span class="text-[9px] text-t3 font-mono">TXN: ${reg.txnId.slice(0, 16)}</span>
+            </div>
+            ${(t.status === 'upcoming' && (reg.status === 'pending' || reg.status === 'approved')) ? `
+              <button class="b-self-cancel px-2.5 py-1 bg-red/10 border border-red/20 hover:bg-red/25 text-red text-[10px] font-bold uppercase rounded-lg transition" data-tid="${t.id}" data-regid="${reg.id}">
+                Cancel Slot
+              </button>
+            ` : ''}
           </div>
         ` : ''}
 
@@ -3698,30 +3668,63 @@ function renderTournaments() {
           <button class="b-part flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
             <i class="fas fa-users mr-1"></i> Slots
           </button>
-          <button class="b-leaderboard flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-            <i class="fas fa-list-ol mr-1"></i> Leaderboard
-          </button>
+          ${t.status === 'ended' ? `
+            <button class="b-result flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+              <i class="fas fa-poll mr-1"></i> Match Result
+            </button>
+          ` : t.status === 'upcoming' ? `
+            <button class="b-register flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
+              <i class="fas fa-gamepad mr-1"></i> Participate
+            </button>
+          ` : ''}
         </div>
       `;
     }
 
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.b-part') || e.target.closest('.b-leaderboard') || e.target.closest('.b-live-stream')) return;
+      if (e.target.closest('.b-part') || e.target.closest('.b-result') || e.target.closest('.b-register') || e.target.closest('.b-live-stream') || e.target.closest('.b-self-cancel')) return;
       handleTourCardClick(t);
     });
 
-    card.querySelector('.b-part').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openTournamentParticipation(t);
-    });
+    const btnPart = card.querySelector('.b-part');
+    if (btnPart) {
+      btnPart.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTournamentParticipation(t);
+      });
+    }
 
-    card.querySelector('.b-leaderboard').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openTournamentLeaderboard(t);
-    });
+    const btnResult = card.querySelector('.b-result');
+    if (btnResult) {
+      btnResult.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTournamentLeaderboard(t);
+      });
+    }
+
+    const btnRegister = card.querySelector('.b-register');
+    if (btnRegister) {
+      btnRegister.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleTourCardClick(t);
+      });
+    }
+
+    const btnSelfCancel = card.querySelector('.b-self-cancel');
+    if (btnSelfCancel) {
+      btnSelfCancel.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const regId = btnSelfCancel.dataset.regid;
+        const tourId = btnSelfCancel.dataset.tid;
+        await window.selfCancelRegistration(regId, tourId, t.name, t.entryFee);
+      });
+    }
 
     listEl.appendChild(card);
   });
+  if (typeof renderLaunchFestUI === 'function') {
+    renderLaunchFestUI();
+  }
 }
 
 function activeTournamentFilter() {
@@ -3894,9 +3897,6 @@ $('tregSubmit').addEventListener('click', async () => {
         console.error("Error setting hasSubmittedRegistration in Firestore:", e);
       }
     }
-    completeFootballMission(2);
-    await checkAndSyncWorldCupTasks();
-    renderWorldCupCampaignQuests();
 
     $('tregStep3').classList.add('hidden');
     $('tregStep4').classList.remove('hidden');
@@ -3909,6 +3909,86 @@ $('tregSubmit').addEventListener('click', async () => {
 });
 
 $('tregDone').addEventListener('click', () => $('mTourDetail').classList.add('hidden'));
+
+window.selfCancelRegistration = async function(regId, tournamentId, tournamentName, entryFeeString) {
+  if (!confirm(`Are you sure you want to cancel your slot and leave the tournament "${tournamentName}"?`)) {
+    return;
+  }
+
+  try {
+    const regDocRef = doc(db, 'tournament_registrations', regId);
+    const regSnap = await getDoc(regDocRef);
+    if (!regSnap.exists()) {
+      alert("Registration record not found.");
+      return;
+    }
+    const regData = regSnap.data();
+
+    // Calculate fee to refund if approved
+    let feeAmount = 0;
+    if (entryFeeString && !entryFeeString.toLowerCase().includes('free')) {
+      const matches = entryFeeString.match(/\d+/);
+      if (matches) feeAmount = parseInt(matches[0], 10);
+    }
+
+    // Only refund if they were approved (deductions only happen on approval)
+    const wasApproved = regData.status === 'approved';
+    
+    if (wasApproved && feeAmount > 0) {
+      // Refund user balance
+      await updateDoc(doc(db, 'users', regData.userId), {
+        balance: increment(feeAmount)
+      });
+
+      // Write deposit log
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: regData.userId,
+        userName: regData.userName || '',
+        userEmail: '',
+        type: 'deposit',
+        method: 'Tournament Fee Refund (User Cancelled)',
+        amountPKR: 0,
+        amountAX: feeAmount,
+        txnId: 'REF-' + Math.floor(100000 + Math.random() * 900000),
+        status: 'approved',
+        submittedAt: serverTimestamp()
+      });
+    }
+
+    // Update registration status to cancelled
+    await updateDoc(regDocRef, {
+      status: 'cancelled',
+      cancelledAt: serverTimestamp(),
+      cancelledBy: 'user'
+    });
+
+    // If it was approved, decrement the tournament's registered slots
+    if (wasApproved) {
+      await updateDoc(doc(db, 'tournaments', tournamentId), {
+        registered: increment(-1)
+      });
+
+      // Remove player from leaderboard
+      try {
+        const leadQuery = query(
+          collection(db, 'leaderboards'),
+          where('tournamentId', '==', tournamentId),
+          where('userId', '==', regData.userId)
+        );
+        const leadSnap = await getDocs(leadQuery);
+        for (const d of leadSnap.docs) {
+          await deleteDoc(doc(db, 'leaderboards', d.id));
+        }
+      } catch (leadErr) {
+        console.error('Error removing player from leaderboard on self-cancel:', leadErr);
+      }
+    }
+
+    alert(`Successfully cancelled your slot for "${tournamentName}".${wasApproved && feeAmount > 0 ? ` ${feeAmount} AX Coins have been refunded to your wallet.` : ''} ✅`);
+  } catch (err) {
+    alert("Error cancelling registration: " + err.message);
+  }
+};
 
 // ── RED REPORT SYSTEM LOGIC ──
 window.activeRedReportSlab = 'Support'; // 'Support', 'RedReport', 'FAQ'
@@ -3983,6 +4063,48 @@ window.closeRedReportHubDrawer = function() {
     backdrop.classList.add('hidden');
   }, 300);
 };
+
+// Launch Fest Drawer controls
+window.openLaunchFestDrawer = function() {
+  const drawer = $('dLaunchFestDrawer');
+  const backdrop = $('mLaunchFestDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+  drawer.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  setTimeout(() => {
+    drawer.classList.remove('translate-x-full');
+    backdrop.classList.remove('opacity-0');
+    backdrop.classList.add('opacity-100');
+  }, 20);
+};
+
+window.closeLaunchFestDrawer = function() {
+  const drawer = $('dLaunchFestDrawer');
+  const backdrop = $('mLaunchFestDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+  drawer.classList.add('translate-x-full');
+  backdrop.classList.remove('opacity-100');
+  backdrop.classList.add('opacity-0');
+  setTimeout(() => {
+    drawer.classList.add('hidden');
+    backdrop.classList.add('hidden');
+  }, 300);
+};
+
+window.openLaunchFestSection = function(sectionId) {
+  const el = $(sectionId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Visual pulse effect
+    el.classList.add('ring-2', 'ring-gold/60', 'scale-[1.01]');
+    setTimeout(() => {
+      el.classList.remove('ring-2', 'ring-gold/60', 'scale-[1.01]');
+    }, 1500);
+  }
+};
+
+$('bCloseLaunchFestDrawer').addEventListener('click', () => closeLaunchFestDrawer());
+$('mLaunchFestDrawerBackdrop').addEventListener('click', () => closeLaunchFestDrawer());
 
 $('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
 $('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
@@ -4129,6 +4251,88 @@ function handleEvidenceFileSelection(file) {
   });
 }
 
+// Helper to validate if reported player exists in database (exact/case-insensitive match)
+async function validateReportedPlayer(reportedName) {
+  if (!reportedName) return null;
+  
+  // Try exact name match
+  const qName = query(collection(db, 'users'), where('name', '==', reportedName));
+  const snapName = await getDocs(qName);
+  if (!snapName.empty) {
+    return snapName.docs[0].data();
+  }
+
+  // Try exact handle match
+  let cleanHandle = reportedName.startsWith('@') ? reportedName.slice(1) : reportedName;
+  const qHandle = query(collection(db, 'users'), where('handle', '==', cleanHandle));
+  const snapHandle = await getDocs(qHandle);
+  if (!snapHandle.empty) {
+    return snapHandle.docs[0].data();
+  }
+
+  // Try case-insensitive name or handle match across some users
+  const qAll = query(collection(db, 'users'), limit(500));
+  const snapAll = await getDocs(qAll);
+  const targetLower = reportedName.toLowerCase().replace(/^@/, '');
+  
+  let found = null;
+  snapAll.forEach(docSnap => {
+    if (found) return;
+    const u = docSnap.data();
+    const uNameLower = (u.name || '').toLowerCase();
+    const uHandleLower = (u.handle || '').toLowerCase();
+    if (uNameLower === targetLower || uHandleLower === targetLower) {
+      found = u;
+    }
+  });
+  
+  return found;
+}
+
+let rrPlayerNameCheckTimeout = null;
+
+async function checkReportedPlayerLive() {
+  const nameInput = $('rrPlayerName').value.trim();
+  const statusDiv = $('rrPlayerNameStatus');
+  
+  if (!nameInput) {
+    statusDiv.classList.add('hidden');
+    statusDiv.textContent = '';
+    return;
+  }
+  
+  statusDiv.classList.remove('hidden');
+  statusDiv.className = 'text-[9px] mt-1 text-gold/80 font-semibold flex items-center gap-1';
+  statusDiv.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i> Checking player name...';
+  
+  try {
+    const foundUser = await validateReportedPlayer(nameInput);
+    if (foundUser) {
+      statusDiv.className = 'text-[9px] mt-1 text-emerald-400 font-semibold flex items-center gap-1';
+      statusDiv.innerHTML = `<i class="fas fa-check-circle text-emerald-400 mr-1"></i> Player found: <span class="text-white">${foundUser.name}</span>${foundUser.handle ? ` (@${foundUser.handle})` : ''}`;
+      if (foundUser.gameUID) {
+        $('rrPlayerUID').value = foundUser.gameUID;
+      }
+    } else {
+      statusDiv.className = 'text-[9px] mt-1 text-red-400 font-semibold flex items-center gap-1';
+      statusDiv.innerHTML = `<i class="fas fa-times-circle text-red-400 mr-1"></i> Wrong name or username! Player not found.`;
+    }
+  } catch (err) {
+    statusDiv.className = 'text-[9px] mt-1 text-red-400';
+    statusDiv.textContent = 'Verification error: ' + err.message;
+  }
+}
+
+$('rrPlayerName').addEventListener('input', () => {
+  clearTimeout(rrPlayerNameCheckTimeout);
+  rrPlayerNameCheckTimeout = setTimeout(checkReportedPlayerLive, 600);
+});
+
+$('rrPlayerName').addEventListener('blur', () => {
+  clearTimeout(rrPlayerNameCheckTimeout);
+  checkReportedPlayerLive();
+});
+
 // Open modal to file new red report
 $('bFileRedReport').addEventListener('click', () => {
   if (guestProfile) {
@@ -4145,6 +4349,10 @@ $('bFileRedReport').addEventListener('click', () => {
   $('rrCheatCategory').value = 'Aimbot / Headshot Lock';
   $('rrDescription').value = '';
   $('rrProofUrl').value = '';
+  
+  // Reset status
+  $('rrPlayerNameStatus').classList.add('hidden');
+  $('rrPlayerNameStatus').textContent = '';
   
   // Reset upload area state
   $('rrUploadProgress').classList.add('hidden');
@@ -4170,19 +4378,28 @@ $('bSubmitRedReport').addEventListener('click', async () => {
     return;
   }
 
-  // Use uploaded file URL if we uploaded one
-  if (window.uploadedEvidenceUrl) {
-    finalEvidenceUrl = window.uploadedEvidenceUrl;
-  }
-
   $('bSubmitRedReport').disabled = true;
-  $('bSubmitRedReport').textContent = 'Submitting report...';
+  $('bSubmitRedReport').textContent = 'Verifying player...';
 
   try {
+    const foundUser = await validateReportedPlayer(reportedName);
+    if (!foundUser) {
+      alert('❌ Wrong name or username! This player does not exist in our database. Please enter the exact registered name or username (e.g. saadanadnan).');
+      $('bSubmitRedReport').disabled = false;
+      $('bSubmitRedReport').textContent = 'Submit Report';
+      return;
+    }
+
+    // Use uploaded file URL if we uploaded one
+    if (window.uploadedEvidenceUrl) {
+      finalEvidenceUrl = window.uploadedEvidenceUrl;
+    }
+
+    $('bSubmitRedReport').textContent = 'Submitting report...';
     await addDoc(collection(db, 'red_reports'), {
       reporterUid: userProfile.uid,
       reporterName: userProfile.name,
-      reportedNickname: reportedName,
+      reportedNickname: foundUser.name, // Save the exact correct name
       gameUID: reportedUID,
       cheatType: cheatType,
       description: description,
@@ -4341,6 +4558,45 @@ window.renderRedReports = function() {
       </div>
 
       ${mediaHTML}
+
+      ${(() => {
+        let defendantHTML = '';
+        const pGameUID = userProfile?.gameUID ? String(userProfile.gameUID).trim().toLowerCase() : '';
+        const rGameUID = r.gameUID ? String(r.gameUID).trim().toLowerCase() : '';
+        const pName = userProfile?.name ? String(userProfile.name).trim().toLowerCase().replace(/^@/, '') : '';
+        const pHandle = userProfile?.handle ? String(userProfile.handle).trim().toLowerCase().replace(/^@/, '') : '';
+        const rReported = r.reportedNickname ? String(r.reportedNickname).trim().toLowerCase().replace(/^@/, '') : '';
+
+        const isAccused = !!(userProfile && (
+          (rGameUID && pGameUID === rGameUID) ||
+          (rReported && (pName === rReported || pHandle === rReported))
+        ));
+
+        if (r.defendantComment) {
+          defendantHTML = `
+            <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg text-xs space-y-1 mt-2.5">
+              <div class="font-bold text-[10px] text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                <i class="fas fa-shield-alt"></i> ${isAccused ? 'Your Statement / Explanation' : "Accused Player's Explanation"}:
+              </div>
+              <p class="text-[11px] text-t2 font-medium leading-relaxed select-text whitespace-pre-line bg-black/20 p-2 rounded border border-white/5 mt-1">${r.defendantComment}</p>
+              <span class="text-[9px] text-t3 block font-mono">Submitted: ${r.defendantCommentAt ? (r.defendantCommentAt.seconds ? new Date(r.defendantCommentAt.seconds * 1000).toLocaleString() : new Date(r.defendantCommentAt).toLocaleString()) : 'Recently'}</span>
+            </div>
+          `;
+        } else if (isAccused) {
+          defendantHTML = `
+            <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg text-xs space-y-2 mt-2.5">
+              <div class="font-bold text-[10px] text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                <i class="fas fa-shield-alt"></i> Submit Your Explanation / Statement (Optional)
+              </div>
+              <p class="text-[10px] text-t3 leading-relaxed">A complaint has been filed against you. You may optionally submit your statement or explanation here so the administration can review your side of the case.</p>
+              <textarea id="defTxt-${r.id}" rows="3" placeholder="Enter your explanation, details, or links to counter-proof..." class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 text-t1 outline-none text-xs focus:border-amber-500 transition resize-none font-medium"></textarea>
+              <button onclick="window.submitDefComment('${r.id}', document.getElementById('defTxt-${r.id}').value)" class="w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-bg text-[10px] font-bold rounded transition">Submit Statement</button>
+            </div>
+          `;
+        }
+        return defendantHTML;
+      })()}
+
       ${verdictHTML}
     `;
 
@@ -4348,12 +4604,140 @@ window.renderRedReports = function() {
   });
 }
 
+window.toggleEditDefendantComment = function(id) {
+  const sec = document.getElementById('editSec-' + id);
+  if (sec) {
+    sec.classList.toggle('hidden');
+  }
+};
+
+window.submitDefComment = async function(id, text) {
+  if (!text || !text.trim()) {
+    alert("Please write a detailed statement or defense!");
+    return;
+  }
+  const btn = event?.target;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+  }
+  try {
+    const reportRef = doc(db, 'red_reports', id);
+    await updateDoc(reportRef, {
+      defendantComment: text.trim(),
+      defendantCommentAt: serverTimestamp()
+    });
+    alert("Defense statement submitted successfully! ✅");
+  } catch (err) {
+    alert("Error submitting defense: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Statement';
+    }
+  }
+};
+
+window.submitRedReportComment = async function(id) {
+  if (!userProfile) {
+    alert("Please sign in to comment on reports.");
+    return;
+  }
+  
+  const textarea = document.getElementById(`commTxt-${id}`);
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text) {
+    alert("Please enter a comment or reply text!");
+    return;
+  }
+  
+  const report = window.allRedReports.find(r => r.id === id);
+  if (!report) {
+    alert("Report not found.");
+    return;
+  }
+  
+  const pGameUID = userProfile.gameUID ? String(userProfile.gameUID).trim().toLowerCase() : '';
+  const rGameUID = report.gameUID ? String(report.gameUID).trim().toLowerCase() : '';
+  const pName = userProfile.name ? String(userProfile.name).trim().toLowerCase().replace(/^@/, '') : '';
+  const pHandle = userProfile.handle ? String(userProfile.handle).trim().toLowerCase().replace(/^@/, '') : '';
+  const rReported = report.reportedNickname ? String(report.reportedNickname).trim().toLowerCase().replace(/^@/, '') : '';
+  const rReporterUid = report.reporterUid || '';
+
+  const isAccused = (
+    (rGameUID && pGameUID === rGameUID) ||
+    (rReported && (pName === rReported || pHandle === rReported)) ||
+    (report.reportedUid && userProfile.uid === report.reportedUid)
+  );
+  const isReporter = userProfile.uid === rReporterUid;
+  const isStaff = userProfile.email === 'admin@arenax.com' || (userProfile.email && userProfile.email.includes('kpllahore'));
+  
+  let role = 'player';
+  if (isStaff) role = 'moderator';
+  else if (isAccused) role = 'accused';
+  else if (isReporter) role = 'reporter';
+  
+  const sendBtn = document.getElementById(`commBtn-${id}`);
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Posting...';
+  }
+  
+  try {
+    const reportRef = doc(db, 'red_reports', id);
+    const newComment = {
+      authorName: userProfile.name || userProfile.handle || "ArenaX Player",
+      authorUid: userProfile.uid,
+      text: text,
+      role: role,
+      createdAt: new Date().toISOString()
+    };
+    
+    await updateDoc(reportRef, {
+      comments: arrayUnion(newComment)
+    });
+    
+    if (textarea) textarea.value = '';
+  } catch (err) {
+    alert("Error posting comment: " + err.message);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<i class="fas fa-paper-plane text-[9px]"></i> Comment';
+    }
+  }
+};
+
 // Admin verdict / review actions
-window.openReviewReportModal = function(id, name) {
+window.openReviewReportModal = async function(id, name) {
   window.activeReviewReportId = id;
   $('revPlayerTitle').textContent = `Reviewing Player: ${name}`;
   $('revVerdict').value = '';
+  $('revPunishment').value = 'none';
+  
+  const statusDiv = $('revMatchedUserStatus');
+  statusDiv.className = 'text-[9px] mt-1 text-gold/80 font-semibold flex items-center gap-1';
+  statusDiv.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Finding linked player...';
+  
   $('mReviewRedReport').classList.remove('hidden');
+  
+  try {
+    const foundUser = await validateReportedPlayer(name);
+    if (foundUser) {
+      statusDiv.className = 'text-[9px] mt-1 text-emerald-400 font-semibold flex items-center gap-1';
+      statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Linked Account: <strong class="text-white">${foundUser.name}</strong>${foundUser.handle ? ` (@${foundUser.handle})` : ''} - UID: ${foundUser.uid || foundUser.id}`;
+      window.activeReviewMatchedUser = foundUser;
+      $('revPunishment').value = 'full_perm'; // Default prefill standard punishment
+    } else {
+      statusDiv.className = 'text-[9px] mt-1 text-red-400 font-semibold flex items-center gap-1';
+      statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Accused player account not found in database.';
+      window.activeReviewMatchedUser = null;
+    }
+  } catch (err) {
+    statusDiv.className = 'text-[9px] mt-1 text-red-400';
+    statusDiv.textContent = 'Error linking player: ' + err.message;
+    window.activeReviewMatchedUser = null;
+  }
 };
 
 $('bCloseReviewModal').addEventListener('click', () => {
@@ -4367,19 +4751,70 @@ $('bSubmitReview').addEventListener('click', async () => {
     return;
   }
 
+  const punishment = $('revPunishment').value;
+
   $('bSubmitReview').disabled = true;
   $('bSubmitReview').textContent = 'Saving decision...';
 
   try {
+    if (punishment !== 'none' && window.activeReviewMatchedUser) {
+      const targetUser = window.activeReviewMatchedUser;
+      const targetUid = targetUser.uid || targetUser.id;
+      
+      let updateFields = {};
+      
+      if (punishment.startsWith('full_')) {
+        let duration = punishment.split('_')[1];
+        let expiry = null;
+        if (duration !== 'perm') {
+          let days = parseInt(duration);
+          expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+        }
+        updateFields = {
+          banned: true,
+          banType: 'full',
+          banReason: `[Auto punishment via Red Report #${window.activeReviewReportId}]: ${verdict}`,
+          banUntil: expiry
+        };
+      } else if (punishment.startsWith('tour_')) {
+        let duration = punishment.split('_')[1];
+        let expiry = null;
+        if (duration !== 'perm') {
+          let days = parseInt(duration);
+          expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+        }
+        updateFields = {
+          banned: true,
+          banType: 'tournament',
+          banReason: `[Auto punishment via Red Report #${window.activeReviewReportId}]: ${verdict}`,
+          banUntil: expiry
+        };
+      } else if (punishment.startsWith('mute_')) {
+        let duration = punishment.split('_')[1];
+        let expiry = null;
+        if (duration !== 'perm') {
+          expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        }
+        updateFields = {
+          muted: true,
+          muteReason: `[Auto punishment via Red Report #${window.activeReviewReportId}]: ${verdict}`,
+          muteUntil: expiry
+        };
+      }
+      
+      await updateDoc(doc(db, 'users', targetUid), updateFields);
+    }
+
     const reportRef = doc(db, 'red_reports', window.activeReviewReportId);
     await updateDoc(reportRef, {
       status: 'closed',
-      verdict: verdict,
+      verdict: 'Confirmed Cheat',
+      verdictComment: verdict,
       closedAt: serverTimestamp()
     });
 
     $('mReviewRedReport').classList.add('hidden');
-    alert('Report closed and verdict published successfully! ✅');
+    alert(`Report closed and verdict published successfully! ✅${punishment !== 'none' ? ' Direct punishment applied to the player!' : ''}`);
   } catch (err) {
     alert('Error submitting verdict: ' + err.message);
   } finally {
@@ -4942,11 +5377,6 @@ $('payConfirmBtn').addEventListener('click', async () => {
       submittedAt: serverTimestamp()
     });
 
-    // Check if deposit is >= 100 AX Coins to complete the daily mission
-    if (finalAX >= 100) {
-      completeFootballMission(6);
-    }
-
     $('mPayment').classList.add('hidden');
     $('payAmtInp').value = '';
     $('payTxnId').value = '';
@@ -5361,6 +5791,15 @@ $('bSaveCustomize').addEventListener('click', async () => {
     return;
   }
 
+  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+  const nameChanged = name !== userProfile.name;
+  if (nameChanged && userProfile.lastNameChangeAt && (Date.now() - userProfile.lastNameChangeAt < fourteenDaysMs)) {
+    const msLeft = fourteenDaysMs - (Date.now() - userProfile.lastNameChangeAt);
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    alert(`You can change your name only after 14 days! Please wait ${daysLeft} more day(s).`);
+    return;
+  }
+
   // Common updates for all users
   const updateData = {
     name,
@@ -5371,6 +5810,10 @@ $('bSaveCustomize').addEventListener('click', async () => {
     socialInstagram,
     socialYoutube
   };
+
+  if (nameChanged) {
+    updateData.lastNameChangeAt = Date.now();
+  }
 
   // Premium updates (Only applied if premium)
   if (userProfile.premium) {
@@ -5389,7 +5832,6 @@ $('bSaveCustomize').addEventListener('click', async () => {
   try {
     await updateDoc(doc(db, 'users', userProfile.uid), updateData);
     $('mCustomize').classList.add('hidden');
-    completeFootballMission(4);
     alert('Profile customizations saved successfully! ✅');
   } catch (err) {
     alert(err.message);
@@ -5417,6 +5859,10 @@ $('prmMonthly').addEventListener('click', () => {
 });
 
 $('bBuyPremium').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert('Please connect a full account to purchase premium.');
+    return;
+  }
   const costCoins = premiumDuration === 'weekly' ? 199 : 399;
   const balance = userProfile.balance || 0;
   
@@ -5495,6 +5941,8 @@ function loadFriendSystem() {
       item.querySelector('.b-dec').addEventListener('click', (e) => declineFriendRequest(e.currentTarget.dataset.uid));
       listEl.appendChild(item);
     });
+  }, (err) => {
+    console.warn("Friend requests listen warning:", err);
   });
 
   // Real-time listen to friends list
@@ -5527,6 +5975,8 @@ function loadFriendSystem() {
       item.addEventListener('click', () => openFriendDM(f));
       listEl.appendChild(item);
     });
+  }, (err) => {
+    console.warn("Friends list listen warning:", err);
   });
 }
 
@@ -5735,8 +6185,6 @@ function renderGlobalMessages(list) {
       <div>
         <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
           ${msg.userName || 'Anonymous'}
-          ${msg.hasFifaTag ? `<span class="bg-gradient-to-r from-emerald-500 to-teal-400 text-bg text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider leading-none shadow-[0_0_6px_rgba(16,185,129,0.3)]"><i class="fas fa-futbol text-[6px]"></i> FIFA MEMBER</span>` : ''}
-          ${msg.hasFifaWorldMemberBadge ? `<span class="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-bg text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider leading-none shadow-[0_0_8px_rgba(245,158,11,0.45)] flex items-center gap-0.5 animate-pulse"><i class="fas fa-medal text-[7px]"></i> FIFA WORLD MEMBER</span>` : ''}
         </div>
         <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
           ${msg.text || ''}
@@ -5870,18 +6318,6 @@ $('globalChatForm').addEventListener('submit', async (e) => {
   const text = input.value.trim();
   if (!text) return;
 
-  // Complete daily mission "Chat in Global"
-  completeFootballMission(5);
-
-  // Complete Task 5 if message contains "GOAL" (case-insensitive)
-  if (text.toUpperCase().includes('GOAL')) {
-    localStorage.setItem('campaign_task5', 'true');
-    setTimeout(async () => {
-      await checkAndSyncWorldCupTasks();
-      renderWorldCupCampaignQuests();
-    }, 100);
-  }
-
   input.value = '';
 
   // Cancel typing status immediately
@@ -5911,11 +6347,18 @@ $('globalChatForm').addEventListener('submit', async (e) => {
       text: filtered,
       originalText: text,
       isAbusive: isAbusive,
-      hasFifaTag: (profile.hasFifaTag || localStorage.getItem('hasFifaTag') === 'true'),
-      hasFifaWorldMemberBadge: (profile.hasFifaWorldMemberBadge || localStorage.getItem('hasFifaWorldMemberBadge') === 'true'),
       avatarFrame: (profile.avatarFrame || localStorage.getItem('selectedAvatarFrame') || 'none'),
       createdAt: serverTimestamp()
     });
+
+    if (profile && !profile.guest) {
+      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      await updateDoc(doc(db, 'users', profile.uid), {
+        'dailyTasks.chat': true,
+        'dailyTasks.date': todayStr,
+        'welcomeBonus.chat': true
+      }).catch(e => console.warn("Failed to update chat tasks: ", e));
+    }
 
     if (isAbusive) {
       await addDoc(collection(db, 'chat_reports'), {
@@ -6558,6 +7001,8 @@ function loadLiveNotifications() {
     });
 
     isInitial = false;
+  }, (err) => {
+    console.warn("Notifications listen warning:", err);
   });
 }
 
@@ -6661,9 +7106,19 @@ $('btnEditProfile').addEventListener('click', () => {
     alert('Connect a full account first to change Display Name!');
     return;
   }
+  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+  if (userProfile.lastNameChangeAt && (Date.now() - userProfile.lastNameChangeAt < fourteenDaysMs)) {
+    const msLeft = fourteenDaysMs - (Date.now() - userProfile.lastNameChangeAt);
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    alert(`You can change your name only after 14 days! Please wait ${daysLeft} more day(s).`);
+    return;
+  }
   const n = prompt('Enter your new Display Name:', userProfile.name);
-  if (n && n.trim()) {
-    updateDoc(doc(db, 'users', userProfile.uid), { name: n.trim() })
+  if (n && n.trim() && n.trim() !== userProfile.name) {
+    updateDoc(doc(db, 'users', userProfile.uid), { 
+      name: n.trim(),
+      lastNameChangeAt: Date.now()
+    })
       .then(() => alert('Name updated successfully!'))
       .catch(err => alert(err.message));
   }
@@ -6739,6 +7194,13 @@ $('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('
 $('bTopbarMenu').addEventListener('click', () => {
   if (typeof window.openRedReportHubDrawer === 'function') {
     window.openRedReportHubDrawer();
+  }
+});
+
+// Topbar Launch Fest Event Click Handler (Opens Launch Fest Drawer)
+$('bLaunchFest').addEventListener('click', () => {
+  if (typeof window.openLaunchFestDrawer === 'function') {
+    window.openLaunchFestDrawer();
   }
 });
 
@@ -7008,1055 +7470,31 @@ function spawnConfetti(colors) {
 }
 
 // ==================== ARENAX FOOTBALL GROUND SYSTEM ====================
-const FOOTBALL_TEAMS = [
-  { id: 'pak_green', name: 'Pakistan Green FC', flag: '🇵🇰', speed: 99, attack: 99, defense: 98, color: 'from-emerald-600 to-teal-500', icon: 'fa-moon', emblemColor: 'text-emerald-400', colors: ['#10b981', '#ffffff'] },
-  { id: 'real_madrid', name: 'Real Madrid CF', flag: '🇪🇸', speed: 95, attack: 95, defense: 93, color: 'from-blue-600 to-indigo-700', icon: 'fa-crown', emblemColor: 'text-yellow-400', colors: ['#3b82f6', '#f59e0b'] },
-  { id: 'barcelona', name: 'FC Barcelona', flag: '🇪🇸', speed: 93, attack: 94, defense: 91, color: 'from-red-600 to-blue-700', icon: 'fa-shield-halved', emblemColor: 'text-red-400', colors: ['#ef4444', '#3b82f6'] },
-  { id: 'man_united', name: 'Manchester United', flag: '🇬🇧', speed: 91, attack: 91, defense: 90, color: 'from-red-700 to-amber-600', icon: 'fa-fire', emblemColor: 'text-orange-400', colors: ['#dc2626', '#ffffff'] },
-  { id: 'brazil', name: 'Brazil Canarinho', flag: '🇧🇷', speed: 96, attack: 96, defense: 92, color: 'from-yellow-500 to-emerald-600', icon: 'fa-star', emblemColor: 'text-yellow-300', colors: ['#eab308', '#22c55e'] },
-  { id: 'argentina', name: 'Argentina Albiceleste', flag: '🇦🇷', speed: 94, attack: 95, defense: 92, color: 'from-sky-400 to-blue-500', icon: 'fa-sun', emblemColor: 'text-sky-300', colors: ['#06b6d4', '#ffffff'] }
-];
-
-let currentFootballTeam = localStorage.getItem('selectedFootballTeam') || null;
-let footballMissions = JSON.parse(localStorage.getItem('footballMissions') || '{"1":false,"2":false,"3":false,"4":false,"5":false,"6":false}');
-let shootoutScore = parseInt(localStorage.getItem('shootoutGoals') || '0');
-let shootoutMissed = 0;
-shootoutBalls = parseInt(localStorage.getItem('shootoutBalls') || '5');
-lastBallChargeTime = parseInt(localStorage.getItem('lastBallChargeTime') || Date.now().toString());
-
-function checkAndRechargeBalls() {
-  const now = Date.now();
-  const chargeDuration = 30 * 60 * 1000; // 30 minutes in ms
-  if (shootoutBalls < 5) {
-    const elapsedMs = now - lastBallChargeTime;
-    if (elapsedMs >= chargeDuration) {
-      const earned = Math.floor(elapsedMs / chargeDuration);
-      shootoutBalls = Math.min(5, shootoutBalls + earned);
-      lastBallChargeTime = lastBallChargeTime + (earned * chargeDuration);
-      localStorage.setItem('shootoutBalls', shootoutBalls.toString());
-      localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
-      
-      if (userProfile && userProfile.uid) {
-        updateDoc(doc(db, 'users', userProfile.uid), {
-          shootoutBalls: shootoutBalls,
-          lastBallChargeTime: lastBallChargeTime
-        }).catch(console.warn);
-      }
-    }
-  } else {
-    lastBallChargeTime = now;
-    localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
-  }
-}
-
-function getNextChargeCountdown() {
-  if (shootoutBalls >= 5) return "";
-  const now = Date.now();
-  const chargeDuration = 30 * 60 * 1000;
-  const elapsedMs = now - lastBallChargeTime;
-  const remainingMs = chargeDuration - (elapsedMs % chargeDuration);
-  
-  const minutes = Math.floor(remainingMs / 60000);
-  const seconds = Math.floor((remainingMs % 60000) / 1000);
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function useBall() {
-  checkAndRechargeBalls();
-  if (shootoutBalls <= 0) {
-    return false;
-  }
-  
-  if (shootoutBalls === 5) {
-    lastBallChargeTime = Date.now();
-    localStorage.setItem('lastBallChargeTime', lastBallChargeTime.toString());
-  }
-  
-  shootoutBalls--;
-  localStorage.setItem('shootoutBalls', shootoutBalls.toString());
-  
-  if (userProfile && userProfile.uid) {
-    updateDoc(doc(db, 'users', userProfile.uid), {
-      shootoutBalls: shootoutBalls,
-      lastBallChargeTime: lastBallChargeTime
-    }).catch(console.warn);
-  }
-  
-  updateBallsUI();
-  return true;
-}
-
-function updateBallsUI() {
-  const countEl = $('dShootoutBallsLeft');
-  const timerEl = $('dShootoutBallsTimer');
-  const rechargeContainer = $('dShootoutBallsRechargeContainer');
-  
-  if (countEl) {
-    countEl.textContent = `${shootoutBalls}/5`;
-  }
-  
-  if (shootoutBalls < 5) {
-    if (rechargeContainer) rechargeContainer.classList.remove('hidden');
-    if (timerEl) {
-      timerEl.textContent = getNextChargeCountdown();
-    }
-  } else {
-    if (rechargeContainer) rechargeContainer.classList.add('hidden');
-  }
-}
-
-// Setup Topbar and Footer Event Listeners
-$('bFootballGround').addEventListener('click', () => openFootballGround());
-document.querySelector('.ni[data-t="Football"]').addEventListener('click', () => openFootballGround());
-
-function openFootballGround() {
-  const loader = $('mFootballGroundLoader');
-  const bar = $('dFootballLoaderBar');
-  const status = $('dFootballLoaderStatus');
-  
-  stadiumAudio.playWhistle();
-  stadiumAudio.playCrowdRoar();
-  
-  loader.classList.remove('hidden');
-  bar.style.width = '0%';
-  
-  let progress = 0;
-  const statuses = [
-    "Initializing Turf Pitch...",
-    "Setting up Floodlights...",
-    "Aligning Goalposts...",
-    "Entering Football Ground!"
-  ];
-  
-  const interval = setInterval(() => {
-    progress += 25;
-    bar.style.width = `${progress}%`;
-    status.textContent = statuses[Math.floor(progress / 25) - 1] || statuses[statuses.length - 1];
-    
-    if (progress >= 100) {
-      clearInterval(interval);
-      setTimeout(() => {
-        loader.classList.add('hidden');
-        switchTab('Football');
-        initFootballGroundUI();
-      }, 300);
-    }
-  }, 400);
-}
-
-function initFootballGroundUI() {
-  if (!currentFootballTeam) {
-    $('dFootballChooseTeam').classList.remove('hidden');
-    $('dFootballActiveGround').classList.add('hidden');
-    renderFootballTeams();
-    return;
-  }
-
-  $('dFootballChooseTeam').classList.add('hidden');
-  $('dFootballActiveGround').classList.remove('hidden');
-
-  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
-  
-  // Set scoreboard title to match team
-  const shortName = team.name.slice(0, 3).toUpperCase();
-  $('scoreboardTeamName').textContent = shortName;
-
-  renderFootballMissions();
-  updateFootballProgress();
-  setupTasksDrawerListeners();
-}
-
-function renderFootballTeams() {
-  const grid = $('dFootballTeamGrid');
-  if (!grid) return;
-  grid.innerHTML = FOOTBALL_TEAMS.map(team => `
-    <div id="card-outer-${team.id}" class="perspective-800 h-32 relative cursor-pointer group" onclick="selectFootballClub('${team.id}')">
-      <div id="card-inner-${team.id}" class="card-inner w-full h-full relative">
-        <!-- Front of Card -->
-        <div class="card-front bg-card border border-bdr hover:border-emerald-500/50 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 shadow-lg">
-          <div class="w-10 h-10 bg-gradient-to-br ${team.color} rounded-xl flex items-center justify-center text-lg text-white shadow-md relative overflow-hidden">
-            <span class="absolute top-0 right-0 text-[10px] p-0.5 animate-flag-wave">${team.flag}</span>
-            <i class="fas ${team.icon}"></i>
-          </div>
-          <div>
-            <h4 class="font-display font-black text-white text-[11px] uppercase tracking-wide leading-none">${team.name}</h4>
-            <p class="text-[8px] text-t3 uppercase mt-1">SPD: ${team.speed} | ATK: ${team.attack} | DEF: ${team.defense}</p>
-          </div>
-        </div>
-        <!-- Back of Card -->
-        <div class="card-back bg-gradient-to-tr ${team.color} border-2 border-emerald-400 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-1 shadow-[0_0_20px_rgba(16,185,129,0.5)]">
-          <span class="text-3xl animate-flag-wave">${team.flag}</span>
-          <span class="text-[10px] font-black text-white uppercase tracking-widest">SELECTED!</span>
-          <span class="text-[8px] font-mono text-white/80 uppercase">Entering Arena...</span>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-window.selectFootballClub = function(teamId) {
-  const team = FOOTBALL_TEAMS.find(t => t.id === teamId) || FOOTBALL_TEAMS[0];
-  
-  // Play country-specific stadium roar
-  stadiumAudio.playCrowdRoar();
-  stadiumAudio.playWhistle();
-  
-  // Spawn flag color confetti
-  spawnConfetti(team.colors);
-  
-  // Flip the clicked country card 3D
-  const innerCard = document.getElementById(`card-inner-${teamId}`);
-  if (innerCard) {
-    innerCard.classList.add('card-flipped');
-  }
-  
-  setTimeout(async () => {
-    localStorage.setItem('selectedFootballTeam', teamId);
-    currentFootballTeam = teamId;
-    
-    // Team Selected
-    
-    if (userProfile && userProfile.uid) {
-      try {
-        await updateDoc(doc(db, 'users', userProfile.uid), {
-          worldCupTeam: teamId
-        });
-        userProfile.worldCupTeam = teamId;
-      } catch (e) {
-        console.error("Error saving worldCupTeam in Firestore:", e);
-      }
-    }
-    
-    await checkAndSyncWorldCupTasks();
-    renderWorldCupCampaignQuests();
-    
-    initFootballGroundUI();
-  }, 1000);
-};
-
-function setupTasksDrawerListeners() {
-  // Bind Tasks Drawer Open
-  const bOpen = $('bShowStadiumTasks');
-  if (bOpen) {
-    bOpen.onclick = () => {
-      stadiumAudio.playChime();
-      const drawer = $('dFootballTasksDrawer');
-      drawer.classList.remove('hidden');
-      setTimeout(() => {
-        drawer.classList.remove('translate-x-full');
-      }, 10);
-    };
-  }
-
-  // Bind Tasks Drawer Close
-  const bClose = $('bCloseTasksDrawer');
-  if (bClose) {
-    bClose.onclick = () => {
-      stadiumAudio.playChime();
-      const drawer = $('dFootballTasksDrawer');
-      drawer.classList.add('translate-x-full');
-      setTimeout(() => {
-        drawer.classList.add('hidden');
-      }, 300);
-    };
-  }
-}
-
-window.kickStadiumBall = function() {
-  stadiumAudio.playKick();
-  const ball = $('stadiumFloatingBall');
-  if (ball) {
-    ball.classList.add('animate-ping');
-    setTimeout(() => {
-      ball.classList.remove('animate-ping');
-    }, 300);
-  }
-  
-  // Random scoreboards updates
-  const teamScore = Math.floor(Math.random() * 4);
-  const oppScore = Math.floor(Math.random() * 3);
-  $('scoreboardMatchScore').textContent = `${teamScore} - ${oppScore}`;
-  
-  // Confetti explosion
-  spawnConfetti(['#10b981', '#ffffff', '#eab308']);
-};
-
-window.showClubProfileModal = function() {
-  stadiumAudio.playChime();
-  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
-  
-  $('dClubModalName').textContent = team.name;
-  $('dClubModalIcon').className = `fas ${team.icon}`;
-  $('dClubModalHeader').className = `p-6 bg-gradient-to-r ${team.color} border-b border-white/10 text-center space-y-2`;
-  
-  $('dClubModalSpeed').textContent = team.speed;
-  $('dClubModalAttack').textContent = team.attack;
-  $('dClubModalDefense').textContent = team.defense;
-  
-  $('mFootballClubModal').classList.remove('hidden');
-};
-
-function renderFootballMissions() {
-  const container = $('dFootballMissionsContainer');
-  if (!container) return;
-
-  const missionDetails = [
-    { id: 1, title: "5 Missions Completed (Master)", desc: "Complete all other 5 daily missions.", reward: 50, actionText: "Auto-Claims", action: "void(0)" },
-    { id: 2, title: "Goal 3 Times", desc: `Score 3 goals in Penalty Shootout (Current: <span class="text-gold font-bold font-mono">${shootoutScore}</span>).`, reward: 15, actionText: "Play Shootout", action: "openPenaltyShootout()" },
-    { id: 3, title: "Goal 5 Times", desc: `Score 5 goals in Penalty Shootout (Current: <span class="text-gold font-bold font-mono">${shootoutScore}</span>).`, reward: 25, actionText: "Play Shootout", action: "openPenaltyShootout()" },
-    { id: 4, title: "Customize Your Profile", desc: "Save profile customizations in Profile tab.", reward: 10, actionText: "Customize", action: "switchTab('Profile'); document.getElementById('mCustomize').classList.remove('hidden'); loadBannerThemeSelector(); loadNameColorSelector(); loadAvatarPickerGrid();" },
-    { id: 5, title: "Chat in Global", desc: "Send any message in Global Chat.", reward: 10, actionText: "Go Chat", action: "switchTab('Chat')" },
-    { id: 6, title: "Deposit 100 AX Coins", desc: "Deposit 100 AX Coins or more in your wallet.", reward: 30, actionText: "Deposit", action: "switchTab('Wallet')" }
-  ];
-
-  container.innerHTML = missionDetails.map(m => {
-    const isCompleted = footballMissions[m.id];
-    return `
-      <div class="p-3 bg-card border ${isCompleted ? 'border-emerald-500/25 bg-emerald-500/[0.02]' : 'border-bdr'} rounded-xl flex items-center justify-between gap-3 transition">
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-1.5">
-            <span class="w-4 h-4 rounded-full ${isCompleted ? 'bg-emerald-500/15 text-emerald-400' : 'bg-ele text-t3'} flex items-center justify-center text-[9px] font-bold">
-              ${isCompleted ? '<i class="fas fa-check"></i>' : m.id}
-            </span>
-            <h5 class="font-bold text-xs ${isCompleted ? 'text-emerald-400 line-through opacity-70' : 'text-white'}">${m.title}</h5>
-          </div>
-          <p class="text-[10px] text-t2 pl-5 font-sans leading-tight">${m.desc}</p>
-          <div class="text-[9px] pl-5 text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
-            <i class="fas fa-coins text-[8px] text-gold"></i> +${m.reward} AX Coins Reward
-          </div>
-        </div>
-        <div>
-          ${isCompleted ? `
-            <span class="text-[10px] text-emerald-400/80 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">Done</span>
-          ` : `
-            <button onclick="${m.action}" class="px-3 py-1.5 bg-ele hover:bg-gold hover:text-bg text-t1 text-[10px] font-bold rounded-lg border border-bdr hover:border-gold transition cursor-pointer shrink-0">${m.actionText}</button>
-          `}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
 window.completeFootballMission = function(missionId) {
-  footballMissions[missionId] = true;
-  localStorage.setItem('footballMissions', JSON.stringify(footballMissions));
-  
-  if (missionId !== 1) {
-    if (footballMissions["2"] && footballMissions["3"] && footballMissions["4"] && footballMissions["5"] && footballMissions["6"]) {
-      footballMissions["1"] = true;
-      localStorage.setItem('footballMissions', JSON.stringify(footballMissions));
-    }
-  }
-
-  renderFootballMissions();
-  updateFootballProgress();
+  // Football features have been fully removed.
+};
+window.checkAndRechargeBalls = function() {
+  // Football shootout features have been fully removed.
 };
 
-function updateFootballProgress() {
-  const completedCount = Object.values(footballMissions).filter(Boolean).length;
-  $('dFootballProgressText').textContent = `${completedCount} / 6 Completed`;
-  const pct = (completedCount / 6) * 100;
-  $('dFootballProgressBar').style.width = `${pct}%`;
 
-  if (completedCount === 6) {
-    const claimed = localStorage.getItem('claimedFootballGifts') === 'true';
-    if (!claimed) {
-      $('dFootballClaimPanel').classList.remove('hidden');
-    } else {
-      $('dFootballClaimPanel').classList.add('hidden');
-    }
-  } else {
-    $('dFootballClaimPanel').classList.add('hidden');
-  }
-}
 
-window.copyFootballInvite = function() {
-  const uid = userProfile ? userProfile.uid : 'guest';
-  navigator.clipboard.writeText('Join my ArenaX Football ground squad: https://arenax.com/ground?ref=' + uid);
-  alert('📋 Invite link copied! Share with your friends to complete the mission.');
-  completeFootballMission(5);
-};
 
-window.buyStadiumTicket = function() {
-  const balance = userProfile ? (userProfile.balance || 0) : 50;
-  if (balance < 5) {
-    alert('❌ Insufficient balance! You need at least 5 AX Coins.');
-    return;
-  }
-  if (confirm('Spend 5 AX Coins to purchase the VIP Stadium Ticket?')) {
-    if (userProfile && userProfile.uid) {
-      updateDoc(doc(db, 'users', userProfile.uid), {
-        balance: balance - 5
-      }).then(() => {
-        userProfile.balance = balance - 5;
-        boot();
-        completeFootballMission(7);
-      });
-    } else {
-      completeFootballMission(7);
-    }
-  }
-};
 
-window.castElClasicoVote = function() {
-  const vote = prompt("Predict the El Clásico Winner!\nType 'REAL' for Real Madrid CF or 'BARCA' for FC Barcelona:");
-  if (!vote) return;
-  const clean = vote.toUpperCase().trim();
-  if (clean === 'REAL' || clean === 'BARCA') {
-    alert(`🗳️ Prediction recorded successfully for ${clean === 'REAL' ? 'Real Madrid CF' : 'FC Barcelona'}!`);
-    completeFootballMission(8);
-  } else {
-    alert("Please enter either 'REAL' or 'BARCA' to submit your prediction.");
-  }
-};
 
-window.drinkEnergyPotion = function() {
-  alert("🔋 Energy fully restored! Speed & stamina boosted.");
-  completeFootballMission(9);
-};
 
-let shootoutBallsInterval = null;
-window.openPenaltyShootout = function() {
-  checkAndRechargeBalls();
-  updateBallsUI();
 
-  if (shootoutBallsInterval) clearInterval(shootoutBallsInterval);
-  shootoutBallsInterval = setInterval(() => {
-    checkAndRechargeBalls();
-    updateBallsUI();
-  }, 1000);
 
-  $('mFootballShootout').classList.remove('hidden');
-  $('dShootoutScore').textContent = shootoutScore;
-  $('dShootoutMissed').textContent = shootoutMissed;
-  $('dShootoutResult').textContent = "Ready to take the shot...";
-  
-  // Reset elements
-  const ball = $('dShootoutBall');
-  ball.style.top = '';
-  ball.style.left = '50%';
-  ball.style.transform = 'translateX(-50%) scale(1)';
-  
-  const keeper = $('dShootoutKeeper');
-  keeper.style.left = '50%';
-  keeper.style.transform = 'translateX(-50%)';
-};
 
-$('bCloseShootout').addEventListener('click', () => {
-  if (shootoutBallsInterval) {
-    clearInterval(shootoutBallsInterval);
-    shootoutBallsInterval = null;
-  }
-  $('mFootballShootout').classList.add('hidden');
-});
 
-document.querySelectorAll('.shoot-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const aim = btn.dataset.aim;
-    shootPenalty(aim);
-  });
-});
-
-function shootPenalty(aim) {
-  checkAndRechargeBalls();
-  if (shootoutBalls <= 0) {
-    const timeText = getNextChargeCountdown();
-    alert(`❌ No balls left! Next ball will recharge in ${timeText || '30:00'}. Please wait or try again later.`);
-    return;
-  }
-
-  useBall();
-
-  const resultText = $('dShootoutResult');
-  resultText.textContent = "Kicking...";
-  
-  // Synthesize kick sound and referee whistle!
-  stadiumAudio.playKick();
-  stadiumAudio.playWhistle();
-  
-  const ball = $('dShootoutBall');
-  const keeper = $('dShootoutKeeper');
-  
-  document.querySelectorAll('.shoot-btn').forEach(b => b.disabled = true);
-  
-  const options = ['left', 'center', 'right'];
-  const keeperAim = options[Math.floor(Math.random() * options.length)];
-  
-  // Animate GK
-  if (keeperAim === 'left') {
-    keeper.style.left = '20%';
-    keeper.style.transform = 'translateX(-50%) rotate(-15deg)';
-  } else if (keeperAim === 'right') {
-    keeper.style.left = '80%';
-    keeper.style.transform = 'translateX(-50%) rotate(15deg)';
-  } else {
-    keeper.style.left = '50%';
-    keeper.style.transform = 'translateX(-50%) scale(1.1)';
-  }
-  
-  // Animate Ball
-  if (aim === 'left') {
-    ball.style.top = '12%';
-    ball.style.left = '25%';
-  } else if (aim === 'right') {
-    ball.style.top = '12%';
-    ball.style.left = '75%';
-  } else {
-    ball.style.top = '12%';
-    ball.style.left = '50%';
-  }
-  ball.style.transform = 'scale(0.5) rotate(360deg)';
-  
-  setTimeout(() => {
-    if (aim === keeperAim) {
-      shootoutMissed++;
-      $('dShootoutMissed').textContent = shootoutMissed;
-      resultText.textContent = "❌ SAVED BY THE GOALKEEPER!";
-      stadiumAudio.playWhistle();
-    } else {
-      shootoutScore++;
-      localStorage.setItem('shootoutGoals', shootoutScore.toString());
-      $('dShootoutScore').textContent = shootoutScore;
-      resultText.textContent = "⚽ GOOOAAALLLL!!! UNBELIEVABLE STRIKE!";
-      
-      // Play crowd roar and spawn goal confetti!
-      stadiumAudio.playCrowdRoar();
-      spawnConfetti(['#10b981', '#3b82f6', '#f59e0b', '#ffffff']);
-      
-      if (shootoutScore >= 3) completeFootballMission(2);
-      if (shootoutScore >= 5) completeFootballMission(3);
-
-      // Async Firestore update and World Cup Campaign task check
-      setTimeout(async () => {
-        if (userProfile && userProfile.uid) {
-          try {
-            await updateDoc(doc(db, 'users', userProfile.uid), {
-              shootoutGoals: shootoutScore
-            });
-            userProfile.shootoutGoals = shootoutScore;
-          } catch (e) {
-            console.error("Error updating shootoutGoals in Firestore:", e);
-          }
-        }
-        await checkAndSyncWorldCupTasks();
-        renderWorldCupCampaignQuests();
-      }, 50);
-    }
-    
-    setTimeout(() => {
-      ball.style.top = '';
-      ball.style.left = '50%';
-      ball.style.transform = 'translateX(-50%) scale(1)';
-      
-      keeper.style.left = '50%';
-      keeper.style.transform = 'translateX(-50%)';
-      
-      document.querySelectorAll('.shoot-btn').forEach(b => b.disabled = false);
-      resultText.textContent = "Aim and shoot next penalty!";
-    }, 1800);
-  }, 700);
-}
-
-window.simulateGrandFinal = function() {
-  const completedCount = Object.values(footballMissions).filter(Boolean).length;
-  if (completedCount < 9) {
-    alert("🔒 Complete all other 9 missions first to unlock the Grand Arena Finale match!");
-    return;
-  }
-  
-  const team = FOOTBALL_TEAMS.find(t => t.id === currentFootballTeam) || FOOTBALL_TEAMS[0];
-  const opponent = "World All-Stars XI";
-  
-  stadiumAudio.playWhistle();
-  stadiumAudio.playCrowdRoar();
-  
-  alert(`⚔️ Entering Grand Finale: ${team.name} vs ${opponent}!\n\nClick OK to simulate the final match!`);
-  
-  const commentary = [
-    "15' Match starts with intense back-and-forth action in midfield...",
-    "34' AMAZING SAVE by your goalkeeper to keep it 0-0!",
-    "55' Yellow card issued to opponent defender for tackle...",
-    "78' GOOOAL! Opponent scores with a lucky header. 0 - 1.",
-    "85' EQUALIZER! Your striker scores absolute worldie from 30 yards! 1 - 1.",
-    "90' PENALTY GIVEN to your team! Last minute drama!",
-    "92' GOOOAL! You score from the spot! The stadium goes absolutely wild!"
-  ];
-  
-  let commentIdx = 0;
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black/95 z-[700] flex flex-col items-center justify-center p-6 text-center space-y-4';
-  modal.innerHTML = `
-    <div class="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center text-4xl text-emerald-400 animate-bounce">
-      <i class="fas fa-trophy"></i>
-    </div>
-    <h3 class="font-display text-xl font-bold text-white uppercase tracking-wider">GRAND ARENA FINALE SIMULATOR</h3>
-    <div class="w-full max-w-sm bg-card border border-bdr rounded-2xl p-5 space-y-3">
-      <div class="flex justify-between items-center text-xs font-mono border-b border-bdr pb-2 text-t2">
-        <span>${team.name}</span>
-        <span class="text-white font-extrabold" id="finalScore">0 - 0</span>
-        <span>${opponent}</span>
-      </div>
-      <p id="finalCommentary" class="text-xs text-emerald-400 font-sans italic min-h-[40px] flex items-center justify-center">Kickoff commencing shortly...</p>
-    </div>
-    <div class="w-48 h-1 bg-emerald-950 rounded-full overflow-hidden">
-      <div id="finalProg" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  
-  const interval = setInterval(() => {
-    if (commentIdx < commentary.length) {
-      const commentaryEl = modal.querySelector('#finalCommentary');
-      const scoreEl = modal.querySelector('#finalScore');
-      const progEl = modal.querySelector('#finalProg');
-      
-      commentaryEl.textContent = commentary[commentIdx];
-      progEl.style.width = `${(commentIdx / (commentary.length - 1)) * 100}%`;
-      
-      stadiumAudio.playWhistle();
-      stadiumAudio.playKick();
-      
-      if (commentIdx === 3 || commentIdx === 4 || commentIdx === 6) {
-        stadiumAudio.playCrowdRoar();
-        spawnConfetti(team.colors);
-      }
-      
-      if (commentIdx === 3) {
-        scoreEl.textContent = "0 - 1";
-      } else if (commentIdx === 4) {
-        scoreEl.textContent = "1 - 1";
-      } else if (commentIdx === 6) {
-        scoreEl.textContent = "2 - 1";
-      }
-      commentIdx++;
-    } else {
-      clearInterval(interval);
-      stadiumAudio.playVictory();
-      
-      setTimeout(() => {
-        modal.innerHTML = `
-          <div class="w-24 h-24 bg-gold/10 border border-gold/30 rounded-full flex items-center justify-center text-5xl text-gold animate-pulse">
-            <i class="fas fa-crown"></i>
-          </div>
-          <h3 class="font-display text-2xl font-black text-gold uppercase tracking-widest">🏆 CHAMPIONS OF ARENAX!</h3>
-          <p class="text-sm text-t1 max-w-sm leading-relaxed">${team.name} defeated ${opponent} 2-1 in a historic match! You have completed the 10th and final mission!</p>
-          <button id="bCloseFinalSim" class="px-6 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer">Return To Ground</button>
-        `;
-        modal.querySelector('#bCloseFinalSim').addEventListener('click', () => {
-          modal.remove();
-          completeFootballMission(10);
-        });
-      }, 1500);
-    }
-  }, 1500);
-};
-
-$('bFootballClaimGifts').addEventListener('click', async () => {
-  const claimed = localStorage.getItem('claimedFootballGifts') === 'true';
-  if (claimed) {
-    alert("You have already claimed your ultimate gifts!");
-    return;
-  }
-
-  const currentBalance = userProfile ? (userProfile.balance || 0) : 100;
-  const newBalance = currentBalance + 250;
-  
-  stadiumAudio.playVictory();
-  
-  try {
-    if (userProfile && userProfile.uid) {
-      await updateDoc(doc(db, 'users', userProfile.uid), {
-        balance: newBalance,
-        hasFifaTag: true,
-        av: `https://api.dicebear.com/7.x/bottts/svg?seed=futbol`
-      });
-      userProfile.balance = newBalance;
-      userProfile.hasFifaTag = true;
-      userProfile.av = `https://api.dicebear.com/7.x/bottts/svg?seed=futbol`;
-      boot();
-    }
-    
-    localStorage.setItem('claimedFootballGifts', 'true');
-    localStorage.setItem('hasFifaTag', 'true');
-    
-    alert("🏆 CONGRATULATIONS CHAMPION!\n\n🎁 Gifts Claimed Successfully:\n1. 250 AX Coins added to your wallet!\n2. Unlocked 'FIFA WORLD MEMBER' Name Tag!\n3. Unlocked Exclusive Football Avatar!\n\nYour profile has been upgraded. Go check your new premium tag in global chat!");
-    
-    $('dFootballClaimPanel').classList.add('hidden');
-    
-    const badgeFifa = $('badgeFifa');
-    if (badgeFifa) {
-      badgeFifa.classList.remove('hidden');
-    }
-    
-    // Elegant fireworks / floating items
-    for (let i = 0; i < 40; i++) {
-      const item = document.createElement('div');
-      item.className = 'fixed text-2xl z-[9999] pointer-events-none animate-bounce';
-      item.style.left = `${Math.random() * 100}vw`;
-      item.style.top = `${Math.random() * 100}vh`;
-      item.innerHTML = Math.random() > 0.5 ? '⚽' : '⭐';
-      document.body.appendChild(item);
-      setTimeout(() => item.remove(), 3500);
-    }
-    
-  } catch (err) {
-    console.error("Error claiming gifts:", err);
-    alert("Failed to claim gifts. Please try again.");
-  }
-});
-
-// ==================== WORLD CUP CAMPAIGN EVENTS & STATE ====================
-let worldCupCampaignTasks = {
-  "1": false,
-  "2": false,
-  "3": false,
-  "4": false,
-  "5": false
-};
-
-const WORLD_CUP_QUESTS = [
-  { id: 1, title: "Select a Football Team", desc: "Select your favorite stadium country card from team selector.", key: "1" },
-  { id: 2, title: "Submit Tournament Registration", desc: "Fill out and submit any live or upcoming tournament entry.", key: "2" },
-  { id: 3, title: "3 Consecutive Days Login", desc: "Log in to ArenaX for 3 consecutive days to build up your streak.", key: "3" },
-  { id: 4, title: "Score 10 Penalty Goals", desc: "Reach at least 10 total goals in the Shootout mini-game.", key: "4" },
-  { id: 5, title: "Chant 'GOAL' in Chat", desc: "Send any chat message containing the word 'GOAL' in Global Chat.", key: "5" }
-];
-
-window.checkAndSyncWorldCupTasks = async function() {
-  const profile = userProfile || guestProfile;
-  
-  // Task 1
-  const t1 = (currentFootballTeam || (profile && profile.worldCupTeam)) ? true : false;
-  if (t1) localStorage.setItem('campaign_task1', 'true');
-
-  // Task 2
-  const t2 = (profile?.hasSubmittedRegistration || localStorage.getItem('campaign_task2') === 'true') ? true : false;
-  if (t2) localStorage.setItem('campaign_task2', 'true');
-
-  // Task 3: check consecutive logins
-  let isTask3Completed = localStorage.getItem('campaign_task3') === 'true';
-  if (!isTask3Completed) {
-    if (userProfile) {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const lastLoginDate = userProfile.lastLoginDate || '';
-      let consecutiveLoginDays = userProfile.consecutiveLoginDays || 0;
-
-      if (!lastLoginDate) {
-        consecutiveLoginDays = 1;
-        try {
-          await updateDoc(doc(db, 'users', userProfile.uid), {
-            lastLoginDate: todayStr,
-            consecutiveLoginDays: 1
-          });
-          userProfile.lastLoginDate = todayStr;
-          userProfile.consecutiveLoginDays = 1;
-        } catch (e) {
-          console.warn(e);
-        }
-      } else if (lastLoginDate === todayStr) {
-        if (consecutiveLoginDays >= 3) {
-          isTask3Completed = true;
-        }
-      } else {
-        try {
-          const lastDate = new Date(lastLoginDate + 'T00:00:00');
-          const currDate = new Date(todayStr + 'T00:00:00');
-          const diffTime = currDate.getTime() - lastDate.getTime();
-          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays === 1) {
-            consecutiveLoginDays += 1;
-          } else if (diffDays > 1) {
-            consecutiveLoginDays = 1;
-          }
-
-          await updateDoc(doc(db, 'users', userProfile.uid), {
-            lastLoginDate: todayStr,
-            consecutiveLoginDays: consecutiveLoginDays
-          });
-          userProfile.lastLoginDate = todayStr;
-          userProfile.consecutiveLoginDays = consecutiveLoginDays;
-
-          if (consecutiveLoginDays >= 3) {
-            isTask3Completed = true;
-          }
-        } catch (e) {
-          console.error("Error updating consecutive logins:", e);
-        }
-      }
-    } else {
-      // Guest consecutive check
-      const guestLastLogin = localStorage.getItem('guest_lastLoginDate') || '';
-      let guestConsecutive = parseInt(localStorage.getItem('guest_consecutiveLoginDays') || '0');
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (!guestLastLogin) {
-        localStorage.setItem('guest_lastLoginDate', todayStr);
-        localStorage.setItem('guest_consecutiveLoginDays', '1');
-        guestConsecutive = 1;
-      } else if (guestLastLogin !== todayStr) {
-        const lastDate = new Date(guestLastLogin + 'T00:00:00');
-        const currDate = new Date(todayStr + 'T00:00:00');
-        const diffTime = currDate.getTime() - lastDate.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
-          guestConsecutive += 1;
-        } else if (diffDays > 1) {
-          guestConsecutive = 1;
-        }
-        localStorage.setItem('guest_lastLoginDate', todayStr);
-        localStorage.setItem('guest_consecutiveLoginDays', guestConsecutive.toString());
-      }
-      if (guestConsecutive >= 3) {
-        isTask3Completed = true;
-      }
-    }
-  }
-  if (isTask3Completed) {
-    localStorage.setItem('campaign_task3', 'true');
-  }
-
-  // Task 4
-  const currentGoals = parseInt(localStorage.getItem('shootoutGoals') || '0');
-  const t4 = (currentGoals >= 10 || profile?.shootoutGoals >= 10 || localStorage.getItem('campaign_task4') === 'true') ? true : false;
-  if (t4) {
-    localStorage.setItem('campaign_task4', 'true');
-  }
-
-  // Sync state
-  worldCupCampaignTasks["1"] = localStorage.getItem('campaign_task1') === 'true';
-  worldCupCampaignTasks["2"] = localStorage.getItem('campaign_task2') === 'true';
-  worldCupCampaignTasks["3"] = localStorage.getItem('campaign_task3') === 'true';
-  worldCupCampaignTasks["4"] = localStorage.getItem('campaign_task4') === 'true';
-  worldCupCampaignTasks["5"] = localStorage.getItem('campaign_task5') === 'true';
-};
-
-window.renderWorldCupCampaignQuests = function() {
-  const container = $('worldCupCampaignQuestsContainer');
-  if (!container) return;
-
-  const currentGoals = parseInt(localStorage.getItem('shootoutGoals') || '0');
-  const profile = userProfile || guestProfile;
-
-  container.innerHTML = WORLD_CUP_QUESTS.map(q => {
-    let isCompleted = worldCupCampaignTasks[q.key];
-    
-    // Fallbacks
-    if (q.key === "1" && (currentFootballTeam || profile?.worldCupTeam)) isCompleted = true;
-    if (q.key === "2" && (profile?.hasSubmittedRegistration)) isCompleted = true;
-    if (q.key === "4" && (currentGoals >= 10 || profile?.shootoutGoals >= 10)) isCompleted = true;
-
-    let subText = q.desc;
-    if (q.key === "4") {
-      subText = `Reach at least 10 goals in Shootout mini-game (Current: <span class="text-gold font-bold font-mono">${currentGoals}</span> / 10).`;
-    } else if (q.key === "3") {
-      let streak = profile?.consecutiveLoginDays || parseInt(localStorage.getItem('guest_consecutiveLoginDays') || '0');
-      subText = `Log in for 3 consecutive days (Current streak: <span class="text-gold font-bold font-mono">${streak}</span> / 3).`;
-    }
-
-    return `
-      <div class="p-2 bg-black/60 border ${isCompleted ? 'border-amber-500/30 bg-amber-500/[0.01]' : 'border-bdr/40'} rounded-xl flex items-center justify-between gap-2.5 text-[10px] transition font-sans">
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-1.5">
-            <span class="w-3.5 h-3.5 rounded-full ${isCompleted ? 'bg-amber-500/20 text-gold font-bold' : 'bg-ele text-t3'} flex items-center justify-center text-[8px]">
-              ${isCompleted ? '<i class="fas fa-check text-[7px]"></i>' : q.id}
-            </span>
-            <span class="font-bold ${isCompleted ? 'text-gold line-through opacity-80' : 'text-white'}">${q.title}</span>
-          </div>
-          <p class="text-[9px] text-t3 pl-5 leading-tight font-sans">${subText}</p>
-        </div>
-        <div>
-          ${isCompleted ? `
-            <span class="text-[8px] text-gold/95 bg-gold/15 border border-gold/30 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">Done</span>
-          ` : `
-            <span class="text-[8px] text-t3 bg-ele/40 border border-bdr/40 px-1.5 py-0.5 rounded font-bold uppercase">Pending</span>
-          `}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Check if all 5 are completed!
-  const totalCompleted = WORLD_CUP_QUESTS.filter(q => {
-    let isCompleted = worldCupCampaignTasks[q.key];
-    if (q.key === "1" && (currentFootballTeam || profile?.worldCupTeam)) isCompleted = true;
-    if (q.key === "2" && (profile?.hasSubmittedRegistration)) isCompleted = true;
-    if (q.key === "4" && (currentGoals >= 10 || profile?.shootoutGoals >= 10)) isCompleted = true;
-    return isCompleted;
-  }).length;
-
-  const claimBtn = $('bClaimWorldCupGifts');
-  if (claimBtn) {
-    if (totalCompleted === 5) {
-      const alreadyClaimed = localStorage.getItem('claimedWorldCupGifts') === 'true' || profile?.hasFifaWorldMemberBadge === true;
-      if (alreadyClaimed) {
-        claimBtn.classList.add('hidden');
-      } else {
-        claimBtn.classList.remove('hidden');
-        claimBtn.classList.add('animate-pulse');
-      }
-    } else {
-      claimBtn.classList.add('hidden');
-    }
-  }
-};
-
-window.claimWorldCupCampaignGifts = async function() {
-  const profile = userProfile || guestProfile;
-  stadiumAudio.playVictory();
-
-  // Calculate 7 days from now
-  const prmExpiry = new Date();
-  prmExpiry.setDate(prmExpiry.getDate() + 7);
-
-  try {
-    if (userProfile && userProfile.uid) {
-      await updateDoc(doc(db, 'users', userProfile.uid), {
-        premium: true,
-        premiumExpiresAt: prmExpiry.toISOString(),
-        hasFifaWorldMemberBadge: true,
-        avatarFrame: 'gold_football'
-      });
-      userProfile.premium = true;
-      userProfile.premiumExpiresAt = prmExpiry.toISOString();
-      userProfile.hasFifaWorldMemberBadge = true;
-      userProfile.avatarFrame = 'gold_football';
-    }
-
-    localStorage.setItem('claimedWorldCupGifts', 'true');
-    localStorage.setItem('hasFifaWorldMemberBadge', 'true');
-    localStorage.setItem('selectedAvatarFrame', 'gold_football');
-    selectedAvatarFrame = 'gold_football';
-
-    // Refresh UI elements
-    boot();
-
-    // Trigger full screen custom gold celebration modal
-    showWorldCupCelebrationModal();
-
-  } catch (err) {
-    console.error("Error claiming World Cup campaign rewards:", err);
-    alert("Failed to claim campaign rewards. Please try again.");
-  }
-};
-
-function showWorldCupCelebrationModal() {
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black/95 z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-hidden animate-fade-in';
-  modal.style.background = 'radial-gradient(circle, rgba(20,15,5,1) 0%, rgba(5,5,5,1) 100%)';
-  
-  // Custom Styles for animations
-  const styleTag = document.createElement('style');
-  styleTag.innerHTML = `
-    @keyframes slow-drop {
-      0% { transform: translateY(-120vh) rotate(0deg); opacity: 0; }
-      50% { opacity: 1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity: 0.2; }
-    }
-    @keyframes glow-pulse {
-      0%, 100% { filter: drop-shadow(0 0 15px rgba(245,158,11,0.6)); }
-      50% { filter: drop-shadow(0 0 35px rgba(245,158,11,0.9)); }
-    }
-    .floating-item {
-      position: absolute;
-      animation: slow-drop 7s linear infinite;
-      pointer-events: none;
-    }
-  `;
-  document.head.appendChild(styleTag);
-
-  // Spawn falling gold footballs and stars in slow motion
-  for (let i = 0; i < 40; i++) {
-    const item = document.createElement('div');
-    item.className = 'floating-item text-3xl';
-    item.style.left = `${Math.random() * 100}vw`;
-    item.style.top = `-10vh`;
-    // Stagger animation
-    item.style.animationDelay = `${Math.random() * 6}s`;
-    item.style.animationDuration = `${6 + Math.random() * 5}s`;
-    item.innerHTML = Math.random() > 0.5 ? '⚽' : '⭐';
-    modal.appendChild(item);
-  }
-
-  modal.innerHTML += `
-    <!-- Glowing Badge Container (Badge drop simulation) -->
-    <div class="relative mb-6 flex flex-col items-center">
-      <div class="w-28 h-28 bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.5)] border-4 border-yellow-300 animate-bounce" style="animation-duration: 2.5s; animation-name: glow-pulse;">
-        <i class="fas fa-medal text-white text-6xl"></i>
-      </div>
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-gold/30 rounded-full animate-ping pointer-events-none" style="animation-duration: 3s;"></div>
-    </div>
-
-    <!-- CONGRATULATIONS big text with glow -->
-    <h1 class="font-display font-black text-4xl sm:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-200 uppercase tracking-widest drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] animate-pulse">
-      CONGRATULATIONS!
-    </h1>
-
-    <h2 class="font-display font-extrabold text-base text-white/90 uppercase tracking-wider mt-2">
-      FIFA World Cup 2026 Champion
-    </h2>
-
-    <p class="text-xs text-t2 max-w-md leading-relaxed mt-3 font-sans">
-      You have successfully accomplished all <strong class="text-gold font-extrabold">5 World Cup campaign quests</strong>! Your legendary rewards have been unlocked and applied:
-    </p>
-
-    <!-- Perks list visual box -->
-    <div class="w-full max-w-sm bg-black/60 border border-gold/35 rounded-2xl p-4 space-y-3.5 my-5 shadow-[0_0_20px_rgba(245,158,11,0.1)] font-sans">
-      <div class="flex items-center gap-3 text-left">
-        <div class="w-8 h-8 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-sm border border-gold/20 shrink-0">🏅</div>
-        <div>
-          <h4 class="font-bold text-xs text-white uppercase leading-none">FIFA World Member Badge</h4>
-          <p class="text-[9px] text-t3 mt-1">Exclusive permanent title displayed on your chat & profile cards!</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 text-left">
-        <div class="w-8 h-8 rounded-lg bg-purple/10 text-purple flex items-center justify-center text-sm border border-purple/20 shrink-0">👑</div>
-        <div>
-          <h4 class="font-bold text-xs text-white uppercase leading-none">7 Days VIP Premium Pass</h4>
-          <p class="text-[9px] text-t3 mt-1">Direct messaging, name colors, and banner themes fully activated!</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 text-left">
-        <div class="w-8 h-8 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-sm border border-gold/20 shrink-0">🖼️</div>
-        <div>
-          <h4 class="font-bold text-xs text-white uppercase leading-none">Special Gold Football Avatar Frame</h4>
-          <p class="text-[9px] text-t3 mt-1">A glowing, animated high-contrast frame circling your profile!</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dismiss button -->
-    <button id="bCloseCampaignCelebration" class="px-8 py-3 bg-gradient-to-r from-gold via-yellow-400 to-gold text-bg font-black uppercase tracking-widest text-xs rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.4)] transition hover:scale-105 active:scale-95 cursor-pointer">
-      Proceed to Arena
-    </button>
-  `;
-
-  document.body.appendChild(modal);
-
-  // Play fireworks in background
-  const fworkInterval = setInterval(() => {
-    spawnConfetti(['#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#ffffff']);
-  }, 1000);
-
-  modal.querySelector('#bCloseCampaignCelebration').addEventListener('click', () => {
-    clearInterval(fworkInterval);
-    modal.remove();
-  });
-}
-
-// Bind Claim World Cup Campaign click
-setTimeout(() => {
-  const bWCClaim = $('bClaimWorldCupGifts');
-  if (bWCClaim) {
-    bWCClaim.addEventListener('click', claimWorldCupCampaignGifts);
-  }
-}, 500);
+// ==================== CAMPAIGN EVENTS & STATE ====================
+window.checkAndSyncWorldCupTasks = async function() {};
+window.renderWorldCupCampaignQuests = function() {};
+window.claimWorldCupCampaignGifts = async function() {};
 
 // Under Development Popup modal listeners
 $('bCloseUnderDev').addEventListener('click', () => {
   $('mUnderDevPopup').classList.add('hidden');
-  openFootballGround();
 });
 $('bCloseUnderDevCross').addEventListener('click', () => {
   $('mUnderDevPopup').classList.add('hidden');
@@ -8080,7 +7518,11 @@ const PREDEFINED_BADGES = [
   { id: 'early_bird', name: "Early Bird Access", description: "Joined the ArenaX alpha/beta test phase early on.", icon: "fa-clock", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
   { id: 'fair_play', name: "Fair Play Hero", description: "Exceptional sportsmanship and clean report card.", icon: "fa-face-smile", color: "text-green-400 border-green-500/30 bg-green-500/10" },
   { id: 'helper', name: "Community Helper", description: "Helped other players and was highly rated in live chats.", icon: "fa-comment-dots", color: "text-lime-400 border-lime-500/30 bg-lime-500/10" },
-  { id: 'tactician', name: "Master Tactician", description: "Acknowledged for deep strategic planning and tournament setup.", icon: "fa-layer-group", color: "text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-500/10" }
+  { id: 'tactician', name: "Master Tactician", description: "Acknowledged for deep strategic planning and tournament setup.", icon: "fa-layer-group", color: "text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-500/10" },
+  { id: 'launch_fest_badge', name: "Launch Fest Badge", description: "Claimed Day 7 daily reward during ArenaX Launch Fest.", icon: "fa-award", color: "text-red-400 border-red-500/30 bg-red-500/10" },
+  { id: 'pioneer_badge', name: "Pioneer Badge", description: "Completed all Welcome Pack challenges during the Launch Fest.", icon: "fa-rocket", color: "text-violet-400 border-violet-500/30 bg-violet-500/10" },
+  { id: 'champion_badge', name: "Champion Badge", description: "Finished 1st place in the Weekly Free Tournament during Launch Fest.", icon: "fa-trophy", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  { id: 'runner_up_badge', name: "Runner Up Badge", description: "Finished 2nd place in the Weekly Free Tournament during Launch Fest.", icon: "fa-medal", color: "text-slate-400 border-slate-500/30 bg-slate-500/10" }
 ];
 
 window.PREDEFINED_BADGES = PREDEFINED_BADGES;
@@ -8318,6 +7760,766 @@ function updateInboxNotificationBadge(uncollectedCount) {
     }
   }
 }
+
+// ==========================================
+// ── ARENAX LAUNCH FEST LOGIC & RENDERING ──
+// ==========================================
+
+let activeEventsSubTab = 'fest'; // 'fest' or 'tours'
+let referralCount = 0;
+let topPlayersList = [];
+let isWheelSpinning = false;
+let launchFestTimersInitialized = false;
+
+function switchEventsSubTab(subTabId) {
+  activeEventsSubTab = subTabId;
+  
+  const btnFest = $('btnSubFest');
+  const btnTours = $('btnSubTours');
+  const wrapperFest = $('festWrapper');
+  const wrapperTours = $('toursWrapper');
+
+  if (subTabId === 'fest') {
+    btnFest.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-gold bg-ele/80 border border-gold/15 transition cursor-pointer";
+    btnTours.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-t3 hover:text-white transition cursor-pointer";
+    wrapperFest.classList.remove('hidden');
+    wrapperTours.classList.add('hidden');
+    renderLaunchFestUI();
+  } else {
+    btnTours.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-gold bg-ele/80 border border-gold/15 transition cursor-pointer";
+    btnFest.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-t3 hover:text-white transition cursor-pointer";
+    wrapperTours.classList.remove('hidden');
+    wrapperFest.classList.add('hidden');
+    
+    // Set daily tasks visit flag to true
+    if (userProfile) {
+      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      updateDoc(doc(db, 'users', userProfile.uid), {
+        'dailyTasks.visit': true,
+        'dailyTasks.date': todayStr
+      }).catch(e => console.warn(e));
+    }
+
+    // Force tournament list render
+    if (typeof window.renderTournaments === 'function') {
+      window.renderTournaments();
+    }
+  }
+}
+window.switchEventsSubTab = switchEventsSubTab;
+
+function startLaunchFestTimers() {
+  if (launchFestTimersInitialized) return;
+  launchFestTimersInitialized = true;
+
+  setInterval(() => {
+    // 1. Hero Countdown (Until August 1, 2026 UTC)
+    const targetHero = new Date('2026-08-01T00:00:00Z').getTime();
+    const now = Date.now();
+    const diffHero = targetHero - now;
+
+    if (diffHero > 0) {
+      const days = Math.floor(diffHero / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffHero % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diffHero % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diffHero % (1000 * 60)) / 1000);
+
+      if ($('cdDays')) $('cdDays').textContent = days.toString().padStart(2, '0');
+      if ($('cdHours')) $('cdHours').textContent = hours.toString().padStart(2, '0');
+      if ($('cdMinutes')) $('cdMinutes').textContent = mins.toString().padStart(2, '0');
+      if ($('cdSeconds')) $('cdSeconds').textContent = secs.toString().padStart(2, '0');
+    }
+
+    // 2. Daily Quests Reset Countdown (Until next PKT midnight)
+    const pktNow = new Date(Date.now() + (5 * 60 * 60 * 1000));
+    const pktMidnight = new Date(pktNow);
+    pktMidnight.setUTCHours(24, 0, 0, 0); // next PKT midnight
+    const pktDiff = pktMidnight.getTime() - pktNow.getTime();
+
+    if (pktDiff > 0) {
+      const h = Math.floor(pktDiff / (1000 * 60 * 60));
+      const m = Math.floor((pktDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const timerEl = $('dailyTasksResetTimer');
+      if (timerEl) {
+        timerEl.innerHTML = `<i class="fas fa-clock"></i> Reset in ${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
+      }
+    }
+
+    // 3. Weekly Tournament Countdown (Until Sunday 8:00 PM PKT)
+    const getNextSunday8PM_PKT = () => {
+      const pktNow = new Date(Date.now() + (5 * 60 * 60 * 1000));
+      const nextSunday = new Date(pktNow);
+      nextSunday.setUTCDate(pktNow.getUTCDate() + (7 - pktNow.getUTCDay()) % 7);
+      nextSunday.setUTCHours(20, 0, 0, 0); // 8:00 PM PKT
+      if (nextSunday.getTime() <= pktNow.getTime()) {
+        nextSunday.setUTCDate(nextSunday.getUTCDate() + 7);
+      }
+      return new Date(nextSunday.getTime() - (5 * 60 * 60 * 1000));
+    };
+
+    const targetSunday = getNextSunday8PM_PKT().getTime();
+    const diffSunday = targetSunday - Date.now();
+
+    if (diffSunday > 0) {
+      const days = Math.floor(diffSunday / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffSunday % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diffSunday % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diffSunday % (1000 * 60)) / 1000);
+
+      const cdText = `${days > 0 ? days + 'd ' : ''}${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+      if ($('weeklyTourCountdown')) {
+        $('weeklyTourCountdown').innerHTML = `<i class="fas fa-hourglass-half"></i> ${cdText}`;
+      }
+    }
+  }, 1000);
+}
+
+function listenToLaunchFestLeaderboard() {
+  if (window.unsubLaunchFestLeaderboard) return;
+  const qLeaders = query(collection(db, 'users'), orderBy('balance', 'desc'), limit(3));
+  window.unsubLaunchFestLeaderboard = onSnapshot(qLeaders, (snapshot) => {
+    topPlayersList = [];
+    snapshot.forEach(doc => {
+      topPlayersList.push({ uid: doc.id, ...doc.data() });
+    });
+    renderLeaderboardPodium();
+  }, (err) => {
+    console.error("Error reading leaders:", err);
+  });
+}
+
+function listenToReferralsCount() {
+  const currentUser = auth.currentUser;
+  const uid = currentUser ? currentUser.uid : (userProfile ? (userProfile.uid || userProfile.id) : null);
+  if (!uid) return;
+  
+  if (window.unsubReferrals) return;
+  const qRefs = query(collection(db, 'referrals'), where('referredBy', '==', uid));
+  window.unsubReferrals = onSnapshot(qRefs, (snapshot) => {
+    referralCount = snapshot.size;
+    renderReferralsSection();
+  }, (err) => {
+    console.error("Error reading referrals:", err);
+  });
+}
+
+function renderLeaderboardPodium() {
+  if (topPlayersList.length >= 1) {
+    const p1 = topPlayersList[0];
+    if ($('podium1Av')) $('podium1Av').src = p1.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1';
+    if ($('podium1Name')) $('podium1Name').textContent = p1.name || 'Player 1';
+    if ($('podium1Bal')) $('podium1Bal').textContent = (p1.balance || 0).toLocaleString() + ' AX';
+  }
+  if (topPlayersList.length >= 2) {
+    const p2 = topPlayersList[1];
+    if ($('podium2Av')) $('podium2Av').src = p2.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax2';
+    if ($('podium2Name')) $('podium2Name').textContent = p2.name || 'Player 2';
+    if ($('podium2Bal')) $('podium2Bal').textContent = (p2.balance || 0).toLocaleString() + ' AX';
+  }
+  if (topPlayersList.length >= 3) {
+    const p3 = topPlayersList[2];
+    if ($('podium3Av')) $('podium3Av').src = p3.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax3';
+    if ($('podium3Name')) $('podium3Name').textContent = p3.name || 'Player 3';
+    if ($('podium3Bal')) $('podium3Bal').textContent = (p3.balance || 0).toLocaleString() + ' AX';
+  }
+}
+
+function renderReferralsSection() {
+  if (!userProfile) return;
+  
+  if ($('refCodeText')) {
+    $('refCodeText').textContent = userProfile.uid.slice(0, 8).toUpperCase();
+  }
+  
+  if ($('referralStatsText')) {
+    $('referralStatsText').textContent = `Referred ${referralCount} friend${referralCount !== 1 ? 's' : ''}`;
+  }
+  
+  if ($('refEarnedAX')) {
+    $('refEarnedAX').textContent = (referralCount * 20).toLocaleString() + ' AX';
+  }
+}
+
+async function renderLaunchFestUI() {
+  if (!userProfile) return;
+
+  // Swap skeleton for real content
+  if ($('festSkeleton')) $('festSkeleton').classList.add('hidden');
+  if ($('festContent')) $('festContent').classList.remove('hidden');
+
+  // Load countdown timers, listeners
+  startLaunchFestTimers();
+  listenToReferralsCount();
+  listenToLaunchFestLeaderboard();
+
+  // 1. Daily Login Streak section
+  const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  const lastClaim = userProfile.lastClaimDate || '';
+  let streak = userProfile.loginStreak || 0;
+  
+  // Verify if streak has been broken
+  if (lastClaim) {
+    const lastClaimDateObj = new Date(lastClaim);
+    const todayDateObj = new Date(todayStr);
+    const diffTime = Math.abs(todayDateObj - lastClaimDateObj);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 1 && lastClaim !== todayStr) {
+      streak = 0;
+    }
+  }
+
+  const isTodayClaimed = (lastClaim === todayStr);
+  const currentDayIndex = isTodayClaimed ? (streak - 1) % 7 : streak % 7;
+
+  if ($('currentStreakBadge')) {
+    $('currentStreakBadge').textContent = `Streak: ${streak} Day${streak !== 1 ? 's' : ''}`;
+  }
+
+  const streakDaysContainer = $('festStreakDays');
+  if (streakDaysContainer) {
+    streakDaysContainer.innerHTML = '';
+    const rewards = [10, 15, 20, 25, 30, 35, 50];
+
+    for (let i = 0; i < 7; i++) {
+      let cardClass = 'flex-shrink-0 w-16 p-2 bg-card border rounded-xl flex flex-col items-center justify-center text-center space-y-1 snap-center transition duration-250';
+      let iconHtml = `<i class="fas fa-coins text-gold/80 text-xs"></i>`;
+      let statusHtml = `<span class="text-[7px] text-t3 uppercase font-black font-mono">Day ${i + 1}</span>`;
+
+      if (i < currentDayIndex || (i === currentDayIndex && isTodayClaimed)) {
+        // Claimed Day
+        cardClass += ' border-green/30 bg-green-500/5 text-green-400';
+        iconHtml = `<i class="fas fa-check-circle text-green text-sm"></i>`;
+        statusHtml = `<span class="text-[7px] text-green uppercase font-black font-mono">Claimed</span>`;
+      } else if (i === currentDayIndex && !isTodayClaimed) {
+        // Today Active Unclaimed
+        cardClass += ' border-gold bg-gold/10 text-white shadow-[0_0_12px_rgba(240,192,64,0.1)] ring-1 ring-gold/20 scale-[1.03]';
+        iconHtml = `<i class="fas fa-gift text-gold text-sm animate-bounce"></i>`;
+        statusHtml = `<span class="text-[7px] text-gold uppercase font-black font-mono">Claim Today</span>`;
+      } else {
+        // Locked / Upcoming Day
+        cardClass += ' border-bdr/35 opacity-45 text-t3';
+        statusHtml = `<span class="text-[7px] text-t3 uppercase font-black font-mono">Day ${i + 1}</span>`;
+      }
+
+      if (i === 6) {
+        // Day 7 Special Badge reward icon
+        iconHtml = `<i class="fas fa-award text-red text-sm animate-pulse"></i>`;
+      }
+
+      const dayCard = document.createElement('div');
+      dayCard.className = cardClass;
+      dayCard.innerHTML = `
+        ${statusHtml}
+        <div class="h-6 flex items-center justify-center">
+          ${iconHtml}
+        </div>
+        <div class="text-[9px] font-black text-white font-mono leading-none">${rewards[i]} AX</div>
+        ${i === 6 ? '<span class="text-[6px] text-red uppercase font-black block leading-none">BADGE</span>' : ''}
+      `;
+      streakDaysContainer.appendChild(dayCard);
+    }
+  }
+
+  const btnClaimDaily = $('btnClaimDailyLogin');
+  if (btnClaimDaily) {
+    if (isTodayClaimed) {
+      btnClaimDaily.disabled = true;
+      btnClaimDaily.className = "w-full py-2.5 bg-bdr/20 text-t3 text-xs font-black uppercase tracking-wide rounded-xl opacity-65 flex items-center justify-center gap-1.5 cursor-not-allowed";
+      btnClaimDaily.innerHTML = `<i class="fas fa-check-circle text-green-500"></i> Already Claimed Today`;
+    } else {
+      btnClaimDaily.disabled = false;
+      btnClaimDaily.className = "w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase tracking-wide rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-95 shadow-lg flex items-center justify-center gap-1.5 cursor-pointer";
+      btnClaimDaily.innerHTML = `<i class="fas fa-gift animate-pulse"></i> Claim Today's Reward`;
+    }
+  }
+
+  // 2. Welcome Pack section (30 days since registration limit)
+  const joinedDate = userProfile.createdAt ? new Date(userProfile.createdAt) : new Date();
+  const daysDiff = (new Date() - joinedDate) / (1000 * 60 * 60 * 24);
+  const showWelcomeBonus = daysDiff <= 30;
+
+  const secWelcome = $('secWelcomeBonus');
+  if (secWelcome) {
+    if (showWelcomeBonus) {
+      secWelcome.classList.remove('hidden');
+      
+      const welcomeBonus = userProfile.welcomeBonus || {};
+      const welcomeClaims = userProfile.welcomeBonusClaims || {};
+
+      // Check tasks logic
+      const isProfileDone = !!(
+        (userProfile.name && userProfile.name !== (userProfile.email ? userProfile.email.split('@')[0] : 'ArenaX Player')) ||
+        userProfile.bio ||
+        userProfile.country ||
+        userProfile.favoriteGame ||
+        (userProfile.av && !userProfile.av.includes(userProfile.uid))
+      );
+
+      const hasJoinedTour = !!(userProfile.hasSubmittedRegistration || (userRegs && Object.keys(userRegs).length > 0));
+      const isTourDone = hasJoinedTour;
+      const isChatDone = !!welcomeBonus.chat;
+
+      // Automatically update completion flags in Firestore if true and not set
+      if (isProfileDone && !welcomeBonus.profile) {
+        updateDoc(doc(db, 'users', userProfile.uid), { 'welcomeBonus.profile': true }).catch(e => console.warn(e));
+      }
+      if (isTourDone && !welcomeBonus.tournament) {
+        updateDoc(doc(db, 'users', userProfile.uid), { 'welcomeBonus.tournament': true }).catch(e => console.warn(e));
+      }
+
+      const tasks = [
+        { id: 'profile', name: "Complete profile credentials", reward: 20, done: isProfileDone, claimed: !!welcomeClaims.profile, desc: "Add Country, Favorite Game, Bio, or customize your Display Name." },
+        { id: 'tournament', name: "Join any dynamic tournament", reward: 30, done: isTourDone, claimed: !!welcomeClaims.tournament, desc: "Submit dynamic registration hold on any active league." },
+        { id: 'chat', name: "Send message in Global Chat", reward: 10, done: isChatDone, claimed: !!welcomeClaims.chat, desc: "Drop a friendly hello message to the global feed tab." }
+      ];
+
+      let completedCount = 0;
+      tasks.forEach(t => { if (t.done) completedCount++; });
+
+      const pct = Math.round((completedCount / 3) * 100);
+      if ($('welcomeBonusProgressText')) $('welcomeBonusProgressText').textContent = `${completedCount}/3 Completed`;
+      if ($('welcomeBonusProgressBar')) $('welcomeBonusProgressBar').style.width = `${pct}%`;
+
+      const tContainer = $('welcomeBonusTasksContainer');
+      if (tContainer) {
+        tContainer.innerHTML = '';
+        tasks.forEach(t => {
+          const item = document.createElement('div');
+          item.className = "flex items-center justify-between p-3 bg-card/60 border border-bdr/40 rounded-xl relative overflow-hidden";
+          
+          let btnClass = "";
+          let btnText = "";
+          let btnDisabled = false;
+
+          if (t.claimed) {
+            btnClass = "px-2.5 py-1 bg-green-500/10 border border-green-500/15 text-green text-[9px] font-black uppercase rounded-lg cursor-not-allowed";
+            btnText = "Claimed ✓";
+            btnDisabled = true;
+          } else if (t.done) {
+            btnClass = "px-3 py-1 bg-purple text-white text-[9px] font-black uppercase rounded-lg hover:scale-[1.02] active:scale-95 transition cursor-pointer";
+            btnText = `Claim ${t.reward} AX`;
+          } else {
+            btnClass = "px-2.5 py-1 bg-bdr/20 text-t3 text-[9px] font-black uppercase rounded-lg cursor-not-allowed";
+            btnText = "Incomplete";
+            btnDisabled = true;
+          }
+
+          item.innerHTML = `
+            <div class="space-y-0.5 flex-1 pr-3">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${t.done ? 'bg-green-500/20 text-green-400' : 'bg-purple/10 text-purple'}">
+                  <i class="fas ${t.done ? 'fa-check-circle' : 'fa-circle-notch animate-spin'}"></i>
+                </span>
+                <span class="text-[10px] font-black text-white leading-none">${t.name}</span>
+                <span class="text-[8px] font-bold text-gold font-mono leading-none">+${t.reward} AX</span>
+              </div>
+              <p class="text-[8px] text-t3 pl-5 max-w-xs leading-normal">${t.desc}</p>
+            </div>
+            <button id="btnWelcomeClaim-${t.id}" class="${btnClass}" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+          `;
+
+          tContainer.appendChild(item);
+
+          if (t.done && !t.claimed) {
+            $(`btnWelcomeClaim-${t.id}`).addEventListener('click', async () => {
+              try {
+                $(`btnWelcomeClaim-${t.id}`).disabled = true;
+                await updateDoc(doc(db, 'users', userProfile.uid), {
+                  balance: increment(t.reward),
+                  [`welcomeBonusClaims.${t.id}`]: true
+                });
+                spawnConfetti(['#a855f7', '#ec4899', '#f0c040']);
+                showToastNotification("Reward Claimed! 🎁", `You received +${t.reward} AX Coins for completing task!`);
+              } catch (e) {
+                alert("Claim failed: " + e.message);
+              }
+            });
+          }
+        });
+      }
+
+      // Pioneer Grand Prize Claim
+      const grandClaim = $('welcomeAllClaimContainer');
+      if (grandClaim) {
+        const allTasksClaimed = tasks.every(t => t.claimed);
+        const grandClaimed = !!welcomeClaims.all;
+
+        if (allTasksClaimed) {
+          grandClaim.classList.remove('hidden');
+          const btnGrand = $('btnClaimPioneer');
+          if (btnGrand) {
+            if (grandClaimed) {
+              btnGrand.disabled = true;
+              btnGrand.className = "w-full py-3 bg-bdr/20 text-t3 text-xs font-black uppercase tracking-wider rounded-xl cursor-not-allowed opacity-65 flex items-center justify-center gap-2";
+              btnGrand.innerHTML = `<i class="fas fa-check-circle text-green-500"></i> Pioneer Welcome Pack Claimed`;
+            } else {
+              btnGrand.disabled = false;
+              btnGrand.className = "w-full py-3 bg-gradient-to-r from-purple via-[#d946ef] to-[#ec4899] hover:opacity-90 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 shadow-xl flex items-center justify-center gap-2 cursor-pointer";
+              btnGrand.innerHTML = `<i class="fas fa-rocket animate-pulse"></i> Claim Pioneer Pack (+20 AX & Pioneer Badge)`;
+            }
+          }
+        } else {
+          grandClaim.classList.add('hidden');
+        }
+      }
+    } else {
+      secWelcome.classList.add('hidden');
+    }
+  }
+
+  // 3. Daily Quests Section
+  const dailyTasks = userProfile.dailyTasks || {};
+  if (dailyTasks.date !== todayStr) {
+    // Force immediate daily tasks reset for new day
+    try {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        balance: increment(10), // auto claim login
+        dailyTasks: {
+          date: todayStr,
+          chat: false,
+          visit: true, // currently on tournaments page
+          game: false,
+          login: true,
+          chatClaimed: false,
+          visitClaimed: false,
+          gameClaimed: false,
+          loginClaimed: true
+        }
+      });
+      showToastNotification("Daily Tasks Reset! ⚡", "A new day has arrived. Your quests have reset & login task auto-claimed (+10 AX)!");
+      spawnConfetti(['#3ddc84', '#f0c040']);
+    } catch(e) {
+      console.warn("Daily quests auto-reset failed:", e);
+    }
+    return;
+  }
+
+  const quests = [
+    { id: 'login', name: "Check-in & Login today", reward: 10, done: !!dailyTasks.login, claimed: !!dailyTasks.loginClaimed, actionLabel: "Logged In", triggerAction: null },
+    { id: 'chat', name: "Send message in Global Chat", reward: 10, done: !!dailyTasks.chat, claimed: !!dailyTasks.chatClaimed, actionLabel: "Go to Chat", triggerAction: () => switchTab('Chat') },
+    { id: 'visit', name: "Visit Live Tournaments tab", reward: 10, done: !!dailyTasks.visit, claimed: !!dailyTasks.visitClaimed, actionLabel: "Go to Tours", triggerAction: () => switchTab('Tour') },
+    { id: 'game', name: "Play AX Lucky Mini Game", reward: 20, done: !!dailyTasks.game, claimed: !!dailyTasks.gameClaimed, actionLabel: "Play Wheel", triggerAction: () => $('miniGameCard').classList.remove('hidden') }
+  ];
+
+  const qContainer = $('dailyTasksContainer');
+  if (qContainer) {
+    qContainer.innerHTML = '';
+    quests.forEach(q => {
+      const el = document.createElement('div');
+      el.className = "flex items-center justify-between p-3 bg-card/60 border border-bdr/45 rounded-xl";
+      
+      let btnClass = "";
+      let btnText = "";
+      let btnDisabled = false;
+
+      if (q.claimed) {
+        btnClass = "px-2.5 py-1 bg-green-500/10 border border-green-500/15 text-green text-[9px] font-black uppercase rounded-lg cursor-not-allowed";
+        btnText = "Claimed ✓";
+        btnDisabled = true;
+      } else if (q.done) {
+        btnClass = "px-3 py-1 bg-green text-bg text-[9px] font-black uppercase rounded-lg hover:scale-[1.02] active:scale-95 transition cursor-pointer";
+        btnText = `Claim ${q.reward} AX`;
+      } else {
+        btnClass = "px-2.5 py-1 bg-gold/10 border border-gold/20 text-gold text-[9px] font-black uppercase rounded-lg hover:bg-gold/15 transition cursor-pointer";
+        btnText = q.actionLabel;
+      }
+
+      el.innerHTML = `
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${q.done ? 'bg-green-500/20 text-green-400' : 'bg-green-500/5 text-t3'}">
+              <i class="fas ${q.done ? 'fa-check-circle' : 'fa-clock'}"></i>
+            </span>
+            <span class="text-[10px] font-black text-white leading-none">${q.name}</span>
+          </div>
+          <span class="text-[8px] font-bold text-gold font-mono leading-none pl-5">+${q.reward} AX Rewards</span>
+        </div>
+        <button id="btnDailyQuest-${q.id}" class="${btnClass}" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+      `;
+      qContainer.appendChild(el);
+
+      const btnQ = $(`btnDailyQuest-${q.id}`);
+      if (btnQ) {
+        if (q.done && !q.claimed) {
+          btnQ.addEventListener('click', async () => {
+            try {
+              btnQ.disabled = true;
+              await updateDoc(doc(db, 'users', userProfile.uid), {
+                balance: increment(q.reward),
+                [`dailyTasks.${q.id}Claimed`]: true
+              });
+              spawnConfetti(['#3ddc84', '#f0c040']);
+              showToastNotification("Quest Reward! ⚡", `You claimed +${q.reward} AX Coins!`);
+            } catch(e) {
+              alert("Quest claim error: " + e.message);
+            }
+          });
+        } else if (!q.done && q.triggerAction) {
+          btnQ.addEventListener('click', q.triggerAction);
+        }
+      }
+    });
+  }
+
+  // 4. Weekly Tournament Registration
+  const btnWeekly = $('btnRegisterWeeklyTour');
+  const weeklyFreeTour = (toursData || []).find(t => t.isWeeklyFree === true);
+
+  if (weeklyFreeTour) {
+    if ($('secWeeklyTour')) {
+      $('secWeeklyTour').classList.remove('hidden');
+    }
+    if ($('festWeeklyTourSlots')) {
+      $('festWeeklyTourSlots').textContent = `${weeklyFreeTour.registered || 0}/${weeklyFreeTour.maxPlayers || 32} Players`;
+    }
+    if ($('festWeeklyTourName')) {
+      $('festWeeklyTourName').innerHTML = `<i class="fas fa-trophy text-gold"></i> ${weeklyFreeTour.name}`;
+    }
+    if ($('festWeeklyTourTime')) {
+      $('festWeeklyTourTime').textContent = `${weeklyFreeTour.date} @ ${weeklyFreeTour.time} — Entry: ${weeklyFreeTour.entryFee || 'Free'}`;
+    }
+
+    if (btnWeekly) {
+      const reg = userRegs && userRegs[weeklyFreeTour.id];
+      if (reg) {
+        if (reg.status === 'approved') {
+          btnWeekly.disabled = true;
+          btnWeekly.className = "w-full py-2.5 bg-green-500/10 border border-green-500/20 text-green text-xs font-black uppercase tracking-wide rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5";
+          btnWeekly.innerHTML = `<i class="fas fa-check-circle"></i> Registered ✓`;
+        } else if (reg.status === 'pending') {
+          btnWeekly.disabled = true;
+          btnWeekly.className = "w-full py-2.5 bg-gold/10 border border-gold/20 text-gold text-xs font-black uppercase tracking-wide rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5";
+          btnWeekly.innerHTML = `<i class="fas fa-hourglass-half"></i> Verification Pending...`;
+        } else if (reg.status === 'rejected') {
+          btnWeekly.disabled = false;
+          btnWeekly.className = "w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer";
+          btnWeekly.innerHTML = `<i class="fas fa-exclamation-circle"></i> Registration Rejected (Re-apply)`;
+        }
+      } else {
+        btnWeekly.disabled = false;
+        btnWeekly.className = "w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer";
+        btnWeekly.innerHTML = `<i class="fas fa-check-circle"></i> Register Now`;
+      }
+    }
+  } else {
+    if ($('secWeeklyTour')) {
+      $('secWeeklyTour').classList.add('hidden');
+    }
+  }
+}
+
+// Bind Daily Login Claims
+if ($('btnClaimDailyLogin')) {
+  $('btnClaimDailyLogin').addEventListener('click', async () => {
+    if (!userProfile) return;
+    const btn = $('btnClaimDailyLogin');
+    btn.disabled = true;
+
+    try {
+      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const rewards = [10, 15, 20, 25, 30, 35, 50];
+      
+      let streak = userProfile.loginStreak || 0;
+      const lastClaim = userProfile.lastClaimDate || '';
+
+      // Check if missed days
+      if (lastClaim) {
+        const lastClaimDateObj = new Date(lastClaim);
+        const todayDateObj = new Date(todayStr);
+        const diffTime = Math.abs(todayDateObj - lastClaimDateObj);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 1 && lastClaim !== todayStr) {
+          streak = 0;
+        }
+      }
+
+      if (lastClaim === todayStr) {
+        alert("You have already claimed today's login reward!");
+        return;
+      }
+
+      const currentDayIndex = streak % 7;
+      const currentReward = rewards[currentDayIndex];
+      const newStreak = streak + 1;
+
+      const updates = {
+        balance: increment(currentReward),
+        loginStreak: newStreak,
+        lastClaimDate: todayStr
+      };
+
+      // Add badge if completed 7-day streak
+      if (newStreak % 7 === 0) {
+        updates.badges = arrayUnion('launch_fest_badge');
+      }
+
+      await updateDoc(doc(db, 'users', userProfile.uid), updates);
+      
+      spawnConfetti(['#f0c040', '#e8404a', '#3ddc84']);
+      showToastNotification("Reward Claimed! 🏆", `streak: +${currentReward} AX Coins credited to wallet!`);
+      
+      if (newStreak % 7 === 0) {
+        showToastNotification("Badge Earned! 🎖️", "You received the 'Launch Fest Badge' for completing 7 day login streak!");
+      }
+
+    } catch (e) {
+      alert("Daily login claim failed: " + e.message);
+      btn.disabled = false;
+    }
+  });
+}
+
+// Bind Grand Pioneer Pack Claim
+if ($('btnClaimPioneer')) {
+  $('btnClaimPioneer').addEventListener('click', async () => {
+    if (!userProfile) return;
+    const btn = $('btnClaimPioneer');
+    btn.disabled = true;
+
+    try {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        balance: increment(20),
+        badges: arrayUnion('pioneer_badge'),
+        'welcomeBonusClaims.all': true
+      });
+      spawnConfetti(['#a855f7', '#ec4899', '#f0c040']);
+      showToastNotification("Grand Prize Unlocked! 🚀", "You received +20 AX and the prestigious 'Pioneer Badge'!");
+    } catch(e) {
+      alert("Claim failed: " + e.message);
+      btn.disabled = false;
+    }
+  });
+}
+
+// Bind Weekly Tournament Registration Button
+if ($('btnRegisterWeeklyTour')) {
+  $('btnRegisterWeeklyTour').addEventListener('click', async () => {
+    if (!userProfile) return;
+    const btn = $('btnRegisterWeeklyTour');
+
+    const weeklyFreeTour = (toursData || []).find(t => t.isWeeklyFree === true);
+    if (weeklyFreeTour) {
+      if (typeof closeLaunchFestDrawer === 'function') {
+        closeLaunchFestDrawer();
+      }
+      handleTourCardClick(weeklyFreeTour);
+    } else {
+      btn.disabled = true;
+      try {
+        await updateDoc(doc(db, 'users', userProfile.uid), {
+          weeklyTourRegistered: true
+        });
+        spawnConfetti(['#e8404a', '#f0c040']);
+        showToastNotification("Successfully Registered! 🏆", "You're in! Join Weekly Free Tournament this Sunday at 8:00 PM PKT!");
+      } catch (e) {
+        alert("Failed to register: " + e.message);
+        btn.disabled = false;
+      }
+    }
+  });
+}
+
+// Interactive Spin Mini Game Buttons & Spins
+if ($('btnSpinFree')) {
+  $('btnSpinFree').addEventListener('click', () => triggerLuckySpin(true));
+}
+if ($('btnSpinPaid')) {
+  $('btnSpinPaid').addEventListener('click', () => triggerLuckySpin(false));
+}
+if ($('btnCloseMiniGame')) {
+  $('btnCloseMiniGame').addEventListener('click', () => {
+    $('miniGameCard').classList.add('hidden');
+  });
+}
+
+async function triggerLuckySpin(isFree) {
+  if (isWheelSpinning || !userProfile) return;
+  
+  if (!isFree && (userProfile.balance || 0) < 10) {
+    alert("Insufficient balance! You need 10 AX to spin the lucky wheel.");
+    return;
+  }
+
+  isWheelSpinning = true;
+  const btnFree = $('btnSpinFree');
+  const btnPaid = $('btnSpinPaid');
+  if (btnFree) btnFree.disabled = true;
+  if (btnPaid) btnPaid.disabled = true;
+
+  const prizes = [10, 15, 20, 25, 30, 50];
+  const landingIndex = Math.floor(Math.random() * prizes.length);
+  const selectedPrize = prizes[landingIndex];
+  const landingAngle = (landingIndex * 60) + 30; // 6 slices
+
+  const spinner = $('wheelSpinner');
+  if (spinner) {
+    spinner.style.transition = 'transform 3.5s cubic-bezier(0.25, 0.1, 0.1, 1)';
+    spinner.style.transform = `rotate(${3600 + landingAngle}deg)`;
+  }
+
+  const pText = $('wheelPrizeText');
+  if (pText) pText.textContent = "SPINNING...";
+
+  setTimeout(async () => {
+    try {
+      if (pText) pText.textContent = `${selectedPrize} AX`;
+      
+      const userRef = doc(db, 'users', userProfile.uid);
+      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      
+      const cost = isFree ? 0 : 10;
+      const netGain = selectedPrize - cost;
+
+      await updateDoc(userRef, {
+        balance: increment(netGain),
+        'dailyTasks.date': todayStr,
+        'dailyTasks.game': true
+      });
+
+      spawnConfetti(['#f0c040', '#3ddc84', '#ff4500']);
+      showToastNotification("You Won! 🎡", `Congratulations! You received +${selectedPrize} AX Coins from Lucky Wheel!`);
+      
+    } catch(e) {
+      alert("Spin payout failed: " + e.message);
+    } finally {
+      isWheelSpinning = false;
+      if (btnFree) btnFree.disabled = false;
+      if (btnPaid) btnPaid.disabled = false;
+    }
+  }, 3600);
+}
+
+// Copy Referral Link & share
+if ($('btnCopyRefLink')) {
+  $('btnCopyRefLink').addEventListener('click', () => {
+    if (!userProfile) return;
+    const refLink = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid.slice(0, 8).toUpperCase();
+    navigator.clipboard.writeText(refLink)
+      .then(() => {
+        showToastNotification("Copied! 📋", "Your referral invite link has been copied to your clipboard!");
+      })
+      .catch(() => {
+        alert("Referral Link: " + refLink);
+      });
+  });
+}
+
+if ($('btnShareWhatsApp')) {
+  $('btnShareWhatsApp').addEventListener('click', () => {
+    if (!userProfile) return;
+    const refLink = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid.slice(0, 8).toUpperCase();
+    const msg = encodeURIComponent(`🎮 Join ArenaX Gaming platform & play free tournaments to win real coin rewards! Sign up now using my referral link to get 50 AX Coins: ${refLink}`);
+    window.open(`https://api.whatsapp.com/send?text=${msg}`);
+  });
+}
+
+if ($('btnViewFullLeaderboard')) {
+  $('btnViewFullLeaderboard').addEventListener('click', () => {
+    showToastNotification("Full Leaderboard 👑", "The full leaderboard will be revealed after Launch Fest ends on August 1st!");
+  });
+}
+
+window.renderLaunchFestUI = renderLaunchFestUI;
 
 window.renderInboxUI = renderInboxUI;
 window.claimMailGift = claimMailGift;
