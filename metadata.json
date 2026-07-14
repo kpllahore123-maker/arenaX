@@ -1,6 +1,6 @@
 {
   "name": "ArenaX",
   "description": "The ultimate esports tournament hub – register, compete, earn coins, chat live, and dominate the arena!",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
