@@ -9167,6 +9167,7 @@ let activeRoomSignalingUnsub = null;
 // Alone host inactivity warning countdown timer
 let aloneCountdownInterval = null;
 let aloneSecondsLeft = 30;
+let wasIInRoomPreviously = false;
 
 // Web Audio API boosted audio nodes
 let remoteAudioContexts = {}; // peerId -> AudioContext
@@ -9474,6 +9475,15 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
   const container = $('voiceRoomsGrid');
   if (!container) return;
 
+  const welcomeBanner = $('welcomeVoiceBanner');
+  if (welcomeBanner) {
+    if (voiceRoomsList.length > 0) {
+      welcomeBanner.classList.add('hidden');
+    } else {
+      welcomeBanner.classList.remove('hidden');
+    }
+  }
+
   const filtered = voiceRoomsList.filter(room => {
     const matchesGame = gameFilter === "All" || room.game === gameFilter;
     const matchesSearch = !searchVal || 
@@ -9562,6 +9572,7 @@ async function joinVoiceRoom(roomId) {
   }
 
   try {
+    wasIInRoomPreviously = false;
     currentVoiceRoomId = roomId;
 
     // Fetch room document to verify
@@ -9822,10 +9833,13 @@ function listenToRoomMembers(roomId) {
     }
 
     // Check if local player was kicked!
-    const wasIKicked = membersList.find(m => m.uid === userProfile.uid) === undefined;
-    if (wasIKicked && currentVoiceRoomId) {
+    const amIInMembers = membersList.some(m => m.uid === userProfile.uid);
+    if (wasIInRoomPreviously && !amIInMembers && currentVoiceRoomId) {
       showToastNotification("Kicked from Room 🚫", "The host has removed you from the squad voice channel.");
       leaveVoiceRoom(false);
+    }
+    if (amIInMembers) {
+      wasIInRoomPreviously = true;
     }
 
     // Trigger WebRTC Mesh Connections
@@ -10006,7 +10020,6 @@ function playRemoteAudioStream(peerId, stream) {
     delete remoteAudioGainNodes[peerId];
   }
 
-  // Create an HTMLAudioElement but keep it muted so it fetches stream tracks but doesn't double-play
   let audioEl = document.getElementById(`audio-remote-${peerId}`);
   if (!audioEl) {
     audioEl = document.createElement('audio');
@@ -10015,8 +10028,6 @@ function playRemoteAudioStream(peerId, stream) {
     audioEl.className = 'hidden';
     document.body.appendChild(audioEl);
   }
-  audioEl.srcObject = stream;
-  audioEl.muted = true; // Mute the element itself because Web Audio API will play the boosted audio!
 
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -10028,15 +10039,35 @@ function playRemoteAudioStream(peerId, stream) {
       // Amplification multiplier (e.g., 3.5x volume boost)
       gainNode.gain.value = isSpeakerMuted ? 0.0 : 3.5; 
       
+      // Connect source to gain, then gain to a new MediaStream destination
+      const dest = audioCtx.createMediaStreamDestination();
       source.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      gainNode.connect(dest);
+      
+      // Feed the boosted stream directly to the unmuted HTMLAudioElement!
+      audioEl.srcObject = dest.stream;
+      audioEl.muted = isSpeakerMuted;
+      
+      // Auto-resume if context suspended by browser autoplay policy
+      if (audioCtx.state === 'suspended') {
+        const resumeCtx = () => {
+          audioCtx.resume();
+          document.removeEventListener('click', resumeCtx);
+        };
+        document.addEventListener('click', resumeCtx);
+        audioCtx.resume().catch(()=>{});
+      }
       
       remoteAudioContexts[peerId] = audioCtx;
       remoteAudioGainNodes[peerId] = gainNode;
-      console.log(`[WebRTC] Audio stream for peer ${peerId} boosted by 3.5x using Web Audio API.`);
+      console.log(`[WebRTC] Audio stream for peer ${peerId} boosted by 3.5x using Web Audio API MediaStreamDestination.`);
+    } else {
+      audioEl.srcObject = stream;
+      audioEl.muted = isSpeakerMuted;
     }
   } catch (e) {
     console.warn("Could not boost remote stream with Web Audio API, falling back to standard audio element:", e);
+    audioEl.srcObject = stream;
     audioEl.muted = isSpeakerMuted; // fallback to unmuted element
   }
 }
@@ -10099,6 +10130,7 @@ async function leaveVoiceRoom(goToLobby = true) {
   if (!currentVoiceRoomId || !userProfile) return;
   const roomId = currentVoiceRoomId;
   currentVoiceRoomId = null;
+  wasIInRoomPreviously = false;
 
   // Stop alone host countdown timers
   stopAloneCountdownTimer();
