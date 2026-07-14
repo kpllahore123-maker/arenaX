@@ -56,6 +56,84 @@
         "sender": { "type": "string" }
       },
       "required": ["title", "body", "read", "createdAt", "sender"]
+    },
+    "VoiceRoom": {
+      "title": "Voice Room",
+      "description": "Active voice communication room",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "hostId": { "type": "string" },
+        "hostName": { "type": "string" },
+        "hostAvatar": { "type": "string" },
+        "game": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private", "friends"] },
+        "password": { "type": "string" },
+        "region": { "type": "string" },
+        "language": { "type": "string" },
+        "maxPlayers": { "type": "number" },
+        "memberCount": { "type": "number" },
+        "locked": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "hostId", "hostName", "game", "type", "maxPlayers", "createdAt"]
+    },
+    "VoiceRoomMember": {
+      "title": "Voice Room Member",
+      "description": "Active participant in a voice room",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "handle": { "type": "string" },
+        "avatar": { "type": "string" },
+        "muted": { "type": "boolean" },
+        "deafened": { "type": "boolean" },
+        "speaking": { "type": "boolean" },
+        "handRaised": { "type": "boolean" },
+        "micStatus": { "type": "boolean" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "handle", "avatar", "muted", "deafened", "joinedAt"]
+    },
+    "VoiceRoomChat": {
+      "title": "Voice Room Chat Message",
+      "description": "Message sent in a voice room text channel",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "message", "createdAt"]
+    },
+    "VoiceRoomSignal": {
+      "title": "Voice Room WebRTC Signal",
+      "description": "WebRTC SDP offer/answer or ICE candidate",
+      "type": "object",
+      "properties": {
+        "fromId": { "type": "string" },
+        "toId": { "type": "string" },
+        "type": { "type": "string", "enum": ["offer", "answer", "candidate"] },
+        "payload": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromId", "toId", "type", "payload", "createdAt"]
+    },
+    "VoiceRoomInvitation": {
+      "title": "Voice Room Invitation",
+      "description": "Invitation sent to a player to join a voice room",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "roomName": { "type": "string" },
+        "hostName": { "type": "string" },
+        "invitedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "roomName", "invitedBy", "createdAt"]
     }
   },
   "firestore": {
@@ -67,6 +145,10 @@
       "schema": "Mail",
       "description": "Sub-collection of emails and badge gifts assigned to a user"
     },
+    "/users/{userId}/invitations/{invitationId}": {
+      "schema": "VoiceRoomInvitation",
+      "description": "Voice room invitations received by this user"
+    },
     "/support_requests/{requestId}": {
       "schema": "SupportRequest",
       "description": "Admin live support queue requests"
@@ -74,6 +156,22 @@
     "/support_ratings/{ratingId}": {
       "schema": "SupportRating",
       "description": "Feedback and support session ratings"
+    },
+    "/voice_rooms/{roomId}": {
+      "schema": "VoiceRoom",
+      "description": "Esports voice room entries"
+    },
+    "/voice_rooms/{roomId}/members/{memberId}": {
+      "schema": "VoiceRoomMember",
+      "description": "Members connected to a specific voice room"
+    },
+    "/voice_rooms/{roomId}/chats/{chatId}": {
+      "schema": "VoiceRoomChat",
+      "description": "Room-specific chat messages"
+    },
+    "/voice_rooms/{roomId}/signaling/{signalId}": {
+      "schema": "VoiceRoomSignal",
+      "description": "WebRTC signaling messages for establishing meshes"
     }
   }
 }
