@@ -819,14 +819,14 @@ tailwind.config = {
         </div>
 
         <!-- Welcome Voice Banner -->
-        <div class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6 shrink-0">
+        <div id="welcomeVoiceBanner" class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6 shrink-0">
           <div class="flex-1 flex flex-col items-center md:items-start justify-center">
             <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
             <p class="text-sm text-white font-semibold">Ready to Speak?</p>
             <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
           </div>
-          <div class="w-32 h-32 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-            <lottie-player src="animation.json" background="transparent" speed="1.2" style="width: 100px; height: 100px;" loop autoplay></lottie-player>
+          <div class="w-full md:w-64 h-36 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10 relative overflow-hidden">
+            <lottie-player src="animation.json" background="transparent" speed="1.0" style="width: 240px; height: 160px;" loop autoplay></lottie-player>
           </div>
         </div>
 
@@ -871,6 +871,20 @@ tailwind.config = {
               <i class="fas fa-sign-out-alt"></i> <span class="text-[9px] font-bold hidden sm:inline">Leave</span>
             </button>
           </div>
+        </div>
+
+        <!-- Inactivity Warning Banner -->
+        <div id="aloneWarningBanner" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center justify-between shrink-0 hidden animate-pulse">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+              <i class="fas fa-exclamation-triangle text-xs animate-bounce"></i>
+            </div>
+            <div>
+              <div class="text-[10px] font-black text-white uppercase tracking-wider">⚠️ You are alone in this channel!</div>
+              <div class="text-[9px] text-t3 mt-0.5 leading-normal">Invite teammates or wait. This room will close in <span id="aloneCountdown" class="text-red-400 font-extrabold text-[11px]">30</span> seconds to keep the lobby clean.</div>
+            </div>
+          </div>
+          <button id="aloneWarningBtnInvite" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-white rounded text-[8px] font-black uppercase tracking-wider transition">Invite</button>
         </div>
 
         <!-- Main Room Grid: Left Participants, Right Chat (on md: flex-row, default flex-col) -->
@@ -9150,6 +9164,14 @@ let activeRoomMembersUnsub = null;
 let activeRoomChatUnsub = null;
 let activeRoomSignalingUnsub = null;
 
+// Alone host inactivity warning countdown timer
+let aloneCountdownInterval = null;
+let aloneSecondsLeft = 30;
+
+// Web Audio API boosted audio nodes
+let remoteAudioContexts = {}; // peerId -> AudioContext
+let remoteAudioGainNodes = {}; // peerId -> GainNode
+
 // WebRTC State
 let localStream = null;
 let peerConnections = {}; // uid -> RTCPeerConnection
@@ -9399,6 +9421,13 @@ function initVoiceRoomsSystem() {
   const btnInvite = $('btnInviteFriendToVoice');
   if (btnInvite) {
     btnInvite.addEventListener('click', () => {
+      openVoiceInviteModal();
+    });
+  }
+
+  const btnAloneInvite = $('aloneWarningBtnInvite');
+  if (btnAloneInvite) {
+    btnAloneInvite.addEventListener('click', () => {
       openVoiceInviteModal();
     });
   }
@@ -9767,6 +9796,31 @@ function listenToRoomMembers(roomId) {
 
     $('activeRoomCount').textContent = membersCount;
 
+    // Check if the local user is the host/admin and is alone in the room
+    if (currentVoiceRoomId && userProfile) {
+      getDoc(doc(db, 'voice_rooms', currentVoiceRoomId)).then(roomSnap => {
+        if (roomSnap.exists()) {
+          const rData = roomSnap.data();
+          const isMeHost = rData.hostId === userProfile.uid;
+          const banner = $('aloneWarningBanner');
+          
+          if (isMeHost && membersCount === 1 && membersList[0] && membersList[0].uid === userProfile.uid) {
+            // Host is alone in the room!
+            if (banner && banner.classList.contains('hidden')) {
+              banner.classList.remove('hidden');
+              startAloneCountdownTimer();
+            }
+          } else {
+            // Host is not alone, or local user is not host
+            if (banner && !banner.classList.contains('hidden')) {
+              banner.classList.add('hidden');
+              stopAloneCountdownTimer();
+            }
+          }
+        }
+      }).catch(err => console.error("Error checking room host alone status:", err));
+    }
+
     // Check if local player was kicked!
     const wasIKicked = membersList.find(m => m.uid === userProfile.uid) === undefined;
     if (wasIKicked && currentVoiceRoomId) {
@@ -9939,8 +9993,20 @@ function listenToRoomSignaling(roomId) {
   });
 }
 
-// Play remote audio stream safely inside DOM
+// Play remote audio stream safely inside DOM with Web Audio API Gain boosting!
 function playRemoteAudioStream(peerId, stream) {
+  // Let's clean up existing audio context for this peer if exists
+  if (remoteAudioContexts[peerId]) {
+    try {
+      remoteAudioContexts[peerId].close();
+    } catch(e){}
+    delete remoteAudioContexts[peerId];
+  }
+  if (remoteAudioGainNodes[peerId]) {
+    delete remoteAudioGainNodes[peerId];
+  }
+
+  // Create an HTMLAudioElement but keep it muted so it fetches stream tracks but doesn't double-play
   let audioEl = document.getElementById(`audio-remote-${peerId}`);
   if (!audioEl) {
     audioEl = document.createElement('audio');
@@ -9950,7 +10016,29 @@ function playRemoteAudioStream(peerId, stream) {
     document.body.appendChild(audioEl);
   }
   audioEl.srcObject = stream;
-  audioEl.muted = isSpeakerMuted;
+  audioEl.muted = true; // Mute the element itself because Web Audio API will play the boosted audio!
+
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const audioCtx = new AudioCtx();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const gainNode = audioCtx.createGain();
+      
+      // Amplification multiplier (e.g., 3.5x volume boost)
+      gainNode.gain.value = isSpeakerMuted ? 0.0 : 3.5; 
+      
+      source.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      remoteAudioContexts[peerId] = audioCtx;
+      remoteAudioGainNodes[peerId] = gainNode;
+      console.log(`[WebRTC] Audio stream for peer ${peerId} boosted by 3.5x using Web Audio API.`);
+    }
+  } catch (e) {
+    console.warn("Could not boost remote stream with Web Audio API, falling back to standard audio element:", e);
+    audioEl.muted = isSpeakerMuted; // fallback to unmuted element
+  }
 }
 
 // Close peer connection
@@ -9962,6 +10050,48 @@ function closePeerConnection(peerId) {
   }
   const audioEl = document.getElementById(`audio-remote-${peerId}`);
   if (audioEl) audioEl.remove();
+
+  // Clean up Web Audio nodes
+  if (remoteAudioContexts[peerId]) {
+    try {
+      remoteAudioContexts[peerId].close();
+    } catch(e){}
+    delete remoteAudioContexts[peerId];
+  }
+  if (remoteAudioGainNodes[peerId]) {
+    delete remoteAudioGainNodes[peerId];
+  }
+}
+
+// Alone warning countdown timer helpers
+function startAloneCountdownTimer() {
+  if (aloneCountdownInterval) clearInterval(aloneCountdownInterval);
+  aloneSecondsLeft = 30;
+  const counterEl = $('aloneCountdown');
+  if (counterEl) counterEl.textContent = aloneSecondsLeft;
+
+  aloneCountdownInterval = setInterval(() => {
+    aloneSecondsLeft--;
+    const el = $('aloneCountdown');
+    if (el) el.textContent = aloneSecondsLeft;
+
+    if (aloneSecondsLeft <= 0) {
+      clearInterval(aloneCountdownInterval);
+      aloneCountdownInterval = null;
+      // Auto leave the room and close it!
+      leaveVoiceRoom(true);
+      showToastNotification("Room Closed ⏱️", "The room was closed automatically because no one else joined.");
+    }
+  }, 1000);
+}
+
+function stopAloneCountdownTimer() {
+  if (aloneCountdownInterval) {
+    clearInterval(aloneCountdownInterval);
+    aloneCountdownInterval = null;
+  }
+  const banner = $('aloneWarningBanner');
+  if (banner) banner.classList.add('hidden');
 }
 
 // Cleanly leave voice room
@@ -9969,6 +10099,9 @@ async function leaveVoiceRoom(goToLobby = true) {
   if (!currentVoiceRoomId || !userProfile) return;
   const roomId = currentVoiceRoomId;
   currentVoiceRoomId = null;
+
+  // Stop alone host countdown timers
+  stopAloneCountdownTimer();
 
   try {
     // 1. Synthesize exit tone
@@ -10102,7 +10235,15 @@ function toggleMySpeakers() {
     showToastNotification("Speakers Active 🔊", "Listening to tactical audio...");
   }
 
-  // Mute/unmute all active audio elements
+  // Adjust volume of all Web Audio API gain nodes
+  Object.keys(remoteAudioGainNodes).forEach(peerId => {
+    const gn = remoteAudioGainNodes[peerId];
+    if (gn) {
+      gn.gain.value = isSpeakerMuted ? 0.0 : 3.5;
+    }
+  });
+
+  // Mute/unmute fallback standard audio elements
   Object.keys(peerConnections).forEach(peerId => {
     const el = document.getElementById(`audio-remote-${peerId}`);
     if (el) el.muted = isSpeakerMuted;
@@ -10347,6 +10488,18 @@ function showVoiceRoomInviteToast(inviteId, invite) {
     if (toast) toast.remove();
   }, 30000);
 }
+
+// Automatically leave voice room if tab/browser is closed or reloaded
+window.addEventListener('beforeunload', () => {
+  if (currentVoiceRoomId) {
+    leaveVoiceRoom(false);
+  }
+});
+window.addEventListener('pagehide', () => {
+  if (currentVoiceRoomId) {
+    leaveVoiceRoom(false);
+  }
+});
 
 // Bind methods to window scope for tab controller access
 window.initVoiceRoomsSystem = initVoiceRoomsSystem;
