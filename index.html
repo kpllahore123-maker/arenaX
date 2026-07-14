@@ -818,19 +818,21 @@ tailwind.config = {
           <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Ludo">Ludo Star</button>
         </div>
 
+        <!-- Welcome Voice Banner -->
+        <div class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6 shrink-0">
+          <div class="flex-1 flex flex-col items-center md:items-start justify-center">
+            <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
+            <p class="text-sm text-white font-semibold">Ready to Speak?</p>
+            <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
+          </div>
+          <div class="w-32 h-32 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+            <lottie-player src="animation.json" background="transparent" speed="1.2" style="width: 100px; height: 100px;" loop autoplay></lottie-player>
+          </div>
+        </div>
+
         <!-- Room Cards Grid -->
         <div id="voiceRoomsGrid" class="flex-1 overflow-y-auto space-y-3 pr-1">
           <!-- Dynamically populated room cards -->
-          <div class="h-full flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6">
-            <div class="flex-1 flex flex-col items-center md:items-start justify-center">
-              <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
-              <p class="text-sm text-white font-semibold">Ready to Speak?</p>
-              <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
-            </div>
-            <div class="w-32 h-32 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-              <lottie-player src="animation.json" background="transparent" speed="1.2" style="width: 100px; height: 100px;" loop autoplay></lottie-player>
-            </div>
-          </div>
         </div>
       </div>
 
