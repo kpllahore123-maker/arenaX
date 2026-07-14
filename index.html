@@ -228,69 +228,25 @@ tailwind.config = {
 <div id="curR" class="hidden md:block"></div>
 
 <!-- ==================== SPLASH / LOADING SCREEN ==================== -->
-<script type="module" src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.14/dist/dotlottie-wc.js"></script>
-
 <div id="sSplash" class="fixed inset-0 bg-[#060b09] z-[200] flex flex-col items-center justify-center p-4">
-
-  <!-- Background Glow -->
   <div class="absolute inset-0 pointer-events-none overflow-hidden">
-    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full blur-[130px]"></div>
+    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-[130px]"></div>
   </div>
-
-  <div class="relative text-center space-y-5">
-
-    <!-- ArenaX Logo -->
-    <div class="w-28 h-28 mx-auto rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(240,192,64,0.35)] border border-gold/30 bg-neutral-900 flex items-center justify-center">
-      <img
-        src="public/file_00000000701471fb8507751e09991308.png"
-        onerror="this.onerror=null; this.src='arenax_logo.jpg';"
-        alt="ArenaX Logo"
-        class="w-full h-full object-cover"
-        referrerpolicy="no-referrer"
-      />
+  <div class="relative text-center space-y-6">
+    <!-- Restored Logo -->
+    <div class="w-28 h-28 mx-auto rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(240,192,64,0.35)] border border-gold/30 bg-neutral-900 flex items-center justify-center animate-pulse">
+      <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-full h-full object-cover" referrerPolicy="no-referrer" />
     </div>
-
-    <!-- Title -->
     <div class="space-y-2">
-      <h1 class="font-display text-4xl font-extrabold tracking-wider text-white">
-        Arena<span class="text-emerald-400">X</span>
-      </h1>
-
-      <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">
-        Compete · Rise · Dominate
-      </p>
+      <h1 class="font-display text-4xl font-extrabold tracking-wider text-white">Arena<span class="text-emerald-400">X</span></h1>
+      <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">Compete · Rise · Dominate</p>
     </div>
-
-    <!-- Loading Animation -->
-    <div class="flex justify-center">
-      <dotlottie-wc
-        src="./loading.json"
-        style="width:170px;height:170px;"
-        autoplay
-        loop>
-      </dotlottie-wc>
+    <div class="flex flex-col items-center gap-1 pt-2">
+      <!-- Lottie Animation Loader placed in the loading progress area -->
+      <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>
+      <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>
     </div>
-
-    <!-- Progress Bar -->
-    <div class="flex flex-col items-center gap-3">
-
-      <div class="w-36 h-1.5 bg-neutral-800 rounded-full overflow-hidden relative">
-
-        <div
-          class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-emerald-300 rounded-full animate-[loading-bar_1.5s_infinite_linear]"
-          style="width:50%;">
-        </div>
-
-      </div>
-
-      <span class="text-[10px] text-t3 uppercase font-black tracking-widest font-mono">
-        Preparing Your Gaming Experience...
-      </span>
-
-    </div>
-
   </div>
-
 </div>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
