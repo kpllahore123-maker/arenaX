@@ -899,6 +899,9 @@ tailwind.config = {
                 <button id="btnToggleLockRoom" class="text-[9px] font-bold px-2 py-0.5 bg-gold/10 border border-gold/25 hover:bg-gold/25 text-gold rounded-md transition flex items-center gap-1">
                   <i class="fas fa-lock"></i> Lock Room
                 </button>
+                <button id="btnDeleteRoom" class="text-[9px] font-bold px-2 py-0.5 bg-red-500/15 border border-red-500/25 hover:bg-red-500/25 text-red rounded-md transition flex items-center gap-1">
+                  <i class="fas fa-trash-alt"></i> Delete Room
+                </button>
               </div>
             </div>
 
@@ -9163,6 +9166,7 @@ let voiceRoomsUnsub = null;
 let activeRoomMembersUnsub = null;
 let activeRoomChatUnsub = null;
 let activeRoomSignalingUnsub = null;
+let activeRoomDocUnsub = null;
 
 // Alone host inactivity warning countdown timer
 let aloneCountdownInterval = null;
@@ -9264,7 +9268,7 @@ function initVoiceRoomsSystem() {
           hostId: userProfile.uid,
           hostName: userProfile.name,
           hostAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid,
-          memberCount: 1,
+          memberCount: 0,
           locked: false,
           createdAt: serverTimestamp()
         });
@@ -9447,6 +9451,26 @@ function initVoiceRoomsSystem() {
       toggleRoomLockState();
     });
   }
+
+  // Delete Room (host-only)
+  const btnDeleteActiveRoom = $('btnDeleteRoom');
+  if (btnDeleteActiveRoom) {
+    btnDeleteActiveRoom.addEventListener('click', async () => {
+      if (!currentVoiceRoomId) return;
+      const confirmDel = confirm("Are you sure you want to end and delete this voice room?");
+      if (!confirmDel) return;
+      
+      try {
+        const roomId = currentVoiceRoomId;
+        const roomRef = doc(db, 'voice_rooms', roomId);
+        await deleteDoc(roomRef);
+        showToastNotification("Room Deleted 🗑️", "The voice room has been permanently deleted.");
+        await leaveVoiceRoom(true);
+      } catch (err) {
+        console.error("Error deleting room:", err);
+      }
+    });
+  }
 }
 
 // Global active filter state
@@ -9559,6 +9583,34 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
   });
 }
 
+// Listen to room document metadata & deletion in real-time
+function listenToActiveRoomDoc(roomId) {
+  if (activeRoomDocUnsub) activeRoomDocUnsub();
+
+  activeRoomDocUnsub = onSnapshot(doc(db, 'voice_rooms', roomId), (snap) => {
+    if (!snap.exists()) {
+      // Room was deleted by host or system countdown!
+      if (currentVoiceRoomId === roomId) {
+        showToastNotification("Room Closed ⏱️", "This voice channel has been closed or ended.");
+        leaveVoiceRoom(true);
+      }
+    } else {
+      const rData = snap.data();
+      $('activeRoomName').textContent = rData.name;
+      $('activeRoomGame').textContent = rData.game;
+      $('activeRoomRegion').textContent = rData.region;
+      $('activeRoomMax').textContent = rData.maxPlayers;
+      if (rData.locked) {
+        $('activeRoomLockIcon').classList.remove('hidden');
+      } else {
+        $('activeRoomLockIcon').classList.add('hidden');
+      }
+    }
+  }, (err) => {
+    console.error("Error watching active room doc:", err);
+  });
+}
+
 // Join voice room
 async function joinVoiceRoom(roomId) {
   if (!userProfile) {
@@ -9571,6 +9623,20 @@ async function joinVoiceRoom(roomId) {
     await leaveVoiceRoom(false);
   }
 
+  // 1. Request Local Microphone Stream FIRST to eliminate WebRTC race conditions!
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    // Apply initial mute states
+    localStream.getAudioTracks().forEach(track => {
+      track.enabled = !isMicMuted;
+    });
+    $('voiceMyStatus').innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> Live & Speaking`;
+  } catch (micErr) {
+    console.warn("Microphone access denied or unavailable:", micErr);
+    $('voiceMyStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Listen Only (No Mic)`;
+    showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode. Allow mic permissions to speak!");
+  }
+
   try {
     wasIInRoomPreviously = false;
     currentVoiceRoomId = roomId;
@@ -9580,11 +9646,15 @@ async function joinVoiceRoom(roomId) {
     if (!roomSnap.exists()) {
       showToastNotification("Error", "Room no longer exists.");
       currentVoiceRoomId = null;
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
       return;
     }
     const roomData = roomSnap.data();
 
-    // 1. Show UI Transition
+    // 2. Show UI Transition
     $('voiceLobbyView').classList.add('hidden');
     $('voiceActiveRoomView').classList.remove('hidden');
 
@@ -9629,7 +9699,7 @@ async function joinVoiceRoom(roomId) {
       osc.stop(audioCtx.currentTime + 0.35);
     } catch(e){}
 
-    // 2. Add local participant to Room Members
+    // 3. Add local participant to Room Members
     const myMemberId = userProfile.uid;
     await setDoc(doc(db, 'voice_rooms', roomId, 'members', myMemberId), {
       uid: userProfile.uid,
@@ -9649,28 +9719,20 @@ async function joinVoiceRoom(roomId) {
       memberCount: increment(1)
     });
 
-    // 3. Request Local Microphone Stream
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      // Apply initial mute states
-      localStream.getAudioTracks().forEach(track => {
-        track.enabled = !isMicMuted;
-      });
-      $('voiceMyStatus').innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> Live & Speaking`;
-    } catch (micErr) {
-      console.warn("Microphone access denied or unavailable:", micErr);
-      $('voiceMyStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Listen Only (No Mic)`;
-      showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode. Allow mic permissions to speak!");
-    }
-
     // 4. Start Real-time Listeners
     listenToRoomMembers(roomId);
     listenToRoomChats(roomId);
     listenToRoomSignaling(roomId);
+    listenToActiveRoomDoc(roomId); // Listen to room document metadata & deletion in real-time
 
   } catch (err) {
     console.error("Error joining voice room:", err);
     showToastNotification("Join Failed", "Could not connect to voice room.");
+    currentVoiceRoomId = null;
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
   }
 }
 
@@ -9929,7 +9991,8 @@ function createPeerConnection(peerId, isInitiator) {
   // Handle incoming stream track
   pc.ontrack = (event) => {
     console.log(`[WebRTC] Got remote audio track from ${peerId}`);
-    playRemoteAudioStream(peerId, event.streams[0]);
+    const remoteStream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+    playRemoteAudioStream(peerId, remoteStream);
   };
 
   // Handle state change
@@ -10020,6 +10083,20 @@ function playRemoteAudioStream(peerId, stream) {
     delete remoteAudioGainNodes[peerId];
   }
 
+  // 1. WebRTC Keep-Alive element (Muted)
+  // This is required in Chrome to force the browser to keep decoding the WebRTC audio stream!
+  let keepAliveEl = document.getElementById(`audio-remote-keepalive-${peerId}`);
+  if (!keepAliveEl) {
+    keepAliveEl = document.createElement('audio');
+    keepAliveEl.id = `audio-remote-keepalive-${peerId}`;
+    keepAliveEl.autoplay = true;
+    keepAliveEl.muted = true;
+    keepAliveEl.className = 'hidden';
+    document.body.appendChild(keepAliveEl);
+  }
+  keepAliveEl.srcObject = stream;
+
+  // 2. Primary Playback Element for amplified audio
   let audioEl = document.getElementById(`audio-remote-${peerId}`);
   if (!audioEl) {
     audioEl = document.createElement('audio');
@@ -10036,8 +10113,8 @@ function playRemoteAudioStream(peerId, stream) {
       const source = audioCtx.createMediaStreamSource(stream);
       const gainNode = audioCtx.createGain();
       
-      // Amplification multiplier (e.g., 3.5x volume boost)
-      gainNode.gain.value = isSpeakerMuted ? 0.0 : 3.5; 
+      // Amplification multiplier (4.5x volume boost)
+      gainNode.gain.value = isSpeakerMuted ? 0.0 : 4.5; 
       
       // Connect source to gain, then gain to a new MediaStream destination
       const dest = audioCtx.createMediaStreamDestination();
@@ -10060,7 +10137,7 @@ function playRemoteAudioStream(peerId, stream) {
       
       remoteAudioContexts[peerId] = audioCtx;
       remoteAudioGainNodes[peerId] = gainNode;
-      console.log(`[WebRTC] Audio stream for peer ${peerId} boosted by 3.5x using Web Audio API MediaStreamDestination.`);
+      console.log(`[WebRTC] Audio stream for peer ${peerId} boosted by 4.5x using Web Audio API MediaStreamDestination.`);
     } else {
       audioEl.srcObject = stream;
       audioEl.muted = isSpeakerMuted;
@@ -10081,6 +10158,9 @@ function closePeerConnection(peerId) {
   }
   const audioEl = document.getElementById(`audio-remote-${peerId}`);
   if (audioEl) audioEl.remove();
+
+  const keepAliveEl = document.getElementById(`audio-remote-keepalive-${peerId}`);
+  if (keepAliveEl) keepAliveEl.remove();
 
   // Clean up Web Audio nodes
   if (remoteAudioContexts[peerId]) {
@@ -10169,23 +10249,35 @@ async function leaveVoiceRoom(goToLobby = true) {
     if (activeRoomMembersUnsub) activeRoomMembersUnsub();
     if (activeRoomChatUnsub) activeRoomChatUnsub();
     if (activeRoomSignalingUnsub) activeRoomSignalingUnsub();
+    if (activeRoomDocUnsub) {
+      activeRoomDocUnsub();
+      activeRoomDocUnsub = null;
+    }
 
     // 4. Remove player doc from members
     await deleteDoc(doc(db, 'voice_rooms', roomId, 'members', userProfile.uid));
 
-    // Decrement memberCount atomically
+    // Dynamic and robust check of remaining members to prevent stale rooms
+    const membersRef = collection(db, 'voice_rooms', roomId, 'members');
+    const remainingMembersSnap = await getDocs(membersRef);
+    
     const roomRef = doc(db, 'voice_rooms', roomId);
-    const roomSnap = await getDoc(roomRef);
-    if (roomSnap.exists()) {
-      const count = roomSnap.data().memberCount || 1;
-      if (count <= 1) {
-        // Automatically delete empty rooms to save Firestore space
+    if (remainingMembersSnap.empty) {
+      // If no members left in the room, delete the room document
+      try {
         await deleteDoc(roomRef);
-        console.log("Empty room deleted:", roomId);
-      } else {
+        console.log("Empty room deleted completely:", roomId);
+      } catch (delErr) {
+        console.warn("Could not delete empty room:", delErr);
+      }
+    } else {
+      // Otherwise update the memberCount to match the exact size
+      try {
         await updateDoc(roomRef, {
-          memberCount: increment(-1)
+          memberCount: remainingMembersSnap.size
         });
+      } catch (updErr) {
+        console.warn("Could not update room member count:", updErr);
       }
     }
 
