@@ -58,6 +58,8 @@ if ('serviceWorker' in navigator) {
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<!-- Lottie Player CDN -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -777,6 +779,264 @@ tailwind.config = {
       </div>
     </section>
 
+    <!-- ── VOICE ROOMS SYSTEM TAB ── -->
+    <section id="tVoice" class="tab space-y-4 hidden flex flex-col h-[calc(100vh-140px)]">
+      <!-- Voice header -->
+      <div class="flex items-center justify-between pb-2 border-b border-bdr shrink-0">
+        <div class="font-display text-xl font-bold flex items-center gap-2">
+          <i class="fas fa-headset text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></i>
+          Voice Arena
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnCreateVoiceRoom" class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] transition duration-200 flex items-center gap-1.5 cursor-pointer">
+            <i class="fas fa-plus"></i> Create Room
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard View (Lobby) -->
+      <div id="voiceLobbyView" class="flex-1 flex flex-col min-h-0 space-y-3">
+        <!-- Search & Filter bar -->
+        <div class="flex gap-2 shrink-0">
+          <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
+            <input id="voiceSearchInput" type="text" placeholder="Search by room name or host..." class="w-full bg-card/60 border border-bdr/80 rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-emerald-500/50 focus:bg-card transition text-white">
+          </div>
+          <button id="btnRefreshVoiceLobby" class="w-8 h-8 bg-card/60 border border-bdr/80 hover:bg-card text-t2 hover:text-emerald-400 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+
+        <!-- Horizontal Game Filter Pills -->
+        <div class="flex gap-1.5 overflow-x-auto pb-1.5 shrink-0 no-scrollbar">
+          <button class="game-filter-pill px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:text-white rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="All">All Games</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="PUBG Mobile">PUBG Mobile</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Free Fire">Free Fire</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="FIFA">FIFA</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Valorant">Valorant</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="COD Mobile">COD Mobile</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Ludo">Ludo Star</button>
+        </div>
+
+        <!-- Room Cards Grid -->
+        <div id="voiceRoomsGrid" class="flex-1 overflow-y-auto space-y-3 pr-1">
+          <!-- Dynamically populated room cards -->
+          <div class="h-full flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6">
+            <div class="flex-1 flex flex-col items-center md:items-start justify-center">
+              <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
+              <p class="text-sm text-white font-semibold">Ready to Speak?</p>
+              <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
+            </div>
+            <div class="w-32 h-32 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+              <lottie-player src="animation.json" background="transparent" speed="1.2" style="width: 100px; height: 100px;" loop autoplay></lottie-player>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- In-Room View (Discord Style Panel) -->
+      <div id="voiceActiveRoomView" class="flex-1 flex flex-col min-h-0 space-y-3 hidden">
+        <!-- Room Banner Info -->
+        <div class="p-3 bg-gradient-to-r from-[#111827] via-[#064e3b]/30 to-[#111827] border border-emerald-500/20 rounded-xl flex items-center justify-between shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+          <div class="flex items-center gap-2.5">
+            <div class="relative">
+              <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <i class="fas fa-headset text-lg animate-pulse"></i>
+              </div>
+              <span class="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 flex items-center justify-center text-[7px] text-white font-black">Live</span>
+              </span>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h4 id="activeRoomName" class="text-xs font-black uppercase text-white tracking-wide">Squad Voice Alpha</h4>
+                <i id="activeRoomLockIcon" class="fas fa-lock text-[10px] text-gold hidden"></i>
+              </div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span id="activeRoomGame" class="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-[8px] font-extrabold uppercase text-emerald-300 rounded-md">PUBG Mobile</span>
+                <span class="text-[9px] text-t3 flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> <span id="activeRoomRegion">South Asia</span></span>
+                <span class="text-[9px] text-t3 flex items-center gap-1"><i class="fas fa-wifi text-[8px] text-emerald-500"></i> <span id="activeRoomPing">18ms</span></span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex gap-1.5">
+            <button id="btnInviteFriendToVoice" class="p-2 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/25 text-emerald-300 rounded-lg transition text-xs flex items-center justify-center gap-1" title="Invite Friends">
+              <i class="fas fa-user-plus"></i> <span class="text-[9px] font-bold hidden sm:inline">Invite</span>
+            </button>
+            <button id="btnLeaveVoiceRoom" class="p-2 bg-red-500/10 border border-red-500/25 hover:bg-red-500/25 text-red rounded-lg transition text-xs flex items-center justify-center gap-1" title="Leave Room">
+              <i class="fas fa-sign-out-alt"></i> <span class="text-[9px] font-bold hidden sm:inline">Leave</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Room Grid: Left Participants, Right Chat (on md: flex-row, default flex-col) -->
+        <div class="flex-1 flex flex-col min-h-0 gap-3">
+          <!-- Participants Grid Wrapper -->
+          <div class="flex-1 flex flex-col min-h-0 bg-card/40 border border-bdr/60 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-2 pb-1 border-b border-bdr/30 shrink-0">
+              <div class="text-[10px] font-black uppercase tracking-wider text-t2 flex items-center gap-1.5">
+                <i class="fas fa-users text-emerald-400"></i> Squad Members (<span id="activeRoomCount">1</span>/<span id="activeRoomMax">10</span>)
+              </div>
+              <div id="hostLobbyControls" class="flex gap-1.5 hidden">
+                <button id="btnToggleLockRoom" class="text-[9px] font-bold px-2 py-0.5 bg-gold/10 border border-gold/25 hover:bg-gold/25 text-gold rounded-md transition flex items-center gap-1">
+                  <i class="fas fa-lock"></i> Lock Room
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid of active avatars -->
+            <div id="roomParticipantsGrid" class="flex-1 overflow-y-auto grid grid-cols-2 xs:grid-cols-3 gap-2.5 content-start pr-1">
+              <!-- Dynamically rendered participant avatars with speakers and indicators -->
+            </div>
+          </div>
+
+          <!-- Room Live Text Chat Panel -->
+          <div class="h-[180px] xs:h-[220px] shrink-0 flex flex-col bg-card/60 border border-bdr/60 rounded-xl overflow-hidden">
+            <div class="p-2 bg-card/80 border-b border-bdr/40 flex items-center gap-1.5 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-[9px] font-black uppercase tracking-wider text-white">Tactical Room Chat</span>
+            </div>
+            
+            <!-- Message List -->
+            <div id="roomChatMsgs" class="flex-1 overflow-y-auto p-2.5 space-y-2 text-[11px]">
+              <!-- Chat logs specific to this room -->
+            </div>
+
+            <!-- Form -->
+            <form id="roomChatForm" class="p-1.5 bg-card/90 border-t border-bdr/40 flex gap-1.5 shrink-0">
+              <input id="roomChatInput" type="text" placeholder="Send squad msg..." class="flex-1 bg-panel border border-bdr/60 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-emerald-500/50 transition text-white">
+              <button type="submit" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center text-xs transition cursor-pointer">
+                <i class="fas fa-paper-plane text-[10px]"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Discord Style Audio Control Bar at bottom of active room view -->
+        <div class="p-3 bg-panel border border-bdr rounded-xl flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <img id="voiceMyAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=me" class="w-8 h-8 rounded-full border border-emerald-500/30 bg-emerald-950"/>
+            <div>
+              <div class="text-[10px] font-black text-white leading-none">Voice Connected</div>
+              <div id="voiceMyStatus" class="text-[8px] text-emerald-400 mt-0.5 flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> RTC Ready
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <!-- Mute mic -->
+            <button id="btnVoiceToggleMute" class="w-8 h-8 rounded-lg bg-card border border-bdr hover:border-emerald-500/30 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer" title="Mute Microphone">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <!-- Deafen/Speaker -->
+            <button id="btnVoiceToggleDeafen" class="w-8 h-8 rounded-lg bg-card border border-bdr hover:border-emerald-500/30 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer" title="Toggle Speakers">
+              <i class="fas fa-volume-up"></i>
+            </button>
+            <!-- Push to Talk button -->
+            <button id="btnVoicePTT" class="h-8 px-3 rounded-lg bg-emerald-600/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white flex items-center gap-1 transition text-[10px] font-black uppercase tracking-wider select-none cursor-pointer" title="Hold to Speak">
+              <i class="fas fa-keyboard text-[9px]"></i> PTT Mode
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Create Room Dialog Backdrop -->
+    <div id="mCreateVoiceRoom" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+      <div class="bg-panel border border-emerald-500/30 rounded-2xl p-5 max-w-[420px] w-full space-y-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-xl"></div>
+        
+        <div class="flex justify-between items-center pb-2 border-b border-bdr/50">
+          <h3 class="font-display text-lg font-black uppercase text-white tracking-wide flex items-center gap-2">
+            <i class="fas fa-microphone-alt text-emerald-400"></i> Setup Voice Channel
+          </h3>
+          <button id="bCloseCreateVoiceRoom" class="text-t3 hover:text-white transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
+        </div>
+
+        <form id="createVoiceRoomForm" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Name</label>
+            <input id="cvName" type="text" required placeholder="Squad Alpha Voice" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Game Selection</label>
+              <select id="cvGame" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+                <option value="PUBG Mobile">PUBG Mobile</option>
+                <option value="Free Fire">Free Fire</option>
+                <option value="FIFA">FIFA</option>
+                <option value="Valorant">Valorant</option>
+                <option value="COD Mobile">COD Mobile</option>
+                <option value="Ludo">Ludo Star</option>
+                <option value="Other">Other Game</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Max Players (2-20)</label>
+              <input id="cvMaxPlayers" type="number" min="2" max="20" value="10" required class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Privacy</label>
+              <select id="cvType" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+                <option value="public">Public</option>
+                <option value="private">Private (Password)</option>
+                <option value="friends">Friends Only</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Region</label>
+              <select id="cvRegion" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+                <option value="South Asia">South Asia</option>
+                <option value="Middle East">Middle East</option>
+                <option value="Europe">Europe</option>
+                <option value="North America">North America</option>
+                <option value="Southeast Asia">Southeast Asia</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="cvPasswordWrap" class="hidden">
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Password</label>
+            <input id="cvPassword" type="text" placeholder="Enter password..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+          </div>
+
+          <div>
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Language</label>
+            <select id="cvLanguage" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+              <option value="Urdu/Hindi">Urdu / Hindi</option>
+              <option value="English">English</option>
+              <option value="Arabic">Arabic</option>
+              <option value="Spanish">Spanish</option>
+            </select>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 transition shadow-lg cursor-pointer">
+            Deploy Channel
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Invite Friends Dialog Backdrop -->
+    <div id="mInviteFriendToVoice" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+      <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[360px] w-full space-y-4">
+        <div class="flex justify-between items-center pb-2 border-b border-bdr/50">
+          <h3 class="font-display text-sm font-black uppercase text-white tracking-wide"><i class="fas fa-share-alt text-emerald-400 mr-1.5"></i> Invite Friends</h3>
+          <button id="bCloseInviteFriendToVoice" class="text-t3 hover:text-white transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="voiceInviteFriendsList" class="space-y-2 max-h-[250px] overflow-y-auto pr-1 text-xs">
+          <!-- Dynamically populated friend list with invite button -->
+        </div>
+      </div>
+    </div>
+
     <!-- Dummy Support Tab (Logic moved to Support Side Drawer) -->
     <div id="tSupport" class="tab hidden"></div>
 
@@ -793,6 +1053,10 @@ tailwind.config = {
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
       <i class="fas fa-wallet text-base"></i><span>Wallet</span>
+    </button>
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Voice">
+      <i class="fas fa-microphone text-base"></i><span>Voice</span>
+      <span id="voiceDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
       <i class="fas fa-comments text-base"></i><span>Chat</span>
@@ -2527,7 +2791,7 @@ tailwind.config = {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
@@ -3057,6 +3321,9 @@ function boot() {
       }
     }, 1200);
   }
+  if (typeof initVoiceRoomsSystem === 'function') {
+    initVoiceRoomsSystem();
+  }
 }
 
 // Navigation Tab controls
@@ -3066,6 +3333,11 @@ function switchTab(tabId) {
       window.openSupportDrawer();
     }
     return;
+  }
+  if (tabId === 'Voice') {
+    if (typeof window.listenToVoiceRooms === 'function') {
+      window.listenToVoiceRooms();
+    }
   }
   activeMainTab = tabId;
   document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
@@ -8867,6 +9139,1216 @@ window.renderInboxUI = renderInboxUI;
 window.claimMailGift = claimMailGift;
 window.renderBadgesGridUI = renderBadgesGridUI;
 window.updateInboxNotificationBadge = updateInboxNotificationBadge;
+
+// ==================== ARENAX VOICE ROOMS SYSTEM ====================
+let currentVoiceRoomId = null;
+let voiceRoomsList = [];
+let voiceRoomsUnsub = null;
+let activeRoomMembersUnsub = null;
+let activeRoomChatUnsub = null;
+let activeRoomSignalingUnsub = null;
+
+// WebRTC State
+let localStream = null;
+let peerConnections = {}; // uid -> RTCPeerConnection
+const iceServers = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
+
+// User's voice state
+let isMicMuted = false;
+let isSpeakerMuted = false;
+let pttActive = false;
+let pttEnabled = false;
+
+// Initialize Voice Room Subsystem
+function initVoiceRoomsSystem() {
+  const btnCreate = $('btnCreateVoiceRoom');
+  const btnCloseCreate = $('bCloseCreateVoiceRoom');
+  const modalCreate = $('mCreateVoiceRoom');
+  const formCreate = $('createVoiceRoomForm');
+  const selectType = $('cvType');
+  const selectGameFilter = document.querySelectorAll('.game-filter-pill');
+  const voiceSearch = $('voiceSearchInput');
+  const btnRefresh = $('btnRefreshVoiceLobby');
+  
+  // Navigation hook
+  const voiceNavBtn = document.querySelector('.ni[data-t="Voice"]');
+  if (voiceNavBtn) {
+    voiceNavBtn.addEventListener('click', () => {
+      // Load Voice Rooms Lobby
+      listenToVoiceRooms();
+    });
+  }
+
+  // Create Room modal trigger
+  if (btnCreate) {
+    btnCreate.addEventListener('click', () => {
+      if (!userProfile) {
+        showToastNotification("Authentication Required", "Please sign in to create a voice room!");
+        return;
+      }
+      modalCreate.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseCreate) {
+    btnCloseCreate.addEventListener('click', () => {
+      modalCreate.classList.add('hidden');
+    });
+  }
+
+  // Toggle password field on room type change
+  if (selectType) {
+    selectType.addEventListener('change', (e) => {
+      if (e.target.value === 'private') {
+        $('cvPasswordWrap').classList.remove('hidden');
+      } else {
+        $('cvPasswordWrap').classList.add('hidden');
+      }
+    });
+  }
+
+  // Form submission
+  if (formCreate) {
+    formCreate.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const name = $('cvName').value.trim();
+        const game = $('cvGame').value;
+        const maxPlayers = parseInt($('cvMaxPlayers').value) || 10;
+        const type = $('cvType').value;
+        const password = type === 'private' ? $('cvPassword').value.trim() : "";
+        const region = $('cvRegion').value;
+        const language = $('cvLanguage').value;
+
+        if (!name) return;
+
+        // Deploy room to Firestore
+        const roomRef = await addDoc(collection(db, 'voice_rooms'), {
+          name,
+          game,
+          maxPlayers,
+          type,
+          password,
+          region,
+          language,
+          hostId: userProfile.uid,
+          hostName: userProfile.name,
+          hostAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid,
+          memberCount: 1,
+          locked: false,
+          createdAt: serverTimestamp()
+        });
+
+        modalCreate.classList.add('hidden');
+        formCreate.reset();
+        $('cvPasswordWrap').classList.add('hidden');
+
+        // Join the newly created room
+        await joinVoiceRoom(roomRef.id);
+        showToastNotification("Voice Room Deployed 🚀", `"${name}" is now live! Friends can join now.`);
+      } catch (err) {
+        console.error("Error creating room:", err);
+        showToastNotification("Creation Failed ❌", "Could not deploy voice room. Try again.");
+      }
+    });
+  }
+
+  // Refresh Lobby button
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      listenToVoiceRooms();
+      showToastNotification("Lobby Refreshed 🔄", "Fetched latest active voice rooms.");
+    });
+  }
+
+  // Search input filter
+  if (voiceSearch) {
+    voiceSearch.addEventListener('input', () => {
+      filterAndRenderVoiceRooms();
+    });
+  }
+
+  // Game filter pills
+  selectGameFilter.forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      selectGameFilter.forEach(p => {
+        p.classList.remove('bg-emerald-500/20', 'border-emerald-500/50', 'text-emerald-300');
+        p.classList.add('bg-card', 'border-bdr', 'text-t2');
+      });
+      pill.classList.remove('bg-card', 'border-bdr', 'text-t2');
+      pill.classList.add('bg-emerald-500/20', 'border-emerald-500/50', 'text-emerald-300');
+      
+      const game = pill.dataset.game;
+      filterAndRenderVoiceRooms(game);
+    });
+  });
+
+  // Setup invitation listener for current user
+  onAuthStateChanged(auth, (fireUser) => {
+    if (fireUser) {
+      listenToInvitations(fireUser.uid);
+    }
+  });
+
+  // Audio Toggle Mute
+  const btnMute = $('btnVoiceToggleMute');
+  if (btnMute) {
+    btnMute.addEventListener('click', () => {
+      toggleMyMicrophone();
+    });
+  }
+
+  // Audio Toggle Deafen
+  const btnDeafen = $('btnVoiceToggleDeafen');
+  if (btnDeafen) {
+    btnDeafen.addEventListener('click', () => {
+      toggleMySpeakers();
+    });
+  }
+
+  // Push to Talk toggling / hold to speak
+  const btnPTT = $('btnVoicePTT');
+  if (btnPTT) {
+    btnPTT.addEventListener('mousedown', () => {
+      if (pttEnabled) {
+        startPTTSpeaking();
+      }
+    });
+    btnPTT.addEventListener('mouseup', () => {
+      if (pttEnabled) {
+        stopPTTSpeaking();
+      }
+    });
+    btnPTT.addEventListener('mouseleave', () => {
+      if (pttEnabled && pttActive) {
+        stopPTTSpeaking();
+      }
+    });
+    btnPTT.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (pttEnabled) {
+        startPTTSpeaking();
+      }
+    });
+    btnPTT.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (pttEnabled) {
+        stopPTTSpeaking();
+      }
+    });
+    
+    // Toggle PTT mode itself on click
+    btnPTT.addEventListener('click', () => {
+      pttEnabled = !pttEnabled;
+      if (pttEnabled) {
+        btnPTT.classList.remove('bg-emerald-600/10', 'text-emerald-300');
+        btnPTT.classList.add('bg-emerald-600', 'text-white');
+        // Mute by default until pressed
+        muteLocalAudio(true);
+        showToastNotification("Push-To-Talk Enabled 🎤", "Hold the PTT button to speak to the team.");
+      } else {
+        btnPTT.classList.remove('bg-emerald-600', 'text-white');
+        btnPTT.classList.add('bg-emerald-600/10', 'text-emerald-300');
+        muteLocalAudio(isMicMuted); // revert to general mute state
+      }
+      updateMemberDocumentVoiceState();
+    });
+  }
+
+  // Chat Form Inside Room
+  const roomChatForm = $('roomChatForm');
+  if (roomChatForm) {
+    roomChatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentVoiceRoomId || !userProfile) return;
+      const input = $('roomChatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      try {
+        await addDoc(collection(db, 'voice_rooms', currentVoiceRoomId, 'chats'), {
+          userId: userProfile.uid,
+          userName: userProfile.name,
+          userAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid,
+          message: msg,
+          createdAt: serverTimestamp()
+        });
+        input.value = '';
+      } catch (err) {
+        console.error("Error sending room chat:", err);
+      }
+    });
+  }
+
+  // Leave room button
+  const btnLeave = $('btnLeaveVoiceRoom');
+  if (btnLeave) {
+    btnLeave.addEventListener('click', () => {
+      leaveVoiceRoom();
+    });
+  }
+
+  // Invite friends popup
+  const btnInvite = $('btnInviteFriendToVoice');
+  if (btnInvite) {
+    btnInvite.addEventListener('click', () => {
+      openVoiceInviteModal();
+    });
+  }
+  
+  const btnCloseInvite = $('bCloseInviteFriendToVoice');
+  if (btnCloseInvite) {
+    btnCloseInvite.addEventListener('click', () => {
+      $('mInviteFriendToVoice').classList.add('hidden');
+    });
+  }
+
+  // Toggle lock room (host-only)
+  const btnToggleLock = $('btnToggleLockRoom');
+  if (btnToggleLock) {
+    btnToggleLock.addEventListener('click', () => {
+      toggleRoomLockState();
+    });
+  }
+}
+
+// Global active filter state
+let selectedGameFilter = "All";
+
+// Listen to voice rooms collection in Firestore
+function listenToVoiceRooms() {
+  if (voiceRoomsUnsub) voiceRoomsUnsub();
+
+  const q = query(collection(db, 'voice_rooms'), orderBy('createdAt', 'desc'), limit(50));
+  voiceRoomsUnsub = onSnapshot(q, (snap) => {
+    voiceRoomsList = [];
+    snap.forEach(d => {
+      voiceRoomsList.push({ id: d.id, ...d.data() });
+    });
+    filterAndRenderVoiceRooms(selectedGameFilter);
+  }, (err) => {
+    console.error("Firestore Error reading voice_rooms:", err);
+  });
+}
+
+// Filter and render voice rooms in the UI
+function filterAndRenderVoiceRooms(gameFilter = "All") {
+  selectedGameFilter = gameFilter;
+  const searchVal = ($('voiceSearchInput')?.value || "").toLowerCase().trim();
+  const container = $('voiceRoomsGrid');
+  if (!container) return;
+
+  const filtered = voiceRoomsList.filter(room => {
+    const matchesGame = gameFilter === "All" || room.game === gameFilter;
+    const matchesSearch = !searchVal || 
+      room.name.toLowerCase().includes(searchVal) || 
+      room.hostName.toLowerCase().includes(searchVal);
+    return matchesGame && matchesSearch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-8 bg-card/20 border border-bdr/50 rounded-2xl">
+        <i class="fas fa-search text-2xl text-emerald-500/25 mb-1.5 animate-pulse"></i>
+        <p class="text-xs text-white font-semibold">No Rooms Found</p>
+        <p class="text-[10px] text-t3 max-w-[180px] mt-0.5">Try changing filters or search query. Or create your own room!</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(room => {
+    const card = document.createElement('div');
+    card.className = 'p-3.5 bg-card/65 backdrop-blur-md border border-emerald-500/10 hover:border-gold/30 rounded-2xl relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-between group shadow-[0_0_15px_rgba(0,0,0,0.2)]';
+    
+    // Add pulsing border if voice room active
+    if (room.memberCount > 0) {
+      card.classList.add('border-emerald-500/20');
+    }
+
+    const isPrivate = room.type === 'private';
+
+    card.innerHTML = `
+      <div class="space-y-1.5 flex-1 pr-3">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
+          <span class="text-xs font-black uppercase text-white tracking-wide group-hover:text-gold transition">${room.name}</span>
+          ${isPrivate ? '<i class="fas fa-lock text-[9px] text-gold/80" title="Password Protected"></i>' : ''}
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-2 text-[9px] text-t3">
+          <span class="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-[8px] font-extrabold uppercase text-emerald-300 rounded-md">${room.game}</span>
+          <span class="text-t2"><i class="fas fa-user text-[8px] mr-1"></i>Host: <span class="text-white">${room.hostName}</span></span>
+          <span class="text-t3">|</span>
+          <span><i class="fas fa-globe text-[8px] mr-1"></i>${room.region}</span>
+          <span class="text-t3">|</span>
+          <span><i class="fas fa-comments text-[8px] mr-1"></i>${room.language}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="text-right">
+          <div class="text-[11px] font-black text-white leading-none">${room.memberCount}<span class="text-t3">/${room.maxPlayers}</span></div>
+          <div class="text-[8px] text-emerald-400 mt-1 uppercase tracking-wider font-semibold">In Channel</div>
+        </div>
+        <button class="btn-join-voice px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-lg border border-emerald-500/30 hover:border-transparent text-[10px] font-black uppercase tracking-wider transition duration-150 cursor-pointer" data-id="${room.id}">
+          Join
+        </button>
+      </div>
+    `;
+
+    card.querySelector('.btn-join-voice').addEventListener('click', () => {
+      if (isPrivate) {
+        const pass = prompt("Enter room password:");
+        if (pass !== room.password) {
+          alert("Incorrect password!");
+          return;
+        }
+      }
+      joinVoiceRoom(room.id);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// Join voice room
+async function joinVoiceRoom(roomId) {
+  if (!userProfile) {
+    showToastNotification("Access Denied", "Please sign in to join the voice arena.");
+    return;
+  }
+
+  // If already in a room, leave it
+  if (currentVoiceRoomId) {
+    await leaveVoiceRoom(false);
+  }
+
+  try {
+    currentVoiceRoomId = roomId;
+
+    // Fetch room document to verify
+    const roomSnap = await getDoc(doc(db, 'voice_rooms', roomId));
+    if (!roomSnap.exists()) {
+      showToastNotification("Error", "Room no longer exists.");
+      currentVoiceRoomId = null;
+      return;
+    }
+    const roomData = roomSnap.data();
+
+    // 1. Show UI Transition
+    $('voiceLobbyView').classList.add('hidden');
+    $('voiceActiveRoomView').classList.remove('hidden');
+
+    // Populate active room details
+    $('activeRoomName').textContent = roomData.name;
+    $('activeRoomGame').textContent = roomData.game;
+    $('activeRoomRegion').textContent = roomData.region;
+    $('activeRoomMax').textContent = roomData.maxPlayers;
+    
+    if (roomData.locked) {
+      $('activeRoomLockIcon').classList.remove('hidden');
+    } else {
+      $('activeRoomLockIcon').classList.add('hidden');
+    }
+
+    // Show host controls if current user is host
+    if (roomData.hostId === userProfile.uid) {
+      $('hostLobbyControls').classList.remove('hidden');
+      $('btnToggleLockRoom').innerHTML = roomData.locked ? `<i class="fas fa-unlock"></i> Unlock Room` : `<i class="fas fa-lock"></i> Lock Room`;
+    } else {
+      $('hostLobbyControls').classList.add('hidden');
+    }
+
+    // Set up local user details
+    const myAvatar = userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid;
+    $('voiceMyAvatar').src = myAvatar;
+
+    // Synthesize simple join tone
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+      osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
+      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    } catch(e){}
+
+    // 2. Add local participant to Room Members
+    const myMemberId = userProfile.uid;
+    await setDoc(doc(db, 'voice_rooms', roomId, 'members', myMemberId), {
+      uid: userProfile.uid,
+      name: userProfile.name,
+      handle: userProfile.handle || '@player',
+      avatar: myAvatar,
+      muted: isMicMuted,
+      deafened: isSpeakerMuted,
+      speaking: false,
+      handRaised: false,
+      micStatus: !isMicMuted,
+      joinedAt: serverTimestamp()
+    });
+
+    // Increment memberCount atomically
+    await updateDoc(doc(db, 'voice_rooms', roomId), {
+      memberCount: increment(1)
+    });
+
+    // 3. Request Local Microphone Stream
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      // Apply initial mute states
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = !isMicMuted;
+      });
+      $('voiceMyStatus').innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> Live & Speaking`;
+    } catch (micErr) {
+      console.warn("Microphone access denied or unavailable:", micErr);
+      $('voiceMyStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Listen Only (No Mic)`;
+      showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode. Allow mic permissions to speak!");
+    }
+
+    // 4. Start Real-time Listeners
+    listenToRoomMembers(roomId);
+    listenToRoomChats(roomId);
+    listenToRoomSignaling(roomId);
+
+  } catch (err) {
+    console.error("Error joining voice room:", err);
+    showToastNotification("Join Failed", "Could not connect to voice room.");
+  }
+}
+
+// Track speaking indicators locally using volume analyzer
+let localAudioAnalyser = null;
+let speakingInterval = null;
+
+function setupVolumeAnalysis() {
+  if (!localStream) return;
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(localStream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    if (speakingInterval) clearInterval(speakingInterval);
+    
+    let wasSpeaking = false;
+
+    speakingInterval = setInterval(() => {
+      if (isMicMuted || (pttEnabled && !pttActive)) {
+        if (wasSpeaking) {
+          wasSpeaking = false;
+          setSpeakingStateInFirestore(false);
+        }
+        return;
+      }
+      
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const averageVolume = sum / bufferLength;
+      const isSpeakingNow = averageVolume > 20; // voice threshold
+
+      if (isSpeakingNow !== wasSpeaking) {
+        wasSpeaking = isSpeakingNow;
+        setSpeakingStateInFirestore(isSpeakingNow);
+      }
+    }, 150);
+  } catch(e) {
+    console.warn("Could not setup voice analyser:", e);
+  }
+}
+
+async function setSpeakingStateInFirestore(speaking) {
+  if (!currentVoiceRoomId || !userProfile) return;
+  try {
+    await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', userProfile.uid), {
+      speaking: speaking
+    });
+  } catch(e){}
+}
+
+// Listen to room members inside a voice room
+function listenToRoomMembers(roomId) {
+  if (activeRoomMembersUnsub) activeRoomMembersUnsub();
+
+  const membersRef = collection(db, 'voice_rooms', roomId, 'members');
+  activeRoomMembersUnsub = onSnapshot(membersRef, (snap) => {
+    const grid = $('roomParticipantsGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    let membersCount = 0;
+    let membersList = [];
+
+    snap.forEach(d => {
+      const m = d.data();
+      membersCount++;
+      membersList.push(m);
+
+      const card = document.createElement('div');
+      card.className = 'p-3 bg-panel border border-bdr/60 hover:border-emerald-500/30 rounded-xl relative overflow-hidden flex flex-col items-center justify-center text-center transition duration-200 group';
+      
+      // Halo Speaking ripple rings
+      if (m.speaking) {
+        card.className = 'p-3 bg-panel border border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.25)] rounded-xl relative overflow-hidden flex flex-col items-center justify-center text-center transition duration-200 group';
+      }
+
+      card.innerHTML = `
+        <div class="relative mb-2 flex items-center justify-center">
+          <!-- Animated speaking ripples -->
+          ${m.speaking ? `
+            <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-500/20 animate-ping"></span>
+            <span class="absolute inline-flex h-[110%] w-[110%] rounded-full bg-emerald-500/10 animate-pulse"></span>
+          ` : ''}
+          <img src="${m.avatar}" class="w-12 h-12 rounded-xl object-cover border border-bdr relative z-10 bg-card/40"/>
+          
+          <!-- Mic status overlay -->
+          <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${m.muted ? 'bg-red-500' : 'bg-emerald-500'} border-2 border-panel flex items-center justify-center z-20 text-[9px] text-white">
+            <i class="fas ${m.muted ? 'fa-microphone-slash' : 'fa-microphone'}"></i>
+          </span>
+        </div>
+
+        <div class="text-[10px] font-black text-white truncate w-full px-1">${m.name}</div>
+        <div class="text-[8px] text-t3 truncate">${m.handle}</div>
+
+        <!-- Host badge -->
+        ${m.uid === userProfile.uid ? '<span class="absolute top-1.5 left-1.5 text-[8px] bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-extrabold uppercase px-1 rounded-md">Me</span>' : ''}
+      `;
+
+      // Host controls popup inside grid if host is looking at someone else
+      if (userProfile && userProfile.uid !== m.uid) {
+        // Find if local user is host
+        getDoc(doc(db, 'voice_rooms', roomId)).then(snapRoom => {
+          if (snapRoom.exists() && snapRoom.data().hostId === userProfile.uid) {
+            const hostActions = document.createElement('div');
+            hostActions.className = 'absolute inset-0 bg-panel/95 flex flex-col items-center justify-center gap-1.5 opacity-0 hover:opacity-100 transition duration-150 rounded-xl p-1 z-30';
+            hostActions.innerHTML = `
+              <div class="text-[8px] font-bold text-emerald-400 mb-0.5">MANAGE PLAYER</div>
+              <button class="btn-kick-peer w-full py-1 bg-red-500/20 hover:bg-red-500/40 text-red text-[8px] font-black uppercase tracking-wider rounded border border-red-500/30 transition" data-uid="${m.uid}">Kick</button>
+              <button class="btn-mute-peer w-full py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow text-[8px] font-black uppercase tracking-wider rounded border border-yellow-500/20 transition" data-uid="${m.uid}">${m.muted ? 'Unmute' : 'Mute'}</button>
+            `;
+            
+            hostActions.querySelector('.btn-kick-peer').addEventListener('click', () => {
+              kickParticipant(m.uid);
+            });
+            hostActions.querySelector('.btn-mute-peer').addEventListener('click', () => {
+              toggleParticipantMute(m.uid, !m.muted);
+            });
+            card.appendChild(hostActions);
+          }
+        });
+      }
+
+      grid.appendChild(card);
+    });
+
+    $('activeRoomCount').textContent = membersCount;
+
+    // Check if local player was kicked!
+    const wasIKicked = membersList.find(m => m.uid === userProfile.uid) === undefined;
+    if (wasIKicked && currentVoiceRoomId) {
+      showToastNotification("Kicked from Room 🚫", "The host has removed you from the squad voice channel.");
+      leaveVoiceRoom(false);
+    }
+
+    // Trigger WebRTC Mesh Connections
+    if (localStream) {
+      establishWebRTCMesh(membersList);
+    }
+  }, (err) => {
+    console.error("Firestore error watching members:", err);
+  });
+}
+
+// Setup volume analysis after localStream gets initialized
+setInterval(() => {
+  if (localStream && !localAudioAnalyser) {
+    setupVolumeAnalysis();
+  }
+}, 1000);
+
+// Kick a participant
+async function kickParticipant(uid) {
+  if (!currentVoiceRoomId) return;
+  try {
+    await deleteDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', uid));
+    showToastNotification("Player Removed 👞", "You kicked the player from the room.");
+  } catch(e){
+    console.error(e);
+  }
+}
+
+// Force remote mute toggle
+async function toggleParticipantMute(uid, muteState) {
+  if (!currentVoiceRoomId) return;
+  try {
+    await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', uid), {
+      muted: muteState,
+      micStatus: !muteState
+    });
+  } catch(e){
+    console.error(e);
+  }
+}
+
+// Establish WebRTC Full-Mesh connection
+function establishWebRTCMesh(membersList) {
+  if (!userProfile) return;
+
+  // For every other member in the room:
+  membersList.forEach(member => {
+    if (member.uid === userProfile.uid) return;
+
+    // To prevent duplicate connections, smaller UID initiates
+    const isInitiator = userProfile.uid < member.uid;
+
+    if (!peerConnections[member.uid]) {
+      createPeerConnection(member.uid, isInitiator);
+    }
+  });
+
+  // Clean up stale connections
+  Object.keys(peerConnections).forEach(uid => {
+    if (!membersList.some(m => m.uid === uid)) {
+      closePeerConnection(uid);
+    }
+  });
+}
+
+// Create a peer connection with a specific user
+function createPeerConnection(peerId, isInitiator) {
+  console.log(`[WebRTC] Creating connection to ${peerId}, initiator: ${isInitiator}`);
+  const pc = new RTCPeerConnection(iceServers);
+  peerConnections[peerId] = pc;
+
+  // Add local track
+  if (localStream) {
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+  }
+
+  // Handle ICE candidates
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      sendSignal(peerId, "candidate", JSON.stringify(event.candidate));
+    }
+  };
+
+  // Handle incoming stream track
+  pc.ontrack = (event) => {
+    console.log(`[WebRTC] Got remote audio track from ${peerId}`);
+    playRemoteAudioStream(peerId, event.streams[0]);
+  };
+
+  // Handle state change
+  pc.onconnectionstatechange = () => {
+    console.log(`[WebRTC] Connection state to ${peerId}: ${pc.connectionState}`);
+  };
+
+  if (isInitiator) {
+    // Generate offer
+    pc.createOffer().then(offer => {
+      return pc.setLocalDescription(offer);
+    }).then(() => {
+      sendSignal(peerId, "offer", JSON.stringify(pc.localDescription));
+    }).catch(err => {
+      console.error("Error creating SDP offer:", err);
+    });
+  }
+}
+
+// Send WebRTC signaling payload to Firestore
+async function sendSignal(toId, type, payload) {
+  if (!currentVoiceRoomId || !userProfile) return;
+  try {
+    await addDoc(collection(db, 'voice_rooms', currentVoiceRoomId, 'signaling'), {
+      fromId: userProfile.uid,
+      toId: toId,
+      type: type,
+      payload: payload,
+      createdAt: serverTimestamp()
+    });
+  } catch(e){}
+}
+
+// Listen to room signaling messages
+function listenToRoomSignaling(roomId) {
+  if (activeRoomSignalingUnsub) activeRoomSignalingUnsub();
+
+  const signalingRef = collection(db, 'voice_rooms', roomId, 'signaling');
+  const q = query(signalingRef, orderBy('createdAt', 'desc'), limit(30));
+
+  activeRoomSignalingUnsub = onSnapshot(q, (snap) => {
+    if (!userProfile) return;
+
+    snap.forEach(d => {
+      const signal = d.data();
+      // Only process messages targeting me that are fresh
+      if (signal.toId !== userProfile.uid) return;
+
+      const pc = peerConnections[signal.fromId];
+      if (!pc) return;
+
+      const parsedPayload = JSON.parse(signal.payload);
+
+      if (signal.type === "offer") {
+        pc.setRemoteDescription(new RTCSessionDescription(parsedPayload))
+          .then(() => pc.createAnswer())
+          .then(answer => pc.setLocalDescription(answer))
+          .then(() => {
+            sendSignal(signal.fromId, "answer", JSON.stringify(pc.localDescription));
+          })
+          .catch(err => console.error("Error processing SDP offer:", err));
+      } else if (signal.type === "answer") {
+        if (pc.signalingState !== "stable") {
+          pc.setRemoteDescription(new RTCSessionDescription(parsedPayload))
+            .catch(err => console.error("Error processing SDP answer:", err));
+        }
+      } else if (signal.type === "candidate") {
+        pc.addIceCandidate(new RTCIceCandidate(parsedPayload))
+          .catch(err => console.warn("Error adding ICE candidate:", err));
+      }
+
+      // Delete the signaling doc immediately to keep collection clean
+      deleteDoc(doc(db, 'voice_rooms', roomId, 'signaling', d.id)).catch(()=>{});
+    });
+  });
+}
+
+// Play remote audio stream safely inside DOM
+function playRemoteAudioStream(peerId, stream) {
+  let audioEl = document.getElementById(`audio-remote-${peerId}`);
+  if (!audioEl) {
+    audioEl = document.createElement('audio');
+    audioEl.id = `audio-remote-${peerId}`;
+    audioEl.autoplay = true;
+    audioEl.className = 'hidden';
+    document.body.appendChild(audioEl);
+  }
+  audioEl.srcObject = stream;
+  audioEl.muted = isSpeakerMuted;
+}
+
+// Close peer connection
+function closePeerConnection(peerId) {
+  const pc = peerConnections[peerId];
+  if (pc) {
+    pc.close();
+    delete peerConnections[peerId];
+  }
+  const audioEl = document.getElementById(`audio-remote-${peerId}`);
+  if (audioEl) audioEl.remove();
+}
+
+// Cleanly leave voice room
+async function leaveVoiceRoom(goToLobby = true) {
+  if (!currentVoiceRoomId || !userProfile) return;
+  const roomId = currentVoiceRoomId;
+  currentVoiceRoomId = null;
+
+  try {
+    // 1. Synthesize exit tone
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+      osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime + 0.2); // A4
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    } catch(e){}
+
+    // Stop speaking interval & analyzer
+    if (speakingInterval) clearInterval(speakingInterval);
+    speakingInterval = null;
+    localAudioAnalyser = null;
+
+    // 2. Stop local tracks & clean RTC Peer connections
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    Object.keys(peerConnections).forEach(closePeerConnection);
+
+    // 3. Unsubscribe Snapshot Listeners
+    if (activeRoomMembersUnsub) activeRoomMembersUnsub();
+    if (activeRoomChatUnsub) activeRoomChatUnsub();
+    if (activeRoomSignalingUnsub) activeRoomSignalingUnsub();
+
+    // 4. Remove player doc from members
+    await deleteDoc(doc(db, 'voice_rooms', roomId, 'members', userProfile.uid));
+
+    // Decrement memberCount atomically
+    const roomRef = doc(db, 'voice_rooms', roomId);
+    const roomSnap = await getDoc(roomRef);
+    if (roomSnap.exists()) {
+      const count = roomSnap.data().memberCount || 1;
+      if (count <= 1) {
+        // Automatically delete empty rooms to save Firestore space
+        await deleteDoc(roomRef);
+        console.log("Empty room deleted:", roomId);
+      } else {
+        await updateDoc(roomRef, {
+          memberCount: increment(-1)
+        });
+      }
+    }
+
+    if (goToLobby) {
+      $('voiceActiveRoomView').classList.add('hidden');
+      $('voiceLobbyView').classList.remove('hidden');
+      showToastNotification("Squad Voice Disconnected 👋", "You safely disconnected from voice communication.");
+    }
+
+  } catch (err) {
+    console.error("Error leaving voice room cleanly:", err);
+  }
+}
+
+// Toggle room lock state (host-only)
+async function toggleRoomLockState() {
+  if (!currentVoiceRoomId) return;
+  try {
+    const roomRef = doc(db, 'voice_rooms', currentVoiceRoomId);
+    const snap = await getDoc(roomRef);
+    if (snap.exists()) {
+      const isCurrentlyLocked = snap.data().locked || false;
+      const newLockedState = !isCurrentlyLocked;
+      await updateDoc(roomRef, {
+        locked: newLockedState
+      });
+      $('btnToggleLockRoom').innerHTML = newLockedState ? `<i class="fas fa-unlock"></i> Unlock Room` : `<i class="fas fa-lock"></i> Lock Room`;
+      if (newLockedState) {
+        showToastNotification("Room Locked 🔒", "No new players can join the channel.");
+        $('activeRoomLockIcon').classList.remove('hidden');
+      } else {
+        showToastNotification("Room Unlocked 🔓", "The voice channel is now open for joins.");
+        $('activeRoomLockIcon').classList.add('hidden');
+      }
+    }
+  } catch(e){}
+}
+
+// Toggle local microphone state
+function toggleMyMicrophone() {
+  isMicMuted = !isMicMuted;
+  const icon = $('btnVoiceToggleMute').querySelector('i');
+  
+  if (isMicMuted) {
+    icon.className = 'fas fa-microphone-slash text-red';
+    $('btnVoiceToggleMute').classList.add('border-red-500/30', 'bg-red-500/10');
+    showToastNotification("Microphone Muted 🔇", "Other players can't hear you.");
+    muteLocalAudio(true);
+  } else {
+    icon.className = 'fas fa-microphone text-emerald-400';
+    $('btnVoiceToggleMute').classList.remove('border-red-500/30', 'bg-red-500/10');
+    showToastNotification("Microphone Active 🎙️", "You are unmuted.");
+    muteLocalAudio(false);
+  }
+
+  updateMemberDocumentVoiceState();
+}
+
+function muteLocalAudio(mute) {
+  if (localStream) {
+    localStream.getAudioTracks().forEach(track => {
+      track.enabled = !mute;
+    });
+  }
+}
+
+// Toggle local speaker state
+function toggleMySpeakers() {
+  isSpeakerMuted = !isSpeakerMuted;
+  const icon = $('btnVoiceToggleDeafen').querySelector('i');
+
+  if (isSpeakerMuted) {
+    icon.className = 'fas fa-volume-mute text-red';
+    $('btnVoiceToggleDeafen').classList.add('border-red-500/30', 'bg-red-500/10');
+    showToastNotification("Speakers Deafened 🙉", "You won't hear other team players.");
+  } else {
+    icon.className = 'fas fa-volume-up text-emerald-400';
+    $('btnVoiceToggleDeafen').classList.remove('border-red-500/30', 'bg-red-500/10');
+    showToastNotification("Speakers Active 🔊", "Listening to tactical audio...");
+  }
+
+  // Mute/unmute all active audio elements
+  Object.keys(peerConnections).forEach(peerId => {
+    const el = document.getElementById(`audio-remote-${peerId}`);
+    if (el) el.muted = isSpeakerMuted;
+  });
+
+  updateMemberDocumentVoiceState();
+}
+
+// Update voice states inside Firestore Member document
+async function updateMemberDocumentVoiceState() {
+  if (!currentVoiceRoomId || !userProfile) return;
+  try {
+    await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', userProfile.uid), {
+      muted: isMicMuted || (pttEnabled && !pttActive),
+      deafened: isSpeakerMuted,
+      micStatus: !isMicMuted && (!pttEnabled || pttActive)
+    });
+  } catch(e){}
+}
+
+// PTT speaking helpers
+function startPTTSpeaking() {
+  if (!pttEnabled || pttActive) return;
+  pttActive = true;
+  muteLocalAudio(false);
+  updateMemberDocumentVoiceState();
+  // mini tone
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } catch(e){}
+}
+
+// PTT speaking helpers end
+function stopPTTSpeaking() {
+  if (!pttEnabled || !pttActive) return;
+  pttActive = false;
+  muteLocalAudio(true);
+  updateMemberDocumentVoiceState();
+}
+
+// Listen to room specific chat logs
+function listenToRoomChats(roomId) {
+  if (activeRoomChatUnsub) activeRoomChatUnsub();
+
+  const chatRef = collection(db, 'voice_rooms', roomId, 'chats');
+  const q = query(chatRef, orderBy('createdAt', 'asc'), limit(50));
+
+  activeRoomChatUnsub = onSnapshot(q, (snap) => {
+    const msgsContainer = $('roomChatMsgs');
+    if (!msgsContainer) return;
+
+    msgsContainer.innerHTML = '';
+    
+    if (snap.empty) {
+      msgsContainer.innerHTML = `
+        <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-4">
+          <i class="far fa-comments text-xl text-emerald-500/20 mb-1"></i>
+          <p class="text-[10px]">No messages in this squad room yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    snap.forEach(d => {
+      const chat = d.data();
+      const row = document.createElement('div');
+      row.className = 'flex items-start gap-2 text-[10px] leading-relaxed';
+      row.innerHTML = `
+        <img src="${chat.userAvatar}" class="w-6 h-6 rounded-full border border-bdr shrink-0 mt-0.5 bg-card/40"/>
+        <div>
+          <span class="font-black text-white mr-1">${chat.userName}</span>
+          <span class="text-t2 break-all font-medium">${chat.message}</span>
+        </div>
+      `;
+      msgsContainer.appendChild(row);
+    });
+
+    // Auto scroll chat to bottom
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }, (err) => {
+    console.error("Firestore error watching room chat:", err);
+  });
+}
+
+// Invite friend panel handler
+function openVoiceInviteModal() {
+  const container = $('voiceInviteFriendsList');
+  if (!container) return;
+
+  container.innerHTML = '<div class="text-center p-4 animate-pulse text-t3">Loading squad list...</div>';
+  $('mInviteFriendToVoice').classList.remove('hidden');
+
+  // Load friends from local memory friendList
+  if (!friendList || friendList.length === 0) {
+    container.innerHTML = `
+      <div class="text-center p-6 text-t3">
+        <i class="fas fa-users-slash text-xl mb-1 text-emerald-500/30"></i>
+        <p>No active online friends found. Add friends in the Chat tab first!</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  friendList.forEach(friend => {
+    const row = document.createElement('div');
+    row.className = 'p-2.5 bg-card border border-bdr rounded-xl flex items-center justify-between text-xs font-semibold';
+    row.innerHTML = `
+      <div class="flex items-center gap-2.5 truncate flex-1 pr-2">
+        <img src="${friend.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + friend.uid}" class="w-7 h-7 rounded-full border border-bdr shrink-0 bg-card/40"/>
+        <div class="truncate">
+          <div class="text-white truncate">${friend.name}</div>
+          <div class="text-[9px] text-t3 truncate">${friend.handle}</div>
+        </div>
+      </div>
+      <button class="btn-send-room-invite px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/25 hover:border-transparent rounded-lg text-[9px] font-bold uppercase tracking-wider transition cursor-pointer" data-uid="${friend.uid}">
+        Invite
+      </button>
+    `;
+
+    row.querySelector('.btn-send-room-invite').addEventListener('click', (e) => {
+      sendVoiceRoomInvitation(friend.uid, friend.name, e.target);
+    });
+
+    container.appendChild(row);
+  });
+}
+
+// Send Room invitation document to friend
+async function sendVoiceRoomInvitation(friendId, friendName, btnEl) {
+  if (!currentVoiceRoomId || !userProfile) return;
+
+  try {
+    btnEl.disabled = true;
+    btnEl.textContent = "Sending...";
+    btnEl.classList.add('opacity-50');
+
+    // Create invite doc in friend's subcollection
+    await addDoc(collection(db, 'users', friendId, 'invitations'), {
+      roomId: currentVoiceRoomId,
+      roomName: $('activeRoomName').textContent,
+      hostName: userProfile.name,
+      invitedBy: userProfile.uid,
+      createdAt: serverTimestamp()
+    });
+
+    btnEl.textContent = "Sent ✓";
+    btnEl.classList.remove('bg-emerald-500/10', 'text-emerald-400');
+    btnEl.classList.add('bg-emerald-600', 'text-white');
+    showToastNotification("Invitation Dispatched 🎮", `Sent squad invite to ${friendName}!`);
+  } catch (err) {
+    console.error("Error sending voice invitation:", err);
+    btnEl.disabled = false;
+    btnEl.textContent = "Invite";
+    btnEl.classList.remove('opacity-50');
+  }
+}
+
+// Listen to invitations targeting me in real-time
+let invitationsUnsub = null;
+function listenToInvitations(myUid) {
+  if (invitationsUnsub) invitationsUnsub();
+
+  const invitationsRef = collection(db, 'users', myUid, 'invitations');
+  const q = query(invitationsRef, orderBy('createdAt', 'desc'), limit(5));
+
+  invitationsUnsub = onSnapshot(q, (snap) => {
+    snap.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const invite = change.doc.data();
+        
+        // Prevent showing stale invitations (older than 2 minutes)
+        const ageSec = invite.createdAt ? (Date.now() - invite.createdAt.seconds * 1000) / 1000 : 0;
+        if (ageSec > 120) {
+          // Delete stale invitations directly
+          deleteDoc(doc(db, 'users', myUid, 'invitations', change.doc.id)).catch(()=>{});
+          return;
+        }
+
+        // Show a custom, gorgeous dual-button toast notification for the invite!
+        showVoiceRoomInviteToast(change.doc.id, invite);
+      }
+    });
+  });
+}
+
+// Show active squad invitation panel toast
+function showVoiceRoomInviteToast(inviteId, invite) {
+  let toast = document.createElement('div');
+  toast.id = `invite-toast-${inviteId}`;
+  toast.className = 'fixed top-16 right-4 p-4 bg-gradient-to-br from-[#0c0e17] to-[#121c21] border border-emerald-500/45 rounded-2xl shadow-[0_0_25px_rgba(16,185,129,0.3)] z-[999] flex flex-col gap-3 max-w-[320px] w-full animate-bounce';
+  
+  toast.innerHTML = `
+    <div class="flex items-start gap-3 text-xs">
+      <div class="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+        <i class="fas fa-gamepad text-lg animate-pulse"></i>
+      </div>
+      <div>
+        <div class="font-black text-white uppercase tracking-wider text-[11px]">SQUAD INVITATION</div>
+        <p class="text-t2 text-[10px] mt-0.5"><strong class="text-white">${invite.hostName}</strong> wants you to join their voice channel: <strong class="text-emerald-400">"${invite.roomName}"</strong></p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn-accept-invite flex-1 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black uppercase rounded-lg text-[9px] border border-emerald-500/30 transition shadow-lg cursor-pointer">Join voice</button>
+      <button class="btn-reject-invite px-3 py-1.5 bg-card/80 hover:bg-card border border-bdr hover:text-white text-t3 font-bold uppercase rounded-lg text-[9px] transition cursor-pointer">Decline</button>
+    </div>
+  `;
+
+  // Join handler
+  toast.querySelector('.btn-accept-invite').addEventListener('click', () => {
+    switchTab("Voice");
+    joinVoiceRoom(invite.roomId);
+    toast.remove();
+    // Delete invite doc
+    if (userProfile) {
+      deleteDoc(doc(db, 'users', userProfile.uid, 'invitations', inviteId)).catch(()=>{});
+    }
+  });
+
+  // Decline handler
+  toast.querySelector('.btn-reject-invite').addEventListener('click', () => {
+    toast.remove();
+    if (userProfile) {
+      deleteDoc(doc(db, 'users', userProfile.uid, 'invitations', inviteId)).catch(()=>{});
+    }
+  });
+
+  document.body.appendChild(toast);
+
+  // Auto remove toast after 30 seconds
+  setTimeout(() => {
+    if (toast) toast.remove();
+  }, 30000);
+}
+
+// Bind methods to window scope for tab controller access
+window.initVoiceRoomsSystem = initVoiceRoomsSystem;
+window.listenToVoiceRooms = listenToVoiceRooms;
 
 </script>
 </body>
