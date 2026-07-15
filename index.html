@@ -253,9 +253,13 @@ if (typeof tailwind !== 'undefined') {
       <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">Compete · Rise · Dominate</p>
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
-      <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">
-        Entering Arena...
-      </span>
+     <!-- Lottie Animation Loader placed in the loading progress area --> 
+      <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+  <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
+</div>
+
+  </div>  
+</div>
     </div>
   </div>
 </div>
