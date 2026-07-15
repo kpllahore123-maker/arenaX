@@ -23,33 +23,40 @@ window.getAppBasePath = function() {
 // Dynamically adjust manifest, icon, and favicon links based on host environment
 (function() {
   const basePath = window.getAppBasePath();
-  document.write('<link rel="manifest" href="' + basePath + 'manifest.json">');
-  document.write('<link rel="apple-touch-icon" href="' + basePath + 'icon-192.png">');
-  document.write('<link rel="icon" type="image/x-icon" href="' + basePath + 'favicon.ico">');
+  
+  const manifestLink = document.createElement('link');
+  manifestLink.rel = 'manifest';
+  manifestLink.href = basePath + 'manifest.json';
+  document.head.appendChild(manifestLink);
+  
+  const appleIconLink = document.createElement('link');
+  appleIconLink.rel = 'apple-touch-icon';
+  appleIconLink.href = basePath + 'icon-192.png';
+  document.head.appendChild(appleIconLink);
+  
+  const faviconLink = document.createElement('link');
+  faviconLink.rel = 'icon';
+  faviconLink.type = 'image/x-icon';
+  faviconLink.href = basePath + 'favicon.ico';
+  document.head.appendChild(faviconLink);
 })();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const basePath = window.getAppBasePath();
-    
     // Force-delete older caches on startup to prevent stale pages in dev preview
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        for (let name of names) {
-          if (name !== 'arenax-cache-v10') {
-            caches.delete(name).then(() => console.log('Deleted old cache:', name));
+    try {
+      if ('caches' in window && typeof caches.keys === 'function') {
+        caches.keys().then(names => {
+          for (let name of names) {
+            if (name !== 'arenax-cache-v10') {
+              caches.delete(name).then(() => console.log('Deleted old cache:', name)).catch(() => {});
+            }
           }
-        }
-      });
+        }).catch(err => console.warn('Caches access failed or rejected:', err));
+      }
+    } catch (e) {
+      console.warn('Cache keys delete failed:', e);
     }
-
-    navigator.serviceWorker.register(basePath + 'sw.js')
-      .then(reg => {
-        console.log('PWA Service Worker registered successfully!', reg);
-        // Force check for updates immediately
-        reg.update();
-      })
-      .catch(err => console.error('PWA Service Worker registration failed:', err));
   });
 }
 </script>
@@ -63,30 +70,34 @@ if ('serviceWorker' in navigator) {
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        bg: '#0a0c12',
-        panel: '#111420',
-        card: '#171b2e',
-        ele: '#1e2340',
-        gold: '#f0c040',
-        red: '#e8404a',
-        blue: '#4f9eff',
-        green: '#3ddc84',
-        purple: '#a78bfa',
-        t1: '#f0f2ff',
-        t2: '#8890b0',
-        t3: '#4a5070',
-        bdr: '#252a45',
-      },
-      fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Rajdhani', 'sans-serif'],
+if (typeof tailwind !== 'undefined') {
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: '#0a0c12',
+          panel: '#111420',
+          card: '#171b2e',
+          ele: '#1e2340',
+          gold: '#f0c040',
+          red: '#e8404a',
+          blue: '#4f9eff',
+          green: '#3ddc84',
+          purple: '#a78bfa',
+          t1: '#f0f2ff',
+          t2: '#8890b0',
+          t3: '#4a5070',
+          bdr: '#252a45',
+        },
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          display: ['Rajdhani', 'sans-serif'],
+        }
       }
     }
   }
+} else {
+  console.warn("Tailwind CSS CDN could not be loaded. Dynamic styles may not render perfectly.");
 }
 </script>
 <style>
@@ -242,9 +253,9 @@ tailwind.config = {
       <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">Compete · Rise · Dominate</p>
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
-      <!-- Lottie Animation Loader placed in the loading progress area -->
-      <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>
-      <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>
+      <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">
+        Entering Arena...
+      </span>
     </div>
   </div>
 </div>
@@ -2370,6 +2381,10 @@ tailwind.config = {
     <!-- Step 1: Details view -->
     <div id="tregStep1" class="space-y-4">
       <div class="bg-gradient-to-br from-gold/10 to-blue/5 border border-bdr rounded-xl p-5 text-center space-y-3 relative overflow-hidden">
+        <!-- Lottie Animation Loader for play.json -->
+        <div class="w-24 h-24 mx-auto mb-2">
+          <lottie-player src="play.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay class="mx-auto"></lottie-player>
+        </div>
         <div>
           <h3 id="tdetName" class="font-display text-2xl font-black text-white leading-tight">Tournament</h3>
           <p id="tdetGame" class="text-xs text-t3 mt-0.5">Grand RP Mobile</p>
@@ -3870,9 +3885,11 @@ function getLiveTrackerWidgetHTML(t) {
 
 function renderTournaments() {
   const listEl = $('tList');
+  if (!listEl) return;
   listEl.innerHTML = '';
   const filter = activeTournamentFilter();
-  const filtered = toursData.filter(t => filter === 'all' || t.status === filter);
+  const data = toursData || [];
+  const filtered = data.filter(t => filter === 'all' || t.status === filter);
 
   if (filtered.length === 0) {
     listEl.innerHTML = `
@@ -4761,14 +4778,14 @@ $('rrUploadArea').addEventListener('dragleave', () => {
 $('rrUploadArea').addEventListener('drop', (e) => {
   e.preventDefault();
   $('rrUploadArea').classList.remove('border-red-500');
-  if (e.dataTransfer.files.length > 0) {
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
     fileInput.files = e.dataTransfer.files;
     handleEvidenceFileSelection(e.dataTransfer.files[0]);
   }
 });
 
 fileInput.addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
+  if (e.target && e.target.files && e.target.files.length > 0) {
     handleEvidenceFileSelection(e.target.files[0]);
   }
 });
@@ -4992,10 +5009,11 @@ window.initRedReportsListener = function() {
 }
 
 window.updateRedReportTabsCount = function() {
-  const allCount = window.allRedReports.length;
-  const createdCount = window.allRedReports.filter(r => r.status === 'created').length;
-  const reviewedCount = window.allRedReports.filter(r => r.status === 'reviewed').length;
-  const fromMeCount = window.allRedReports.filter(r => r.reporterUid === userProfile?.uid).length;
+  const reports = window.allRedReports || [];
+  const allCount = reports.length;
+  const createdCount = reports.filter(r => r.status === 'created').length;
+  const reviewedCount = reports.filter(r => r.status === 'reviewed').length;
+  const fromMeCount = reports.filter(r => r.reporterUid === userProfile?.uid).length;
 
   $('allReportsCount').textContent = allCount;
   $('createdReportsCount').textContent = createdCount;
@@ -5008,15 +5026,16 @@ window.renderRedReports = function() {
   if (!container) return;
   container.innerHTML = '';
 
+  const reports = window.allRedReports || [];
   let filtered = [];
   if (window.activeRedReportFilter === 'all') {
-    filtered = window.allRedReports;
+    filtered = reports;
   } else if (window.activeRedReportFilter === 'created') {
-    filtered = window.allRedReports.filter(r => r.status === 'created');
+    filtered = reports.filter(r => r.status === 'created');
   } else if (window.activeRedReportFilter === 'reviewed') {
-    filtered = window.allRedReports.filter(r => r.status === 'reviewed');
+    filtered = reports.filter(r => r.status === 'reviewed');
   } else if (window.activeRedReportFilter === 'from_me') {
-    filtered = window.allRedReports.filter(r => r.reporterUid === userProfile?.uid);
+    filtered = reports.filter(r => r.reporterUid === userProfile?.uid);
   }
 
   if (filtered.length === 0) {
@@ -5943,7 +5962,7 @@ function renderUserDeposits(list) {
   const histEl = $('wHist');
   if (!histEl) return;
   
-  if (list.length === 0) {
+  if (!list || list.length === 0) {
     histEl.innerHTML = `
       <div class="p-6 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
         <i class="fas fa-receipt text-2xl mb-1.5"></i>
@@ -6657,7 +6676,7 @@ function renderGlobalMessages(list) {
 
   const currentUid = (userProfile || guestProfile)?.uid;
 
-  if (list.length === 0) {
+  if (!list || list.length === 0) {
     container.innerHTML = `
       <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6">
         <i class="fas fa-globe text-3xl mb-1"></i>
@@ -8537,20 +8556,21 @@ function listenToReferralsCount() {
 }
 
 function renderLeaderboardPodium() {
-  if (topPlayersList.length >= 1) {
-    const p1 = topPlayersList[0];
+  const players = topPlayersList || [];
+  if (players.length >= 1) {
+    const p1 = players[0];
     if ($('podium1Av')) $('podium1Av').src = p1.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1';
     if ($('podium1Name')) $('podium1Name').textContent = p1.name || 'Player 1';
     if ($('podium1Bal')) $('podium1Bal').textContent = (p1.balance || 0).toLocaleString() + ' AX';
   }
-  if (topPlayersList.length >= 2) {
-    const p2 = topPlayersList[1];
+  if (players.length >= 2) {
+    const p2 = players[1];
     if ($('podium2Av')) $('podium2Av').src = p2.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax2';
     if ($('podium2Name')) $('podium2Name').textContent = p2.name || 'Player 2';
     if ($('podium2Bal')) $('podium2Bal').textContent = (p2.balance || 0).toLocaleString() + ' AX';
   }
-  if (topPlayersList.length >= 3) {
-    const p3 = topPlayersList[2];
+  if (players.length >= 3) {
+    const p3 = players[2];
     if ($('podium3Av')) $('podium3Av').src = p3.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax3';
     if ($('podium3Name')) $('podium3Name').textContent = p3.name || 'Player 3';
     if ($('podium3Bal')) $('podium3Bal').textContent = (p3.balance || 0).toLocaleString() + ' AX';
@@ -9499,16 +9519,17 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
   const container = $('voiceRoomsGrid');
   if (!container) return;
 
+  const list = voiceRoomsList || [];
   const welcomeBanner = $('welcomeVoiceBanner');
   if (welcomeBanner) {
-    if (voiceRoomsList.length > 0) {
+    if (list.length > 0) {
       welcomeBanner.classList.add('hidden');
     } else {
       welcomeBanner.classList.remove('hidden');
     }
   }
 
-  const filtered = voiceRoomsList.filter(room => {
+  const filtered = list.filter(room => {
     const matchesGame = gameFilter === "All" || room.game === gameFilter;
     const matchesSearch = !searchVal || 
       room.name.toLowerCase().includes(searchVal) || 
