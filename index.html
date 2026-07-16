@@ -1934,41 +1934,89 @@ if (typeof tailwind !== 'undefined') {
 <!-- ==================== PREMIUM PLAN MODAL ==================== -->
 <div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-purple/10 border border-purple/20 rounded-full flex items-center justify-center text-purple text-lg"><i class="fas fa-crown"></i></div>
-      <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
+    <!-- Purchase View -->
+    <div id="prmPurchaseView" class="space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-purple/10 border border-purple/20 rounded-full flex items-center justify-center text-purple text-lg"><i class="fas fa-crown"></i></div>
+        <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
+      </div>
+
+      <!-- Premium Promo Video -->
+      <div class="relative overflow-hidden rounded-xl border border-purple/30 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
+        <video class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
+          <source src="premium.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
+      </div>
+      <ul class="space-y-2.5 text-xs text-t2 bg-card p-4 rounded-xl border border-bdr">
+        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Direct DM chat with other players</li>
+        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Custom Profile (Avatars & Bio)</li>
+        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Premium VIP profile badge</li>
+        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Priority support live queue</li>
+      </ul>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button id="prmWeekly" class="p-3 bg-card border border-purple/30 rounded-xl text-center flex flex-col items-center gap-1">
+          <span class="text-xs font-semibold text-white">Weekly Pass</span>
+          <span class="font-display text-lg font-bold text-purple">199 AX</span>
+          <span class="text-[9px] text-t3">7 Days VIP</span>
+        </button>
+        <button id="prmMonthly" class="p-3 bg-card border border-bdr rounded-xl text-center flex flex-col items-center gap-1">
+          <span class="text-xs font-semibold text-white">Monthly Pass</span>
+          <span class="font-display text-lg font-bold text-purple">399 AX</span>
+          <span class="text-[9px] text-t3">Best Value (30 days)</span>
+        </button>
+      </div>
+
+      <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
+      <button id="bClosePremium" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
     </div>
 
-    <!-- Premium Promo Video -->
-    <div class="relative overflow-hidden rounded-xl border border-purple/30 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
-      <video class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
-        <source src="premium.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
-    </div>
-    <ul class="space-y-2.5 text-xs text-t2 bg-card p-4 rounded-xl border border-bdr">
-      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Direct DM chat with other players</li>
-      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Custom Profile (Avatars & Bio)</li>
-      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Premium VIP profile badge</li>
-      <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Priority support live queue</li>
-    </ul>
+    <!-- Active Premium State View -->
+    <div id="prmActiveView" class="space-y-4 hidden text-center">
+      <!-- Success Header -->
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-14 h-14 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl shadow-lg shadow-purple-500/30 animate-pulse">
+          <i class="fas fa-crown"></i>
+        </div>
+        <h3 class="font-display text-xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent uppercase tracking-wider">
+          ArenaX Premium VIP
+        </h3>
+        <span class="px-2.5 py-0.5 text-[9px] font-black bg-purple/20 text-purple border border-purple-500/30 rounded uppercase tracking-widest">
+          Active Member
+        </span>
+      </div>
 
-    <div class="grid grid-cols-2 gap-3">
-      <button id="prmWeekly" class="p-3 bg-card border border-purple/30 rounded-xl text-center flex flex-col items-center gap-1">
-        <span class="text-xs font-semibold text-white">Weekly Pass</span>
-        <span class="font-display text-lg font-bold text-purple">199 AX</span>
-        <span class="text-[9px] text-t3">7 Days VIP</span>
+      <!-- Premium Video Looping -->
+      <div class="relative overflow-hidden rounded-xl border border-purple/40 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
+        <video id="prmActiveVideo" class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
+          <source src="premium.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
+      </div>
+
+      <!-- Stylish Thank You Text -->
+      <div class="bg-gradient-to-b from-purple-950/20 to-card/90 border border-purple-500/15 p-4 rounded-xl space-y-1 text-center">
+        <h4 class="text-xs font-black text-purple uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <i class="fas fa-heart text-pink-500 animate-pulse"></i> Thank You For Subscribing! <i class="fas fa-heart text-pink-500 animate-pulse"></i>
+        </h4>
+        <p class="text-[11px] text-t2 leading-relaxed">
+          Aapka bohot shukriya ArenaX Premium purchase karne ke liye! ❤️ Your premium VIP membership is fully active. Enjoy exclusive privileges, custom styles, and premium chat benefits!
+        </p>
+      </div>
+
+      <!-- Lottie flies animation -->
+      <div class="flex justify-center py-1 bg-black/10 rounded-xl border border-bdr/10">
+        <lottie-player src="pre.json" background="transparent" speed="1.2" style="width: 130px; height: 130px;" loop autoplay class="mx-auto"></lottie-player>
+      </div>
+
+      <!-- Close button -->
+      <button onclick="document.getElementById('mPremium').classList.add('hidden')" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition duration-150 shadow-md">
+        Close
       </button>
-      <button id="prmMonthly" class="p-3 bg-card border border-bdr rounded-xl text-center flex flex-col items-center gap-1">
-        <span class="text-xs font-semibold text-white">Monthly Pass</span>
-        <span class="font-display text-lg font-bold text-purple">399 AX</span>
-        <span class="text-[9px] text-t3">Best Value (30 days)</span>
-      </button>
     </div>
-
-    <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
-    <button id="bClosePremium" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
   </div>
 </div>
 
@@ -3384,6 +3432,29 @@ function boot() {
   }
   if (typeof initVoiceRoomsSystem === 'function') {
     initVoiceRoomsSystem();
+  }
+  syncPremiumModalState();
+}
+
+function syncPremiumModalState() {
+  const profile = userProfile || guestProfile;
+  const isPremium = profile ? !!profile.premium : false;
+  
+  const purchaseView = document.getElementById('prmPurchaseView');
+  const activeView = document.getElementById('prmActiveView');
+  const activeVideo = document.getElementById('prmActiveVideo');
+  
+  if (purchaseView && activeView) {
+    if (isPremium) {
+      purchaseView.classList.add('hidden');
+      activeView.classList.remove('hidden');
+      if (activeVideo) {
+        activeVideo.play().catch(err => console.log("Premium video playback error:", err));
+      }
+    } else {
+      purchaseView.classList.remove('hidden');
+      activeView.classList.add('hidden');
+    }
   }
 }
 
@@ -6490,7 +6561,8 @@ $('bBuyPremium').addEventListener('click', async () => {
         submittedAt: serverTimestamp()
       });
       
-      $('mPremium').classList.add('hidden');
+      userProfile.premium = true;
+      syncPremiumModalState();
       alert(`Congratulations! ArenaX Premium VIP activated. ${costCoins} AX Coins deducted. Access all benefits now! ✅`);
     } catch (err) {
       alert(err.message);
@@ -7785,7 +7857,18 @@ $('btnCustomize').addEventListener('click', () => {
 
 $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
 $('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
-$('btnPremium').addEventListener('click', () => $('mPremium').classList.remove('hidden'));
+$('btnPremium').addEventListener('click', () => {
+  syncPremiumModalState();
+  $('mPremium').classList.remove('hidden');
+});
+
+const bOpenPremium = document.getElementById('bOpenPremium');
+if (bOpenPremium) {
+  bOpenPremium.addEventListener('click', () => {
+    syncPremiumModalState();
+    $('mPremium').classList.remove('hidden');
+  });
+}
 
 // Topbar Menu Click Handler (Opens Menu Hub Drawer)
 $('bTopbarMenu').addEventListener('click', () => {
