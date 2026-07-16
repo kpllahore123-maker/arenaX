@@ -1266,10 +1266,10 @@ if (typeof tailwind !== 'undefined') {
 
         <!-- SECTION 4: WEEKLY FREE TOURNAMENT -->
         <div id="secWeeklyTour" class="bg-gradient-to-b from-red/15 to-card border border-red/40 rounded-2xl p-4 space-y-3.5 shadow-[0_0_15px_rgba(232,64,74,0.05)] relative overflow-hidden transition-all duration-300 hidden">
-          <span id="festWeeklyTourSlots" class="absolute top-4 right-4 bg-red text-white text-[8px] font-black px-2 py-0.5 rounded border border-red-400/20 uppercase tracking-wider">
+          <span id="festWeeklyTourSlots" class="absolute top-4 right-4 bg-red text-white text-[8px] font-black px-2 py-0.5 rounded border border-red-400/20 uppercase tracking-wider z-10">
             32 Players Max
           </span>
-          <div class="space-y-1">
+          <div class="space-y-1 relative z-10">
             <h3 id="festWeeklyTourName" class="font-display text-sm font-extrabold text-white tracking-wide flex items-center gap-1.5">
               <i class="fas fa-trophy text-gold"></i> Weekly Free Tournament
             </h3>
@@ -1277,7 +1277,7 @@ if (typeof tailwind !== 'undefined') {
           </div>
           
           <!-- Prize Pool -->
-          <div class="bg-black/30 border border-bdr/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-black/30 border border-bdr/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs relative z-10">
             <div class="flex items-center gap-2">
               <span class="w-6 h-6 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-[10px]"><i class="fas fa-trophy"></i></span>
               <div>
@@ -1309,14 +1309,14 @@ if (typeof tailwind !== 'undefined') {
           </div>
 
           <!-- Sunday Countdown -->
-          <div class="bg-black/25 border border-bdr/20 rounded-xl p-2.5 flex items-center justify-between text-xs">
+          <div class="bg-black/25 border border-bdr/20 rounded-xl p-2.5 flex items-center justify-between text-xs relative z-10">
             <span class="text-[9px] text-t2 font-bold uppercase tracking-wider">Next Sunday Match</span>
             <span class="font-mono text-[10px] font-black text-red uppercase tracking-wider flex items-center gap-1" id="weeklyTourCountdown">
               <i class="fas fa-hourglass-half"></i> 00h 00m 00s
             </span>
           </div>
 
-          <button id="btnRegisterWeeklyTour" class="w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer">
+          <button id="btnRegisterWeeklyTour" class="w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-lg shadow-red-500/10 flex items-center justify-center gap-1.5 cursor-pointer relative z-10">
             <i class="fas fa-check-circle"></i> Register Now
           </button>
         </div>
@@ -1795,13 +1795,21 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <img id="eventBannerImg" class="w-full h-full object-cover" alt="ArenaX Live Event" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop';" />
+      <video id="eventBannerImg" class="w-full h-full object-cover" autoplay loop muted playsinline>
+        <source src="cod.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
       <script>
         (function() {
-          var img = document.getElementById('eventBannerImg');
-          if (img) {
+          var video = document.getElementById('eventBannerImg');
+          if (video) {
             var basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
-            img.src = basePath + 'event_banner_1783187383925.jpg';
+            var source = video.querySelector('source');
+            if (source) {
+              source.src = basePath + 'code.mp4';
+              video.load();
+              video.play().catch(function(e) { console.log('Video autoplay:', e); });
+            }
           }
         })();
       </script>
@@ -8510,7 +8518,7 @@ function startLaunchFestTimers() {
       }
     }
 
-    // 3. Weekly Tournament Countdown (Until Sunday 8:00 PM PKT)
+    // 3. Weekly Tournament Countdown (dynamic date/time from the database)
     const getNextSunday8PM_PKT = () => {
       const pktNow = new Date(Date.now() + (5 * 60 * 60 * 1000));
       const nextSunday = new Date(pktNow);
@@ -8534,6 +8542,10 @@ function startLaunchFestTimers() {
       const cdText = `${days > 0 ? days + 'd ' : ''}${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
       if ($('weeklyTourCountdown')) {
         $('weeklyTourCountdown').innerHTML = `<i class="fas fa-hourglass-half"></i> ${cdText}`;
+      }
+    } else {
+      if ($('weeklyTourCountdown')) {
+        $('weeklyTourCountdown').innerHTML = `<i class="fas fa-play text-green animate-pulse"></i> Live Now`;
       }
     }
   }, 1000);
@@ -8958,12 +8970,12 @@ async function renderLaunchFestUI() {
           btnWeekly.innerHTML = `<i class="fas fa-hourglass-half"></i> Verification Pending...`;
         } else if (reg.status === 'rejected') {
           btnWeekly.disabled = false;
-          btnWeekly.className = "w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer";
+          btnWeekly.className = "w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-lg shadow-pink-500/10 flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-95";
           btnWeekly.innerHTML = `<i class="fas fa-exclamation-circle"></i> Registration Rejected (Re-apply)`;
         }
       } else {
         btnWeekly.disabled = false;
-        btnWeekly.className = "w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer";
+        btnWeekly.className = "w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-lg shadow-pink-500/10 flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-95";
         btnWeekly.innerHTML = `<i class="fas fa-check-circle"></i> Register Now`;
       }
     }
