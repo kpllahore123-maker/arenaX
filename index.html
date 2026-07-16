@@ -371,6 +371,12 @@ if (typeof tailwind !== 'undefined') {
       <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
+      <!-- PWA Download Button -->
+      <button id="btnDownloadApp" class="hidden items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-lg text-xs font-bold transition shadow-md active:scale-[0.98] cursor-pointer z-50">
+        <span class="sm:hidden">📲 Install</span>
+        <span class="hidden sm:inline">📲 Download App</span>
+      </button>
+
       <!-- Topbar Menu Button (Hamburger) -->
       <button id="bTopbarMenu" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Menu Hub">
         <i class="fas fa-bars"></i>
@@ -10675,6 +10681,123 @@ window.addEventListener('pagehide', () => {
 window.initVoiceRoomsSystem = initVoiceRoomsSystem;
 window.listenToVoiceRooms = listenToVoiceRooms;
 
+</script>
+
+<!-- iOS Install Tooltip -->
+<div id="iosInstallTooltip" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0a110d]/95 backdrop-blur-md border border-gold/30 p-4 rounded-xl shadow-2xl max-w-sm w-[90%] z-[200] hidden transition-all duration-300 transform scale-95 opacity-0">
+  <div class="flex items-start gap-3">
+    <div class="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center flex-shrink-0 text-lg">
+      <i class="fas fa-arrow-alt-circle-down animate-bounce"></i>
+    </div>
+    <div class="flex-1 space-y-1">
+      <div class="flex items-center justify-between">
+        <h4 class="font-display font-bold text-white text-xs uppercase tracking-wider">Install ArenaX</h4>
+        <button id="closeIosTooltip" class="text-t2 hover:text-white transition text-xs p-1 cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <p class="text-[11px] text-t2 leading-relaxed">
+        Tap the <strong class="text-white flex inline-flex items-center gap-1 mx-0.5 bg-[#122018] px-1 py-0.5 rounded border border-bdr text-[10px]"><i class="fas fa-share-square text-blue-400"></i> Share</strong> button on your browser tab bar, then scroll down and select <strong class="text-gold">Add to Home Screen</strong>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- PWA Install Handling -->
+<script>
+  (function() {
+    let deferredPrompt = null;
+
+    function isIosSafari() {
+      const ua = window.navigator.userAgent;
+      const isIPad = !!ua.match(/iPad/i);
+      const isIPhone = !!ua.match(/iPhone/i);
+      const isIOS = isIPad || isIPhone;
+      const isWebkit = !!ua.match(/WebKit/i);
+      const isSafari = isWebkit && !ua.match(/CriOS/i) && !ua.match(/FxiOS/i) && !ua.match(/OPiOS/i) && !ua.match(/mercury/i);
+      // Also check if app is not already running in standalone mode (i.e. installed)
+      const isStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
+      return isIOS && isSafari && !isStandalone;
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Show the button
+      const btn = document.getElementById('btnDownloadApp');
+      if (btn) {
+        btn.style.setProperty('display', 'inline-flex', 'important');
+      }
+    });
+
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('ArenaX: App was successfully installed!');
+      const btn = document.getElementById('btnDownloadApp');
+      if (btn) {
+        btn.style.setProperty('display', 'none', 'important');
+      }
+      const tooltip = document.getElementById('iosInstallTooltip');
+      if (tooltip) {
+        tooltip.classList.remove('opacity-100', 'scale-100');
+        tooltip.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => tooltip.classList.add('hidden'), 300);
+      }
+    });
+
+    // Handle button display & interactions when DOM is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('btnDownloadApp');
+      if (btn) {
+        if (isIosSafari()) {
+          btn.style.setProperty('display', 'inline-flex', 'important');
+        }
+
+        btn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            // Show the prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`ArenaX: User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+            btn.style.setProperty('display', 'none', 'important');
+          } else if (isIosSafari()) {
+            // Toggle the iOS tooltip/banner
+            const tooltip = document.getElementById('iosInstallTooltip');
+            if (tooltip) {
+              if (tooltip.classList.contains('hidden')) {
+                tooltip.classList.remove('hidden');
+                // Allow layout repaint before animation
+                setTimeout(() => {
+                  tooltip.classList.remove('opacity-0', 'scale-95');
+                  tooltip.classList.add('opacity-100', 'scale-100');
+                }, 10);
+              } else {
+                tooltip.classList.remove('opacity-100', 'scale-100');
+                tooltip.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => tooltip.classList.add('hidden'), 300);
+              }
+            }
+          }
+        });
+      }
+
+      // Close iOS Tooltip handler
+      const closeBtn = document.getElementById('closeIosTooltip');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          const tooltip = document.getElementById('iosInstallTooltip');
+          if (tooltip) {
+            tooltip.classList.remove('opacity-100', 'scale-100');
+            tooltip.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => tooltip.classList.add('hidden'), 300);
+          }
+        });
+      }
+    });
+  })();
 </script>
 </body>
 </html>
