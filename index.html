@@ -254,7 +254,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
       <!-- Lottie Animation Loader placed in the loading progress area --> 
-       <lottie-player src="public/loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -272,7 +272,7 @@ if (typeof tailwind !== 'undefined') {
     <!-- Pitch graphic markings in background with low opacity -->
     <div class="absolute inset-10 border border-emerald-500/5 rounded-3xl pointer-events-none select-none"></div>
   </div>
-  <div class="relative w-full max-w-[420px] space-y-6">
+  <div class="relative w-full max-w-[400px] space-y-6">
     <div class="text-center">
       <div class="w-24 h-24 mx-auto rounded-3xl overflow-hidden shadow-[0_0_35px_rgba(240,192,64,0.3)] border border-gold/20 bg-neutral-900 flex items-center justify-center">
         <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -281,26 +281,35 @@ if (typeof tailwind !== 'undefined') {
       <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase mt-1 font-semibold">Compete · Rise · Dominate</p>
     </div>
 
+    <!-- Main custom styled form container -->
     <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-5">
-      <div>
-        <h2 class="font-display text-xl font-bold">Enter the Arena</h2>
-        <p class="text-xs text-t2">Choose how you want to continue</p>
-      </div>
-
+      <p class="text-center font-display text-2xl font-extrabold text-white tracking-wide">Welcome back</p>
+      
       <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
 
-      <!-- Terms & Conditions and Privacy Policy agreement -->
-      <div class="flex items-start gap-2.5 p-3 bg-card border border-bdr rounded-lg">
-        <input id="termsCheckbox" type="checkbox" checked class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
-        <label for="termsCheckbox" class="text-[11px] text-t2 leading-snug cursor-pointer select-none">
-          I agree to the <span class="text-white font-medium hover:underline cursor-pointer" id="lnkTerms">Terms & Conditions</span> and <span class="text-white font-medium hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span> of ArenaX.
-        </label>
+      <!-- Main Login/Register Form -->
+      <div class="space-y-4">
+        <input type="email" id="iEmail" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Email">
+        <input type="password" id="iPass" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Password">
+        
+        <p class="text-right">
+          <span id="lnkForgot" class="cursor-pointer text-[10px] text-t3 hover:text-white font-bold uppercase tracking-wider underline">Forgot Password?</span>
+        </p>
+
+        <!-- Terms & Conditions and Privacy Policy agreement -->
+        <div class="flex items-start gap-2.5 p-3 bg-[#0d1612] border border-bdr/40 rounded-xl">
+          <input id="termsCheckbox" type="checkbox" checked class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
+          <label for="termsCheckbox" class="text-[10px] text-t2 leading-normal cursor-pointer select-none">
+            I agree to the <span class="text-white font-semibold hover:underline cursor-pointer" id="lnkTerms">Terms</span> & <span class="text-white font-semibold hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span>.
+          </label>
+        </div>
+
+        <button id="bEmail" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:brightness-110 text-white font-bold rounded-full text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/10">Log in</button>
       </div>
 
-      <button id="bGoogle" class="w-full py-3 bg-white hover:bg-neutral-100 text-neutral-800 rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
-        <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google"/>
-        Continue with Google
-      </button>
+      <p class="text-center text-[10px] text-t3 font-medium uppercase tracking-wider">
+        Don't have an account? <span id="lnkSignup" class="text-emerald-400 font-bold underline cursor-pointer">Sign up</span>
+      </p>
 
       <div class="flex items-center gap-3 text-xs text-t3">
         <div class="flex-1 h-[1px] bg-bdr"></div>
@@ -309,22 +318,27 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <div class="space-y-3">
-        <input type="email" id="iEmail" placeholder="Email address" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-gold transition text-white"/>
-        <input type="password" id="iPass" placeholder="Password (min 6 chars)" class="w-full bg-card border border-bdr rounded-lg px-4 py-2.5 text-sm outline-none focus:border-gold transition text-white"/>
-        <button id="bEmail" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]">
-          <i class="fas fa-envelope"></i> Continue with Email
+        <!-- Google Login -->
+        <div id="bGoogle" class="w-full py-3 bg-neutral-900 border border-bdr hover:border-white/20 text-white rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2.5 transition active:scale-[0.98] cursor-pointer shadow-md">
+          <svg stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" x="0px" y="0px" class="w-4.5 h-4.5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
+	c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24
+	c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657
+	C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36
+	c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571
+	c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+          </svg>
+          <span>Log in with Google</span>
+        </div>
+
+        <!-- Guest Login -->
+        <button id="bGuest" class="w-full py-3 bg-transparent hover:bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2.5 transition active:scale-[0.98] cursor-pointer">
+          <i class="fas fa-user-secret"></i> Continue as Guest
         </button>
       </div>
-
-      <div class="flex items-center gap-3 text-xs text-t3">
-        <div class="flex-1 h-[1px] bg-bdr"></div>
-        <span>or</span>
-        <div class="flex-1 h-[1px] bg-bdr"></div>
-      </div>
-
-      <button id="bGuest" class="w-full py-3 bg-transparent hover:border-gold hover:text-gold border border-bdr text-t2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition">
-        <i class="fas fa-user-secret"></i> Continue as Guest
-      </button>
     </div>
   </div>
 </div>
@@ -2899,7 +2913,7 @@ if (typeof tailwind !== 'undefined') {
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -3772,6 +3786,29 @@ $('bEmail').addEventListener('click', async () => {
       $('loginErr').classList.remove('hidden');
     }
   }
+});
+
+// Forgot Password Handler
+$('lnkForgot').addEventListener('click', async () => {
+  const em = $('iEmail').value.trim();
+  if (!em) {
+    $('loginErr').textContent = '⚠️ Please enter your email address first to reset password.';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, em);
+    alert('✉️ Password reset link has been sent to your email address!');
+    $('loginErr').classList.add('hidden');
+  } catch (err) {
+    $('loginErr').textContent = err.message;
+    $('loginErr').classList.remove('hidden');
+  }
+});
+
+// Sign Up click helper
+$('lnkSignup').addEventListener('click', () => {
+  alert('✨ Account banana bohot asan hai! Bas upar apna Email aur Password enter karein aur login button dabayein, aapka account khud register hojayega.');
 });
 
 // Guest Sign In Flow
