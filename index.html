@@ -253,8 +253,8 @@ if (typeof tailwind !== 'undefined') {
       <p class="text-[11px] text-emerald-500 tracking-[3px] uppercase font-semibold">Compete · Rise · Dominate</p>
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
-     <!-- Lottie Animation Loader placed in the loading progress area --> 
-      <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+      <!-- Lottie Animation Loader placed in the loading progress area --> 
+       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -1923,6 +1923,15 @@ if (typeof tailwind !== 'undefined') {
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-purple/10 border border-purple/20 rounded-full flex items-center justify-center text-purple text-lg"><i class="fas fa-crown"></i></div>
       <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
+    </div>
+
+    <!-- Premium Promo Video -->
+    <div class="relative overflow-hidden rounded-xl border border-purple/30 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
+      <video class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
+        <source src="premium.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
     </div>
     <ul class="space-y-2.5 text-xs text-t2 bg-card p-4 rounded-xl border border-bdr">
       <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Direct DM chat with other players</li>
