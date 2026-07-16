@@ -229,6 +229,165 @@ if (typeof tailwind !== 'undefined') {
   50% { transform: translateX(110%); }
   100% { transform: translateX(-110%); }
 }
+
+/* ==================== PREMIUM CARD CUSTOM STYLES ==================== */
+.prm-card {
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 0.85rem;
+  width: 100%;
+  height: auto;
+  background-color: rgb(122, 48, 143);
+  background-image: radial-gradient(
+      circle at 0% 0%,
+      rgb(37, 7, 44) 15%,
+      rgba(0, 0, 0, 0) 75%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgb(25, 2, 31, 0.9) 15%,
+      rgba(0, 0, 0, 0) 150%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(24, 8, 28, 0) 0%,
+      rgb(122, 48, 143) 50%,
+      rgba(24, 8, 28, 0) 100%
+    );
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.prm-card::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  background-color: rgb(122, 48, 143);
+  background-image: linear-gradient(
+    0deg,
+    rgba(118, 42, 180, 1) 0%,
+    rgb(199, 95, 228) 75%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 1px 5px 3px rgb(199, 95, 228), 0 0 30px 5px rgb(199, 95, 228);
+}
+
+.prm-card .prm-card-title {
+  font-size: 0.85rem;
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prm-card .prm-card-pricing {
+  font-size: 1.4rem;
+  color: white;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+
+.prm-card .prm-card-pricing .prm-card-pricing-time,
+.prm-card .prm-card-sub-title {
+  font-size: 0.65rem;
+  color: rgb(216, 180, 254);
+  font-weight: 500;
+}
+
+.prm-card .prm-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  list-style: none;
+  margin-top: 0.4rem;
+  padding: 0;
+}
+
+.prm-card .prm-card-list .prm-card-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.prm-card .prm-card-list .prm-card-list-item .prm-card-check {
+  font-size: 0.8rem;
+  color: rgb(216, 180, 254);
+  font-weight: 900;
+}
+
+.prm-card .prm-card-button {
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  width: 100%;
+  height: fit-content;
+  background-color: rgb(122, 48, 143);
+  font-size: 0.7rem;
+  color: white;
+  border: none;
+  border-radius: 0.35rem;
+  box-shadow: 0px 0px 2px 1px rgb(122, 48, 143);
+  transition: all 0.3s cubic-bezier(1, 0, 0, 1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.prm-card .prm-card-button .prm-card-text-button {
+  position: relative;
+  z-index: 10;
+}
+
+.prm-card .prm-card-button::before,
+.prm-card .prm-card-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transition: all 0.3s ease-in-out;
+}
+.prm-card .prm-card-button::before {
+  left: 0;
+  background-image: radial-gradient(
+    circle at 0% 45%,
+    rgba(16, 5, 36, 1) 19%,
+    rgba(16, 5, 36, 0.26) 46%,
+    rgba(16, 5, 36, 0) 100%
+  );
+}
+.prm-card .prm-card-button::after {
+  right: 0;
+  background-image: radial-gradient(
+    circle at 100% 45%,
+    rgba(16, 5, 36, 1) 19%,
+    rgba(16, 5, 36, 0.26) 46%,
+    rgba(16, 5, 36, 0) 100%
+  );
+}
+
+.prm-card:hover .prm-card-button {
+  box-shadow: 0px 0px 15px 0 rgb(122, 48, 143);
+}
+
+.prm-card:hover .prm-card-button::before,
+.prm-card:hover .prm-card-button::after {
+  width: 0;
+  opacity: 0;
+}
 </style>
 
 </head>
@@ -383,7 +542,7 @@ if (typeof tailwind !== 'undefined') {
   <!-- TOPBAR -->
   <nav class="h-[56px] bg-panel border-b border-bdr flex items-center justify-between px-4 flex-shrink-0 z-50">
     <div class="font-display text-xl font-bold tracking-wider text-white flex items-center">
-      <img src="file_00000000f43072089000286c3e607398.png" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
+      <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
       <!-- PWA Download Button -->
@@ -1948,7 +2107,7 @@ if (typeof tailwind !== 'undefined') {
 
 <!-- ==================== PREMIUM PLAN MODAL ==================== -->
 <div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[540px] w-full space-y-4">
     <!-- Purchase View -->
     <div id="prmPurchaseView" class="space-y-4">
       <div class="flex items-center gap-3">
@@ -1964,24 +2123,43 @@ if (typeof tailwind !== 'undefined') {
         </video>
         <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
       </div>
-      <ul class="space-y-2.5 text-xs text-t2 bg-card p-4 rounded-xl border border-bdr">
-        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Direct DM chat with other players</li>
-        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Unlocks Custom Profile (Avatars & Bio)</li>
-        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Premium VIP profile badge</li>
-        <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-green"></i> Priority support live queue</li>
-      </ul>
-
+      <!-- Premium Cards Grid -->
       <div class="grid grid-cols-2 gap-3">
-        <button id="prmWeekly" class="p-3 bg-card border border-purple/30 rounded-xl text-center flex flex-col items-center gap-1">
-          <span class="text-xs font-semibold text-white">Weekly Pass</span>
-          <span class="font-display text-lg font-bold text-purple">199 AX</span>
-          <span class="text-[9px] text-t3">7 Days VIP</span>
-        </button>
-        <button id="prmMonthly" class="p-3 bg-card border border-bdr rounded-xl text-center flex flex-col items-center gap-1">
-          <span class="text-xs font-semibold text-white">Monthly Pass</span>
-          <span class="font-display text-lg font-bold text-purple">399 AX</span>
-          <span class="text-[9px] text-t3">Best Value (30 days)</span>
-        </button>
+        <!-- Weekly Card: AX Pro -->
+        <div id="prmWeekly" class="prm-card border-2 border-purple cursor-pointer relative">
+          <span class="prm-card-title">AX Pro</span>
+          <p class="prm-card-pricing">199 AX <span class="prm-card-pricing-time">/ weekly</span></p>
+          <span class="prm-card-sub-title">Everything on Basic plus:
+            <ul class="prm-card-list">
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
+            </ul>
+            <div class="prm-card-button">
+              <span class="prm-card-text-button">Select Weekly</span>
+            </div>
+          </span>
+        </div>
+
+        <!-- Monthly Card: AX Pro Ultra -->
+        <div id="prmMonthly" class="prm-card border-2 border-bdr cursor-pointer relative">
+          <span class="prm-card-title">AX Pro Ultra</span>
+          <p class="prm-card-pricing">399 AX <span class="prm-card-pricing-time">/ monthly</span></p>
+          <span class="prm-card-sub-title">Everything on Basic plus:
+            <ul class="prm-card-list">
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
+              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
+            </ul>
+            <div class="prm-card-button">
+              <span class="prm-card-text-button">Select Monthly</span>
+            </div>
+          </span>
+        </div>
       </div>
 
       <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
