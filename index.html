@@ -283,12 +283,13 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- Main custom styled form container -->
     <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-5">
-      <p class="text-center font-display text-2xl font-extrabold text-white tracking-wide">Welcome back</p>
+      <p id="loginTitle" class="text-center font-display text-2xl font-extrabold text-white tracking-wide">Welcome back</p>
       
       <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
 
       <!-- Main Login/Register Form -->
       <div class="space-y-4">
+        <input type="text" id="iUsername" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3 hidden" placeholder="Username">
         <input type="email" id="iEmail" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Email">
         <input type="password" id="iPass" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Password">
         
@@ -308,7 +309,7 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <p class="text-center text-[10px] text-t3 font-medium uppercase tracking-wider">
-        Don't have an account? <span id="lnkSignup" class="text-emerald-400 font-bold underline cursor-pointer">Sign up</span>
+        <span id="txtTogglePrompt">Don't have an account?</span> <span id="lnkSignup" class="text-emerald-400 font-bold underline cursor-pointer">Sign up</span>
       </p>
 
       <div class="flex items-center gap-3 text-xs text-t3">
@@ -3745,44 +3746,91 @@ $('bGoogle').addEventListener('click', async () => {
   }
 });
 
+let currentLoginMode = 'login';
+
+$('lnkSignup').addEventListener('click', () => {
+  if (currentLoginMode === 'login') {
+    currentLoginMode = 'signup';
+    $('loginTitle').textContent = 'Create Account';
+    $('iUsername').classList.remove('hidden');
+    $('bEmail').textContent = 'Sign up';
+    $('lnkForgot').classList.add('hidden');
+    $('txtTogglePrompt').textContent = 'Have an account?';
+    $('lnkSignup').textContent = 'Sign in';
+    $('loginErr').classList.add('hidden');
+  } else {
+    currentLoginMode = 'login';
+    $('loginTitle').textContent = 'Welcome back';
+    $('iUsername').classList.add('hidden');
+    $('bEmail').textContent = 'Log in';
+    $('lnkForgot').classList.remove('hidden');
+    $('txtTogglePrompt').textContent = "Don't have an account?";
+    $('lnkSignup').textContent = 'Sign up';
+    $('loginErr').classList.add('hidden');
+  }
+});
+
 $('bEmail').addEventListener('click', async () => {
   if (!$('termsCheckbox').checked) {
     $('loginErr').textContent = '⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!';
     $('loginErr').classList.remove('hidden');
     return;
   }
+  
   const em = $('iEmail').value.trim();
   const pw = $('iPass').value.trim();
-  if (!em || !pw) {
-    $('loginErr').textContent = 'Please enter email and password.';
-    $('loginErr').classList.remove('hidden');
-    return;
-  }
-  if (pw.length < 6) {
-    $('loginErr').textContent = 'Password must be at least 6 characters.';
-    $('loginErr').classList.remove('hidden');
-    return;
-  }
 
-  $('loginErr').classList.add('hidden');
-  try {
-    await signInWithEmailAndPassword(auth, em, pw);
-  } catch (err) {
-    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, em, pw);
-        const dName = em.split('@')[0];
-        await updateProfile(cred.user, { displayName: dName });
-      } catch (signUpErr) {
-        if (signUpErr.code === 'auth/email-already-in-use') {
-          $('loginErr').textContent = '⚠️ Incorrect password for this email address. Please try again.';
-        } else {
-          $('loginErr').textContent = signUpErr.message;
-        }
-        $('loginErr').classList.remove('hidden');
+  if (currentLoginMode === 'signup') {
+    const username = $('iUsername').value.trim();
+    if (!username) {
+      $('loginErr').textContent = 'Please enter a username.';
+      $('loginErr').classList.remove('hidden');
+      return;
+    }
+    if (!em || !pw) {
+      $('loginErr').textContent = 'Please enter email and password.';
+      $('loginErr').classList.remove('hidden');
+      return;
+    }
+    if (pw.length < 6) {
+      $('loginErr').textContent = 'Password must be at least 6 characters.';
+      $('loginErr').classList.remove('hidden');
+      return;
+    }
+
+    $('loginErr').classList.add('hidden');
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, em, pw);
+      await updateProfile(cred.user, { displayName: username });
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') {
+        $('loginErr').textContent = '⚠️ This email address is already registered. Please sign in.';
+      } else {
+        $('loginErr').textContent = err.message;
       }
-    } else {
-      $('loginErr').textContent = err.message;
+      $('loginErr').classList.remove('hidden');
+    }
+  } else {
+    if (!em || !pw) {
+      $('loginErr').textContent = 'Please enter email and password.';
+      $('loginErr').classList.remove('hidden');
+      return;
+    }
+    if (pw.length < 6) {
+      $('loginErr').textContent = 'Password must be at least 6 characters.';
+      $('loginErr').classList.remove('hidden');
+      return;
+    }
+
+    $('loginErr').classList.add('hidden');
+    try {
+      await signInWithEmailAndPassword(auth, em, pw);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        $('loginErr').textContent = '⚠️ Incorrect email or password. Please try again or sign up!';
+      } else {
+        $('loginErr').textContent = err.message;
+      }
       $('loginErr').classList.remove('hidden');
     }
   }
@@ -3804,11 +3852,6 @@ $('lnkForgot').addEventListener('click', async () => {
     $('loginErr').textContent = err.message;
     $('loginErr').classList.remove('hidden');
   }
-});
-
-// Sign Up click helper
-$('lnkSignup').addEventListener('click', () => {
-  alert('✨ Account banana bohot asan hai! Bas upar apna Email aur Password enter karein aur login button dabayein, aapka account khud register hojayega.');
 });
 
 // Guest Sign In Flow
