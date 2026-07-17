@@ -123,6 +123,10 @@ tailwind.config = {
         <i class="fas fa-flag w-4 text-center"></i> Hack Reports <span id="repOpenCount" class="bg-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden">0</span>
       </button>
 
+      <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Submissions">
+        <i class="fas fa-video w-4 text-center"></i> Promo Submissions <span id="subPendingCount" class="bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-auto hidden font-bold">0</span>
+      </button>
+
       <div class="text-[10px] text-t3 uppercase font-bold tracking-wider px-5 py-2 pt-4">Customer Channels</div>
 
       <button class="ni w-full text-left px-5 py-2.5 text-xs font-semibold flex items-center gap-3 transition border-l-4 border-transparent" data-p="Support">
@@ -616,6 +620,56 @@ tailwind.config = {
         </div>
       </section>
 
+      <!-- ── PROMO VIDEO SUBMISSIONS REVIEW PAGE ── -->
+      <section id="pSubmissions" class="page space-y-4 hidden">
+        <div class="p-6 bg-[#111422] border border-orange-500/20 rounded-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full filter blur-xl"></div>
+          <div class="space-y-1 relative z-10">
+            <h3 class="font-display text-lg font-black text-orange-400 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-scroll"></i> Video Submission Event Review Panel</h3>
+            <p class="text-xs text-t2 leading-relaxed max-w-[800px]">Review player submitted videos promoting ArenaX on social handles. Approve submissions with appropriate tiers, reward coins, activate VIP Premium durations, and award exclusive Ninja profile badges.</p>
+          </div>
+          <div class="shrink-0 flex items-center gap-2 bg-black/40 px-3 py-2 rounded-xl border border-bdr">
+            <span class="text-xs text-t3 uppercase font-bold tracking-wider">Pending Tasks</span>
+            <span id="subPendingBadge" class="bg-orange-500 text-white text-xs font-mono font-black px-2.5 py-1 rounded-md animate-pulse">0 Pending</span>
+          </div>
+        </div>
+
+        <div class="bg-card border border-bdr rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-bdr bg-panel/30 flex items-center justify-between">
+            <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">All Video Submissions Log</h4>
+            <div class="flex items-center gap-2">
+              <select id="subFilterStatus" class="bg-bg border border-bdr rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-orange-500 font-semibold">
+                <option value="all">Show All Submissions</option>
+                <option value="pending" selected>Show Pending Review</option>
+                <option value="approved">Show Approved</option>
+                <option value="rejected">Show Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto min-h-[300px]">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-bg border-b border-bdr text-t3 font-bold uppercase tracking-wider text-[9px]">
+                  <th class="p-4">Submitter Profile</th>
+                  <th class="p-4">Platform</th>
+                  <th class="p-4">Video URL link</th>
+                  <th class="p-4">Date Submitted</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Award/Reason</th>
+                  <th class="p-4 text-right">Actions Panel</th>
+                </tr>
+              </thead>
+              <tbody id="adminSubmissionsList" class="divide-y divide-bdr/30">
+                <tr>
+                  <td colspan="7" class="p-8 text-center text-t3 font-semibold animate-pulse">Loading submissions stream from scroll...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
 </div>
@@ -1025,7 +1079,7 @@ tailwind.config = {
 
 <!-- ==================== STAFF NOTIFICATION MODAL ==================== -->
 <div id="mNotif" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[250] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[460px] w-full space-y-4 shadow-2xl animate-fade-in">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-lg"><i class="fas fa-bell"></i></div>
       <div>
@@ -1043,11 +1097,53 @@ tailwind.config = {
         <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Message Body *</label>
         <textarea id="notifBody" rows="4" placeholder="Type your custom notification message here..." class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-t1 outline-none focus:border-blue-500 resize-none"></textarea>
       </div>
+      
+      <!-- FCM Browser Push Section -->
+      <div class="border-t border-bdr/60 pt-3 space-y-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="notifSendFcm" type="checkbox" class="accent-blue-500 w-4 h-4 rounded"/>
+          <span class="text-xs text-white font-bold">Also send Browser Push Notification (FCM)</span>
+        </label>
+        
+        <div id="fcmConfigArea" class="space-y-2.5 bg-card border border-bdr/60 rounded-xl p-3.5 hidden">
+          <div class="flex items-center justify-between text-[10px] text-t3 font-mono font-bold uppercase">
+            <span>FCM Delivery Channel</span>
+            <span id="fcmTokenStatus" class="text-red">Not Registered ❌</span>
+          </div>
+
+          <!-- Recipient FCM Token display box -->
+          <div id="fcmTokenDisplayContainer" class="hidden space-y-1 bg-[#0a0d16] border border-bdr/40 rounded-lg p-2">
+            <div class="flex justify-between items-center text-[9px] uppercase font-bold text-t2">
+              <span>Recipient FCM Token</span>
+              <button id="btnCopyRecipientToken" type="button" class="text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer transition">
+                <i class="fas fa-copy"></i> Copy Token
+              </button>
+            </div>
+            <textarea id="fcmRecipientToken" readonly class="w-full bg-transparent text-[10px] text-t2 font-mono outline-none resize-none h-12 cursor-text select-all leading-tight border-none p-0 focus:ring-0" placeholder="No token registered"></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-t2 mb-1 flex justify-between">
+              <span>Firebase FCM Legacy Server Key</span>
+              <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-400 hover:underline">Find in Firebase Console <i class="fas fa-external-link-alt text-[8px]"></i></a>
+            </label>
+            <div class="relative">
+              <input id="fcmServerKey" type="password" placeholder="AAAA..." class="w-full bg-[#0a0d16] border border-bdr rounded-lg pl-3 pr-10 py-2 text-xs outline-none focus:border-blue-500 text-white font-mono"/>
+              <button id="toggleFcmKeyVisible" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-t3 hover:text-t2 text-xs">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+            <p class="text-[9px] text-t3 mt-1 leading-relaxed">
+              Required for sending browser notifications. Saved in your browser's local storage for security.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button id="bCloseNotifModal" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
-      <button id="bSendNotif" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition">Send Notification</button>
+      <button id="bCloseNotifModal" class="flex-1 py-2.5 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
+      <button id="bSendNotif" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition">Send Notification</button>
     </div>
   </div>
 </div>
@@ -1320,6 +1416,27 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, increment, where, arrayUnion, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+// Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
+let localMemoryStorage = {};
+let storageAccessor;
+try {
+  const testKey = '__storage_test__';
+  window.localStorage.setItem(testKey, testKey);
+  window.localStorage.removeItem(testKey);
+  storageAccessor = window.localStorage;
+} catch (e) {
+  console.warn("Window localStorage is blocked or throws an error. Shadowing with in-memory storage fallback.");
+  storageAccessor = {
+    getItem: (key) => (key in localMemoryStorage ? localMemoryStorage[key] : null),
+    setItem: (key, val) => { localMemoryStorage[key] = String(val); },
+    removeItem: (key) => { delete localMemoryStorage[key]; },
+    clear: () => { localMemoryStorage = {}; },
+    key: (i) => Object.keys(localMemoryStorage)[i] || null,
+    get length() { return Object.keys(localMemoryStorage).length; }
+  };
+}
+const localStorage = storageAccessor;
+
 const firebaseConfig = {
   apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
   authDomain: "arenax-c1586.firebaseapp.com",
@@ -1349,6 +1466,8 @@ let adminLogs = [];
 let chatMessages = [];
 let chatReports = [];
 let muteTargetUser = null;
+let submissions = [];
+let submissionsFilter = 'pending';
 
 let activePage = 'Dash';
 let banTargetUser = null;
@@ -1408,7 +1527,8 @@ function switchPage(page) {
                                  page === 'Reports' ? 'Violation Cheat Reports logs' :
                                  page === 'Deposits' ? 'Verify Deposits Queue' :
                                  page === 'Super' ? 'Super Admin Audit Control' :
-                                 page === 'GlobalChat' ? 'Global Chat Spectator & Mutes' : 'Customer Support Chat Channels';
+                                 page === 'GlobalChat' ? 'Global Chat Spectator & Mutes' :
+                                 page === 'Submissions' ? 'Verify Social Promo Videos' : 'Customer Support Chat Channels';
 }
 window.switchPage = switchPage;
 
@@ -1742,6 +1862,33 @@ function loadRealtimeDatabase() {
   }, (err) => {
     console.warn("Failed to listen to chat reports:", err);
   });
+
+  // 10. Listen Video Submissions
+  const qSubmissions = query(collection(db, 'video_submissions'));
+  onSnapshot(qSubmissions, (snap) => {
+    submissions = [];
+    snap.forEach(d => submissions.push({ id: d.id, ...d.data() }));
+    
+    // Sort in memory by submittedAt desc
+    submissions.sort((a, b) => {
+      const ta = a.submittedAt?.seconds || 0;
+      const tb = b.submittedAt?.seconds || 0;
+      return tb - ta;
+    });
+
+    const pendings = submissions.filter(s => s.status === 'pending');
+    $('subPendingBadge').textContent = `${pendings.length} Pending`;
+    if (pendings.length > 0) {
+      $('subPendingCount').textContent = pendings.length;
+      $('subPendingCount').classList.remove('hidden');
+    } else {
+      $('subPendingCount').classList.add('hidden');
+    }
+
+    renderSubmissions();
+  }, (err) => {
+    console.warn("Failed to listen to video submissions:", err);
+  });
 }
 
 // ── SUPER ADMIN DASHBOARD LOGIC ──
@@ -1954,9 +2101,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── RENDER RECENT REGS DASHBOARD ──
 function renderRecentRegistrations() {
   const container = $('dashRecentRegs');
+  if (!container) return;
   container.innerHTML = '';
   
-  const pendings = registrations.filter(r => r.status === 'pending').slice(0, 4);
+  const list = registrations || [];
+  const pendings = list.filter(r => r.status === 'pending').slice(0, 4);
   if (pendings.length === 0) {
     container.innerHTML = `<tr><td colSpan="5" class="p-4 text-center text-t3 font-medium">No pending registration slots check requested.</td></tr>`;
     return;
@@ -1988,7 +2137,8 @@ function renderDeposits() {
   if (!container) return;
   container.innerHTML = '';
 
-  const filtered = deposits.filter(d => {
+  const list = deposits || [];
+  const filtered = list.filter(d => {
     if (depositFilter === 'all') return true;
     return d.status === depositFilter;
   });
@@ -2178,14 +2328,16 @@ document.querySelectorAll('.ufb').forEach(btn => {
 
 function renderUsers() {
   const container = $('userTableBody');
+  if (!container) return;
   container.innerHTML = '';
 
   const q = $('userSearchIn').value.toLowerCase();
-  const filtered = users.filter(u => {
+  const list = users || [];
+  const filtered = list.filter(u => {
     if (userFilter === 'premium' && !u.premium) return false;
     if (userFilter === 'banned' && !u.banned) return false;
     if (q) {
-      return u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q) || (u.email && u.email.toLowerCase().includes(q));
+      return (u.name && u.name.toLowerCase().includes(q)) || (u.handle && u.handle.toLowerCase().includes(q)) || (u.email && u.email.toLowerCase().includes(q));
     }
     return true;
   });
@@ -2213,7 +2365,18 @@ function renderUsers() {
           <img src="${u.av}" class="w-8 h-8 rounded-full border border-bdr flex-shrink-0"/>
           <div>
             <div class="font-bold text-white text-xs">${u.name}</div>
-            <div class="text-[9px] text-t3 font-mono">${u.handle}</div>
+            <div class="text-[9px] text-t3 font-mono flex items-center gap-1.5 mt-0.5">
+              <span>${u.handle}</span>
+              ${u.fcmToken ? `
+                <span class="inline-flex items-center gap-1 px-1 bg-green-500/15 text-green-400 border border-green-500/20 text-[8px] font-bold rounded" title="FCM Token: ${u.fcmToken.substring(0, 10)}...">
+                  <i class="fas fa-mobile-alt text-[7px]"></i> PUSH
+                </span>
+              ` : `
+                <span class="inline-flex items-center gap-1 px-1 bg-red-500/10 text-red-400/80 border border-red-500/20 text-[8px] font-bold rounded">
+                  <i class="fas fa-mobile-alt text-[7px] opacity-40"></i> NO PUSH
+                </span>
+              `}
+            </div>
           </div>
         </div>
       </td>
@@ -2853,22 +3016,116 @@ if (adminChatForm) {
 let notifTargetType = 'single';
 let notifTargetUser = null;
 
+// Send notification via FCM Legacy API
+async function sendFCMNotification(serverKey, tokens, title, body) {
+  if (!tokens || tokens.length === 0) return { success: true, count: 0 };
+  
+  // Clean empty or invalid tokens
+  const activeTokens = tokens.filter(t => t && t.trim() !== '');
+  if (activeTokens.length === 0) return { success: true, count: 0 };
+
+  console.log("FCM: Sending notification to", activeTokens.length, "tokens...");
+
+  // Send to up to 1000 tokens using legacy registration_ids
+  const batchSize = 1000;
+  for (let i = 0; i < activeTokens.length; i += batchSize) {
+    const batch = activeTokens.slice(i, i + batchSize);
+    
+    const payload = {
+      notification: {
+        title: title,
+        body: body,
+        icon: 'https://ais-pre-thlxggrprkfzrysccm6s4p-1068528038155.asia-southeast1.run.app/favicon.ico',
+        click_action: 'https://ais-pre-thlxggrprkfzrysccm6s4p-1068528038155.asia-southeast1.run.app/'
+      },
+      data: {
+        title: title,
+        body: body
+      }
+    };
+
+    if (batch.length === 1) {
+      payload.to = batch[0];
+    } else {
+      payload.registration_ids = batch;
+    }
+
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=' + serverKey
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`FCM Endpoint returned HTTP ${response.status}: ${errText}`);
+    }
+
+    const resData = await response.json();
+    console.log("FCM response:", resData);
+  }
+
+  return { success: true, count: activeTokens.length };
+}
+
 function openNotifModal(type, user = null) {
   notifTargetType = type;
   notifTargetUser = user;
   $('notifTitle').value = '';
   $('notifBody').value = '';
 
+  // Initialize FCM options
+  const savedKey = localStorage.getItem('fcm_server_key_arena_x') || '';
+  $('fcmServerKey').value = savedKey;
+  
+  if (savedKey) {
+    $('notifSendFcm').checked = true;
+    $('fcmConfigArea').classList.remove('hidden');
+  } else {
+    $('notifSendFcm').checked = false;
+    $('fcmConfigArea').classList.add('hidden');
+  }
+
   if (type === 'all') {
     $('notifModalTitle').textContent = 'Broadcast Notification';
     $('notifModalSubtitle').textContent = 'This message will be sent to ALL registered players simultaneously.';
+    
+    const countWithToken = users.filter(u => u.fcmToken).length;
+    $('fcmTokenStatus').innerHTML = `<span class="text-green">${countWithToken} Push-Ready Users ✅</span>`;
+    $('fcmTokenDisplayContainer').classList.add('hidden');
+    $('fcmRecipientToken').value = '';
   } else {
     $('notifModalTitle').textContent = 'Send Player Notification';
     $('notifModalSubtitle').textContent = `To: ${user.name} (${user.handle})`;
+    
+    if (user && user.fcmToken) {
+      $('fcmTokenStatus').innerHTML = '<span class="text-green">Device Registered ✅</span>';
+      $('fcmTokenDisplayContainer').classList.remove('hidden');
+      $('fcmRecipientToken').value = user.fcmToken;
+    } else {
+      $('fcmTokenStatus').innerHTML = '<span class="text-red">No Push Token ❌</span>';
+      $('fcmTokenDisplayContainer').classList.add('hidden');
+      $('fcmRecipientToken').value = '';
+    }
   }
 
   $('mNotif').classList.remove('hidden');
 }
+
+// Set up recipient token copy button
+$('btnCopyRecipientToken').addEventListener('click', () => {
+  const token = $('fcmRecipientToken').value;
+  if (token && token.trim() !== '') {
+    navigator.clipboard.writeText(token).then(() => {
+      alert('📋 Recipient FCM Token copied to clipboard!');
+    }).catch(err => {
+      alert('Failed to copy. Please select the text inside and copy manually.');
+    });
+  }
+});
 
 $('btnBroadcastNotif').addEventListener('click', () => {
   openNotifModal('all');
@@ -2876,6 +3133,25 @@ $('btnBroadcastNotif').addEventListener('click', () => {
 
 $('bCloseNotifModal').addEventListener('click', () => {
   $('mNotif').classList.add('hidden');
+});
+
+$('notifSendFcm').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    $('fcmConfigArea').classList.remove('hidden');
+  } else {
+    $('fcmConfigArea').classList.add('hidden');
+  }
+});
+
+$('toggleFcmKeyVisible').addEventListener('click', () => {
+  const input = $('fcmServerKey');
+  if (input.type === 'password') {
+    input.type = 'text';
+    $('toggleFcmKeyVisible').innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    input.type = 'password';
+    $('toggleFcmKeyVisible').innerHTML = '<i class="fas fa-eye"></i>';
+  }
 });
 
 $('bSendNotif').addEventListener('click', async () => {
@@ -2887,16 +3163,34 @@ $('bSendNotif').addEventListener('click', async () => {
     return;
   }
 
+  const sendFcm = $('notifSendFcm').checked;
+  const fcmKey = $('fcmServerKey').value.trim();
+
+  if (sendFcm && !fcmKey) {
+    alert('FCM Server Key is required to send Web Push Notifications!');
+    return;
+  }
+
+  // Save FCM Key to localStorage
+  if (fcmKey) {
+    localStorage.setItem('fcm_server_key_arena_x', fcmKey);
+  } else {
+    localStorage.removeItem('fcm_server_key_arena_x');
+  }
+
   $('bSendNotif').disabled = true;
   $('bSendNotif').textContent = 'Sending...';
 
   try {
+    let fcmTokensToSend = [];
+
     if (notifTargetType === 'all') {
       if (users.length === 0) {
         alert('No users found to broadcast to!');
         return;
       }
 
+      // 1. Send In-App Notifications
       const promises = users.map(u => {
         return addDoc(collection(db, 'notifications'), {
           userId: u.id,
@@ -2910,8 +3204,26 @@ $('bSendNotif').addEventListener('click', async () => {
       });
 
       await Promise.all(promises);
-      alert(`Broadcast notification sent successfully to all ${users.length} players! 📢`);
+
+      // Collect FCM tokens
+      if (sendFcm) {
+        fcmTokensToSend = users.filter(u => u.fcmToken).map(u => u.fcmToken);
+      }
+
+      // Send via FCM if we have tokens
+      let fcmSuccessMsg = '';
+      if (sendFcm && fcmTokensToSend.length > 0) {
+        try {
+          await sendFCMNotification(fcmKey, fcmTokensToSend, title, body);
+          fcmSuccessMsg = ` & ${fcmTokensToSend.length} browser push notifications triggered!`;
+        } catch (fcmErr) {
+          fcmSuccessMsg = ` (FCM Push failed: ${fcmErr.message})`;
+        }
+      }
+
+      alert(`Broadcast notification sent successfully to all ${users.length} players!${fcmSuccessMsg} 📢`);
     } else {
+      // 1. Send In-App Notification
       await addDoc(collection(db, 'notifications'), {
         userId: notifTargetUser.id,
         message: `${title}: ${body}`,
@@ -2921,7 +3233,21 @@ $('bSendNotif').addEventListener('click', async () => {
         read: false,
         createdAt: serverTimestamp()
       });
-      alert(`Notification sent successfully to ${notifTargetUser.name}! ✅`);
+
+      // Send via FCM if token exists
+      let fcmSuccessMsg = '';
+      if (sendFcm && notifTargetUser.fcmToken) {
+        try {
+          await sendFCMNotification(fcmKey, [notifTargetUser.fcmToken], title, body);
+          fcmSuccessMsg = ` & browser push notification sent!`;
+        } catch (fcmErr) {
+          fcmSuccessMsg = ` (FCM Push failed: ${fcmErr.message})`;
+        }
+      } else if (sendFcm) {
+        fcmSuccessMsg = ` (Skip FCM: User has no registered push token)`;
+      }
+
+      alert(`Notification sent successfully to ${notifTargetUser.name}!${fcmSuccessMsg} ✅`);
     }
 
     $('mNotif').classList.add('hidden');
@@ -3146,14 +3472,16 @@ $('bSubmitVerdictAction').addEventListener('click', async () => {
 // ── TOURNAMENTS EVENTS RENDER ──
 function renderTournaments() {
   const container = $('toursTableBody');
+  if (!container) return;
   container.innerHTML = '';
 
-  if (tournaments.length === 0) {
+  const list = tournaments || [];
+  if (list.length === 0) {
     container.innerHTML = `<tr><td colSpan="7" class="p-8 text-center text-t3">No active tournaments configured. Create one now.</td></tr>`;
     return;
   }
 
-  tournaments.forEach(t => {
+  list.forEach(t => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-white/[0.01]';
     tr.innerHTML = `
@@ -3537,9 +3865,11 @@ document.querySelectorAll('.rfb').forEach(btn => {
 
 function renderRegistrations() {
   const container = $('regsTableBody');
+  if (!container) return;
   container.innerHTML = '';
 
-  const filtered = registrations.filter(r => r.status === regsFilter);
+  const list = registrations || [];
+  const filtered = list.filter(r => r.status === regsFilter);
   if (filtered.length === 0) {
     container.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-t3">No registration logs in this criteria.</td></tr>`;
     return;
@@ -3874,14 +4204,16 @@ window.manuallyAddToLeaderboard = manuallyAddToLeaderboard;
 // ── CHEAT REPORTS LOG ──
 function renderReports() {
   const container = $('reportsTableBody');
+  if (!container) return;
   container.innerHTML = '';
 
-  if (reports.length === 0) {
+  const list = reports || [];
+  if (list.length === 0) {
     container.innerHTML = `<tr><td colSpan="6" class="p-8 text-center text-t3">No cheat logs submitted. Clear match environment!</td></tr>`;
     return;
   }
 
-  reports.forEach(rep => {
+  list.forEach(rep => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-white/[0.01] align-top';
     
@@ -4786,11 +5118,15 @@ async function openLiveTrackerModal(tour) {
 
 function renderTrackerPlayers() {
   const container = $('mTrackerTableBody');
+  if (!container) return;
   container.innerHTML = '';
   
-  $('mTrackerCountHeader').textContent = `${trackerRegs.length} Participants`;
+  const list = trackerRegs || [];
+  if ($('mTrackerCountHeader')) {
+    $('mTrackerCountHeader').textContent = `${list.length} Participants`;
+  }
   
-  if (trackerRegs.length === 0) {
+  if (list.length === 0) {
     container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-t3">No approved players registered for this tournament.</td></tr>`;
     return;
   }
@@ -4995,6 +5331,289 @@ $('bConfirmWinner').addEventListener('click', async () => {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Confirm Winner & End';
+  }
+});
+
+window.openLiveTrackerModal = openLiveTrackerModal;
+
+// ── PROMO VIDEO SUBMISSIONS REVIEW SYSTEM ──
+function renderSubmissions() {
+  const tbody = $('adminSubmissionsList');
+  if (!tbody) return;
+
+  const filter = $('subFilterStatus') ? $('subFilterStatus').value : 'pending';
+  
+  const filtered = submissions.filter(sub => {
+    if (filter === 'all') return true;
+    return sub.status === filter;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="p-8 text-center text-t3 font-semibold">No video submissions found matching "${filter}". 🎬</td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(sub => {
+    let dateStr = 'Unknown';
+    if (sub.submittedAt) {
+      const date = sub.submittedAt.seconds ? new Date(sub.submittedAt.seconds * 1000) : new Date(sub.submittedAt);
+      dateStr = date.toLocaleString();
+    }
+
+    let statusClass = 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+    if (sub.status === 'approved') statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    if (sub.status === 'rejected') statusClass = 'bg-red/10 text-red border-red/20';
+
+    const statusBadge = `<span class="px-2.5 py-1 text-[10px] font-bold rounded-md border uppercase tracking-wider ${statusClass}">${sub.status}</span>`;
+
+    let awardText = 'Pending Review';
+    if (sub.status === 'approved') {
+      awardText = `<span class="text-gold font-bold">${sub.reward || 'Approved'}</span>`;
+    } else if (sub.status === 'rejected') {
+      awardText = `<span class="text-red">Rejected (${sub.rejectReason || 'Does not meet requirements'})</span>`;
+    }
+
+    let actionsHtml = '';
+    if (sub.status === 'pending') {
+      actionsHtml = `
+        <div class="flex items-center justify-end gap-1.5 flex-wrap">
+          <select id="tierSelect_${sub.id}" class="bg-bg border border-bdr text-t1 text-[11px] font-bold rounded px-1.5 py-1 outline-none cursor-pointer focus:border-orange-500">
+            <option value="tier1">Tier 1: Genin (50 Coins)</option>
+            <option value="tier2">Tier 2: Chunin (150 Coins)</option>
+            <option value="tier3">Tier 3: Jonin (400 Coins + 1W Premium)</option>
+            <option value="tier4">Tier 4: Hokage (Cash, 1M Premium, Hokage Badge)</option>
+          </select>
+          <button class="px-2.5 py-1 bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 text-green font-bold rounded text-[10px] uppercase transition cursor-pointer" onclick="approveSubmission('${sub.id}')">
+            Approve
+          </button>
+          <button class="px-2.5 py-1 bg-red/15 hover:bg-red/25 border border-red/30 text-red font-bold rounded text-[10px] uppercase transition cursor-pointer" onclick="rejectSubmission('${sub.id}')">
+            Reject
+          </button>
+        </div>
+      `;
+    } else {
+      actionsHtml = `<span class="text-[10px] text-t3 uppercase font-bold italic">Reviewed</span>`;
+    }
+
+    return `
+      <tr class="hover:bg-white/[0.01] transition text-xs">
+        <td class="p-4">
+          <div class="font-bold text-white">${sub.username || 'Anonymous'}</div>
+          <div class="text-[10px] text-t3 font-mono">${sub.userEmail || 'No Email'}</div>
+        </td>
+        <td class="p-4 font-semibold text-t2">${sub.platform}</td>
+        <td class="p-4 max-w-[200px] truncate"><a href="${sub.videoLink}" target="_blank" class="text-blue-400 hover:underline inline-flex items-center gap-1">${sub.videoLink} <i class="fas fa-external-link-alt text-[9px]"></i></a></td>
+        <td class="p-4 text-[10px] text-t3 font-mono">${dateStr}</td>
+        <td class="p-4">${statusBadge}</td>
+        <td class="p-4">${awardText}</td>
+        <td class="p-4 text-right">${actionsHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function approveSubmission(id) {
+  const selectEl = $(`tierSelect_${id}`);
+  if (!selectEl) return;
+  const tier = selectEl.value;
+  let rewardName = '';
+  let coinsToAdd = 0;
+  let premiumDaysToAdd = 0;
+  let giveHokageBadge = false;
+
+  switch (tier) {
+    case 'tier1':
+      rewardName = 'Tier 1 - Genin Reward (50 AX Coins)';
+      coinsToAdd = 50;
+      break;
+    case 'tier2':
+      rewardName = 'Tier 2 - Chunin Reward (150 AX Coins)';
+      coinsToAdd = 150;
+      break;
+    case 'tier3':
+      rewardName = 'Tier 3 - Jonin Reward (400 AX Coins + 1W Premium)';
+      coinsToAdd = 400;
+      premiumDaysToAdd = 7;
+      break;
+    case 'tier4':
+      rewardName = 'Tier 4 - Hokage Reward (Cash, 1M Premium, Hokage Badge)';
+      coinsToAdd = 0; // cash & badge & premium
+      premiumDaysToAdd = 30;
+      giveHokageBadge = true;
+      break;
+  }
+
+  if (!confirm(`Are you sure you want to approve this promo video with ${rewardName}?`)) {
+    return;
+  }
+
+  try {
+    const subRef = doc(db, 'video_submissions', id);
+    const snap = await getDoc(subRef);
+    if (!snap.exists()) {
+      alert("Submission doc not found!");
+      return;
+    }
+    const subData = snap.data();
+    const userId = subData.userId;
+
+    // 1. Update Submissions collection status to approved
+    await updateDoc(subRef, {
+      status: 'approved',
+      reward: rewardName,
+      reviewedAt: serverTimestamp()
+    });
+
+    // 2. Fetch User profile to increment balance or grant premium status
+    const uRef = doc(db, 'users', userId);
+    const uSnap = await getDoc(uRef);
+    if (uSnap.exists()) {
+      const uData = uSnap.data();
+      const currentCoins = uData.coins || 0;
+      const currentTransactions = uData.transactions || [];
+
+      // Create new transactions list
+      const txId = 'TX-' + Math.floor(Math.random() * 1000000);
+      const newTx = {
+        id: txId,
+        type: 'Promo Reward',
+        amount: coinsToAdd,
+        status: 'Completed',
+        timestamp: new Date().toISOString(),
+        details: rewardName
+      };
+
+      const updatePayload = {
+        transactions: [newTx, ...currentTransactions]
+      };
+
+      if (coinsToAdd > 0) {
+        updatePayload.coins = currentCoins + coinsToAdd;
+      }
+
+      if (premiumDaysToAdd > 0) {
+        // If already premium, extend. Else start from today.
+        let premExpiry = uData.premiumExpiry ? new Date(uData.premiumExpiry) : new Date();
+        if (premExpiry < new Date()) {
+          premExpiry = new Date();
+        }
+        premExpiry.setDate(premExpiry.getDate() + premiumDaysToAdd);
+        
+        updatePayload.premium = true;
+        updatePayload.premiumExpiry = premExpiry.toISOString();
+      }
+
+      if (giveHokageBadge) {
+        // Grant Hokage badge in badges array
+        const currentBadges = uData.earnedBadges || [];
+        if (!currentBadges.includes('hokage_badge')) {
+          currentBadges.push('hokage_badge');
+          updatePayload.earnedBadges = currentBadges;
+        }
+      }
+
+      await updateDoc(uRef, updatePayload);
+
+      // 3. Add to user's notifications collection so they receive it in real-time
+      await addDoc(collection(db, 'notifications'), {
+        userId: userId,
+        title: '🎉 Promo Video Approved!',
+        body: `Congratulations! Your promoting video has been approved. You received: ${rewardName}! Thank you for supporting ArenaX.`,
+        message: `🎉 Promo Video Approved! Congratulations! Your promoting video has been approved. You received: ${rewardName}! Thank you for supporting ArenaX.`,
+        type: 'system',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
+      // Also send a player inbox mail
+      await addDoc(collection(db, 'users', userId, 'mails'), {
+        title: '🎬 Promotion Rewards Credited!',
+        sender: 'ArenaX Jutsu Board',
+        body: `Sensational Promo Video! Your promotional video Jutsu submission has been approved under the tier criteria. \n\nAward: ${rewardName}\n\nThank you for spreading ArenaX's fire will! Keep creating! 🍃`,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // Log admin activity
+    await logAdminActivity('Approve Sub', subData.username || 'Anonymous', `Approved video submission ID: ${id} as ${rewardName}`);
+    
+    alert("Submission approved and rewards successfully dispatched to player! 🍃");
+
+  } catch (err) {
+    console.error("Approval error:", err);
+    alert("Failed to approve submission: " + err.message);
+  }
+}
+
+async function rejectSubmission(id) {
+  const reason = prompt("Enter the rejection reason:", "Video does not meet promotional guidelines or quality standards.");
+  if (reason === null) return;
+
+  try {
+    const subRef = doc(db, 'video_submissions', id);
+    const snap = await getDoc(subRef);
+    if (!snap.exists()) {
+      alert("Submission doc not found!");
+      return;
+    }
+    const subData = snap.data();
+    const userId = subData.userId;
+
+    // 1. Update Submissions collection status to rejected
+    await updateDoc(subRef, {
+      status: 'rejected',
+      rejectReason: reason,
+      reviewedAt: serverTimestamp()
+    });
+
+    // 2. Add notification to user
+    await addDoc(collection(db, 'notifications'), {
+      userId: userId,
+      title: '❌ Promo Video Rejected',
+      body: `Your promo video submission was rejected. Reason: ${reason}`,
+      message: `❌ Your promo video submission was rejected. Reason: ${reason}`,
+      type: 'system',
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    // 3. Send player inbox mail
+    await addDoc(collection(db, 'users', userId, 'mails'), {
+      title: '❌ Video Promotion Feedback',
+      sender: 'ArenaX Jutsu Board',
+      body: `We have reviewed your promotional video submission but unfortunately could not approve it this time. \n\nReason: ${reason}\n\nEnsure the video is publicly visible and references ArenaX correctly. You are welcome to submit again next month! 🍃`,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    // Log admin activity
+    await logAdminActivity('Reject Sub', subData.username || 'Anonymous', `Rejected video submission ID: ${id}. Reason: ${reason}`);
+
+    alert("Submission rejected successfully.");
+
+  } catch (err) {
+    console.error("Rejection error:", err);
+    alert("Failed to reject: " + err.message);
+  }
+}
+
+// Global scope binds
+window.approveSubmission = approveSubmission;
+window.rejectSubmission = rejectSubmission;
+window.renderSubmissions = renderSubmissions;
+
+// Filter bind
+document.addEventListener('DOMContentLoaded', () => {
+  const filterSelect = $('subFilterStatus');
+  if (filterSelect) {
+    filterSelect.addEventListener('change', () => {
+      renderSubmissions();
+    });
   }
 });
 
