@@ -134,9 +134,31 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["roomId", "roomName", "invitedBy", "createdAt"]
+    },
+    "VideoSubmission": {
+      "title": "Video Submission",
+      "description": "Promo video submission by a player",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "platform": { "type": "string" },
+        "videoLink": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "reward": { "type": "string" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "rejectReason": { "type": "string" }
+      },
+      "required": ["userId", "platform", "videoLink", "status"]
     }
   },
   "firestore": {
+    "/video_submissions/{docId}": {
+      "schema": "VideoSubmission",
+      "description": "Promo video submissions submitted by players for reviews"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile documents"
