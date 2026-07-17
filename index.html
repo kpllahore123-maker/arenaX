@@ -3884,6 +3884,12 @@ function switchTab(tabId) {
       }).catch(e => console.warn(e));
     }
   }
+
+  if (tabId === 'Submission') {
+    if (typeof window.playSubmissionSplash === 'function') {
+      window.playSubmissionSplash();
+    }
+  }
 }
 window.switchTab = switchTab;
 
@@ -11415,6 +11421,59 @@ window.listenToVoiceRooms = listenToVoiceRooms;
 window.startUserSubmissionsListener = startUserSubmissionsListener;
 window.loadUserSubmissions = loadUserSubmissions;
 window.renderUserSubmissions = renderUserSubmissions;
+
+// ── SPLASH SCREEN FOR PROMO SUBMISSIONS PAGE ──
+function playSubmissionSplash() {
+  // Check if overlay already exists to avoid duplication
+  if (document.getElementById('submission-splash-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'submission-splash-overlay';
+  overlay.className = 'fixed inset-0 bg-black flex items-center justify-center opacity-100 transition-opacity duration-[800ms] ease-out';
+  overlay.style.zIndex = '999999';
+
+  // Transparent-background video clip (4.5s long)
+  const video = document.createElement('video');
+  video.src = '071702_1784293531987.mp4';
+  video.className = 'max-w-[80%] max-h-[80%] object-contain pointer-events-none';
+  video.playsInline = true;
+  video.controls = false;
+
+  overlay.appendChild(video);
+  document.body.appendChild(overlay);
+
+  let finished = false;
+  const finishSplash = () => {
+    if (finished) return;
+    finished = true;
+    overlay.classList.replace('opacity-100', 'opacity-0');
+    setTimeout(() => {
+      try {
+        video.pause();
+        video.src = '';
+        video.load();
+      } catch (err) {}
+      overlay.remove();
+    }, 850);
+  };
+
+  // Try playing with audio enabled first
+  video.play().then(() => {
+    console.log("Splash promo video playing with sound successfully!");
+  }).catch((err) => {
+    // Fallback: If autoplay with sound is blocked by browser autoplay policy, play muted.
+    // Note: On subsequent visits (after user has interacted with the platform once), the video's audio will play normally.
+    console.log("Audio-enabled autoplay blocked. Falling back to muted playback.", err);
+    video.muted = true;
+    video.play().catch((e) => console.error("Muted playback failed:", e));
+  });
+
+  // Fade out smoothly after video finishes playing or after 4.5 seconds safety limit
+  video.addEventListener('ended', finishSplash);
+  setTimeout(finishSplash, 4500);
+}
+
+window.playSubmissionSplash = playSubmissionSplash;
 
 </script>
 
