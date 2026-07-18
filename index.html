@@ -1261,7 +1261,7 @@ if (typeof tailwind !== 'undefined') {
       <!-- Top Video Banner -->
       <div class="relative w-full max-w-[1335px] mx-auto rounded-2xl overflow-hidden border border-orange-500/30 shadow-[0_0_25px_rgba(239,104,10,0.2)] bg-black/40">
         <video id="narutoVideo" class="w-full h-[220px] sm:h-[300px] md:h-[400px] object-cover pointer-events-none" autoplay loop muted playsinline>
-          <source src="Naruto.mp4" type="video/mp4">
+          <source src="naruto.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0c12] via-transparent to-transparent pointer-events-none"></div>
@@ -4670,8 +4670,8 @@ function renderTournaments() {
               <i class="fas fa-gamepad"></i> ${t.game || 'Grand RP Mobile'}
             </p>
           </div>
-          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.isComingSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'live' ? 'bg-red text-white animate-pulse' : 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/35'}">
-            ${t.isComingSoon ? 'Coming Soon' : t.status === 'live' ? '🔴 Live' : 'Upcoming'}
+          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.isComingSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'live' ? 'bg-red text-white animate-pulse' : t.status === 'cancelled' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'ended' ? 'bg-neutral-800 text-t3 border border-neutral-700' : 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/35'}">
+            ${t.isComingSoon ? 'Coming Soon' : t.status === 'live' ? '🔴 Live' : t.status === 'cancelled' ? '❌ Cancelled' : t.status === 'ended' ? 'Ended' : 'Upcoming'}
           </span>
         </div>
 
@@ -4709,12 +4709,24 @@ function renderTournaments() {
           </div>
         ` : ''}
 
+        ${t.liveMessage ? `
+          <div class="p-2.5 ${t.status === 'cancelled' ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400' : 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-fuchsia-300'} rounded-lg text-[11px] font-medium flex gap-2 items-start leading-normal relative z-10">
+            <i class="fas ${t.status === 'cancelled' ? 'fa-exclamation-triangle animate-pulse text-amber-400' : 'fa-bullhorn animate-bounce text-fuchsia-400'} text-xs mt-0.5"></i>
+            <div>
+              <span class="font-bold uppercase text-[9px] block mb-0.5 tracking-wider ${t.status === 'cancelled' ? 'text-amber-400' : 'text-fuchsia-400'}">
+                ${t.status === 'cancelled' ? '⚠️ Cancellation Notice' : '🔴 Live Notice'}
+              </span>
+              ${t.liveMessage}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="pt-2 flex gap-2 flex-wrap relative z-10">
           ${t.isComingSoon ? `
             <button class="b-coming-soon flex-1 py-2 bg-neutral-800/80 border border-neutral-700 text-t3 text-[11px] font-black uppercase tracking-wider rounded-lg transition">
               🔒 Locked (Coming Soon)
             </button>
-          ` : `
+          ` : t.status === 'cancelled' ? '' : `
             <button class="b-part flex-1 min-w-[120px] py-1.5 bg-fuchsia-500/15 border border-fuchsia-500/35 hover:bg-fuchsia-500/25 text-fuchsia-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
               <i class="fas fa-users mr-1"></i> Slots
             </button>
@@ -4771,8 +4783,8 @@ function renderTournaments() {
               <i class="fas fa-gamepad"></i> ${t.game || 'Grand RP Mobile'}
             </p>
           </div>
-          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.isComingSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'live' ? 'bg-red text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35'}">
-            ${t.isComingSoon ? 'Coming Soon' : t.status === 'live' ? '🔴 Live' : 'Upcoming'}
+          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.isComingSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'live' ? 'bg-red text-white animate-pulse' : t.status === 'cancelled' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'ended' ? 'bg-neutral-800 text-t3 border border-neutral-700' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35'}">
+            ${t.isComingSoon ? 'Coming Soon' : t.status === 'live' ? '🔴 Live' : t.status === 'cancelled' ? '❌ Cancelled' : t.status === 'ended' ? 'Ended' : 'Upcoming'}
           </span>
         </div>
 
@@ -4809,12 +4821,24 @@ function renderTournaments() {
           </div>
         ` : ''}
 
+        ${t.liveMessage ? `
+          <div class="p-2.5 ${t.status === 'cancelled' ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400' : 'bg-emerald-500/5 border border-emerald-500/20 text-emerald-300'} rounded-lg text-[11px] font-medium flex gap-2 items-start leading-normal relative z-10">
+            <i class="fas ${t.status === 'cancelled' ? 'fa-exclamation-triangle animate-pulse text-amber-400' : 'fa-bullhorn animate-bounce text-emerald-400'} text-xs mt-0.5"></i>
+            <div>
+              <span class="font-bold uppercase text-[9px] block mb-0.5 tracking-wider ${t.status === 'cancelled' ? 'text-amber-400' : 'text-emerald-400'}">
+                ${t.status === 'cancelled' ? '⚠️ Cancellation Notice' : '🔴 Live Notice'}
+              </span>
+              ${t.liveMessage}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="pt-2 flex gap-2 flex-wrap relative z-10">
           ${t.isComingSoon ? `
             <button class="b-coming-soon flex-1 py-2 bg-neutral-800/80 border border-neutral-700 hover:bg-neutral-800 text-t3 text-[11px] font-black uppercase tracking-wider rounded-lg transition">
               🔒 Locked (Coming Soon)
             </button>
-          ` : `
+          ` : t.status === 'cancelled' ? '' : `
             <button class="b-part flex-1 min-w-[120px] py-1.5 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
               <i class="fas fa-users mr-1"></i> Slots
             </button>
@@ -4891,11 +4915,13 @@ function renderTournaments() {
           </div>
         ` : ''}
 
-        ${t.status === 'live' && t.liveMessage ? `
-          <div class="p-2.5 bg-red/5 border border-red/20 rounded-lg text-[11px] text-red/90 font-medium flex gap-2 items-start leading-normal">
-            <i class="fas fa-bullhorn text-xs mt-0.5 animate-bounce text-red"></i>
+        ${t.liveMessage ? `
+          <div class="p-2.5 ${t.status === 'cancelled' ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400' : 'bg-red/5 border border-red/20 text-red/90'} rounded-lg text-[11px] font-medium flex gap-2 items-start leading-normal">
+            <i class="fas ${t.status === 'cancelled' ? 'fa-exclamation-triangle animate-pulse text-amber-400' : 'fa-bullhorn animate-bounce text-red'} text-xs mt-0.5"></i>
             <div>
-              <span class="font-bold text-red uppercase text-[9px] block mb-0.5 tracking-wider">🔴 Live Notice</span>
+              <span class="font-bold uppercase text-[9px] block mb-0.5 tracking-wider ${t.status === 'cancelled' ? 'text-amber-400' : 'text-red'}">
+                ${t.status === 'cancelled' ? '⚠️ Cancellation Notice' : '🔴 Live Notice'}
+              </span>
               ${t.liveMessage}
             </div>
           </div>
@@ -4914,7 +4940,7 @@ function renderTournaments() {
             <button class="b-coming-soon flex-1 py-2 bg-neutral-800/80 border border-neutral-700 text-t3 text-[11px] font-black uppercase tracking-wider rounded-lg transition">
               🔒 Locked (Coming Soon)
             </button>
-          ` : `
+          ` : t.status === 'cancelled' ? '' : `
             <button class="b-part flex-1 min-w-[120px] py-1.5 bg-gold/10 border border-gold/20 hover:bg-gold/25 text-gold text-[11px] font-bold rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
               <i class="fas fa-users mr-1"></i> Slots
             </button>
@@ -4935,6 +4961,10 @@ function renderTournaments() {
     card.addEventListener('click', (e) => {
       if (t.isComingSoon) {
         alert("Coming soon! This tournament is not open for registration yet.");
+        return;
+      }
+      if (t.status === 'cancelled') {
+        alert("This tournament has been cancelled! All registration and participation options are disabled.");
         return;
       }
       if (e.target.closest('.b-part') || e.target.closest('.b-result') || e.target.closest('.b-register') || e.target.closest('.b-live-stream') || e.target.closest('.b-self-cancel')) return;
@@ -5017,6 +5047,10 @@ function handleTourCardClick(tour) {
     alert("This tournament is coming soon!");
     return;
   }
+  if (tour.status === 'cancelled') {
+    alert("This tournament has been cancelled! All registration and participation options are disabled.");
+    return;
+  }
   const profile = userProfile || guestProfile;
   
   // 1. Check if user is banned from tournaments (onlyBan) or overall banned
@@ -5050,8 +5084,21 @@ function openTournamentRegister(tour) {
   $('tdetGame').textContent = tour.game || 'Grand RP Mobile';
   $('tdetPlayers').textContent = `${tour.registered || 0}/${tour.maxPlayers || 32}`;
   $('tdetPrize').textContent = tour.prize || 'TBD';
-  $('tdetStatus').textContent = tour.status;
+  const statusLabels = {
+    upcoming: 'Upcoming',
+    live: '🔴 Live Now',
+    ended: 'Ended',
+    cancelled: '❌ Cancelled'
+  };
+  $('tdetStatus').textContent = statusLabels[tour.status] || tour.status;
   $('tdetExtra').textContent = `Format: ${tour.teamType || 'Solo'} — Entry: ${tour.entryFee || 'Free'}`;
+
+  // Reset and hide dynamic or participation buttons if cancelled
+  if (tour.status === 'cancelled') {
+    $('bParticipate').classList.add('hidden');
+  } else {
+    $('bParticipate').classList.remove('hidden');
+  }
 
   // Reset steps
   document.querySelectorAll('#tregStep1, #tregStep2, #tregStep3, #tregStep4').forEach(step => step.classList.add('hidden'));
@@ -5071,6 +5118,10 @@ $('bCloseTourDetail').addEventListener('click', () => $('mTourDetail').classList
 $('bParticipate').addEventListener('click', () => {
   if (activeRegisterTour.status === 'ended') {
     alert('This tournament has already ended!');
+    return;
+  }
+  if (activeRegisterTour.status === 'cancelled') {
+    alert('This tournament has been cancelled!');
     return;
   }
   $('tregStep1').classList.add('hidden');
