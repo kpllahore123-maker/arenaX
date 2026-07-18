@@ -388,6 +388,11 @@ if (typeof tailwind !== 'undefined') {
   width: 0;
   opacity: 0;
 }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 </style>
 
 </head>
@@ -413,7 +418,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
       <!-- Lottie Animation Loader placed in the loading progress area --> 
-       <lottie-player src="public/loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -1256,7 +1261,7 @@ if (typeof tailwind !== 'undefined') {
       <!-- Top Video Banner -->
       <div class="relative w-full max-w-[1335px] mx-auto rounded-2xl overflow-hidden border border-orange-500/30 shadow-[0_0_25px_rgba(239,104,10,0.2)] bg-black/40">
         <video id="narutoVideo" class="w-full h-[220px] sm:h-[300px] md:h-[400px] object-cover pointer-events-none" autoplay loop muted playsinline>
-          <source src="naruto.mp4" type="video/mp4">
+          <source src="Naruto.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0c12] via-transparent to-transparent pointer-events-none"></div>
@@ -3322,6 +3327,154 @@ const googleProvider = new GoogleAuthProvider();
 let messaging = null;
 
 if ('serviceWorker' in navigator) {
+  // PWA Update flow functions
+  function setupPwaUpdateDetection(reg) {
+    // Only activate in PWA mode
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.includes('android-app://');
+    if (!isPWA) {
+      console.log("PWA Update Detection: Running in standard browser tab. Update modal suppressed.");
+      return;
+    }
+
+    console.log("PWA Update Detection: Running in PWA standalone mode. Monitoring for updates...");
+
+    // Check for updates on load
+    if (reg.waiting) {
+      showPwaUpdateModal(reg);
+    }
+
+    // Listen for new service worker installing/waiting
+    reg.addEventListener('updatefound', () => {
+      const installingWorker = reg.installing;
+      if (installingWorker) {
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state === 'installed') {
+            if (navigator.serviceWorker.controller) {
+              // New content is available, show update popup
+              showPwaUpdateModal(reg);
+            }
+          }
+        });
+      }
+    });
+
+    // Periodically check for SW updates (every 15 minutes)
+    setInterval(() => {
+      reg.update().catch(err => console.warn("Failed to check for SW update:", err));
+    }, 15 * 60 * 1000);
+  }
+
+  let isPwaUpdating = false;
+
+  function showPwaUpdateModal(reg) {
+    const modal = document.getElementById('pwaUpdateModal');
+    const percentText = document.getElementById('pwaUpdatePercent');
+    const bar = document.getElementById('pwaUpdateBar');
+    const updateBtn = document.getElementById('pwaUpdateNowBtn');
+    const laterBtn = document.getElementById('pwaUpdateLaterBtn');
+    const autoToggle = document.getElementById('pwaAutoUpdateToggle');
+
+    if (!modal) return;
+
+    // Initialize progress
+    if (percentText && bar) {
+      percentText.textContent = '0%';
+      bar.style.width = '0%';
+    }
+
+    // Read saved auto-update preference from localStorage
+    const savedAutoUpdate = localStorage.getItem('pwa_auto_update_enabled') !== 'false';
+    if (autoToggle) {
+      autoToggle.checked = savedAutoUpdate;
+    }
+
+    // If auto-update is enabled, trigger update automatically
+    if (savedAutoUpdate) {
+      console.log("PWA Auto-Update enabled. Automatically updating app...");
+      triggerPwaUpdate(reg);
+      return;
+    }
+
+    // Show PWA Update modal with scale-in transition
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Setup click handlers
+    if (updateBtn) {
+      updateBtn.onclick = () => {
+        triggerPwaUpdate(reg);
+      };
+    }
+
+    if (laterBtn) {
+      laterBtn.onclick = () => {
+        // Hide modal
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      };
+    }
+
+    if (autoToggle) {
+      autoToggle.onchange = (e) => {
+        localStorage.setItem('pwa_auto_update_enabled', e.target.checked);
+        if (e.target.checked) {
+          triggerPwaUpdate(reg);
+        }
+      };
+    }
+  }
+
+  function triggerPwaUpdate(reg) {
+    if (isPwaUpdating) return;
+    isPwaUpdating = true;
+
+    const percentText = document.getElementById('pwaUpdatePercent');
+    const bar = document.getElementById('pwaUpdateBar');
+    const modal = document.getElementById('pwaUpdateModal');
+
+    // Show modal if it was hidden (for auto-update)
+    if (modal && modal.classList.contains('hidden')) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    // Disable interaction during progress animation
+    const updateBtn = document.getElementById('pwaUpdateNowBtn');
+    const laterBtn = document.getElementById('pwaUpdateLaterBtn');
+    if (updateBtn) updateBtn.disabled = true;
+    if (laterBtn) laterBtn.disabled = true;
+
+    // Animate progress bar elegantly from 0% to 100%
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 15) + 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        
+        // Perform the update swap
+        setTimeout(() => {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            // Fallback reload if no waiting worker but we are forced
+            window.location.reload();
+          }
+        }, 500);
+      }
+
+      if (percentText && bar) {
+        percentText.textContent = `${progress}%`;
+        bar.style.width = `${progress}%`;
+      }
+    }, 150);
+  }
+
+  // Controller change listener to reload page
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+
   const registerSW = async () => {
     try {
       const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
@@ -3329,6 +3482,9 @@ if ('serviceWorker' in navigator) {
       console.log('Registering Service Worker for ArenaX at:', swPath);
       const reg = await navigator.serviceWorker.register(swPath);
       console.log('Service Worker registered successfully with scope:', reg.scope);
+      
+      // Setup PWA Update detection and auto-update flow
+      setupPwaUpdateDetection(reg);
       
       // Initialize messaging and setup foreground notification listener
       try {
@@ -11502,6 +11658,171 @@ function playSubmissionSplash() {
 window.playSubmissionSplash = playSubmissionSplash;
 
 </script>
+
+<!-- PWA Update Modal Overlay -->
+<div id="pwaUpdateModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden transition-all duration-300">
+  <div class="group relative w-96 max-w-full">
+    <div
+      class="relative overflow-hidden rounded-2xl bg-slate-950 shadow-2xl transition-all duration-300 hover:shadow-emerald-500/10 border border-slate-800"
+    >
+      <div
+        class="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/0 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-70"
+      ></div>
+      <div
+        class="absolute -right-16 -bottom-16 h-32 w-32 rounded-full bg-gradient-to-br from-teal-500/20 to-emerald-500/0 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-70"
+      ></div>
+
+      <div class="relative p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <div
+                class="absolute -inset-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 opacity-30 blur-sm transition-opacity duration-300 group-hover:opacity-40"
+              ></div>
+              <div
+                class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900"
+              >
+                <svg
+                  class="h-6 w-6 text-emerald-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-white">System Update</h3>
+              <p class="text-sm text-slate-400">Version 2.4.0 is now live</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-end gap-1">
+            <span class="text-xs text-slate-400">2 min ago</span>
+            <span
+              class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500"
+            >
+              <span class="h-1 w-1 rounded-full bg-emerald-500"></span>
+              New
+            </span>
+          </div>
+        </div>
+
+        <div class="mt-6 space-y-4">
+          <div class="rounded-xl bg-slate-900/50 p-4">
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10"
+              >
+                <svg
+                  class="h-4 w-4 text-emerald-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm text-slate-400">
+                Performance improvements and bug fixes
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-medium text-white">Download Progress</span>
+              <span id="pwaUpdatePercent" class="text-slate-400">89%</span>
+            </div>
+
+            <div class="h-1.5 overflow-hidden rounded-full bg-slate-900">
+              <div
+                id="pwaUpdateBar"
+                class="h-full w-[89%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
+              >
+                <div
+                  class="h-full w-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              id="pwaUpdateNowBtn"
+              class="group/btn relative flex-1 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-px font-medium text-white shadow-[0_1000px_0_0_hsl(0_0%_100%_/_0%)_inset] transition-colors hover:shadow-[0_1000px_0_0_hsl(0_0%_100%_/_2%)_inset] cursor-pointer"
+            >
+              <div
+                class="relative rounded-xl bg-slate-950/50 px-4 py-3 transition-colors group-hover/btn:bg-transparent"
+              >
+                <span class="relative flex items-center justify-center gap-2">
+                  Update Now
+                  <svg
+                    class="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    ></path>
+                  </svg>
+                </span>
+              </div>
+            </button>
+            <button
+              id="pwaUpdateLaterBtn"
+              class="flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-800 cursor-pointer"
+            >
+              Later
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="mt-6 flex items-center justify-between rounded-xl bg-slate-900/50 p-4"
+        >
+          <div class="flex items-center justify-between w-full">
+            <div>
+              <p class="text-sm font-medium text-white">Auto-update is enabled</p>
+              <p class="text-xs text-slate-400">
+                Future updates will be installed automatically
+              </p>
+            </div>
+
+            <label
+              class="relative inline-flex items-center cursor-pointer select-none"
+              for="pwaAutoUpdateToggle"
+            >
+              <input class="sr-only peer" id="pwaAutoUpdateToggle" type="checkbox" checked />
+              <div
+                class="w-11 h-6 bg-slate-800 rounded-full peer-checked:bg-emerald-500 transition-colors"
+              ></div>
+              <div
+                class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 transform peer-checked:translate-x-5"
+              ></div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- iOS Install Tooltip -->
 <div id="iosInstallTooltip" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0a110d]/95 backdrop-blur-md border border-gold/30 p-4 rounded-xl shadow-2xl max-w-sm w-[90%] z-[200] hidden transition-all duration-300 transform scale-95 opacity-0">
