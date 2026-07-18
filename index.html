@@ -11662,18 +11662,18 @@ function playSubmissionSplash() {
 
   const overlay = document.createElement('div');
   overlay.id = 'submission-splash-overlay';
-  overlay.className = 'fixed inset-0 bg-black flex items-center justify-center opacity-100 transition-opacity duration-[800ms] ease-out';
+  overlay.className = 'fixed inset-0 bg-black flex flex-col items-center justify-center opacity-100 transition-opacity duration-[800ms] ease-out';
   overlay.style.zIndex = '999999';
 
-  // Transparent-background video clip (4.5s long)
+  // Transparent-background video clip (made to loop)
   const video = document.createElement('video');
   video.src = '071702_1784293531987.mp4';
-  video.className = 'max-w-[80%] max-h-[80%] object-contain pointer-events-none';
+  video.className = 'max-w-[80%] max-h-[70%] object-contain pointer-events-none mb-6';
   video.playsInline = true;
   video.controls = false;
+  video.loop = true;
 
   overlay.appendChild(video);
-  document.body.appendChild(overlay);
 
   let finished = false;
   const finishSplash = () => {
@@ -11690,20 +11690,27 @@ function playSubmissionSplash() {
     }, 850);
   };
 
+  // Skip Button
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-widest rounded-full border border-white/20 transition active:scale-95 cursor-pointer flex items-center gap-2';
+  skipBtn.innerHTML = 'Skip <i class="fas fa-forward text-[10px]"></i>';
+  skipBtn.addEventListener('click', finishSplash);
+  overlay.appendChild(skipBtn);
+
+  document.body.appendChild(overlay);
+
   // Try playing with audio enabled first
   video.play().then(() => {
     console.log("Splash promo video playing with sound successfully!");
   }).catch((err) => {
     // Fallback: If autoplay with sound is blocked by browser autoplay policy, play muted.
-    // Note: On subsequent visits (after user has interacted with the platform once), the video's audio will play normally.
     console.log("Audio-enabled autoplay blocked. Falling back to muted playback.", err);
     video.muted = true;
     video.play().catch((e) => console.error("Muted playback failed:", e));
   });
 
-  // Fade out smoothly after video finishes playing or after 4.5 seconds safety limit
-  video.addEventListener('ended', finishSplash);
-  setTimeout(finishSplash, 4500);
+  // Fade out smoothly after 10 seconds safety limit
+  setTimeout(finishSplash, 10000);
 }
 
 window.playSubmissionSplash = playSubmissionSplash;
