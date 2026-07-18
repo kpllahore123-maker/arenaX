@@ -862,7 +862,7 @@ if (typeof tailwind !== 'undefined') {
         </div>
         <div class="flex gap-3 mt-6">
           <button id="bDep" class="flex-1 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition"><i class="fas fa-plus mr-1.5"></i> Deposit</button>
-          <button id="bWith" class="flex-1 py-2 bg-transparent hover:bg-white/5 border border-bdr text-white text-xs font-bold rounded-lg transition"><i class="fas fa-arrow-up mr-1.5"></i> Withdraw</button>
+          <button id="bWith" class="flex-1 py-2 bg-[#f2c242] hover:bg-[#e0b230] text-[#0a0c12] text-xs font-bold rounded-lg transition shadow-lg shadow-[#f2c242]/10"><i class="fas fa-arrow-up mr-1.5"></i> Withdraw</button>
         </div>
       </div>
 
@@ -1256,7 +1256,7 @@ if (typeof tailwind !== 'undefined') {
       <!-- Top Video Banner -->
       <div class="relative w-full max-w-[1335px] mx-auto rounded-2xl overflow-hidden border border-orange-500/30 shadow-[0_0_25px_rgba(239,104,10,0.2)] bg-black/40">
         <video id="narutoVideo" class="w-full h-[220px] sm:h-[300px] md:h-[400px] object-cover pointer-events-none" autoplay loop muted playsinline>
-          <source src="naruto.mp4" type="video/mp4">
+          <source src="Naruto.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0c12] via-transparent to-transparent pointer-events-none"></div>
@@ -2132,12 +2132,12 @@ if (typeof tailwind !== 'undefined') {
         <div class="space-y-3 text-[11px] leading-relaxed">
           <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
             <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-coins text-xs"></i> Deposit / Recharge Coins?</h4>
-            <p class="text-t2">Send PKR to JazzCash (0302-4686897) or EasyPaisa (0315-9876543), then head to Wallet -> Recharge. Enter PKR amount & TXN ID. Verified in 15-30 mins!</p>
+            <p class="text-t2">Send PKR to JazzCash (0302-4686897) or NayaPay (0303-9229405), then head to Wallet -> Recharge. Enter PKR amount & TXN ID. Verified in 15-30 mins!</p>
           </div>
 
           <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
             <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-clock"></i> Withdrawal Speed?</h4>
-            <p class="text-t2">Processed securely within 24 to 48 hours directly to your designated JazzCash or EasyPaisa account.</p>
+            <p class="text-t2">Processed securely within 24 to 48 hours directly to your designated JazzCash or NayaPay account.</p>
           </div>
 
           <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
@@ -2779,8 +2779,8 @@ if (typeof tailwind !== 'undefined') {
       <button class="pm-btn w-full p-4 bg-card border-2 border-bdr hover:border-[#a78bfa] hover:bg-[#a78bfa]/5 rounded-xl flex items-center gap-4 text-left transition" data-m="ep">
         <div class="w-10 h-10 rounded-lg bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/20 flex items-center justify-center text-lg flex-shrink-0"><i class="fas fa-wallet"></i></div>
         <div>
-          <h4 class="font-bold text-sm text-white">EasyPaisa</h4>
-          <p class="text-[10px] text-t3">0315-9876543 · Instant Processing</p>
+          <h4 class="font-bold text-sm text-white">NayaPay</h4>
+          <p class="text-[10px] text-t3">0303-9229405 · Instant Processing</p>
         </div>
         <i class="fas fa-chevron-right text-t3 ml-auto text-xs"></i>
       </button>
@@ -2818,7 +2818,7 @@ if (typeof tailwind !== 'undefined') {
       <div>
         <label class="block text-[10px] uppercase font-black text-t3 mb-1 tracking-wider">Enter payment Transaction ID *</label>
         <input id="payTxnId" type="text" placeholder="Transaction ID (TXN ID / TID) *" class="w-full bg-card border border-bdr rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold transition text-white font-mono uppercase"/>
-        <p class="text-[8px] text-t3 mt-1 leading-normal">Enter the precise 11-12 digit Transaction ID from your EasyPaisa/JazzCash receipt to submit the deposit check.</p>
+        <p class="text-[8px] text-t3 mt-1 leading-normal">Enter the precise 11-12 digit Transaction ID from your NayaPay/JazzCash receipt to submit the deposit check.</p>
       </div>
 
       <button id="payConfirmBtn" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black rounded-lg uppercase tracking-wider transition">Submit Deposit Request</button>
@@ -6423,7 +6423,7 @@ $('rSearch').addEventListener('input', (e) => {
 let selectedDepMethod = 'jc';
 const payInstructions = {
   jc: '<strong>JazzCash Transfer:</strong><br/>1. Open your JazzCash Mobile App.<br/>2. Select Send Money → Mobile Account.<br/>3. Enter Receiver Number: <strong class="text-gold">0302-4686897</strong>.<br/>4. Enter PKR Amount & confirm.<br/>5. Put Ref Key: <strong class="text-gold">AX-COINS</strong>.<br/>6. Enter Transaction ID (TXN ID) below to claim coins instantly.',
-  ep: '<strong>EasyPaisa Transfer:</strong><br/>1. Open your EasyPaisa Mobile App.<br/>2. Select Send Money → EasyPaisa Mobile Account.<br/>3. Enter Receiver Number: <strong class="text-gold">0315-9876543</strong>.<br/>4. Enter PKR Amount & confirm.<br/>5. Put Ref Key: <strong class="text-gold">AX-COINS</strong>.<br/>6. Enter Transaction ID (TXN ID) below to claim coins instantly.'
+  ep: '<strong>NayaPay Transfer:</strong><br/>1. Open your NayaPay Mobile App.<br/>2. Select Send Money → NayaPay User Account.<br/>3. Enter Receiver Number: <strong class="text-gold">0303-9229405</strong>.<br/>4. Enter PKR Amount & confirm.<br/>5. Put Ref Key: <strong class="text-gold">AX-COINS</strong>.<br/>6. Enter Transaction ID (TXN ID) below to claim coins instantly.'
 };
 
 $('bDep').addEventListener('click', () => {
@@ -6487,7 +6487,7 @@ $('payConfirmBtn').addEventListener('click', async () => {
 
   try {
     const finalAX = Math.floor(amt * 1.15);
-    const methodStr = selectedDepMethod === 'jc' ? 'JazzCash' : 'EasyPaisa';
+    const methodStr = selectedDepMethod === 'jc' ? 'JazzCash' : 'NayaPay';
 
     // Submit to Firestore deposit_requests collection
     await addDoc(collection(db, 'deposit_requests'), {
@@ -6668,19 +6668,45 @@ $('bWith').addEventListener('click', async () => {
     alert('Connect a full account to request withdrawals.');
     return;
   }
+
+  // Check tournament participation to unlock withdrawals
+  let hasPlayed = false;
+  if (userProfile.hasSubmittedRegistration) {
+    hasPlayed = true;
+  } else {
+    try {
+      const regQuery = query(collection(db, 'tournament_registrations'), where('userId', '==', userProfile.uid));
+      const regSnap = await getDocs(regQuery);
+      if (!regSnap.empty) {
+        hasPlayed = true;
+      }
+    } catch (e) {
+      console.warn("Error querying registrations, falling back to false:", e);
+    }
+  }
+
+  if (!hasPlayed) {
+    alert('⚠️ Withdrawal Locked!\n\nYou have to play at least one tournament to unlock withdrawals.');
+    return;
+  }
+
   const curBal = userProfile.balance || 0;
   if (curBal <= 0) {
     alert('No balance available to withdraw!');
     return;
   }
-  const amtStr = prompt(`Withdraw how many AX Coins? (Max: ${curBal})`);
+  const amtStr = prompt(`Withdraw how many AX Coins? (Minimum 300 AX. Max: ${curBal})`);
   if (!amtStr) return;
   const amt = parseFloat(amtStr);
   if (isNaN(amt) || amt <= 0 || amt > curBal) {
     alert('Invalid withdrawal amount!');
     return;
   }
-  const account = prompt('Enter your EasyPaisa / JazzCash Account Number and Name to receive PKR:');
+  if (amt < 300) {
+    alert('The minimum withdrawal limit is 300 AX Coins. Please enter a valid amount of 300 AX Coins or more to proceed.');
+    return;
+  }
+  const account = prompt('Enter your JazzCash / NayaPay Account Number and Name to receive PKR:');
   if (!account || !account.trim()) {
     alert('Withdrawal account details are required!');
     return;
@@ -6702,7 +6728,7 @@ $('bWith').addEventListener('click', async () => {
       userHandle: userProfile.handle,
       amountPKR: amt, // For withdrawals, coin-to-PKR is 1:1
       amountAX: amt,
-      method: 'EasyPaisa/JazzCash',
+      method: 'JazzCash/NayaPay',
       txnId: txnId,
       status: 'pending',
       type: 'withdrawal',
@@ -7926,9 +7952,9 @@ $('bSubmitRating').addEventListener('click', async () => {
 
 // Sync both user message and automatic bot responses into Firestore!
 const BOT_AUTO_ANSWERS = [
-  { keys: ['deposit', 'recharge', 'pay', 'paisa'], ans: '💰 To deposit funds, go to the Wallet tab, click "Recharge", send PKR to JazzCash (0302-4686897) or EasyPaisa (0315-9876543), and submit your TXN ID. Admin will credit your AX Coins within 15-30 minutes!' },
+  { keys: ['deposit', 'recharge', 'pay', 'paisa'], ans: '💰 To deposit funds, go to the Wallet tab, click "Recharge", send PKR to JazzCash (0302-4686897) or NayaPay (0303-9229405), and submit your TXN ID. Admin will credit your AX Coins within 15-30 minutes!' },
   { keys: ['register', 'join', 'tournament', 'slot'], ans: '🏆 To register for a tournament, browse available tournaments on the Dashboard, select one, click "Register / Join Slot", and fill in your game profile details. Waiting for admin approval takes around 10-15 mins.' },
-  { keys: ['withdraw', 'cashout', 'earnings'], ans: '💸 To withdraw your AX Coins, head to Wallet -> Withdraw, input your desired cashout amount and JazzCash or EasyPaisa account details. Approved withdrawals are processed within 24-48 hours.' },
+  { keys: ['withdraw', 'cashout', 'earnings'], ans: '💸 To withdraw your AX Coins, head to Wallet -> Withdraw, input your desired cashout amount and JazzCash or NayaPay account details. Approved withdrawals are processed within 24-48 hours.' },
   { keys: ['ban', 'suspend', 'block', 'cheat'], ans: '🚫 If your account is banned or you have reports of illegal scripts, our Anti-Cheat system issues permanent locks. You can file a "Red Report" under the Help Desk or contact our support staff for manual verification.' },
 ];
 
