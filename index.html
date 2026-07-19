@@ -418,7 +418,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
       <!-- Lottie Animation Loader placed in the loading progress area --> 
-       <lottie-player src="public/loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -2296,6 +2296,67 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 
+<!-- ==================== INTERACTIVE TUTORIAL CHOICE MODAL ==================== -->
+<div id="mTutorialChoiceModal" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[315] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[400px] w-full space-y-5 relative animate-scale-in flex flex-col shadow-2xl text-center">
+    <div class="flex flex-col items-center space-y-3">
+      <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 text-3xl relative shadow-lg shadow-emerald-500/5">
+        <i class="fas fa-graduation-cap animate-bounce" style="animation-duration: 2s;"></i>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-display text-xl font-black text-white tracking-wide uppercase">New Player Tour</h3>
+        <p class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">Welcome to ArenaX!</p>
+      </div>
+    </div>
+    
+    <p class="text-xs text-t2 font-medium px-2 leading-relaxed">
+      Aao gamer! 🎮 Kya aap ArenaX ka quick 1-minute interactive tour lena chahenge taake matches, tournaments, wallet aur chat systems ko asani se samajh saken?
+    </p>
+    
+    <div class="flex gap-3 pt-2">
+      <button id="btnTutorialSkip" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer">
+        Nahi, Skip ❌
+      </button>
+      <button id="btnTutorialStart" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition duration-150 shadow-lg shadow-emerald-500/20 cursor-pointer">
+        Haan, Start! 🚀
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== FLOATING INTERACTIVE TUTORIAL CARD ==================== -->
+<div id="mTutorialTourCard" class="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-panel border border-emerald-500 rounded-2xl shadow-[0_0_50px_rgba(16,185,129,0.3)] p-5 z-[320] flex flex-col space-y-3.5 transition-all duration-300 transform scale-100 hidden">
+  <!-- Glowing subtle badge -->
+  <div class="flex items-center justify-between">
+    <span id="tutorialStepIndicator" class="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[9px] font-bold rounded-full uppercase tracking-wider">
+      Step 1 of 5
+    </span>
+    <button id="btnTutorialEnd" class="text-t3 hover:text-red transition text-xs flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/5 cursor-pointer">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <div class="space-y-1.5">
+    <h4 id="tutorialStepTitle" class="font-display text-sm font-black text-white uppercase tracking-wide">
+      Step Title
+    </h4>
+    <p id="tutorialStepText" class="text-[11px] text-t2 leading-relaxed font-sans font-medium">
+      Step details and instructions.
+    </p>
+  </div>
+  
+  <div class="flex items-center justify-between pt-2 border-t border-bdr/40">
+    <button id="btnTutorialPrev" class="px-3 py-1.5 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer hidden">
+      <i class="fas fa-arrow-left text-[9px]"></i> Back
+    </button>
+    <div class="flex-1"></div>
+    <button id="btnTutorialNext" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer">
+      Next Step <i class="fas fa-arrow-right text-[9px]"></i>
+    </button>
+  </div>
+</div>
+
+
 
 
 
@@ -3727,6 +3788,42 @@ const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'
 let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
 let notifPopupShownThisSession = false;
+
+// Interactive Tutorial States & Steps config
+let currentTutorialStep = 0;
+let activeHighlightedElementId = null;
+const tutorialSteps = [
+  {
+    title: "Aapka Profile Hub 👤",
+    text: "Aao gamer! Yeh aapka personal Profile Hub hai. Yahan aap apna display name, unique handle, level ranks, wallet AX balance aur total hearts popularity rating live dekh sakte hain.",
+    tab: "Profile",
+    highlight: "profileCard",
+  },
+  {
+    title: "Esports Tournaments 🏆",
+    text: "Events page par aapko saare live, upcoming aur ended matches milenge. Apni pasand ke esports contest me register karke cash prize pools jeeten!",
+    tab: "Tour",
+    highlight: "toursWrapper",
+  },
+  {
+    title: "Secure AX Wallet 💰",
+    text: "Wallet section se aap asani se Recharge kar sakte hain (JazzCash, NayaPay ke zariye) aur apni winnings ko seedha bank ya wallet me instant withdraw kar sakte hain.",
+    tab: "Wallet",
+    highlight: "wCard",
+  },
+  {
+    title: "Global Chat & Voice Lobbies 🎤",
+    text: "Dosre gamers ke sath connect hon! Global feed me chat karen, friends add karen aur high-quality low-latency audio room channels join karke dosto se voice chat karen.",
+    tab: "Chat",
+    highlight: "tChat",
+  },
+  {
+    title: "Profile Customization 🎨",
+    text: "Edit Display Name ya Customize Profile par click karke bio, social links aur custom avatar set karen. Premium VIP lekar golden frames aur glowing banners unlock karen! 👑",
+    tab: "Profile",
+    highlight: "btnCustomize",
+  }
+];
 
 // Customization States
 let selectedBannerTheme = 'dark';
@@ -9262,15 +9359,26 @@ $('bCloseUnderDevCross').addEventListener('click', () => {
 
 // ==================== BROWSER PUSH NOTIFICATIONS SYSTEM ====================
 window.checkAndShowNotificationPopup = function() {
-  if (notifPopupShownThisSession) return;
+  if (notifPopupShownThisSession) {
+    if (typeof window.checkAndPromptTutorial === 'function') {
+      window.checkAndPromptTutorial();
+    }
+    return;
+  }
   
   // 1. Check if browser notifications are already granted
   if (window.Notification && Notification.permission === 'granted') {
+    if (typeof window.checkAndPromptTutorial === 'function') {
+      window.checkAndPromptTutorial();
+    }
     return;
   }
   
   // 2. Only show for fully logged-in user, not guests
   if (guestProfile || !userProfile) {
+    if (typeof window.checkAndPromptTutorial === 'function') {
+      window.checkAndPromptTutorial();
+    }
     return;
   }
   
@@ -9280,6 +9388,9 @@ window.checkAndShowNotificationPopup = function() {
     const timestamp = parseInt(lastAsked, 10);
     const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
     if (Date.now() - timestamp < threeDaysMs) {
+      if (typeof window.checkAndPromptTutorial === 'function') {
+        window.checkAndPromptTutorial();
+      }
       return;
     }
   }
@@ -9294,6 +9405,9 @@ $('btnNotifNotNow').addEventListener('click', () => {
   $('mEnableNotifications').classList.add('hidden');
   // Close popup and save ask time to localStorage to ask again after 3 days
   localStorage.setItem('notifAsked', Date.now().toString());
+  if (typeof window.checkAndPromptTutorial === 'function') {
+    window.checkAndPromptTutorial();
+  }
 });
 
 $('btnNotifAllow').addEventListener('click', async () => {
@@ -9340,7 +9454,133 @@ $('btnNotifAllow').addEventListener('click', async () => {
   } else {
     showToastNotification('⚠️ Unsupported Browser', 'Push notifications are not supported in your browser.');
   }
+  if (typeof window.checkAndPromptTutorial === 'function') {
+    window.checkAndPromptTutorial();
+  }
 });
+
+// ==================== INTERACTIVE TUTORIAL SYSTEM IMPLEMENTATION ====================
+window.checkAndPromptTutorial = function() {
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+  const uid = profile.uid;
+  if (!uid) return;
+  
+  // Check if they have already finished or skipped the tutorial
+  if (localStorage.getItem('arenaX_tutorial_done_' + uid)) {
+    return;
+  }
+  
+  // Show the tutorial choice modal
+  $('mTutorialChoiceModal').classList.remove('hidden');
+};
+
+function highlightElement(id) {
+  clearHighlight();
+  const el = $(id);
+  if (!el) return;
+  
+  activeHighlightedElementId = id;
+  el.classList.add('ring-4', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-[#070913]', 'animate-pulse', 'relative', 'z-40', 'transition-all', 'duration-300');
+  
+  try {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (err) {}
+}
+
+function clearHighlight() {
+  if (activeHighlightedElementId) {
+    const el = $(activeHighlightedElementId);
+    if (el) {
+      el.classList.remove('ring-4', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-[#070913]', 'animate-pulse', 'relative', 'z-40', 'transition-all', 'duration-300');
+    }
+    activeHighlightedElementId = null;
+  }
+}
+
+function startTutorialTour() {
+  $('mTutorialChoiceModal').classList.add('hidden');
+  const profile = userProfile || guestProfile;
+  if (profile) {
+    localStorage.setItem('arenaX_tutorial_done_' + profile.uid, 'completed');
+  }
+  currentTutorialStep = 0;
+  $('mTutorialTourCard').classList.remove('hidden');
+  renderTutorialStep(currentTutorialStep);
+}
+
+function skipTutorialTour() {
+  $('mTutorialChoiceModal').classList.add('hidden');
+  const profile = userProfile || guestProfile;
+  if (profile) {
+    localStorage.setItem('arenaX_tutorial_done_' + profile.uid, 'skipped');
+  }
+  showToastNotification('ℹ️ Tour Skipped', 'Aap jab chahein profile tab se matches explore kar sakte hain!');
+}
+
+function endTutorialTour() {
+  $('mTutorialTourCard').classList.add('hidden');
+  clearHighlight();
+  switchTab('Profile');
+  showToastNotification('🏆 Tour Completed!', 'Aapne ArenaX ka tour complete kar liya hai. Ab matches join karen aur dominate karen!');
+}
+
+function nextTutorialStep() {
+  if (currentTutorialStep < tutorialSteps.length - 1) {
+    currentTutorialStep++;
+    renderTutorialStep(currentTutorialStep);
+  } else {
+    endTutorialTour();
+  }
+}
+
+function prevTutorialStep() {
+  if (currentTutorialStep > 0) {
+    currentTutorialStep--;
+    renderTutorialStep(currentTutorialStep);
+  }
+}
+
+function renderTutorialStep(stepIndex) {
+  const step = tutorialSteps[stepIndex];
+  if (!step) return;
+  
+  // Switch tab programmatically
+  switchTab(step.tab);
+  
+  // Update step indicators
+  $('tutorialStepIndicator').textContent = `Step ${stepIndex + 1} of ${tutorialSteps.length}`;
+  $('tutorialStepTitle').textContent = step.title;
+  $('tutorialStepText').textContent = step.text;
+  
+  // Prev button visibility
+  if (stepIndex === 0) {
+    $('btnTutorialPrev').classList.add('hidden');
+  } else {
+    $('btnTutorialPrev').classList.remove('hidden');
+  }
+  
+  // Next button text
+  if (stepIndex === tutorialSteps.length - 1) {
+    $('btnTutorialNext').innerHTML = `Finish Tour 🏆`;
+    $('btnTutorialNext').className = "px-4 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-bg text-[10px] font-black uppercase tracking-wider rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer";
+  } else {
+    $('btnTutorialNext').innerHTML = `Next Step <i class="fas fa-arrow-right text-[9px]"></i>`;
+    $('btnTutorialNext').className = "px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer";
+  }
+  
+  // Highlight with a slight delay for smooth tab rendering
+  setTimeout(() => {
+    highlightElement(step.highlight);
+  }, 120);
+}
+
+// Bind tutorial event listeners
+$('btnTutorialStart').addEventListener('click', startTutorialTour);
+$('btnTutorialSkip').addEventListener('click', skipTutorialTour);
+$('btnTutorialEnd').addEventListener('click', endTutorialTour);
+$('btnTutorialPrev').addEventListener('click', prevTutorialStep);
+$('btnTutorialNext').addEventListener('click', nextTutorialStep);
 
 // Initial bootstrapper loads
 loadAvatarPickerGrid();
