@@ -418,7 +418,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
       <!-- Lottie Animation Loader placed in the loading progress area --> 
-       <lottie-player src="public/loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -547,7 +547,7 @@ if (typeof tailwind !== 'undefined') {
   <!-- TOPBAR -->
   <nav class="h-[56px] bg-panel border-b border-bdr flex items-center justify-between px-4 flex-shrink-0 z-50">
     <div class="font-display text-xl font-bold tracking-wider text-white flex items-center">
-      <img src="trophy.png" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
+      <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
       <!-- PWA Download Button -->
@@ -3203,14 +3203,17 @@ if (typeof tailwind !== 'undefined') {
 
       <!-- Horizontal Options Tray (Hidden by default, toggled on click) -->
       <div id="popularityTray" class="hidden opacity-0 max-h-0 overflow-hidden transition-all duration-300 ease-out space-y-2.5">
-        <div class="flex items-center gap-3 overflow-x-auto py-1.5 scrollbar-none justify-center">
+        <div class="flex items-center gap-3 overflow-x-auto py-1.5 scrollbar-none justify-center px-1">
           
           <!-- Option 1: Rose -->
           <button id="btnSendRose" class="flex items-center gap-2.5 p-2 bg-bg/80 hover:bg-rose-500/10 active:scale-95 border border-bdr hover:border-rose-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0">
             <!-- Dynamic rose content will be populated in updateSendButtonState -->
           </button>
 
-          <!-- Future items can be placed here side-by-side horizontally! -->
+          <!-- Option 2: Rocket -->
+          <button id="btnSendRocket" class="flex items-center gap-2.5 p-2 bg-bg/80 hover:bg-orange-500/10 active:scale-95 border border-bdr hover:border-orange-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0">
+            <!-- Dynamic rocket content will be populated in updateSendButtonState -->
+          </button>
           
         </div>
         
@@ -3218,8 +3221,9 @@ if (typeof tailwind !== 'undefined') {
         <div id="popSuccessMsg" class="hidden text-[10px] p-2 bg-green-500/10 border border-green-500/20 text-green rounded-lg text-center font-medium"></div>
         
         <!-- Flaticon Attribution -->
-        <div class="text-[8px] text-t3 text-center opacity-60 leading-normal">
+        <div class="text-[8px] text-t3 text-center opacity-60 leading-normal flex flex-col gap-0.5 justify-center items-center">
           <a href="https://www.flaticon.com/free-icons/rose-flower" title="rose flower icons" target="_blank" rel="noopener noreferrer" class="hover:underline">Rose icon created by Aryicon777 - Flaticon</a>
+          <span class="text-[7px]">Rocket icon by Flaticon</span>
         </div>
       </div>
     </div>
@@ -3236,6 +3240,19 @@ if (typeof tailwind !== 'undefined') {
     <div class="space-y-1">
       <h2 class="font-display text-2xl font-black text-rose-500 tracking-wider uppercase animate-bounce">Rose Received! 🌹</h2>
       <p class="text-xs text-t3 font-medium">Their popularity level has increased by +1!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Full screen Rocket Popularity Splash Overlay -->
+<div id="rocket-popularity-splash" class="fixed inset-0 bg-black/95 z-[300] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+  <div class="text-center space-y-4">
+    <div class="relative w-72 h-72 mx-auto">
+      <lottie-player id="rocketSplashLottie" src="rocket.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
+    </div>
+    <div class="space-y-1">
+      <h2 class="font-display text-2xl font-black text-orange-500 tracking-wider uppercase animate-bounce">Rocket Launched! 🚀</h2>
+      <p class="text-xs text-t3 font-medium">Their popularity level has increased by +10!</p>
     </div>
   </div>
 </div>
@@ -6377,6 +6394,7 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
   window.updateSendButtonState = () => {
     const activeId = window.currentViewingPlayerId;
     if (userProfile && activeId === userProfile.uid) {
+      // Disable Rose Button
       $('btnSendRose').disabled = true;
       $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-xl cursor-not-allowed text-left focus:outline-none min-w-[170px] shrink-0 opacity-60";
       $('btnSendRose').innerHTML = `
@@ -6388,7 +6406,21 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
           <span class="block text-[9px] text-neutral-500 truncate">Self-Popularity Blocked</span>
         </div>
       `;
+
+      // Disable Rocket Button
+      $('btnSendRocket').disabled = true;
+      $('btnSendRocket').className = "flex items-center gap-2.5 p-2 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-xl cursor-not-allowed text-left focus:outline-none min-w-[170px] shrink-0 opacity-60";
+      $('btnSendRocket').innerHTML = `
+        <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 shrink-0">
+          <img src="rocket.png" class="w-full h-full object-contain filter grayscale" alt="Rocket">
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="block text-xs font-bold leading-tight">Rocket Booster</span>
+          <span class="block text-[9px] text-neutral-500 truncate">Self-Popularity Blocked</span>
+        </div>
+      `;
     } else {
+      // Enable Rose Button
       $('btnSendRose').disabled = false;
       $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-bg hover:bg-rose-500/10 active:scale-95 border border-bdr hover:border-rose-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0";
       
@@ -6415,6 +6447,19 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
           </div>
         `;
       }
+
+      // Enable Rocket Button
+      $('btnSendRocket').disabled = false;
+      $('btnSendRocket').className = "flex items-center gap-2.5 p-2 bg-bg hover:bg-orange-500/10 active:scale-95 border border-bdr hover:border-orange-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0";
+      $('btnSendRocket').innerHTML = `
+        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center p-1.5 shrink-0">
+          <img src="rocket.png" class="w-full h-full object-contain animate-pulse" alt="Rocket">
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="block text-xs font-bold text-white leading-tight">Rocket Booster</span>
+          <span class="block text-[9px] text-t3 truncate">Send Rocket (100 AX)</span>
+        </div>
+      `;
     }
   };
   
@@ -6678,6 +6723,111 @@ $('btnSendRose').addEventListener('click', async () => {
         splash.classList.add('hidden');
       }, 300);
     }, 2000);
+    
+  } catch (error) {
+    console.error("Error sending popularity:", error);
+    alert("Failed to send popularity: " + error.message);
+    btn.innerHTML = originalHTML;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── SEND ROCKET POPULARITY EVENT HANDLER ──
+$('btnSendRocket').addEventListener('click', async () => {
+  if (!userProfile) {
+    alert("Please sign in to send popularity! ❌");
+    return;
+  }
+  
+  const recipientId = window.currentViewingPlayerId;
+  if (!recipientId) return;
+  
+  if (recipientId === userProfile.uid) {
+    alert("You cannot send popularity to yourself! 🚀");
+    return;
+  }
+  
+  const balance = userProfile.balance || 0;
+  if (balance < 100) {
+    alert("Insufficient AX Coins! You need 100 AX Coins to send a Rocket Booster. ❌");
+    return;
+  }
+  
+  const btn = $('btnSendRocket');
+  btn.disabled = true;
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = `
+    <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center p-1.5 shrink-0">
+      <i class="fas fa-circle-notch animate-spin text-orange-500 text-sm"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <span class="block text-xs font-bold text-white leading-tight">Rocket Booster</span>
+      <span class="block text-[9px] text-t3 truncate">Launching...</span>
+    </div>
+  `;
+  
+  try {
+    // 1. Update recipient's popularity by +10
+    const recipientRef = doc(db, 'users', recipientId);
+    await updateDoc(recipientRef, {
+      popularity: increment(10)
+    });
+    
+    // 2. Update sender's profile (Deduct 100 AX)
+    const senderRef = doc(db, 'users', userProfile.uid);
+    await updateDoc(senderRef, {
+      balance: increment(-100)
+    });
+    
+    // Add transaction history record to track spent AX coins
+    const txnId = 'POP-' + Math.floor(100000 + Math.random() * 900000);
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      userHandle: userProfile.handle,
+      amountPKR: 0,
+      amountAX: 100,
+      method: `Popularity Rocket Sent to ${window.currentViewingPlayerName}`,
+      txnId: txnId,
+      status: 'approved',
+      type: 'withdrawal',
+      submittedAt: serverTimestamp()
+    });
+    
+    // Update local UI
+    const currentVal = parseInt($('vPartPopularityVal').textContent) || 0;
+    $('vPartPopularityVal').textContent = currentVal + 10;
+    
+    // Display success msg
+    const successMsg = $('popSuccessMsg');
+    successMsg.textContent = `You sent a Rocket to ${window.currentViewingPlayerName}! +10 Popularity! 🚀`;
+    successMsg.classList.remove('hidden');
+    
+    // Update button states after sending
+    window.updateSendButtonState();
+
+    // 3. Play Rocket splash overlay with black background for 3 seconds
+    const splash = $('rocket-popularity-splash');
+    const player = document.getElementById('rocketSplashLottie');
+    
+    // Trigger replay
+    if (player && typeof player.stop === 'function') {
+      player.stop();
+      player.play();
+    }
+    
+    splash.classList.remove('hidden');
+    // Force reflow
+    splash.offsetHeight;
+    splash.style.opacity = '1';
+    
+    setTimeout(() => {
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.classList.add('hidden');
+      }, 300);
+    }, 3000);
     
   } catch (error) {
     console.error("Error sending popularity:", error);
