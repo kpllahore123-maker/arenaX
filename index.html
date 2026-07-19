@@ -707,29 +707,29 @@ if (typeof tailwind !== 'undefined') {
 
       <!-- ACCOUNT NAVIGATION -->
       <div class="bg-card border border-bdr rounded-xl divide-y divide-bdr overflow-hidden">
-        <div class="px-4 py-2.5 text-[10px] font-semibold text-t2 uppercase tracking-wider bg-panel/50">Account Navigation</div>
+        <div id="lblAccNavHeader" class="px-4 py-2.5 text-[10px] font-semibold text-t2 uppercase tracking-wider bg-panel/50">Account Navigation</div>
         
         <button id="btnEditProfile" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-pen text-gold w-4"></i> Edit Display Name</span>
+          <span class="flex items-center gap-3"><i class="fas fa-pen text-gold w-4"></i> <span id="lblEditDisplayName">Edit Display Name</span></span>
           <i class="fas fa-chevron-right text-xs"></i>
         </button>
         <button id="btnCustomize" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-palette text-gold w-4"></i> Customize Profile</span>
+          <span class="flex items-center gap-3"><i class="fas fa-palette text-gold w-4"></i> <span id="lblCustomizeProfile">Customize Profile</span></span>
           <span class="flex items-center gap-2">
             <span class="text-[9px] bg-purple/15 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium</span>
             <i class="fas fa-chevron-right text-xs"></i>
           </span>
         </button>
         <button id="btnPlayerChat" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-comments text-gold w-4"></i> Direct Messages</span>
+          <span class="flex items-center gap-3"><i class="fas fa-comments text-gold w-4"></i> <span id="lblDirectMessages">Direct Messages</span></span>
           <i class="fas fa-chevron-right text-xs"></i>
         </button>
         <button id="btnPremium" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-crown text-gold w-4"></i> Premium Passes</span>
+          <span class="flex items-center gap-3"><i class="fas fa-crown text-gold w-4"></i> <span id="lblPremiumPasses">Premium Passes</span></span>
           <i class="fas fa-chevron-right text-xs"></i>
         </button>
         <button id="bLogout" class="w-full text-left px-4 py-3 hover:bg-red/10 text-sm flex items-center justify-between text-red transition">
-          <span class="flex items-center gap-3"><i class="fas fa-sign-out-alt w-4"></i> Sign Out</span>
+          <span class="flex items-center gap-3"><i class="fas fa-sign-out-alt w-4"></i> <span id="lblSignOut">Sign Out</span></span>
           <i class="fas fa-chevron-right text-xs"></i>
         </button>
       </div>
@@ -1443,24 +1443,24 @@ if (typeof tailwind !== 'undefined') {
   <!-- BOTTOM FOOTER NAVIGATION -->
   <nav class="fixed bottom-0 left-0 right-0 h-[64px] bg-panel border-t border-bdr flex items-stretch z-45">
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Profile">
-      <i class="fas fa-user text-base"></i><span>Profile</span>
+      <i class="fas fa-user text-base"></i><span id="navProfileText">Profile</span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Tour">
-      <i class="fas fa-trophy text-base"></i><span>Events</span>
+      <i class="fas fa-trophy text-base"></i><span id="navEventsText">Events</span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Wallet">
-      <i class="fas fa-wallet text-base"></i><span>Wallet</span>
+      <i class="fas fa-wallet text-base"></i><span id="navWalletText">Wallet</span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Voice">
-      <i class="fas fa-microphone text-base"></i><span>Voice</span>
+      <i class="fas fa-microphone text-base"></i><span id="navVoiceText">Voice</span>
       <span id="voiceDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1" data-t="Chat">
-      <i class="fas fa-comments text-base"></i><span>Chat</span>
+      <i class="fas fa-comments text-base"></i><span id="navChatText">Chat</span>
       <span id="chatDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-gold hidden"></span>
     </button>
     <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-150 relative py-1 hidden" data-t="Support">
-      <i class="fas fa-headset text-base"></i><span>Support</span>
+      <i class="fas fa-headset text-base"></i><span id="navSupportText">Support</span>
     </button>
   </nav>
 </div>
@@ -2296,6 +2296,35 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 
+<!-- ==================== LANGUAGE SELECTION MODAL ==================== -->
+<div id="mLanguageSelectionModal" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[318] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[400px] w-full space-y-5 relative animate-scale-in flex flex-col shadow-2xl text-center">
+    <div class="flex flex-col items-center space-y-3">
+      <div class="w-16 h-16 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-3xl relative shadow-lg shadow-gold/5 animate-pulse">
+        <i class="fas fa-language animate-bounce" style="animation-duration: 3s;"></i>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-display text-xl font-black text-white tracking-wide uppercase">Select Language</h3>
+        <p class="text-[10px] text-gold uppercase font-bold tracking-wider">Aapki tarjih kya hai?</p>
+      </div>
+    </div>
+    
+    <p class="text-xs text-t2 font-medium px-2 leading-relaxed">
+      Welcome to ArenaX! Please choose your preferred language for the app interface and tutorials.
+    </p>
+    
+    <div class="flex flex-col gap-2 pt-2">
+      <button id="btnLangEn" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 text-white text-xs font-black uppercase tracking-wider rounded-xl transition duration-150 shadow-md cursor-pointer flex items-center justify-center gap-2">
+        🇺🇸 English
+      </button>
+      <button id="btnLangUr" class="w-full py-3 bg-gradient-to-r from-gold to-amber-500 hover:brightness-110 text-bg text-xs font-black uppercase tracking-wider rounded-xl transition duration-150 shadow-md cursor-pointer flex items-center justify-center gap-2">
+        🇵🇰 Urdu / Roman Urdu (اردو)
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <!-- ==================== INTERACTIVE TUTORIAL CHOICE MODAL ==================== -->
 <div id="mTutorialChoiceModal" class="fixed inset-0 bg-black/95 backdrop-filter backdrop-blur-md z-[315] flex items-center justify-center p-4 hidden animate-fade-in">
   <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[400px] w-full space-y-5 relative animate-scale-in flex flex-col shadow-2xl text-center">
@@ -2691,6 +2720,19 @@ if (typeof tailwind !== 'undefined') {
             <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
           </label>
         </div>
+      </div>
+    </div>
+
+    <!-- Language Selection -->
+    <div class="space-y-3">
+      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">App Language / زبان منتخب کریں</h4>
+      <div class="flex gap-2">
+        <button id="btnSettingsLangEn" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-lg text-xs font-semibold transition hover:border-gold/50 flex items-center justify-center gap-1.5 cursor-pointer">
+          🇺🇸 English
+        </button>
+        <button id="btnSettingsLangUr" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-lg text-xs font-semibold transition hover:border-gold/50 flex items-center justify-center gap-1.5 cursor-pointer">
+          🇵🇰 Urdu / Roman Urdu (اردو)
+        </button>
       </div>
     </div>
 
@@ -9459,6 +9501,242 @@ $('btnNotifAllow').addEventListener('click', async () => {
   }
 });
 
+// ==================== LOCALIZATION & TRANSLATIONS ENGINE ====================
+window.appLanguage = 'ur'; // default language
+
+const translations = {
+  en: {
+    navProfile: "Profile",
+    navEvents: "Events",
+    navWallet: "Wallet",
+    navVoice: "Voice",
+    navChat: "Chat",
+    navSupport: "Support",
+    accNavHeader: "Account Navigation",
+    editDisplayName: "Edit Display Name",
+    customizeProfile: "Customize Profile",
+    directMessages: "Direct Messages",
+    premiumPasses: "Premium Passes",
+    signOut: "Sign Out",
+    lblTournaments: "Tournaments",
+    lblWins: "Wins",
+    lblWinRate: "Win Rate",
+    lblBestFinish: "Best Finish",
+    lblMyProfileHeader: "My Profile",
+    lblMyWalletHeader: "My Wallet",
+    tutorialSteps: [
+      {
+        title: "Your Profile Hub 👤",
+        text: "Welcome gamer! This is your personal Profile Hub. Here you can view your display name, unique handle, level ranks, wallet AX balance, and total hearts popularity rating live.",
+        tab: "Profile",
+        highlight: "profileCard",
+      },
+      {
+        title: "Esports Tournaments 🏆",
+        text: "On the Events page, you will find all live, upcoming, and ended matches. Register in your favorite esports contest to win AX coins and real cash prizes!",
+        tab: "Tour",
+        highlight: "toursWrapper",
+      },
+      {
+        title: "Secure AX Wallet 💰",
+        text: "From the Wallet section, you can easily deposit funds and withdraw your winnings directly to your bank account or local digital wallets.",
+        tab: "Wallet",
+        highlight: "wCard",
+      },
+      {
+        title: "Global Chat & Voice Lobbies 🎤",
+        text: "Connect with other players! Chat in the global feed, add friends, and join high-quality low-latency voice channels to coordinate with your team.",
+        tab: "Chat",
+        highlight: "tChat",
+      },
+      {
+        title: "Profile Customization 🎨",
+        text: "Click Edit Display Name or Customize Profile to set your bio, social links, and avatars. Unlock premium golden frames and glowing banners! 👑",
+        tab: "Profile",
+        highlight: "btnCustomize",
+      }
+    ]
+  },
+  ur: {
+    navProfile: "پروفائل",
+    navEvents: "ٹورنامنٹس",
+    navWallet: "والٹ",
+    navVoice: "وائس چیٹ",
+    navChat: "چیٹ",
+    navSupport: "سپورٹ",
+    accNavHeader: "اکاؤنٹ نیویگیشن",
+    editDisplayName: "نام تبدیل کریں",
+    customizeProfile: "پروفائل سجائیں",
+    directMessages: "ڈائریکٹ میسجز",
+    premiumPasses: "پریمیئم پاسز",
+    signOut: "سائن آؤٹ",
+    lblTournaments: "ٹورنامنٹس",
+    lblWins: "جیتیں",
+    lblWinRate: "جیت کا تناسب",
+    lblBestFinish: "بہترین پوزیشن",
+    lblMyProfileHeader: "میری پروفائل",
+    lblMyWalletHeader: "میرا والٹ",
+    tutorialSteps: [
+      {
+        title: "Aapka Profile Hub 👤",
+        text: "Aao gamer! Yeh aapka personal Profile Hub hai. Yahan aap apna display name, unique handle, level ranks, wallet AX balance aur total hearts popularity rating live dekh sakte hain.",
+        tab: "Profile",
+        highlight: "profileCard",
+      },
+      {
+        title: "Esports Tournaments 🏆",
+        text: "Events page par aapko saare live, upcoming aur ended matches milenge. Apni pasand ke esports contest me register karke cash prize pools jeeten!",
+        tab: "Tour",
+        highlight: "toursWrapper",
+      },
+      {
+        title: "Secure AX Wallet 💰",
+        text: "Wallet section se aap asani se Recharge kar sakte hain aur apni winnings ko seedha bank ya digital wallet me instant withdraw kar sakte hain.",
+        tab: "Wallet",
+        highlight: "wCard",
+      },
+      {
+        title: "Global Chat & Voice Lobbies 🎤",
+        text: "Dosre gamers ke sath connect hon! Global feed me chat karen, friends add karen aur high-quality low-latency audio room channels join karke dosto se voice chat karen.",
+        tab: "Chat",
+        highlight: "tChat",
+      },
+      {
+        title: "Profile Customization 🎨",
+        text: "Edit Display Name ya Customize Profile par click karke bio, social links aur custom avatar set karen. Premium VIP lekar golden frames aur glowing banners unlock karen! 👑",
+        tab: "Profile",
+        highlight: "btnCustomize",
+      }
+    ]
+  }
+};
+
+window.applyAppLanguage = function(lang) {
+  window.appLanguage = lang;
+  
+  const dict = translations[lang] || translations.ur;
+  
+  // Save preference
+  const profile = userProfile || guestProfile;
+  if (profile && profile.uid) {
+    localStorage.setItem('arenaX_language_' + profile.uid, lang);
+  }
+  localStorage.setItem('arenaX_global_lang', lang);
+  
+  // Update UI Elements
+  if ($('navProfileText')) $('navProfileText').textContent = dict.navProfile;
+  if ($('navEventsText')) $('navEventsText').textContent = dict.navEvents;
+  if ($('navWalletText')) $('navWalletText').textContent = dict.navWallet;
+  if ($('navVoiceText')) $('navVoiceText').textContent = dict.navVoice;
+  if ($('navChatText')) $('navChatText').textContent = dict.navChat;
+  if ($('navSupportText')) $('navSupportText').textContent = dict.navSupport;
+  
+  if ($('lblTournaments')) $('lblTournaments').textContent = dict.lblTournaments;
+  if ($('lblWins')) $('lblWins').textContent = dict.lblWins;
+  if ($('lblWinRate')) $('lblWinRate').textContent = dict.lblWinRate;
+  if ($('lblBestFinish')) $('lblBestFinish').textContent = dict.lblBestFinish;
+  
+  const profileHeader = $('lblMyProfileHeader');
+  if (profileHeader) {
+    profileHeader.innerHTML = `<i class="fas fa-user-circle text-gold"></i> ${dict.lblMyProfileHeader}`;
+  }
+  const walletHeader = $('lblMyWalletHeader');
+  if (walletHeader) {
+    walletHeader.innerHTML = `<i class="fas fa-wallet text-gold"></i> ${dict.lblMyWalletHeader}`;
+  }
+  
+  if ($('lblAccNavHeader')) $('lblAccNavHeader').textContent = dict.accNavHeader;
+  if ($('lblEditDisplayName')) $('lblEditDisplayName').textContent = dict.editDisplayName;
+  if ($('lblCustomizeProfile')) $('lblCustomizeProfile').textContent = dict.customizeProfile;
+  if ($('lblDirectMessages')) $('lblDirectMessages').textContent = dict.directMessages;
+  if ($('lblPremiumPasses')) $('lblPremiumPasses').textContent = dict.premiumPasses;
+  if ($('lblSignOut')) $('lblSignOut').textContent = dict.signOut;
+  
+  // Update Tutorial Choice Modal
+  if ($('mTutorialChoiceModal')) {
+    const titleEl = $('mTutorialChoiceModal').querySelector('h3');
+    const descEl = $('mTutorialChoiceModal').querySelector('p.text-xs');
+    if (lang === 'en') {
+      if (titleEl) titleEl.textContent = "New Player Tour";
+      if (descEl) descEl.textContent = "Welcome gamer! 🎮 Would you like to take a quick 1-minute interactive tour of ArenaX to easily understand matches, tournaments, wallet and chat systems?";
+      if ($('btnTutorialSkip')) $('btnTutorialSkip').textContent = "No, Skip ❌";
+      if ($('btnTutorialStart')) $('btnTutorialStart').textContent = "Yes, Start! 🚀";
+    } else {
+      if (titleEl) titleEl.textContent = "New Player Tour";
+      if (descEl) descEl.textContent = "Aao gamer! 🎮 Kya aap ArenaX ka quick 1-minute interactive tour lena chahenge taake matches, tournaments, wallet aur chat systems ko asani se samajh saken?";
+      if ($('btnTutorialSkip')) $('btnTutorialSkip').textContent = "Nahi, Skip ❌";
+      if ($('btnTutorialStart')) $('btnTutorialStart').textContent = "Haan, Start! 🚀";
+    }
+  }
+  
+  // Settings Selection Active Highlights
+  updateLanguageSettingsUI();
+  
+  // Sync Tutorial Steps Reference
+  tutorialSteps.length = 0;
+  dict.tutorialSteps.forEach(s => tutorialSteps.push(s));
+  
+  // Refresh Tutorial steps visual if currently in tutorial progress
+  if ($('mTutorialTourCard') && !$('mTutorialTourCard').classList.contains('hidden')) {
+    renderTutorialStep(currentTutorialStep);
+  }
+};
+
+function updateLanguageSettingsUI() {
+  const btnEn = $('btnSettingsLangEn');
+  const btnUr = $('btnSettingsLangUr');
+  
+  if (btnEn && btnUr) {
+    if (window.appLanguage === 'en') {
+      btnEn.className = "flex-1 py-2 px-3 bg-gold text-bg border border-gold rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer";
+      btnUr.className = "flex-1 py-2 px-3 bg-card border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition hover:border-gold/30 flex items-center justify-center gap-1.5 cursor-pointer";
+    } else {
+      btnEn.className = "flex-1 py-2 px-3 bg-card border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition hover:border-gold/30 flex items-center justify-center gap-1.5 cursor-pointer";
+      btnUr.className = "flex-1 py-2 px-3 bg-gold text-bg border border-gold rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer";
+    }
+  }
+}
+
+// Bind Settings Language Buttons
+if ($('btnSettingsLangEn')) {
+  $('btnSettingsLangEn').addEventListener('click', () => {
+    window.applyAppLanguage('en');
+    showToastNotification('🇺🇸 Language Set', 'Interface language changed to English.');
+  });
+}
+if ($('btnSettingsLangUr')) {
+  $('btnSettingsLangUr').addEventListener('click', () => {
+    window.applyAppLanguage('ur');
+    showToastNotification('🇵🇰 زبان تبدیل', 'زبان کامیابی سے اردو میں تبدیل ہو گئی ہے۔');
+  });
+}
+
+// Bind Modal Language Buttons
+if ($('btnLangEn')) {
+  $('btnLangEn').addEventListener('click', () => {
+    window.applyAppLanguage('en');
+    $('mLanguageSelectionModal').classList.add('hidden');
+    
+    // Check tutorial state
+    const profile = userProfile || guestProfile;
+    if (profile && !localStorage.getItem('arenaX_tutorial_done_' + profile.uid)) {
+      $('mTutorialChoiceModal').classList.remove('hidden');
+    }
+  });
+}
+if ($('btnLangUr')) {
+  $('btnLangUr').addEventListener('click', () => {
+    window.applyAppLanguage('ur');
+    $('mLanguageSelectionModal').classList.add('hidden');
+    
+    // Check tutorial state
+    const profile = userProfile || guestProfile;
+    if (profile && !localStorage.getItem('arenaX_tutorial_done_' + profile.uid)) {
+      $('mTutorialChoiceModal').classList.remove('hidden');
+    }
+  });
+}
+
 // ==================== INTERACTIVE TUTORIAL SYSTEM IMPLEMENTATION ====================
 window.checkAndPromptTutorial = function() {
   const profile = userProfile || guestProfile;
@@ -9466,7 +9744,18 @@ window.checkAndPromptTutorial = function() {
   const uid = profile.uid;
   if (!uid) return;
   
-  // Check if they have already finished or skipped the tutorial
+  // 1. Resolve Language Preference first
+  const savedLang = localStorage.getItem('arenaX_language_' + uid) || localStorage.getItem('arenaX_global_lang');
+  if (!savedLang) {
+    // Show Language selection modal first!
+    $('mLanguageSelectionModal').classList.remove('hidden');
+    return;
+  }
+  
+  // Apply saved language preference
+  window.applyAppLanguage(savedLang);
+  
+  // 2. Check if they have already finished or skipped the tutorial
   if (localStorage.getItem('arenaX_tutorial_done_' + uid)) {
     return;
   }
@@ -9515,14 +9804,22 @@ function skipTutorialTour() {
   if (profile) {
     localStorage.setItem('arenaX_tutorial_done_' + profile.uid, 'skipped');
   }
-  showToastNotification('ℹ️ Tour Skipped', 'Aap jab chahein profile tab se matches explore kar sakte hain!');
+  if (window.appLanguage === 'en') {
+    showToastNotification('ℹ️ Tour Skipped', 'You can explore matches directly from the Events tab!');
+  } else {
+    showToastNotification('ℹ️ Tour Skipped', 'Aap jab chahein events tab se matches explore kar sakte hain!');
+  }
 }
 
 function endTutorialTour() {
   $('mTutorialTourCard').classList.add('hidden');
   clearHighlight();
   switchTab('Profile');
-  showToastNotification('🏆 Tour Completed!', 'Aapne ArenaX ka tour complete kar liya hai. Ab matches join karen aur dominate karen!');
+  if (window.appLanguage === 'en') {
+    showToastNotification('🏆 Tour Completed!', 'You have successfully completed the ArenaX tour. Join matches now and dominate!');
+  } else {
+    showToastNotification('🏆 Tour Completed!', 'Aapne ArenaX ka tour complete kar liya hai. Ab matches join karen aur dominate karen!');
+  }
 }
 
 function nextTutorialStep() {
