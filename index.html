@@ -3190,30 +3190,38 @@ if (typeof tailwind !== 'undefined') {
       </div>
     </div>
 
-    <!-- Send Popularity Action Section -->
-    <div id="popularityActionBox" class="p-4 bg-card border border-bdr rounded-xl space-y-3">
-      <h4 class="text-[10px] uppercase tracking-wider text-rose-400 font-bold border-b border-rose-500/20 pb-1.5 flex items-center gap-1.5">
-        <i class="fas fa-gift"></i> Send Popularity
-      </h4>
-      <p class="text-[10px] text-t3 leading-normal">
-        Shower this player with love! Send a Rose to boost their popularity score by +1.
-      </p>
-      
-      <div class="flex items-center justify-between bg-bg border border-bdr/60 p-2.5 rounded-lg">
+    <!-- Send Popularity Compact Section -->
+    <div id="popularityCompactSection" class="p-3 bg-card border border-bdr rounded-xl space-y-2">
+      <!-- Toggle Header / Button -->
+      <button id="btnTogglePopularity" class="w-full py-2 px-3 bg-gradient-to-r from-rose-500/10 to-pink-500/10 hover:from-rose-500/15 hover:to-pink-500/15 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-lg transition active:scale-95 flex items-center justify-between cursor-pointer">
         <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-lg">
-            🌹
-          </div>
-          <div>
-            <span class="block text-xs font-bold text-white">Rose Popularity</span>
-            <span class="block text-[9px] text-t3" id="popularityCostText">1 Free Daily, then 10 AX Coins</span>
-          </div>
+          <img src="rose.png" class="w-4 h-4 object-contain animate-pulse" alt="Rose">
+          <span class="tracking-wide text-rose-400">Send Popularity</span>
         </div>
-        <button id="btnSendRose" class="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
-          <i class="fas fa-paper-plane text-[10px]"></i> Send Rose
-        </button>
+        <i class="fas fa-chevron-down text-[10px] opacity-75 transition-transform duration-300" id="popularityChevron"></i>
+      </button>
+
+      <!-- Horizontal Options Tray (Hidden by default, toggled on click) -->
+      <div id="popularityTray" class="hidden opacity-0 max-h-0 overflow-hidden transition-all duration-300 ease-out space-y-2.5">
+        <div class="flex items-center gap-3 overflow-x-auto py-1.5 scrollbar-none justify-center">
+          
+          <!-- Option 1: Rose -->
+          <button id="btnSendRose" class="flex items-center gap-2.5 p-2 bg-bg/80 hover:bg-rose-500/10 active:scale-95 border border-bdr hover:border-rose-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0">
+            <!-- Dynamic rose content will be populated in updateSendButtonState -->
+          </button>
+
+          <!-- Future items can be placed here side-by-side horizontally! -->
+          
+        </div>
+        
+        <!-- Status / Success Message inside the tray -->
+        <div id="popSuccessMsg" class="hidden text-[10px] p-2 bg-green-500/10 border border-green-500/20 text-green rounded-lg text-center font-medium"></div>
+        
+        <!-- Flaticon Attribution -->
+        <div class="text-[8px] text-t3 text-center opacity-60 leading-normal">
+          <a href="https://www.flaticon.com/free-icons/rose-flower" title="rose flower icons" target="_blank" rel="noopener noreferrer" class="hover:underline">Rose icon created by Aryicon777 - Flaticon</a>
+        </div>
       </div>
-      <div id="popSuccessMsg" class="hidden text-[10px] p-2 bg-green-500/10 border border-green-500/20 text-green rounded-lg text-center font-medium"></div>
     </div>
 
   </div>
@@ -6353,30 +6361,64 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
   // Apply default border / gradient
   $('vPartCard').className = 'p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-card to-card/40';
 
+  // Reset popularity compact tray state
+  const tray = $('popularityTray');
+  if (tray) {
+    tray.classList.add('hidden');
+    tray.style.maxHeight = '0px';
+    tray.style.opacity = '0';
+  }
+  const chevron = $('popularityChevron');
+  if (chevron) {
+    chevron.style.transform = 'rotate(0deg)';
+  }
+
   // Configure Send Popularity Action state
-  const updateSendButtonState = () => {
-    if (userProfile && pId === userProfile.uid) {
+  window.updateSendButtonState = () => {
+    const activeId = window.currentViewingPlayerId;
+    if (userProfile && activeId === userProfile.uid) {
       $('btnSendRose').disabled = true;
-      $('btnSendRose').className = "px-3.5 py-1.5 bg-neutral-700 text-neutral-400 text-xs font-bold rounded-lg cursor-not-allowed flex items-center gap-1.5";
-      $('btnSendRose').innerHTML = '<i class="fas fa-ban text-[10px]"></i> Self-Popularity Blocked';
-      $('popularityCostText').textContent = 'You cannot send popularity to yourself! 🌹';
+      $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-xl cursor-not-allowed text-left focus:outline-none min-w-[170px] shrink-0 opacity-60";
+      $('btnSendRose').innerHTML = `
+        <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 shrink-0">
+          <img src="rose.png" class="w-full h-full object-contain filter grayscale" alt="Rose">
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="block text-xs font-bold leading-tight">Rose Popularity</span>
+          <span class="block text-[9px] text-neutral-500 truncate">Self-Popularity Blocked</span>
+        </div>
+      `;
     } else {
       $('btnSendRose').disabled = false;
-      $('btnSendRose').className = "px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer";
+      $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-bg hover:bg-rose-500/10 active:scale-95 border border-bdr hover:border-rose-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0";
       
       const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
       const isFree = !userProfile || !userProfile.lastFreeRoseDate || userProfile.lastFreeRoseDate !== todayDate;
       if (isFree) {
-        $('popularityCostText').textContent = 'Your daily free Rose is available! 🌹';
-        $('btnSendRose').innerHTML = '<i class="fas fa-paper-plane text-[10px]"></i> Send Free Rose';
+        $('btnSendRose').innerHTML = `
+          <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center p-1.5 shrink-0">
+            <img src="rose.png" class="w-full h-full object-contain animate-pulse" alt="Rose">
+          </div>
+          <div class="flex-1 min-w-0">
+            <span class="block text-xs font-bold text-white leading-tight">Rose Popularity</span>
+            <span class="block text-[9px] text-t3 truncate">Daily Free Rose 🌹</span>
+          </div>
+        `;
       } else {
-        $('popularityCostText').textContent = 'Daily free used. Next Rose costs 10 AX Coins.';
-        $('btnSendRose').innerHTML = '<i class="fas fa-paper-plane text-[10px]"></i> Send Rose (10 AX)';
+        $('btnSendRose').innerHTML = `
+          <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center p-1.5 shrink-0">
+            <img src="rose.png" class="w-full h-full object-contain animate-pulse" alt="Rose">
+          </div>
+          <div class="flex-1 min-w-0">
+            <span class="block text-xs font-bold text-white leading-tight">Rose Popularity</span>
+            <span class="block text-[9px] text-t3 truncate">Send Rose (10 AX)</span>
+          </div>
+        `;
       }
     }
   };
   
-  updateSendButtonState();
+  window.updateSendButtonState();
 
   // Open the view modal
   $('mViewParticipantProfile').classList.remove('hidden');
@@ -6506,6 +6548,29 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
 
 $('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));
 
+// ── TOGGLE POPULARITY TRAY EVENT HANDLER ──
+$('btnTogglePopularity').addEventListener('click', () => {
+  const tray = $('popularityTray');
+  const chevron = $('popularityChevron');
+  if (tray.classList.contains('hidden')) {
+    tray.classList.remove('hidden');
+    // Force browser layout reflow to trigger transition
+    tray.offsetHeight;
+    tray.style.maxHeight = '220px';
+    tray.style.opacity = '1';
+    chevron.style.transform = 'rotate(180deg)';
+  } else {
+    tray.style.maxHeight = '0px';
+    tray.style.opacity = '0';
+    chevron.style.transform = 'rotate(0deg)';
+    setTimeout(() => {
+      if (tray.style.maxHeight === '0px') {
+        tray.classList.add('hidden');
+      }
+    }, 300);
+  }
+});
+
 // ── SEND ROSE POPULARITY EVENT HANDLER ──
 $('btnSendRose').addEventListener('click', async () => {
   if (!userProfile) {
@@ -6536,7 +6601,15 @@ $('btnSendRose').addEventListener('click', async () => {
   const btn = $('btnSendRose');
   btn.disabled = true;
   const originalHTML = btn.innerHTML;
-  btn.textContent = 'Sending...';
+  btn.innerHTML = `
+    <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center p-1.5 shrink-0">
+      <i class="fas fa-circle-notch animate-spin text-rose-500 text-sm"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <span class="block text-xs font-bold text-white leading-tight">Rose Popularity</span>
+      <span class="block text-[9px] text-t3 truncate">Sending...</span>
+    </div>
+  `;
   
   try {
     // 1. Update recipient's popularity
@@ -6582,8 +6655,7 @@ $('btnSendRose').addEventListener('click', async () => {
     successMsg.classList.remove('hidden');
     
     // Update button states after sending
-    $('popularityCostText').textContent = 'Daily free used. Next Rose costs 10 AX Coins.';
-    btn.innerHTML = '<i class="fas fa-paper-plane text-[10px]"></i> Send Rose (10 AX)';
+    window.updateSendButtonState();
 
     // 3. Play Rose splash overlay with black background for 2 seconds
     const splash = $('rose-popularity-splash');
