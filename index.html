@@ -1862,6 +1862,17 @@ if (typeof tailwind !== 'undefined') {
       <span id="inboxBadgeCount" class="absolute top-2 right-2 w-5 h-5 bg-red text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
     </div>
 
+    <!-- Guilds & Teams Card -->
+    <div id="btnHubGuilds" class="bg-card hover:bg-ele/60 border border-bdr hover:border-gold/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
+        <i class="fas fa-shield-alt text-gold"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🛡️ Guild & Teams Hub</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Form teams, level up & compete</p>
+      </div>
+    </div>
+
     <!-- Submission Event Card -->
     <div id="btnHubSubmission" class="bg-card hover:bg-ele/60 border border-bdr hover:border-orange-500/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
       <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center text-lg flex-shrink-0">
@@ -1933,6 +1944,189 @@ if (typeof tailwind !== 'undefined') {
           <!-- Dynamically populated 12 badges -->
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ARENAX GUILDS & TEAMS SYSTEM MODAL ==================== -->
+<div id="mGuildSystemModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[240] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0b0c14] border border-gold/30 rounded-2xl w-full max-w-[1100px] h-[90vh] flex flex-col shadow-[0_0_50px_rgba(192,160,48,0.15)] overflow-hidden text-t1 font-sans">
+    
+    <!-- Modal Header -->
+    <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-card/60 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-users text-gold text-lg"></i>
+        <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">🛡️ Guild & Teams Hub</h3>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="bCloseGuildsSystem" class="text-t3 hover:text-white transition cursor-pointer text-sm w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Container Grid -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden min-h-0">
+      
+      <!-- LEFT PANEL: Guild List (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col h-full min-h-0 space-y-3">
+        <!-- Controls Header: Create Guild & Search -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+          <button id="btnCreateGuildTrigger" class="px-3 py-2 bg-gold hover:bg-[#e8b830] text-bg text-[11px] font-black uppercase rounded-lg transition active:scale-[0.98] cursor-pointer flex items-center gap-1.5">
+            <i class="fas fa-plus"></i> Create Guild
+          </button>
+          
+          <div class="flex items-center gap-2 flex-1 max-w-sm ml-auto">
+            <div class="relative flex-1">
+              <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
+              <input id="guildSearchInput" type="text" placeholder="Search by name, tag, or leader..." class="w-full bg-card border border-bdr rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-gold/50 transition" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Table / List Column Headers -->
+        <div class="grid grid-cols-12 px-3 py-1.5 bg-card/20 rounded-lg text-[10px] text-t3 font-bold uppercase tracking-wider border border-bdr/20">
+          <div class="col-span-5 flex items-center">Guild Info</div>
+          <div class="col-span-2 text-center">Level</div>
+          <div class="col-span-2 text-center">Members</div>
+          <div class="col-span-3 text-right">Slogan Type</div>
+        </div>
+
+        <!-- Scrollable Guild Rows -->
+        <div id="guildsRowsContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Guild Details (5 cols) -->
+      <div id="guildDetailsPanel" class="lg:col-span-5 flex flex-col h-full bg-[#111322] border border-bdr/60 rounded-xl p-4 overflow-y-auto space-y-4">
+        <!-- Will show selected guild info dynamically or a placeholder if no guilds -->
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CREATE GUILD MODAL ==================== -->
+<div id="mCreateGuild" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[245] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full flex flex-col max-h-[90vh] shadow-2xl overflow-y-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-sm">
+          <i class="fas fa-plus-circle"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Create New Guild</h3>
+          <p class="text-[9px] text-t3 font-mono">Establish your tournament squad</p>
+        </div>
+      </div>
+      <button id="bCloseCreateGuild" class="text-t3 hover:text-white transition cursor-pointer text-sm w-7 h-7 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Form Fields -->
+    <div class="space-y-4 mt-4">
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Name <span class="text-red">*</span></label>
+        <input id="cgName" type="text" placeholder="e.g. DeathSquad" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Tag (Max 5 Chars) <span class="text-red">*</span></label>
+          <input id="cgTag" type="text" placeholder="e.g. DSQD" max="5" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition uppercase" />
+        </div>
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Shield / Logo Style</label>
+          <select id="cgLogo" class="w-full bg-[#111422] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition">
+            <option value="🔥">🔥 Flame Crest</option>
+            <option value="🐺">🐺 Wolf Pack</option>
+            <option value="🐯">🐯 Tiger Clan</option>
+            <option value="👑">👑 Royal Crown</option>
+            <option value="🐉">🐉 Dragon Fang</option>
+            <option value="⚔️">⚔️ Iron Sword</option>
+            <option value="💀">💀 Death Skull</option>
+            <option value="⚡">⚡ Thunder Strike</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Slogan / Slogan Type</label>
+        <select id="cgType" class="w-full bg-[#111422] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition">
+          <option value="CASUAL">Casual Play</option>
+          <option value="COMPETITIVE">Competitive Esports</option>
+          <option value="RANKED">Ranked Pushers</option>
+          <option value="SOCIAL">Social & Friends</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Slogan / Description <span class="text-red">*</span></label>
+        <input id="cgDesc" type="text" placeholder="e.g. Play together, win together!" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition" />
+      </div>
+
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Joining Requirements Text <span class="text-red">*</span></label>
+        <textarea id="cgRequirements" placeholder="e.g. Min Rank level 10, must join squad tournaments, active daily." rows="3" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition scrollbar-thin"></textarea>
+      </div>
+
+      <!-- Action Button -->
+      <button id="btnSubmitCreateGuild" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer mt-2">
+        Establish Guild
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JOIN REQUEST MESSAGE SUB-MODAL ==================== -->
+<div id="mTeamJoinRequestMsgModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[255] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[400px] w-full flex flex-col shadow-2xl">
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-8 h-8 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-xs">
+        <i class="fas fa-file-signature"></i>
+      </div>
+      <div>
+        <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">Join Request Message</h3>
+        <p class="text-[9px] text-t3 font-mono">Send introduction to team leader</p>
+      </div>
+    </div>
+    
+    <div class="space-y-3 mt-4">
+      <div>
+        <label class="block text-[9px] text-t3 uppercase font-bold tracking-wider mb-1">Optional Message</label>
+        <textarea id="joinRequestOptionalMsg" placeholder="Introduce yourself! e.g. Hey, I'm active daily and pushed Level 45 in tournaments!" rows="3" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition scrollbar-thin"></textarea>
+      </div>
+      
+      <div class="flex gap-2.5">
+        <button id="btnCancelJoinRequest" class="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-bdr text-t2 text-xs font-bold rounded-xl transition cursor-pointer">
+          Cancel
+        </button>
+        <button id="btnSendJoinRequest" class="flex-1 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer">
+          Send Request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SQUAD INVITE PROMPT MODAL ==================== -->
+<div id="mSquadInvitePromptModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[255] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full flex flex-col shadow-2xl text-center space-y-4">
+    <div class="w-12 h-12 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-xl mx-auto">
+      <i class="fas fa-users-cog"></i>
+    </div>
+    <div class="space-y-1.5">
+      <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Invite Team Members?</h3>
+      <p id="squadInvitePromptMsg" class="text-xs text-t2 leading-relaxed">You successfully registered for this tournament! Do you want to invite your guild/team members to join your squad for this tournament?</p>
+    </div>
+    <div class="flex gap-3 pt-2">
+      <button id="btnSquadInviteNo" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-bdr text-t2 text-xs font-bold rounded-xl transition cursor-pointer">
+        No, Skip
+      </button>
+      <button id="btnSquadInviteYes" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer">
+        Yes, Invite All!
+      </button>
     </div>
   </div>
 </div>
@@ -3556,7 +3750,7 @@ if (typeof tailwind !== 'undefined') {
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
@@ -5599,6 +5793,26 @@ $('tregSubmit').addEventListener('click', async () => {
 
     $('tregStep3').classList.add('hidden');
     $('tregStep4').classList.remove('hidden');
+
+    // Squad invitation check for Team Leaders
+    try {
+      const teamsRef = collection(db, 'teams');
+      const q = query(teamsRef, where('leaderId', '==', userProfile.uid), limit(1));
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        const teamDoc = qSnap.docs[0];
+        const teamData = teamDoc.data();
+        const teamId = teamDoc.id;
+        
+        window.activeSquadInviteTeam = { id: teamId, ...teamData };
+        window.activeSquadInviteTour = activeRegisterTour;
+        
+        $('squadInvitePromptMsg').textContent = `You successfully registered for the tournament "${activeRegisterTour.name}"! Do you want to invite your Guild "${teamData.name}" members to join your tournament squad?`;
+        $('mSquadInvitePromptModal').classList.remove('hidden');
+      }
+    } catch (e) {
+      console.error("Error checking leading teams on register success:", e);
+    }
   } catch (err) {
     alert('Registration error: ' + err.message);
   } finally {
@@ -10495,6 +10709,52 @@ function renderInboxUI() {
       }
     }
 
+    let customActionBlock = '';
+    if (mail.type === 'team_join_request') {
+      if (mail.status === 'pending') {
+        customActionBlock = `
+          <div class="mt-3 flex items-center gap-2 p-2.5 bg-gold/10 border border-gold/20 rounded-xl justify-between">
+            <span class="text-[9px] text-t3 font-bold">Request Pending</span>
+            <div class="flex gap-2">
+              <button class="b-decline-req px-3 py-1 bg-red-500/20 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-400 font-bold text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-from-user-id="${mail.fromUserId}" data-team-id="${mail.teamId}" data-team-name="${mail.teamName}">
+                Decline
+              </button>
+              <button class="b-accept-req px-3 py-1 bg-gold hover:bg-[#e8b830] text-bg font-black text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-from-user-id="${mail.fromUserId}" data-team-id="${mail.teamId}" data-team-name="${mail.teamName}">
+                Accept
+              </button>
+            </div>
+          </div>`;
+      } else if (mail.status === 'accepted') {
+        customActionBlock = `
+          <div class="mt-3 p-2.5 bg-green-500/5 border border-green-500/20 rounded-xl flex items-center justify-between">
+            <span class="text-[9px] text-t3 font-bold">Status</span>
+            <span class="text-[10px] text-green-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Accepted ✔</span>
+          </div>`;
+      } else if (mail.status === 'declined') {
+        customActionBlock = `
+          <div class="mt-3 p-2.5 bg-red-500/5 border border-red-500/20 rounded-xl flex items-center justify-between">
+            <span class="text-[9px] text-t3 font-bold">Status</span>
+            <span class="text-[10px] text-red-400 font-bold flex items-center gap-1"><i class="fas fa-times-circle"></i> Declined ✖</span>
+          </div>`;
+      }
+    } else if (mail.type === 'tournament_invite') {
+      if (mail.status === 'pending') {
+        customActionBlock = `
+          <div class="mt-3 flex items-center gap-2 p-2.5 bg-gold/10 border border-gold/20 rounded-xl justify-between">
+            <span class="text-[9px] text-t3 font-bold">Squad Invite</span>
+            <button class="b-join-tour px-3 py-1 bg-gold hover:bg-[#e8b830] text-bg font-black text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-team-id="${mail.teamId}" data-tour-id="${mail.tournamentId}" data-tour-name="${mail.tournamentName}">
+              Join Tournament Slot
+            </button>
+          </div>`;
+      } else if (mail.status === 'joined') {
+        customActionBlock = `
+          <div class="mt-3 p-2.5 bg-green-500/5 border border-green-500/20 rounded-xl flex items-center justify-between">
+            <span class="text-[9px] text-t3 font-bold">Status</span>
+            <span class="text-[10px] text-green-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Joined Slot ✔</span>
+          </div>`;
+      }
+    }
+
     const card = document.createElement('div');
     card.className = `p-4 bg-card border ${mail.read ? 'border-bdr/50' : 'border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]'} rounded-xl relative overflow-hidden transition duration-150`;
     card.innerHTML = `
@@ -10510,6 +10770,7 @@ function renderInboxUI() {
       </h4>
       <p class="text-[10px] text-t2 mt-1 leading-relaxed whitespace-pre-wrap font-sans">${mail.body}</p>
       ${giftBlock}
+      ${customActionBlock}
     `;
 
     const collectBtn = card.querySelector('.b-collect-gift');
@@ -10520,6 +10781,42 @@ function renderInboxUI() {
         e.target.disabled = true;
         e.target.textContent = 'Collecting...';
         await claimMailGift(mailId, badgeId, e.target);
+      });
+    }
+
+    const acceptBtn = card.querySelector('.b-accept-req');
+    if (acceptBtn) {
+      acceptBtn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const mailId = btn.dataset.mailId;
+        const fromUserId = btn.dataset.fromUserId;
+        const teamId = btn.dataset.teamId;
+        const teamName = btn.dataset.teamName;
+        await window.acceptTeamJoinRequest(mailId, fromUserId, teamId, teamName, btn);
+      });
+    }
+
+    const declineBtn = card.querySelector('.b-decline-req');
+    if (declineBtn) {
+      declineBtn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const mailId = btn.dataset.mailId;
+        const fromUserId = btn.dataset.fromUserId;
+        const teamId = btn.dataset.teamId;
+        const teamName = btn.dataset.teamName;
+        await window.declineTeamJoinRequest(mailId, fromUserId, teamId, teamName, btn);
+      });
+    }
+
+    const joinBtn = card.querySelector('.b-join-tour');
+    if (joinBtn) {
+      joinBtn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const mailId = btn.dataset.mailId;
+        const teamId = btn.dataset.teamId;
+        const tourId = btn.dataset.tourId;
+        const tourName = btn.dataset.tourName;
+        await window.joinTournamentViaInvite(mailId, teamId, tourId, tourName, btn);
       });
     }
 
@@ -10599,6 +10896,716 @@ function updateInboxNotificationBadge(uncollectedCount) {
     }
   }
 }
+
+// ==========================================
+// ── ARENAX GUILDS & TEAMS SYSTEM LOGIC ──
+// ==========================================
+let allGuilds = [];
+let selectedGuild = null;
+let userGuild = null;
+let unsubGuilds = null;
+
+function listenToGuilds() {
+  if (unsubGuilds) unsubGuilds();
+  
+  const q = query(collection(db, 'teams'), orderBy('createdAt', 'desc'));
+  unsubGuilds = onSnapshot(q, (snapshot) => {
+    allGuilds = [];
+    userGuild = null;
+    snapshot.forEach(docSnap => {
+      const g = { id: docSnap.id, ...docSnap.data() };
+      allGuilds.push(g);
+      
+      if (userProfile) {
+        const isLeader = g.leaderId === userProfile.uid;
+        const isMember = g.members && g.members.includes(userProfile.uid);
+        if (isLeader || isMember) {
+          userGuild = g;
+        }
+      }
+    });
+    
+    renderGuildsListUI();
+    if (selectedGuild) {
+      const updated = allGuilds.find(g => g.id === selectedGuild.id);
+      selectedGuild = updated || null;
+    }
+    renderSelectedGuildDetailsUI();
+  }, (err) => {
+    console.error("Error listening to guilds:", err);
+  });
+}
+
+function renderGuildsListUI() {
+  const container = $('guildsRowsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const searchWord = $('guildSearchInput').value.trim().toLowerCase();
+  
+  const filtered = allGuilds.filter(g => {
+    if (!searchWord) return true;
+    return g.name.toLowerCase().includes(searchWord) || 
+           (g.tag && g.tag.toLowerCase().includes(searchWord)) || 
+           (g.leaderName && g.leaderName.toLowerCase().includes(searchWord)) ||
+           g.id.toLowerCase().includes(searchWord);
+  });
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center text-t3 text-xs bg-card/10 border border-bdr/20 rounded-xl mt-4">
+        <i class="fas fa-shield-alt text-lg text-t3/40 mb-2 block animate-pulse"></i>
+        No guilds found matching your search.
+      </div>
+    `;
+    return;
+  }
+  
+  filtered.forEach(g => {
+    const isSelected = selectedGuild && selectedGuild.id === g.id;
+    const isUserGuild = userGuild && userGuild.id === g.id;
+    const memberCount = (g.members || []).length;
+    
+    const row = document.createElement('div');
+    row.className = `grid grid-cols-12 px-3 py-3 rounded-xl border items-center transition cursor-pointer hover:scale-[1.01] ${
+      isSelected 
+        ? 'bg-[#1b1e32] border-gold/40 shadow-[0_0_15px_rgba(192,160,48,0.08)] text-white' 
+        : 'bg-card/40 hover:bg-card/75 border-bdr/30 text-t2 hover:text-white'
+    }`;
+    
+    const infoCol = document.createElement('div');
+    infoCol.className = 'col-span-5 flex items-center gap-3 min-w-0';
+    
+    const shieldLogo = document.createElement('div');
+    shieldLogo.className = 'w-9 h-9 rounded-lg bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-base flex-shrink-0';
+    shieldLogo.textContent = g.logoUrl || '🔥';
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'min-w-0';
+    
+    const nameP = document.createElement('p');
+    nameP.className = 'font-bold text-xs truncate flex items-center gap-1.5 text-white';
+    nameP.innerHTML = `${g.name} <span class="text-[9px] bg-gold/10 text-gold px-1 py-0.5 rounded border border-gold/20 font-mono">[${g.tag || 'TEAM'}]</span>`;
+    
+    const sloganP = document.createElement('p');
+    sloganP.className = 'text-[10px] text-t3 truncate mt-0.5';
+    sloganP.textContent = `Leader: ${g.leaderName || 'Admin'}`;
+    
+    textDiv.appendChild(nameP);
+    textDiv.appendChild(sloganP);
+    infoCol.appendChild(shieldLogo);
+    infoCol.appendChild(textDiv);
+    row.appendChild(infoCol);
+    
+    const lvlCol = document.createElement('div');
+    lvlCol.className = 'col-span-2 text-center text-xs font-bold font-mono';
+    lvlCol.innerHTML = `<span class="text-gold">Lv.</span> ${g.level || 1}`;
+    row.appendChild(lvlCol);
+    
+    const memCol = document.createElement('div');
+    memCol.className = 'col-span-2 text-center text-xs font-medium font-mono text-t2';
+    memCol.innerHTML = `<i class="fas fa-user text-[10px] text-t3 mr-1"></i>${memberCount}`;
+    row.appendChild(memCol);
+    
+    const appCol = document.createElement('div');
+    appCol.className = 'col-span-3 text-right text-[10px] font-bold uppercase tracking-wider text-t3';
+    if (isUserGuild) {
+      appCol.innerHTML = `<span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[9px]">My Guild</span>`;
+    } else {
+      appCol.textContent = g.type || 'CASUAL';
+    }
+    row.appendChild(appCol);
+    
+    row.addEventListener('click', () => {
+      selectedGuild = g;
+      renderGuildsListUI();
+      renderSelectedGuildDetailsUI();
+    });
+    
+    container.appendChild(row);
+  });
+}
+
+function renderSelectedGuildDetailsUI() {
+  const panel = $('guildDetailsPanel');
+  if (!panel) return;
+  panel.innerHTML = '';
+  
+  let g = selectedGuild;
+  if (!g && allGuilds.length > 0) {
+    g = allGuilds[0];
+    selectedGuild = g;
+  }
+  
+  if (!g) {
+    panel.innerHTML = `
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 h-full">
+        <div class="w-14 h-14 rounded-full bg-gold/5 border border-gold/15 flex items-center justify-center text-gold/40 text-2xl animate-pulse">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="space-y-1">
+          <h4 class="font-display text-xs font-black text-white uppercase tracking-wider">No Guild Selected</h4>
+          <p class="text-[10px] text-t3 leading-relaxed max-w-[240px] mx-auto">
+            Select a team from the list to view its active details, requirements, level progression, and rosters! Or click "Create Guild" to establish your own.
+          </p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  const isLeader = g.leaderId === (userProfile && userProfile.uid);
+  const isMember = g.members && g.members.includes(userProfile && userProfile.uid);
+  const isUserGuild = isLeader || isMember;
+  
+  const currentLevel = g.level || 1;
+  const currentXp = g.xp || 0;
+  const nextLevelXp = currentLevel * 100;
+  const prevLevelXp = (currentLevel - 1) * 100;
+  const xpNeededForThisLevel = nextLevelXp - prevLevelXp;
+  const xpInThisLevel = currentXp - prevLevelXp;
+  const xpProgressPercent = Math.min(100, Math.max(0, (xpInThisLevel / xpNeededForThisLevel) * 100));
+  
+  panel.innerHTML = `
+    <!-- Top Details Card -->
+    <div class="flex items-center gap-3 bg-card/25 border border-bdr/20 p-3.5 rounded-xl">
+      <div class="w-12 h-12 bg-gold/10 text-gold border border-gold/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+        ${g.logoUrl || '🔥'}
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider truncate flex-1">${g.name}</h3>
+          <span class="text-[9px] font-bold font-mono text-gold bg-gold/10 border border-gold/20 px-1.5 py-0.5 rounded uppercase">[${g.tag || 'TEAM'}]</span>
+        </div>
+        <p class="text-[10px] text-t3 font-mono mt-0.5">ID: <span class="text-t2">${g.id}</span></p>
+      </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="grid grid-cols-2 gap-3.5">
+      <div class="bg-card/25 border border-bdr/20 p-3 rounded-xl flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gold/5 text-gold flex items-center justify-center text-sm border border-gold/15">
+          <i class="fas fa-crown"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-[9px] text-t3 uppercase font-bold tracking-wider">Leader</p>
+          <p class="font-bold text-xs text-white truncate mt-0.5">${g.leaderName || 'Admin'}</p>
+        </div>
+      </div>
+
+      <div class="bg-card/25 border border-bdr/20 p-3 rounded-xl flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-500/5 text-blue-400 flex items-center justify-center text-sm border border-blue-500/15">
+          <i class="fas fa-user-friends"></i>
+        </div>
+        <div>
+          <p class="text-[9px] text-t3 uppercase font-bold tracking-wider">Members</p>
+          <p class="font-bold text-xs text-white mt-0.5">${(g.members || []).length} / 30</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- XP / Level Progress -->
+    <div class="bg-card/20 border border-bdr/20 p-3.5 rounded-xl space-y-2">
+      <div class="flex items-center justify-between text-xs">
+        <div class="flex items-center gap-1.5 font-bold">
+          <i class="fas fa-star text-gold"></i>
+          <span class="text-white">GUILD LEVEL:</span>
+          <span class="text-gold font-mono">${currentLevel}</span>
+        </div>
+        <span class="text-[10px] font-mono text-t3">${currentXp} / ${nextLevelXp} XP</span>
+      </div>
+      <div class="w-full bg-bg border border-bdr/40 rounded-full h-2.5 overflow-hidden">
+        <div class="bg-gradient-to-r from-gold to-[#f0c040] h-full rounded-full shadow-[0_0_8px_rgba(240,192,64,0.3)]" style="width: ${xpProgressPercent}%"></div>
+      </div>
+      <p class="text-[9px] text-t3 leading-relaxed mt-1">Earn 50 XP per filled tournament registration squad. Next level increases squad capabilities!</p>
+    </div>
+
+    <!-- Description Slogan -->
+    <div class="bg-card/15 border border-bdr/10 p-3.5 rounded-xl space-y-1.5 relative">
+      <div class="flex items-center justify-between">
+        <label class="text-[9px] text-t3 uppercase font-bold tracking-wider">Guild Slogan / Motto</label>
+        ${isLeader ? `
+          <button id="btnEditSlogan" class="text-gold hover:text-white text-[10px] flex items-center gap-1 cursor-pointer">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        ` : ''}
+      </div>
+      <p id="sloganTextContainer" class="text-xs text-t2 italic font-medium leading-relaxed">"${g.description || 'No slogan set.'}"</p>
+    </div>
+
+    <!-- Joining Requirements -->
+    <div class="bg-card/15 border border-bdr/10 p-3.5 rounded-xl space-y-1.5 relative flex-1 flex flex-col min-h-[120px]">
+      <div class="flex items-center justify-between flex-shrink-0">
+        <label class="text-[9px] text-t3 uppercase font-bold tracking-wider">Joining Requirements</label>
+        ${isLeader ? `
+          <button id="btnEditRequirements" class="text-gold hover:text-white text-[10px] flex items-center gap-1 cursor-pointer">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        ` : ''}
+      </div>
+      <div class="flex-1 overflow-y-auto max-h-[120px] scrollbar-thin text-xs text-t2 leading-relaxed">
+        <p id="requirementsTextContainer" class="whitespace-pre-line">${g.requirements || 'No special requirements specified. Anyone is welcome to apply!'}</p>
+      </div>
+    </div>
+
+    <!-- CTA Join Request Buttons -->
+    <div class="pt-2 border-t border-bdr/30 flex-shrink-0">
+      ${isUserGuild ? `
+        ${isLeader ? `
+          <p class="text-[10px] text-center text-gold font-bold uppercase tracking-wider py-2 border border-gold/10 rounded-xl bg-gold/5">
+            👑 You are the Leader of this Guild
+          </p>
+        ` : `
+          <div class="flex flex-col gap-2">
+            <p class="text-[10px] text-center text-emerald-400 font-bold uppercase tracking-wider py-1 border border-emerald-500/10 rounded-xl bg-emerald-500/5">
+              🛡️ Active Guild Member
+            </p>
+            <button id="btnLeaveGuild" class="w-full py-2 bg-red/10 hover:bg-red/20 border border-red/20 hover:border-red/40 text-red text-xs font-bold uppercase rounded-xl transition cursor-pointer">
+              Leave Guild
+            </button>
+          </div>
+        `}
+      ` : `
+        ${userGuild ? `
+          <p class="text-[10px] text-center text-t3 leading-relaxed px-4 py-2 bg-card/15 border border-bdr/20 rounded-xl">
+            You are already a member of <strong class="text-white">[${userGuild.tag}] ${userGuild.name}</strong>. Please leave your current guild to join another.
+          </p>
+        ` : `
+          <button id="btnRequestToJoinGuild" class="w-full py-3 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer shadow-[0_4px_15px_rgba(240,192,64,0.15)] flex items-center justify-center gap-2">
+            <i class="fas fa-door-open"></i> Request to Join Guild
+          </button>
+        `}
+      `}
+    </div>
+  `;
+  
+  if (!isUserGuild && !userGuild) {
+    const btnJoin = $('btnRequestToJoinGuild');
+    if (btnJoin) {
+      btnJoin.addEventListener('click', () => {
+        openJoinRequestMessageModal();
+      });
+    }
+  }
+  
+  if (isLeader) {
+    $('btnEditSlogan').addEventListener('click', async () => {
+      const newSlogan = prompt("Enter new Guild slogan/motto:", g.description || '');
+      if (newSlogan === null) return;
+      if (!newSlogan.trim()) {
+        alert("Slogan cannot be empty.");
+        return;
+      }
+      try {
+        await updateDoc(doc(db, 'teams', g.id), {
+          description: newSlogan.trim()
+        });
+        alert("Guild slogan updated! 🛡️");
+      } catch (err) {
+        alert("Failed to update slogan: " + err.message);
+      }
+    });
+    
+    $('btnEditRequirements').addEventListener('click', async () => {
+      const newReq = prompt("Enter new Guild joining requirements:", g.requirements || '');
+      if (newReq === null) return;
+      if (!newReq.trim()) {
+        alert("Requirements cannot be empty.");
+        return;
+      }
+      try {
+        await updateDoc(doc(db, 'teams', g.id), {
+          requirements: newReq.trim()
+        });
+        alert("Guild joining requirements updated! 🛡️");
+      } catch (err) {
+        alert("Failed to update requirements: " + err.message);
+      }
+    });
+  }
+  
+  if (!isLeader && isMember) {
+    $('btnLeaveGuild').addEventListener('click', async () => {
+      if (!confirm(`Are you sure you want to leave the guild "${g.name}"?`)) return;
+      try {
+        await updateDoc(doc(db, 'teams', g.id), {
+          members: arrayRemove(userProfile.uid)
+        });
+        alert(`You successfully left the guild "${g.name}".`);
+      } catch (err) {
+        alert("Failed to leave guild: " + err.message);
+      }
+    });
+  }
+}
+
+function openGuildsModal() {
+  if (guestProfile) {
+    alert("Please log in or register a profile to access the Guilds & Teams Hub!");
+    return;
+  }
+  $('mGuildSystemModal').classList.remove('hidden');
+  listenToGuilds();
+}
+
+function openJoinRequestMessageModal() {
+  $('joinRequestOptionalMsg').value = '';
+  $('mTeamJoinRequestMsgModal').classList.remove('hidden');
+}
+
+// Global actions for Mail UI to invoke
+window.acceptTeamJoinRequest = async function(mailId, fromUserId, teamId, teamName, buttonEl) {
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Accepting...';
+  }
+  try {
+    const teamDocRef = doc(db, 'teams', teamId);
+    const teamSnap = await getDoc(teamDocRef);
+    if (!teamSnap.exists()) {
+      alert("This team/guild no longer exists.");
+      return;
+    }
+    const teamData = teamSnap.data();
+    if (teamData.members && teamData.members.length >= 30) {
+      alert("This guild is already full (30 members max)!");
+      return;
+    }
+    
+    await updateDoc(teamDocRef, {
+      members: arrayUnion(fromUserId)
+    });
+    
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+    await updateDoc(mailDocRef, {
+      status: "accepted",
+      read: true
+    });
+    
+    const fromUserMailsRef = collection(db, 'users', fromUserId, 'mails');
+    await addDoc(fromUserMailsRef, {
+      type: "team_join_confirm",
+      sender: "Guild Admin",
+      title: "Guild Request Accepted! 🎉",
+      body: `Congratulations! Your request to join the Guild "${teamName}" has been accepted by the Guild Leader.`,
+      teamId: teamId,
+      teamName: teamName,
+      createdAt: serverTimestamp()
+    });
+    
+    alert(`🎉 Successfully accepted! User has been added to "${teamName}".`);
+    renderInboxUI();
+  } catch (err) {
+    alert("Failed to accept join request: " + err.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Accept';
+    }
+  }
+};
+
+window.declineTeamJoinRequest = async function(mailId, fromUserId, teamId, teamName, buttonEl) {
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Declining...';
+  }
+  try {
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+    await updateDoc(mailDocRef, {
+      status: "declined",
+      read: true
+    });
+    
+    const fromUserMailsRef = collection(db, 'users', fromUserId, 'mails');
+    await addDoc(fromUserMailsRef, {
+      type: "team_join_decline",
+      sender: "Guild Admin",
+      title: "Guild Request Declined",
+      body: `We regret to inform you that your request to join the Guild "${teamName}" was declined by the Guild Leader.`,
+      teamId: teamId,
+      teamName: teamName,
+      createdAt: serverTimestamp()
+    });
+    
+    alert("Request declined successfully.");
+    renderInboxUI();
+  } catch (err) {
+    alert("Failed to decline request: " + err.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Decline';
+    }
+  }
+};
+
+window.joinTournamentViaInvite = async function(mailId, teamId, tournamentId, tournamentName, buttonEl) {
+  if (!userProfile) return;
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Joining...';
+  }
+  
+  try {
+    const memberDocRef = doc(db, 'tournament_registrations', tournamentId, 'teamMembers', userProfile.uid);
+    await setDoc(memberDocRef, {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      joinedAt: serverTimestamp()
+    });
+    
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+    await updateDoc(mailDocRef, {
+      status: "joined",
+      read: true
+    });
+    
+    await window.checkAndAwardTeamXP(teamId, tournamentId, userProfile.uid);
+    
+    alert(`🎉 Successfully joined your Guild squad for the tournament "${tournamentName}"!`);
+    renderInboxUI();
+  } catch (err) {
+    alert("Failed to join tournament: " + err.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Join Tournament';
+    }
+  }
+};
+
+window.checkAndAwardTeamXP = async function(teamId, tournamentId, joinedUid) {
+  const participationRef = doc(db, 'teams', teamId, 'tournamentParticipations', tournamentId);
+  const teamRef = doc(db, 'teams', teamId);
+  
+  try {
+    await runTransaction(db, async (transaction) => {
+      const partSnap = await transaction.get(participationRef);
+      if (!partSnap.exists()) return;
+      
+      const partData = partSnap.data();
+      if (partData.xpAwarded) return;
+      
+      const joinedList = partData.joinedMembers || [];
+      if (!joinedList.includes(joinedUid)) {
+        joinedList.push(joinedUid);
+      }
+      
+      const invitedList = partData.invitedMembers || [];
+      const allJoined = invitedList.every(uid => joinedList.includes(uid));
+      const minSquadMet = (joinedList.length + 1) >= 4;
+      
+      if ((allJoined || minSquadMet) && !partData.xpAwarded) {
+        const teamSnap = await transaction.get(teamRef);
+        if (teamSnap.exists()) {
+          const teamData = teamSnap.data();
+          const currentXp = teamData.xp || 0;
+          const newXp = currentXp + 50;
+          const newLevel = Math.floor(newXp / 100) + 1;
+          
+          transaction.update(teamRef, {
+            xp: newXp,
+            level: newLevel
+          });
+          
+          transaction.update(participationRef, {
+            joinedMembers: joinedList,
+            xpAwarded: true
+          });
+        }
+      } else {
+        transaction.update(participationRef, {
+          joinedMembers: joinedList
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error in checkAndAwardTeamXP transaction: ", err);
+    throw err;
+  }
+};
+
+// Bind Guild Event Listeners
+$('btnHubGuilds').addEventListener('click', () => {
+  if (typeof window.closeRedReportHubDrawer === 'function') {
+    window.closeRedReportHubDrawer();
+  }
+  openGuildsModal();
+});
+
+$('bCloseGuildsSystem').addEventListener('click', () => {
+  $('mGuildSystemModal').classList.add('hidden');
+  if (unsubGuilds) {
+    unsubGuilds();
+    unsubGuilds = null;
+  }
+});
+
+$('guildSearchInput').addEventListener('input', () => {
+  renderGuildsListUI();
+});
+
+$('btnCreateGuildTrigger').addEventListener('click', () => {
+  if (userGuild) {
+    alert("You are already in a guild! You must leave your current guild to create a new one.");
+    return;
+  }
+  $('cgName').value = '';
+  $('cgTag').value = '';
+  $('cgDesc').value = '';
+  $('cgRequirements').value = '';
+  $('mCreateGuild').classList.remove('hidden');
+});
+
+$('bCloseCreateGuild').addEventListener('click', () => {
+  $('mCreateGuild').classList.add('hidden');
+});
+
+$('btnSubmitCreateGuild').addEventListener('click', async () => {
+  if (userGuild) {
+    alert("You are already in a guild!");
+    return;
+  }
+  
+  const name = $('cgName').value.trim();
+  const tag = $('cgTag').value.trim().toUpperCase();
+  const logo = $('cgLogo').value;
+  const type = $('cgType').value;
+  const desc = $('cgDesc').value.trim();
+  const req = $('cgRequirements').value.trim();
+  
+  if (!name || !tag || !desc || !req) {
+    alert("Please fill out all required fields to establish your Guild!");
+    return;
+  }
+  
+  if (tag.length > 5) {
+    alert("Guild Tag must be maximum 5 characters.");
+    return;
+  }
+  
+  $('btnSubmitCreateGuild').disabled = true;
+  $('btnSubmitCreateGuild').textContent = 'Establishing...';
+  
+  try {
+    const teamDocRef = await addDoc(collection(db, 'teams'), {
+      name,
+      tag,
+      logoUrl: logo,
+      type,
+      description: desc,
+      requirements: req,
+      leaderId: userProfile.uid,
+      leaderName: userProfile.name,
+      members: [userProfile.uid],
+      xp: 0,
+      level: 1,
+      createdAt: serverTimestamp()
+    });
+    
+    alert(`🎉 Congratulations! Your new Guild "${name}" has been established successfully!`);
+    $('mCreateGuild').classList.add('hidden');
+  } catch (err) {
+    alert("Failed to create Guild: " + err.message);
+  } finally {
+    $('btnSubmitCreateGuild').disabled = false;
+    $('btnSubmitCreateGuild').textContent = 'Establish Guild';
+  }
+});
+
+$('btnCancelJoinRequest').addEventListener('click', () => {
+  $('mTeamJoinRequestMsgModal').classList.add('hidden');
+});
+
+$('btnSendJoinRequest').addEventListener('click', async () => {
+  if (!selectedGuild) return;
+  const msg = $('joinRequestOptionalMsg').value.trim();
+  const leaderId = selectedGuild.leaderId;
+  if (!leaderId) {
+    alert("This guild does not have an active leader.");
+    return;
+  }
+  
+  $('btnSendJoinRequest').disabled = true;
+  $('btnSendJoinRequest').textContent = 'Sending...';
+  
+  try {
+    const mailsRef = collection(db, 'users', leaderId, 'mails');
+    await addDoc(mailsRef, {
+      type: "team_join_request",
+      sender: "Guild Application",
+      title: "New Join Request",
+      body: `User @${userProfile.handle} requested to join your Guild "${selectedGuild.name}". Message: "${msg || 'No message'}"`,
+      fromUserId: userProfile.uid,
+      fromUserName: userProfile.name,
+      fromUserHandle: userProfile.handle,
+      teamId: selectedGuild.id,
+      teamName: selectedGuild.name,
+      message: msg,
+      status: "pending",
+      createdAt: serverTimestamp()
+    });
+    
+    alert("Join request sent to the Guild Leader's Inbox successfully! 🛡️");
+    $('mTeamJoinRequestMsgModal').classList.add('hidden');
+  } catch (err) {
+    alert("Failed to send request: " + err.message);
+  } finally {
+    $('btnSendJoinRequest').disabled = false;
+    $('btnSendJoinRequest').textContent = 'Send Request';
+  }
+});
+
+$('btnSquadInviteNo').addEventListener('click', () => {
+  $('mSquadInvitePromptModal').classList.add('hidden');
+});
+
+$('btnSquadInviteYes').addEventListener('click', async () => {
+  const team = window.activeSquadInviteTeam;
+  const tour = window.activeSquadInviteTour;
+  if (!team || !tour) return;
+  
+  $('btnSquadInviteYes').disabled = true;
+  $('btnSquadInviteYes').textContent = 'Inviting...';
+  
+  try {
+    const membersToInvite = (team.members || []).filter(uid => uid !== userProfile.uid);
+    if (membersToInvite.length === 0) {
+      alert("Your guild does not have any other members to invite yet.");
+      $('mSquadInvitePromptModal').classList.add('hidden');
+      return;
+    }
+    
+    const participationRef = doc(db, 'teams', team.id, 'tournamentParticipations', tour.id);
+    await setDoc(participationRef, {
+      invitedMembers: membersToInvite,
+      joinedMembers: [],
+      xpAwarded: false,
+      createdAt: serverTimestamp()
+    });
+    
+    for (const memberId of membersToInvite) {
+      const mailRef = collection(db, 'users', memberId, 'mails');
+      await addDoc(mailRef, {
+        type: "tournament_invite",
+        sender: "Guild Tournament Squad",
+        title: "Squad Tournament Invitation! 🏆",
+        body: `Your Guild leader ${userProfile.name} has registered the team for the tournament "${tour.name}". Click the button below to join the squad slot!`,
+        tournamentId: tour.id,
+        tournamentName: tour.name,
+        teamId: team.id,
+        status: "pending",
+        createdAt: serverTimestamp()
+      });
+    }
+    
+    alert(`🎉 Invites successfully sent to your ${membersToInvite.length} Guild members!`);
+    $('mSquadInvitePromptModal').classList.add('hidden');
+  } catch (err) {
+    alert("Failed to send invites: " + err.message);
+  } finally {
+    $('btnSquadInviteYes').disabled = false;
+    $('btnSquadInviteYes').textContent = 'Yes, Invite All!';
+  }
+});
 
 // ==========================================
 // ── ARENAX LAUNCH FEST LOGIC & RENDERING ──
