@@ -4386,20 +4386,70 @@ function mergeAndRenderTransactions() {
   renderUserDeposits(combined);
 }
 
-// Setup Auth State listener
-onAuthStateChanged(auth, async (fireUser) => {
-  if (depositUnsub) {
-    depositUnsub();
+// Setup global listener unsubs
+let friendReqsUnsub = null;
+let friendsListUnsub = null;
+let notificationsUnsub = null;
+
+function cleanupAllUserListeners() {
+  console.log("[Auth Engine] Cleaning up all active user-specific snapshot listeners...");
+  if (typeof depositUnsub !== 'undefined' && depositUnsub) {
+    try { depositUnsub(); } catch(e){}
     depositUnsub = null;
   }
   if (window.userMailsUnsub) {
-    window.userMailsUnsub();
+    try { window.userMailsUnsub(); } catch(e){}
     window.userMailsUnsub = null;
   }
   if (window.userSubmissionsUnsub) {
     try { window.userSubmissionsUnsub(); } catch(e) {}
     window.userSubmissionsUnsub = null;
   }
+  if (notificationsUnsub) {
+    try { notificationsUnsub(); } catch(e){}
+    notificationsUnsub = null;
+  }
+  if (friendReqsUnsub) {
+    try { friendReqsUnsub(); } catch(e){}
+    friendReqsUnsub = null;
+  }
+  if (friendsListUnsub) {
+    try { friendsListUnsub(); } catch(e){}
+    friendsListUnsub = null;
+  }
+  if (typeof invitationsUnsub !== 'undefined' && invitationsUnsub) {
+    try { invitationsUnsub(); } catch(e){}
+    invitationsUnsub = null;
+  }
+  if (typeof globalChatUnsub !== 'undefined' && globalChatUnsub) {
+    try { globalChatUnsub(); } catch(e){}
+    globalChatUnsub = null;
+  }
+  if (typeof globalChatTypingUnsub !== 'undefined' && globalChatTypingUnsub) {
+    try { globalChatTypingUnsub(); } catch(e){}
+    globalChatTypingUnsub = null;
+  }
+  if (typeof activeRoomSignalingUnsub !== 'undefined' && activeRoomSignalingUnsub) {
+    try { activeRoomSignalingUnsub(); } catch(e){}
+    activeRoomSignalingUnsub = null;
+  }
+  if (typeof activeRoomDocUnsub !== 'undefined' && activeRoomDocUnsub) {
+    try { activeRoomDocUnsub(); } catch(e){}
+    activeRoomDocUnsub = null;
+  }
+  if (typeof activeRoomMembersUnsub !== 'undefined' && activeRoomMembersUnsub) {
+    try { activeRoomMembersUnsub(); } catch(e){}
+    activeRoomMembersUnsub = null;
+  }
+  if (typeof activeRoomChatUnsub !== 'undefined' && activeRoomChatUnsub) {
+    try { activeRoomChatUnsub(); } catch(e){}
+    activeRoomChatUnsub = null;
+  }
+}
+
+// Setup Auth State listener
+onAuthStateChanged(auth, async (fireUser) => {
+  cleanupAllUserListeners();
   if (fireUser && !guestProfile) {
     // Start real-time submissions listener
     if (typeof window.startUserSubmissionsListener === 'function') {
@@ -4554,6 +4604,14 @@ onAuthStateChanged(auth, async (fireUser) => {
       }
     }, (err) => {
       console.warn("Firestore user profile snapshot listener warning (non-fatal):", err);
+      if (err.code === 'permission-denied') {
+        console.log("[Auth Engine] Attempting to refresh user authentication session...");
+        if (auth.currentUser) {
+          auth.currentUser.getIdToken(true)
+            .then(() => console.log("[Auth Engine] Session re-verified and token refreshed successfully."))
+            .catch(e => console.error("[Auth Engine] Failed to refresh token during snapshot failure:", e));
+        }
+      }
     });
   } else if (!guestProfile) {
     if (window.unsubReferrals) {
@@ -7922,8 +7980,17 @@ function loadFriendSystem() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
+  if (friendReqsUnsub) {
+    try { friendReqsUnsub(); } catch(e){}
+    friendReqsUnsub = null;
+  }
+  if (friendsListUnsub) {
+    try { friendsListUnsub(); } catch(e){}
+    friendsListUnsub = null;
+  }
+
   // Real-time listen to friendRequests
-  onSnapshot(collection(db, 'users', profile.uid, 'friendRequests'), (snap) => {
+  friendReqsUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friendRequests'), (snap) => {
     const listEl = $('friendReqsList');
     listEl.innerHTML = '';
     
@@ -7960,7 +8027,7 @@ function loadFriendSystem() {
   });
 
   // Real-time listen to friends list
-  onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
+  friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
     const listEl = $('friendsList');
     listEl.innerHTML = '';
 
@@ -9445,13 +9512,18 @@ function loadLiveNotifications() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
+  if (notificationsUnsub) {
+    try { notificationsUnsub(); } catch (e) {}
+    notificationsUnsub = null;
+  }
+
   let isInitial = true;
 
   const qNotifs = query(
     collection(db, 'notifications'),
     where('userId', '==', profile.uid)
   );
-  onSnapshot(qNotifs, (snap) => {
+  notificationsUnsub = onSnapshot(qNotifs, (snap) => {
     let unreadCount = 0;
     const items = [];
     snap.forEach(d => {
@@ -9482,6 +9554,12 @@ function loadLiveNotifications() {
     isInitial = false;
   }, (err) => {
     console.warn("Notifications listen warning:", err);
+    if (err.code === 'permission-denied') {
+      console.log("[Auth Engine] Attempting token refresh on notifications snapshot permission denied...");
+      if (auth.currentUser) {
+        auth.currentUser.getIdToken(true).catch(e => console.warn(e));
+      }
+    }
   });
 }
 
@@ -11535,8 +11613,29 @@ let localStream = null;
 let peerConnections = {}; // uid -> RTCPeerConnection
 const iceServers = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    {
+      urls: "stun:stun.relay.metered.ca:80",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "716b790d0c0f402d3c231ddc",
+      credential: "t3yPYOapJ5VoWN13",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: "716b790d0c0f402d3c231ddc",
+      credential: "t3yPYOapJ5VoWN13",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "716b790d0c0f402d3c231ddc",
+      credential: "t3yPYOapJ5VoWN13",
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: "716b790d0c0f402d3c231ddc",
+      credential: "t3yPYOapJ5VoWN13",
+    },
   ]
 };
 
@@ -12057,6 +12156,16 @@ async function joinVoiceRoom(roomId) {
   if (!userProfile) {
     showToastNotification("Access Denied", "Please sign in to join the voice arena.");
     return;
+  }
+
+  // Force refresh ID token before setting up connection listeners to prevent session invalidation
+  if (auth.currentUser) {
+    try {
+      await auth.currentUser.getIdToken(true);
+      console.log("[Auth Engine] Forced ID token refresh on voice room join to ensure session validity.");
+    } catch (e) {
+      console.warn("[Auth Engine] Failed token refresh during voice room join:", e);
+    }
   }
 
   // If already in a room, leave it
