@@ -1254,7 +1254,23 @@ if (typeof tailwind !== 'undefined') {
           <h3 class="font-display text-sm font-black uppercase text-white tracking-wide"><i class="fas fa-share-alt text-emerald-400 mr-1.5"></i> Invite Friends</h3>
           <button id="bCloseInviteFriendToVoice" class="text-t3 hover:text-white transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
         </div>
-        <div id="voiceInviteFriendsList" class="space-y-2 max-h-[250px] overflow-y-auto pr-1 text-xs">
+
+        <!-- Quick Global & DM Share Buttons -->
+        <div class="p-2.5 bg-card/60 border border-bdr/80 rounded-xl space-y-2">
+          <div class="text-[9px] uppercase font-black text-emerald-400 tracking-wider flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Quick Broadcast Invite
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnShareVoiceGlobal" class="py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:brightness-110 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition flex items-center justify-center gap-1 cursor-pointer">
+              <i class="fas fa-globe"></i> Global Chat
+            </button>
+            <button id="btnShareVoiceDMs" class="py-2 bg-gradient-to-r from-gold to-amber-500 hover:brightness-110 text-bg rounded-lg text-[9px] font-black uppercase tracking-wider transition flex items-center justify-center gap-1 cursor-pointer">
+              <i class="fas fa-comments"></i> Share in DMs
+            </button>
+          </div>
+        </div>
+
+        <div id="voiceInviteFriendsList" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 text-xs">
           <!-- Dynamically populated friend list with invite button -->
         </div>
       </div>
@@ -3064,9 +3080,9 @@ if (typeof tailwind !== 'undefined') {
     <!-- Header -->
     <div class="px-4 py-3 bg-card border-b border-bdr flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <img id="dmChatAv" src="" alt="" class="w-8 h-8 rounded-full border border-bdr"/>
-        <div>
-          <h4 id="dmChatName" class="text-xs font-bold text-white">Player Chat</h4>
+        <img id="dmChatAv" src="" alt="" class="w-8 h-8 rounded-full border border-bdr cursor-pointer hover:scale-105 hover:border-gold transition duration-150" title="View Player Profile"/>
+        <div class="cursor-pointer hover:opacity-80 transition duration-150" id="dmChatHeaderDetails" title="View Player Profile">
+          <h4 id="dmChatName" class="text-xs font-bold text-white hover:text-gold transition">Player Chat</h4>
           <span class="text-[9px] text-green uppercase font-bold tracking-wider">Active Connection</span>
         </div>
       </div>
@@ -3082,6 +3098,100 @@ if (typeof tailwind !== 'undefined') {
     <div class="p-3 bg-card border-t border-bdr/40 flex gap-2">
       <input id="dmInp" type="text" placeholder="Type direct message..." class="flex-1 bg-ele border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
       <button id="dmSendBtn" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VIEW PLAYER PROFILE CARD MODAL ==================== -->
+<div id="mViewPlayerProfile" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[310] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-panel border border-bdr rounded-2xl w-full max-w-[420px] shadow-2xl relative overflow-hidden animate-scale-in">
+    <!-- Close button -->
+    <button id="bCloseViewPlayerProfile" class="absolute top-4 right-4 text-t3 hover:text-white transition cursor-pointer text-base z-[320] p-1 bg-black/40 rounded-full w-7 h-7 flex items-center justify-center">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Top cover banner gradient -->
+    <div id="vppCoverBanner" class="h-28 bg-gradient-to-r from-emerald-950 via-[#111827] to-purple-950 relative">
+      <div class="absolute -bottom-10 left-6">
+        <div class="relative">
+          <img id="vppAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1" class="w-20 h-20 rounded-2xl bg-card border-2 border-bdr relative z-10 shadow-lg object-cover"/>
+          <span id="vppPremiumBadge" class="absolute -top-1.5 -right-1.5 bg-gold text-bg text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full z-20 shadow-md flex items-center gap-0.5 animate-pulse hidden">
+            <i class="fas fa-crown"></i> VIP
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="pt-12 px-6 pb-6 space-y-4">
+      <!-- Name and Handle -->
+      <div class="space-y-0.5">
+        <div class="flex items-center gap-2">
+          <h3 id="vppName" class="font-display text-lg font-black text-white uppercase tracking-wide">Player Name</h3>
+          <span id="vppBadge" class="px-1.5 py-0.5 text-[8px] bg-gold/15 border border-gold/30 text-gold rounded font-bold uppercase tracking-wider hidden">STAFF</span>
+        </div>
+        <p id="vppHandle" class="text-xs text-t3 font-mono">@playerhandle</p>
+      </div>
+
+      <!-- Bio / Description -->
+      <p id="vppBio" class="text-xs text-t2 leading-relaxed italic bg-card/40 border border-bdr/50 rounded-xl p-3">
+        "No bio available."
+      </p>
+
+      <!-- Player Statistics/Overview Grid -->
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="bg-card border border-bdr/60 rounded-xl p-2.5 text-center">
+          <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Level</div>
+          <div id="vppLevel" class="text-sm font-black text-white mt-0.5">15</div>
+        </div>
+        <div class="bg-card border border-bdr/60 rounded-xl p-2.5 text-center">
+          <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Hearts</div>
+          <div id="vppPopularity" class="text-sm font-black text-gold mt-0.5 flex items-center justify-center gap-1"><i class="fas fa-heart text-red text-[10px]"></i> 142</div>
+        </div>
+        <div class="bg-card border border-bdr/60 rounded-xl p-2.5 text-center">
+          <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Rounds</div>
+          <div id="vppTournaments" class="text-sm font-black text-emerald-400 mt-0.5">38</div>
+        </div>
+      </div>
+
+      <!-- Extended Details: Country, favorite game, game UID -->
+      <div class="bg-card border border-bdr/60 rounded-xl divide-y divide-bdr/40 overflow-hidden text-xs">
+        <div id="vppCountryRow" class="px-3.5 py-2.5 flex items-center justify-between">
+          <span class="text-t3 font-semibold uppercase text-[9px] tracking-wider">Country</span>
+          <span id="vppCountry" class="text-white font-bold">🇵🇰 Pakistan</span>
+        </div>
+        <div id="vppFavGameRow" class="px-3.5 py-2.5 flex items-center justify-between">
+          <span class="text-t3 font-semibold uppercase text-[9px] tracking-wider">Favorite Game</span>
+          <span id="vppFavGame" class="text-white font-bold">PUBG Mobile</span>
+        </div>
+        <div id="vppGameUIDRow" class="px-3.5 py-2.5 flex items-center justify-between">
+          <span class="text-t3 font-semibold uppercase text-[9px] tracking-wider">In-Game UID</span>
+          <span id="vppGameUID" class="text-white font-bold font-mono">5829482</span>
+        </div>
+      </div>
+
+      <!-- Social handles if available -->
+      <div id="vppSocialsContainer" class="flex gap-2 justify-center pt-1.5 hidden">
+        <a id="vppSocialDiscord" href="#" target="_blank" class="w-8 h-8 rounded-full bg-indigo-600/15 hover:bg-indigo-600 border border-indigo-500/20 text-indigo-400 hover:text-white flex items-center justify-center transition text-xs">
+          <i class="fab fa-discord"></i>
+        </a>
+        <a id="vppSocialInstagram" href="#" target="_blank" class="w-8 h-8 rounded-full bg-pink-600/15 hover:bg-pink-600 border border-pink-500/20 text-pink-400 hover:text-white flex items-center justify-center transition text-xs">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a id="vppSocialYoutube" href="#" target="_blank" class="w-8 h-8 rounded-full bg-red-600/15 hover:bg-red-600 border border-red-500/20 text-red hover:text-white flex items-center justify-center transition text-xs">
+          <i class="fab fa-youtube"></i>
+        </a>
+      </div>
+
+      <!-- Action Footer Buttons (DM, Send Friend Request) -->
+      <div class="flex gap-2.5 pt-2">
+        <button id="btnVppSendDM" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md">
+          <i class="fas fa-comments"></i> Chat Direct
+        </button>
+        <button id="btnVppAddFriend" class="flex-1 py-2.5 bg-gradient-to-r from-gold to-amber-500 hover:brightness-110 text-bg rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md">
+          <i class="fas fa-user-plus"></i> Add Friend
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -8055,7 +8165,7 @@ function renderGlobalMessages(list) {
       return;
     }
 
-    // 4. Regular Chat Message
+    // 4. Regular Chat Message or Voice Room Invite
     const isMe = msg.userId === currentUid;
     msgDiv.className = `flex gap-2.5 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`;
     
@@ -8064,21 +8174,51 @@ function renderGlobalMessages(list) {
       ? 'border-2 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-pulse' 
       : 'border border-bdr';
 
-    msgDiv.innerHTML = `
-      <img
-        src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
-        alt="Avatar"
-        class="w-7 h-7 rounded-full bg-panel shrink-0 object-cover ${avatarBorder}"
-      />
-      <div>
-        <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
-          ${msg.userName || 'Anonymous'}
+    if (msg.isVoiceRoomInvite) {
+      msgDiv.innerHTML = `
+        <img
+          src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
+          alt="Avatar"
+          class="w-7 h-7 rounded-full bg-panel shrink-0 object-cover ${avatarBorder} cursor-pointer hover:scale-105 transition duration-150"
+          onclick="openPlayerProfileCard('${msg.userId}')"
+          title="Click to view profile"
+        />
+        <div class="space-y-1">
+          <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
+            <span class="cursor-pointer hover:text-white hover:underline transition duration-150" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}</span>
+          </div>
+          <div class="p-3 bg-gradient-to-br from-emerald-950/90 via-[#064e3b]/30 to-[#0a120f] border border-emerald-500/40 rounded-xl space-y-2.5 max-w-[280px] shadow-lg shadow-emerald-500/5">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-bold uppercase text-[9px] tracking-wider animate-pulse">
+              <i class="fas fa-microphone-alt"></i> Live Voice Invite
+            </div>
+            <p class="text-white text-[11px] font-medium leading-relaxed">
+              Hey! Join my squad voice room: <strong class="text-gold">"${msg.voiceRoomName}"</strong> (${msg.voiceRoomGame})
+            </p>
+            <button class="w-full py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer" onclick="joinVoiceRoom('${msg.voiceRoomId}').then(() => { goTo('sVoice'); })">
+              <i class="fas fa-sign-in-alt"></i> Connect Live Audio
+            </button>
+          </div>
         </div>
-        <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
-          ${msg.text || ''}
+      `;
+    } else {
+      msgDiv.innerHTML = `
+        <img
+          src="${msg.userAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1'}"
+          alt="Avatar"
+          class="w-7 h-7 rounded-full bg-panel shrink-0 object-cover ${avatarBorder} cursor-pointer hover:scale-105 transition duration-150"
+          onclick="openPlayerProfileCard('${msg.userId}')"
+          title="Click to view profile"
+        />
+        <div>
+          <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
+            <span class="cursor-pointer hover:text-white hover:underline transition duration-150" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}</span>
+          </div>
+          <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
+            ${msg.text || ''}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
     container.appendChild(msgDiv);
   });
 
@@ -8355,15 +8495,32 @@ function openFriendDM(friend) {
       const m = d.data();
       const isMe = m.sender === userProfile.uid;
       const flexCls = isMe ? 'flex-row-reverse' : '';
-      const bgCls = isMe ? 'bg-gold border-gold text-bg font-semibold rounded-tr-none' : 'bg-card border-bdr text-t1 rounded-tl-none';
 
       const bubble = document.createElement('div');
       bubble.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
-      bubble.innerHTML = `
-        <div class="max-w-full p-2.5 rounded-xl border text-[11px] leading-relaxed break-words ${bgCls}">
-          ${m.text}
-        </div>
-      `;
+      
+      if (m.isVoiceRoomInvite) {
+        bubble.innerHTML = `
+          <div class="p-3 bg-gradient-to-br from-emerald-950/80 via-teal-950/40 to-black/30 border border-emerald-500/40 rounded-xl text-xs space-y-2.5 shadow-md">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-bold uppercase text-[9px] tracking-wider animate-pulse">
+              <i class="fas fa-headset"></i> Voice Channel Invite
+            </div>
+            <p class="text-white text-[11px] font-medium leading-snug">
+              Come talk! Join my room: <strong class="text-gold">"${m.voiceRoomName}"</strong>
+            </p>
+            <button class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition shadow cursor-pointer flex items-center justify-center gap-1" onclick="joinVoiceRoom('${m.voiceRoomId}').then(() => { goTo('sVoice'); $('mDMChat').classList.add('hidden'); })">
+              <i class="fas fa-sign-in-alt"></i> Join Room
+            </button>
+          </div>
+        `;
+      } else {
+        const bgCls = isMe ? 'bg-gold border-gold text-bg font-semibold rounded-tr-none' : 'bg-card border-bdr text-t1 rounded-tl-none';
+        bubble.innerHTML = `
+          <div class="max-w-full p-2.5 rounded-xl border text-[11px] leading-relaxed break-words ${bgCls}">
+            ${m.text}
+          </div>
+        `;
+      }
       listEl.appendChild(bubble);
     });
 
@@ -8381,6 +8538,223 @@ $('bCloseDMChat').addEventListener('click', () => {
     dmUnsub = null;
   }
 });
+
+// Bind DM header click elements to open player profile
+if ($('dmChatAv')) {
+  $('dmChatAv').addEventListener('click', () => {
+    if (activeDMFriendUid) {
+      openPlayerProfileCard(activeDMFriendUid);
+    }
+  });
+}
+if ($('dmChatName')) {
+  $('dmChatName').addEventListener('click', () => {
+    if (activeDMFriendUid) {
+      openPlayerProfileCard(activeDMFriendUid);
+    }
+  });
+}
+
+// ── CUSTOM PLAYER PROFILE CARD CONTROLLER ──
+let currentViewedUser = null;
+
+window.openPlayerProfileCard = async function(targetUid) {
+  if (!targetUid) return;
+  const profile = userProfile || guestProfile;
+  if (profile && (profile.uid === targetUid || profile.id === targetUid)) {
+    goTo('sProfile');
+    showToastNotification("Your Profile 👤", "Opening your personal profile dashboard.");
+    return;
+  }
+
+  // Reset UI to loading state
+  $('vppName').textContent = "Loading Profile...";
+  $('vppHandle').textContent = "@loading";
+  $('vppBio').textContent = '"Loading detailed player profile card from ArenaX records..."';
+  $('vppAv').src = "https://api.dicebear.com/7.x/bottts/svg?seed=loading";
+  $('vppPremiumBadge').classList.add('hidden');
+  $('vppBadge').classList.add('hidden');
+  $('vppLevel').textContent = "--";
+  $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red/40 text-[10px]"></i> --`;
+  $('vppTournaments').textContent = "--";
+  $('vppCountryRow').classList.add('hidden');
+  $('vppFavGameRow').classList.add('hidden');
+  $('vppGameUIDRow').classList.add('hidden');
+  $('vppSocialsContainer').classList.add('hidden');
+  
+  // Show modal
+  $('mViewPlayerProfile').classList.remove('hidden');
+
+  try {
+    const userDocRef = doc(db, 'users', targetUid);
+    const snap = await getDoc(userDocRef);
+    if (!snap.exists()) {
+      $('vppName').textContent = "Unknown Player";
+      return;
+    }
+
+    const u = snap.data();
+    currentViewedUser = { uid: targetUid, ...u };
+
+    // Fill data
+    $('vppName').textContent = u.name || 'ArenaX Player';
+    $('vppHandle').textContent = u.handle ? `@${u.handle}` : `@user_${targetUid.slice(0, 5)}`;
+    $('vppAv').src = u.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+    $('vppBio').textContent = u.bio ? `"${u.bio}"` : '"No tactical bio written yet."';
+
+    // Premium status Styling
+    if (u.premium) {
+      $('vppPremiumBadge').classList.remove('hidden');
+      $('vppCoverBanner').className = "h-28 bg-gradient-to-r from-amber-950 via-[#1e150a] to-yellow-950 relative";
+    } else {
+      $('vppPremiumBadge').classList.add('hidden');
+      $('vppCoverBanner').className = "h-28 bg-gradient-to-r from-emerald-950 via-[#111827] to-purple-950 relative";
+    }
+
+    // Role badge
+    if (u.badge) {
+      $('vppBadge').textContent = u.badge;
+      $('vppBadge').classList.remove('hidden');
+    } else {
+      $('vppBadge').classList.add('hidden');
+    }
+
+    // Stats
+    $('vppLevel').textContent = u.level || 1;
+    $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red text-[10px] animate-pulse"></i> ${u.popularity || 0}`;
+    $('vppTournaments').textContent = u.tournaments || 0;
+
+    // Detailed metadata rows
+    if (u.country) {
+      const countryNames = {
+        PK: '🇵🇰 Pakistan', IN: '🇮🇳 India', BD: '🇧🇩 Bangladesh', SA: '🇸🇦 Saudi Arabia',
+        AE: '🇦🇪 UAE', US: '🇺🇸 USA', GB: '🇬🇧 UK', Other: '🌍 Other'
+      };
+      $('vppCountry').textContent = countryNames[u.country] || u.country;
+      $('vppCountryRow').classList.remove('hidden');
+    }
+    if (u.favoriteGame) {
+      $('vppFavGame').textContent = u.favoriteGame;
+      $('vppFavGameRow').classList.remove('hidden');
+    }
+    if (u.gameUID) {
+      $('vppGameUID').textContent = u.gameUID;
+      $('vppGameUIDRow').classList.remove('hidden');
+    }
+
+    // Social icons
+    let hasSoc = false;
+    if (u.socialDiscord) {
+      $('vppSocialDiscord').href = `https://discord.com/users/${u.socialDiscord}`;
+      $('vppSocialDiscord').classList.remove('hidden');
+      hasSoc = true;
+    } else {
+      $('vppSocialDiscord').classList.add('hidden');
+    }
+    if (u.socialInstagram) {
+      $('vppSocialInstagram').href = `https://instagram.com/${u.socialInstagram.replace('@', '')}`;
+      $('vppSocialInstagram').classList.remove('hidden');
+      hasSoc = true;
+    } else {
+      $('vppSocialInstagram').classList.add('hidden');
+    }
+    if (u.socialYoutube) {
+      $('vppSocialYoutube').href = u.socialYoutube.startsWith('http') ? u.socialYoutube : `https://youtube.com/${u.socialYoutube}`;
+      $('vppSocialYoutube').classList.remove('hidden');
+      hasSoc = true;
+    } else {
+      $('vppSocialYoutube').classList.add('hidden');
+    }
+
+    if (hasSoc) {
+      $('vppSocialsContainer').classList.remove('hidden');
+    }
+
+  } catch (err) {
+    console.error("Error fetching target player details:", err);
+    $('vppName').textContent = "Failed to Load";
+  }
+};
+
+// Bind modal triggers
+if ($('bCloseViewPlayerProfile')) {
+  $('bCloseViewPlayerProfile').addEventListener('click', () => {
+    $('mViewPlayerProfile').classList.add('hidden');
+  });
+}
+
+if ($('btnVppSendDM')) {
+  $('btnVppSendDM').addEventListener('click', () => {
+    if (!currentViewedUser) return;
+    $('mViewPlayerProfile').classList.add('hidden');
+    openFriendDM(currentViewedUser);
+  });
+}
+
+if ($('btnVppAddFriend')) {
+  $('btnVppAddFriend').addEventListener('click', async () => {
+    if (!currentViewedUser || !userProfile) return;
+    try {
+      await setDoc(doc(db, 'users', currentViewedUser.uid, 'friendRequests', userProfile.uid), {
+        uid: userProfile.uid,
+        name: userProfile.name,
+        handle: userProfile.handle,
+        av: userProfile.av,
+        sentAt: serverTimestamp()
+      });
+      showToastNotification("Request Sent ✉️", `Friend request successfully sent to ${currentViewedUser.name}!`);
+      $('mViewPlayerProfile').classList.add('hidden');
+    } catch (err) {
+      console.error("Error sending friend request from vpp:", err);
+      alert("Error: " + err.message);
+    }
+  });
+}
+
+// ── QUICK BROADCAST SHORTCUT HANDLERS FOR VOICE CHANNELS ──
+if ($('btnShareVoiceGlobal')) {
+  $('btnShareVoiceGlobal').addEventListener('click', async () => {
+    if (!currentVoiceRoomId || !userProfile) {
+      showToastNotification("Lobby Required ⚠️", "Join or create a live voice channel first!");
+      return;
+    }
+    try {
+      const roomName = $('activeRoomName').textContent;
+      const roomGame = $('activeRoomGame').textContent;
+      
+      await addDoc(collection(db, 'global_chat'), {
+        userId: userProfile.uid,
+        userName: userProfile.name,
+        userAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1',
+        text: `[Voice Invite to "${roomName}"]`,
+        originalText: `[Voice Invite to "${roomName}"]`,
+        isVoiceRoomInvite: true,
+        voiceRoomId: currentVoiceRoomId,
+        voiceRoomName: roomName,
+        voiceRoomGame: roomGame,
+        avatarFrame: (userProfile.avatarFrame || localStorage.getItem('selectedAvatarFrame') || 'none'),
+        createdAt: serverTimestamp()
+      });
+      
+      $('mInviteFriendToVoice').classList.add('hidden');
+      showToastNotification("Broadcasted 📣", "Live Squad invitation posted to Global Chat successfully!");
+    } catch (err) {
+      console.error("Error broadcasting voice room to global:", err);
+      showToastNotification("Error", "Could not broadcast invite.");
+    }
+  });
+}
+
+if ($('btnShareVoiceDMs')) {
+  $('btnShareVoiceDMs').addEventListener('click', () => {
+    // Simply scroll/focus friends list inside the modal to send individually via DMs
+    showToastNotification("Select Friend ✉️", "Click 'Invite' next to any online friend below to send a DM invite instantly!");
+    const list = $('voiceInviteFriendsList');
+    if (list) {
+      list.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+}
 
 // Send DMs perfectly
 $('dmSendBtn').addEventListener('click', () => sendDirectMessage());
@@ -10949,11 +11323,98 @@ const iceServers = {
   ]
 };
 
-// User's voice state
+// User's voice state and feedback loopback controllers
 let isMicMuted = false;
 let isSpeakerMuted = false;
 let pttActive = false;
 let pttEnabled = false;
+
+// Safe Military/Tactical Mic Loopback and audio test variables
+let localLoopbackCtx = null;
+let localLoopbackSource = null;
+let localLoopbackGain = null;
+
+function toggleLocalMicLoopback(enable) {
+  // Clean up any existing loopback
+  if (localLoopbackSource) {
+    try { localLoopbackSource.disconnect(); } catch(e){}
+    localLoopbackSource = null;
+  }
+  if (localLoopbackCtx) {
+    try { localLoopbackCtx.close(); } catch(e){}
+    localLoopbackCtx = null;
+  }
+
+  if (!enable || !localStream || isMicMuted || isSpeakerMuted) {
+    return;
+  }
+
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    localLoopbackCtx = new AudioCtx();
+    localLoopbackSource = localLoopbackCtx.createMediaStreamSource(localStream);
+
+    // Apply feedback-safe tactical radio filtering (bandpass)
+    const filter = localLoopbackCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1000, localLoopbackCtx.currentTime); // standard 1kHz walkie-talkie bandpass
+    filter.Q.setValueAtTime(1.2, localLoopbackCtx.currentTime);
+
+    // Apply 220ms military-radio latency delay to eliminate raw howling loopback feedback
+    const delay = localLoopbackCtx.createDelay(1.0);
+    delay.delayTime.setValueAtTime(0.22, localLoopbackCtx.currentTime);
+
+    // Set comfortable spatial loopback gain (comfortable feedback-safe volume)
+    localLoopbackGain = localLoopbackCtx.createGain();
+    localLoopbackGain.gain.setValueAtTime(0.25, localLoopbackCtx.currentTime);
+
+    // Pipe stream: Source -> Bandpass filter -> Radio latency Delay -> Gain -> Speakers
+    localLoopbackSource.connect(filter);
+    filter.connect(delay);
+    delay.connect(localLoopbackGain);
+    localLoopbackGain.connect(localLoopbackCtx.destination);
+
+    console.log("[Audio Engine] Active tactical squad loopback initialized (feedback-safe bandpass + 220ms radio delay).");
+  } catch(err) {
+    console.warn("Could not start local mic loopback:", err);
+  }
+}
+
+// Procedural Military Radio static squelch noise burst generator!
+function playRadioSquelchClick(isRelease) {
+  if (isSpeakerMuted) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    
+    // Generate white noise buffer
+    const bufferSize = ctx.sampleRate * (isRelease ? 0.15 : 0.08); // 80ms-150ms noise burst
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noiseNode = ctx.createBufferSource();
+    noiseNode.buffer = buffer;
+    
+    // Bandpass filter to sound exactly like a walkie-talkie speaker click
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(isRelease ? 700 : 1200, ctx.currentTime);
+    filter.Q.setValueAtTime(1.8, ctx.currentTime);
+    
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(isRelease ? 0.04 : 0.06, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isRelease ? 0.15 : 0.08));
+    
+    noiseNode.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    noiseNode.start();
+  } catch(e){}
+}
 
 // Initialize Voice Room Subsystem
 function initVoiceRoomsSystem() {
@@ -11394,6 +11855,10 @@ async function joinVoiceRoom(roomId) {
       track.enabled = !isMicMuted;
     });
     $('voiceMyStatus').innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> Live & Speaking`;
+    
+    // Trigger feedback-safe loopback and initial walkie squelch
+    toggleLocalMicLoopback(!isMicMuted);
+    playRadioSquelchClick(false);
   } catch (micErr) {
     console.warn("Microphone access denied or unavailable:", micErr);
     $('voiceMyStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Listen Only (No Mic)`;
@@ -12002,6 +12467,7 @@ async function leaveVoiceRoom(goToLobby = true) {
     localAudioAnalyser = null;
 
     // 2. Stop local tracks & clean RTC Peer connections
+    toggleLocalMicLoopback(false);
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
       localStream = null;
@@ -12089,11 +12555,13 @@ function toggleMyMicrophone() {
     $('btnVoiceToggleMute').classList.add('border-red-500/30', 'bg-red-500/10');
     showToastNotification("Microphone Muted 🔇", "Other players can't hear you.");
     muteLocalAudio(true);
+    playRadioSquelchClick(true);
   } else {
     icon.className = 'fas fa-microphone text-emerald-400';
     $('btnVoiceToggleMute').classList.remove('border-red-500/30', 'bg-red-500/10');
     showToastNotification("Microphone Active 🎙️", "You are unmuted.");
     muteLocalAudio(false);
+    playRadioSquelchClick(false);
   }
 
   updateMemberDocumentVoiceState();
@@ -12105,6 +12573,8 @@ function muteLocalAudio(mute) {
       track.enabled = !mute;
     });
   }
+  // Dynamic feedback loopback
+  toggleLocalMicLoopback(!mute);
 }
 
 // Toggle local speaker state
@@ -12116,10 +12586,12 @@ function toggleMySpeakers() {
     icon.className = 'fas fa-volume-mute text-red';
     $('btnVoiceToggleDeafen').classList.add('border-red-500/30', 'bg-red-500/10');
     showToastNotification("Speakers Deafened 🙉", "You won't hear other team players.");
+    toggleLocalMicLoopback(false);
   } else {
     icon.className = 'fas fa-volume-up text-emerald-400';
     $('btnVoiceToggleDeafen').classList.remove('border-red-500/30', 'bg-red-500/10');
     showToastNotification("Speakers Active 🔊", "Listening to tactical audio...");
+    toggleLocalMicLoopback(!isMicMuted);
   }
 
   // Adjust volume of all Web Audio API gain nodes
@@ -12286,6 +12758,23 @@ async function sendVoiceRoomInvitation(friendId, friendName, btnEl) {
       invitedBy: userProfile.uid,
       createdAt: serverTimestamp()
     });
+
+    // Also post interactive invite message to DM history!
+    try {
+      const dmRoomId = [userProfile.uid, friendId].sort().join('_');
+      await addDoc(collection(db, 'dms', dmRoomId, 'messages'), {
+        text: `[Voice Invite to "${$('activeRoomName').textContent}"]`,
+        sender: userProfile.uid,
+        senderName: userProfile.name,
+        isVoiceRoomInvite: true,
+        voiceRoomId: currentVoiceRoomId,
+        voiceRoomName: $('activeRoomName').textContent,
+        voiceRoomGame: $('activeRoomGame').textContent,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn("Failed to post invite to DM chat history:", e);
+    }
 
     btnEl.textContent = "Sent ✓";
     btnEl.classList.remove('bg-emerald-500/10', 'text-emerald-400');
