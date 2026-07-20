@@ -3184,7 +3184,7 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <!-- Popularity Boost Section -->
-      <div class="bg-gradient-to-r from-rose-950/20 via-pink-950/20 to-orange-950/20 border border-rose-500/10 rounded-xl p-3 space-y-2">
+      <div id="vppPopularityBoostSection" class="bg-gradient-to-r from-rose-950/20 via-pink-950/20 to-orange-950/20 border border-rose-500/10 rounded-xl p-3 space-y-2">
         <div class="text-[9px] uppercase font-black text-rose-400 tracking-wider flex items-center gap-1.5 justify-between">
           <span class="flex items-center gap-1"><i class="fas fa-heart text-rose-500 animate-pulse"></i> Popularity Boost</span>
           <span id="vppFreeRoseBadge" class="text-[8px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Free Available</span>
@@ -3206,6 +3206,9 @@ if (typeof tailwind !== 'undefined') {
         </button>
         <button id="btnVppAddFriend" class="flex-1 py-2.5 bg-gradient-to-r from-gold to-amber-500 hover:brightness-110 text-bg rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md">
           <i class="fas fa-user-plus"></i> Add Friend
+        </button>
+        <button id="btnVppEditSelf" class="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md hidden">
+          <i class="fas fa-user-edit"></i> Edit My Profile
         </button>
       </div>
     </div>
@@ -6671,247 +6674,7 @@ $('bCloseParticipation').addEventListener('click', () => $('mTournamentParticipa
 
 // ── DETAILED PLAYER CARD MODAL DISPLAY ──
 window.openParticipantProfileCard = async function(pId, registrationData) {
-  // Set current viewing player details globally
-  window.currentViewingPlayerId = pId;
-  window.currentViewingPlayerName = registrationData.userName || 'Player';
-
-  // Hide the success message
-  $('popSuccessMsg').classList.add('hidden');
-  $('popSuccessMsg').textContent = '';
-
-  // Reset fields to default loading state
-  $('vPartName').textContent = registrationData.userName || 'Player';
-  $('vPartHandle').textContent = registrationData.userHandle || '@player#0000';
-  $('vPartBio').textContent = 'Loading customized bio...';
-  $('vPartCountry').textContent = '🌍 Loading...';
-  $('vPartFavGame').textContent = 'Loading...';
-  $('vPartGameUID').textContent = registrationData.gameUID || 'None';
-  $('vPartAv').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(pId)}`;
-  $('vPartPopularityVal').textContent = '...';
-  
-  // Reset badges
-  $('vPartBadges').innerHTML = `
-    <span class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-t3 rounded border border-neutral-700 uppercase">Unranked</span>
-  `;
-
-  // Hide socials by default
-  $('vPartSocialsCard').classList.add('hidden');
-  $('vPartSocialsList').innerHTML = '';
-
-  // Apply default border / gradient
-  $('vPartCard').className = 'p-5 rounded-xl border border-bdr relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-card to-card/40';
-
-  // Reset popularity compact tray state
-  const tray = $('popularityTray');
-  if (tray) {
-    tray.classList.add('hidden');
-    tray.style.maxHeight = '0px';
-    tray.style.opacity = '0';
-  }
-  const chevron = $('popularityChevron');
-  if (chevron) {
-    chevron.style.transform = 'rotate(0deg)';
-  }
-
-  // Configure Send Popularity Action state
-  window.updateSendButtonState = () => {
-    const activeId = window.currentViewingPlayerId;
-    if (userProfile && activeId === userProfile.uid) {
-      // Disable Rose Button
-      $('btnSendRose').disabled = true;
-      $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-xl cursor-not-allowed text-left focus:outline-none min-w-[170px] shrink-0 opacity-60";
-      $('btnSendRose').innerHTML = `
-        <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 shrink-0">
-          <img src="rose.png" class="w-full h-full object-contain filter grayscale" alt="Rose">
-        </div>
-        <div class="flex-1 min-w-0">
-          <span class="block text-xs font-bold leading-tight">Rose Popularity</span>
-          <span class="block text-[9px] text-neutral-500 truncate">Self-Popularity Blocked</span>
-        </div>
-      `;
-
-      // Disable Rocket Button
-      $('btnSendRocket').disabled = true;
-      $('btnSendRocket').className = "flex items-center gap-2.5 p-2 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-xl cursor-not-allowed text-left focus:outline-none min-w-[170px] shrink-0 opacity-60";
-      $('btnSendRocket').innerHTML = `
-        <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 shrink-0">
-          <img src="rocket.png" class="w-full h-full object-contain filter grayscale" alt="Rocket">
-        </div>
-        <div class="flex-1 min-w-0">
-          <span class="block text-xs font-bold leading-tight">Rocket Booster</span>
-          <span class="block text-[9px] text-neutral-500 truncate">Self-Popularity Blocked</span>
-        </div>
-      `;
-    } else {
-      // Enable Rose Button
-      $('btnSendRose').disabled = false;
-      $('btnSendRose').className = "flex items-center gap-2.5 p-2 bg-bg hover:bg-rose-500/10 active:scale-95 border border-bdr hover:border-rose-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0";
-      
-      const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-      const isFree = !userProfile || !userProfile.lastFreeRoseDate || userProfile.lastFreeRoseDate !== todayDate;
-      if (isFree) {
-        $('btnSendRose').innerHTML = `
-          <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center p-1.5 shrink-0">
-            <img src="rose.png" class="w-full h-full object-contain animate-pulse" alt="Rose">
-          </div>
-          <div class="flex-1 min-w-0">
-            <span class="block text-xs font-bold text-white leading-tight">Rose Popularity</span>
-            <span class="block text-[9px] text-t3 truncate">Daily Free Rose 🌹</span>
-          </div>
-        `;
-      } else {
-        $('btnSendRose').innerHTML = `
-          <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center p-1.5 shrink-0">
-            <img src="rose.png" class="w-full h-full object-contain animate-pulse" alt="Rose">
-          </div>
-          <div class="flex-1 min-w-0">
-            <span class="block text-xs font-bold text-white leading-tight">Rose Popularity</span>
-            <span class="block text-[9px] text-t3 truncate">Send Rose (10 AX)</span>
-          </div>
-        `;
-      }
-
-      // Enable Rocket Button
-      $('btnSendRocket').disabled = false;
-      $('btnSendRocket').className = "flex items-center gap-2.5 p-2 bg-bg hover:bg-orange-500/10 active:scale-95 border border-bdr hover:border-orange-500/30 rounded-xl transition cursor-pointer text-left focus:outline-none min-w-[170px] shrink-0";
-      $('btnSendRocket').innerHTML = `
-        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center p-1.5 shrink-0">
-          <img src="rocket.png" class="w-full h-full object-contain animate-pulse" alt="Rocket">
-        </div>
-        <div class="flex-1 min-w-0">
-          <span class="block text-xs font-bold text-white leading-tight">Rocket Booster</span>
-          <span class="block text-[9px] text-t3 truncate">Send Rocket (100 AX)</span>
-        </div>
-      `;
-    }
-  };
-  
-  window.updateSendButtonState();
-
-  // Open the view modal
-  $('mViewParticipantProfile').classList.remove('hidden');
-
-  try {
-    const uSnap = await getDoc(doc(db, 'users', pId));
-    if (uSnap.exists()) {
-      const u = uSnap.data();
-      
-      // Save recipient's customized name
-      window.currentViewingPlayerName = u.name || registrationData.userName || 'Player';
-      
-      // Render Popularity
-      $('vPartPopularityVal').textContent = u.popularity || 0;
-
-      // Avatar
-      if (u.av) $('vPartAv').src = u.av;
-      
-      // Name & bio
-      $('vPartName').textContent = u.name || registrationData.userName;
-      $('vPartHandle').textContent = u.handle || registrationData.userHandle || `@player#${pId.slice(0, 4)}`;
-      $('vPartBio').textContent = u.bio || 'This player has not written a custom bio yet.';
-
-      // Details
-      $('vPartCountry').textContent = u.country ? `🌍 ${u.country}` : '🌍 Other';
-      $('vPartFavGame').textContent = u.favoriteGame || 'None Selected';
-      $('vPartGameUID').textContent = u.gameUID || registrationData.gameUID || 'None';
-
-      // Customized color name if premium
-      if (u.premium && u.nameColor) {
-        $('vPartName').style.color = u.nameColor;
-      } else {
-        $('vPartName').style.color = '';
-      }
-
-      // Banner themes / Avatar frame glow styling if premium
-      if (u.premium) {
-        // Banner background custom style
-        if (u.bannerTheme) {
-          if (u.bannerTheme === 'gold') {
-            $('vPartCard').className = 'p-5 rounded-xl border border-gold/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#f0c040]/10 to-[#141828]';
-          } else if (u.bannerTheme === 'cosmic') {
-            $('vPartCard').className = 'p-5 rounded-xl border border-purple/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#a78bfa]/10 to-[#141828]';
-          } else if (u.bannerTheme === 'cyber') {
-            $('vPartCard').className = 'p-5 rounded-xl border border-blue/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#4f9eff]/10 to-[#141828]';
-          } else if (u.bannerTheme === 'crimson') {
-            $('vPartCard').className = 'p-5 rounded-xl border border-red/30 relative overflow-hidden space-y-4 flex flex-col items-center text-center bg-gradient-to-b from-[#e8404a]/10 to-[#141828]';
-          }
-        }
-
-        // Avatar glow frame matching u.avatarFrame
-        if (u.avatarFrame) {
-          if (u.avatarFrame === 'gold') {
-            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-gold shadow-[0_0_15px_rgba(240,192,64,0.4)] object-cover';
-          } else if (u.avatarFrame === 'fire') {
-            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-red shadow-[0_0_15px_rgba(232,64,74,0.4)] object-cover';
-          } else if (u.avatarFrame === 'ice') {
-            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-blue shadow-[0_0_15px_rgba(79,158,255,0.4)] object-cover';
-          } else if (u.avatarFrame === 'royal') {
-            $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-purple shadow-[0_0_15px_rgba(167,139,250,0.4)] object-cover';
-          }
-        } else {
-          $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
-        }
-      } else {
-        $('vPartAv').className = 'w-20 h-20 rounded-full border-2 border-bdr object-cover';
-      }
-
-      // Render Badges
-      let badgesHTML = '';
-      if (u.rank) {
-        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase"><i class="fas fa-star mr-1"></i> ${u.rank}</span>`;
-      } else {
-        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-neutral-800 text-t2 rounded border border-neutral-700 uppercase">Unranked</span>`;
-      }
-
-      if (u.premium) {
-        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-purple/15 text-purple rounded border border-purple/20 uppercase"><i class="fas fa-crown mr-1"></i> Premium</span>`;
-      }
-
-      if (u.specialBadge) {
-        badgesHTML += `<span class="px-2.5 py-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 rounded border border-blue-500/20 uppercase"><i class="fas fa-award mr-1"></i> ${u.specialBadge}</span>`;
-      }
-      $('vPartBadges').innerHTML = badgesHTML;
-
-      // Social Links
-      let socialButtonsHTML = '';
-      if (u.socials) {
-        if (u.socials.discord) {
-          socialButtonsHTML += `
-            <span class="px-3 py-1.5 bg-[#5865F2]/10 border border-[#5865F2]/30 text-[#5865F2] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#5865F2]/20 transition">
-              <i class="fab fa-discord"></i> ${u.socials.discord}
-            </span>
-          `;
-        }
-        if (u.socials.instagram) {
-          socialButtonsHTML += `
-            <a href="https://instagram.com/${u.socials.instagram}" target="_blank" class="px-3 py-1.5 bg-[#E1306C]/10 border border-[#E1306C]/30 text-[#E1306C] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#E1306C]/20 transition">
-              <i class="fab fa-instagram"></i> @${u.socials.instagram}
-            </a>
-          `;
-        }
-        if (u.socials.youtube) {
-          socialButtonsHTML += `
-            <a href="${u.socials.youtube}" target="_blank" class="px-3 py-1.5 bg-[#FF0000]/10 border border-[#FF0000]/30 text-[#FF0000] text-xs font-semibold rounded-lg flex items-center gap-1.5 hover:bg-[#FF0000]/20 transition">
-              <i class="fab fa-youtube"></i> YouTube
-            </a>
-          `;
-        }
-      }
-
-      if (socialButtonsHTML) {
-        $('vPartSocialsList').innerHTML = socialButtonsHTML;
-        $('vPartSocialsCard').classList.remove('hidden');
-      }
-
-    } else {
-      $('vPartBio').textContent = 'This player has not customized their profile.';
-      $('vPartCountry').textContent = '🌍 Other';
-      $('vPartFavGame').textContent = 'None';
-    }
-  } catch (err) {
-    console.error('Failed loading profile details:', err);
-    $('vPartBio').textContent = 'Failed loading player customizations.';
-  }
+  openPlayerProfileCard(pId);
 };
 
 $('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));
@@ -8644,11 +8407,7 @@ let currentViewedUser = null;
 window.openPlayerProfileCard = async function(targetUid) {
   if (!targetUid) return;
   const profile = userProfile || guestProfile;
-  if (profile && (profile.uid === targetUid || profile.id === targetUid)) {
-    goTo('sProfile');
-    showToastNotification("Your Profile 👤", "Opening your personal profile dashboard.");
-    return;
-  }
+  const isSelf = profile && (profile.uid === targetUid || profile.id === targetUid);
 
   // Reset UI to loading state
   $('vppName').textContent = "Loading Profile...";
@@ -8665,6 +8424,19 @@ window.openPlayerProfileCard = async function(targetUid) {
   $('vppGameUIDRow').classList.add('hidden');
   $('vppSocialsContainer').classList.add('hidden');
   
+  // Toggle buttons for self vs other
+  if (isSelf) {
+    if ($('vppPopularityBoostSection')) $('vppPopularityBoostSection').classList.add('hidden');
+    if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
+    if ($('btnVppAddFriend')) $('btnVppAddFriend').classList.add('hidden');
+    if ($('btnVppEditSelf')) $('btnVppEditSelf').classList.remove('hidden');
+  } else {
+    if ($('vppPopularityBoostSection')) $('vppPopularityBoostSection').classList.remove('hidden');
+    if ($('btnVppSendDM')) $('btnVppSendDM').classList.remove('hidden');
+    if ($('btnVppAddFriend')) $('btnVppAddFriend').classList.remove('hidden');
+    if ($('btnVppEditSelf')) $('btnVppEditSelf').classList.add('hidden');
+  }
+
   // Show modal
   $('mViewPlayerProfile').classList.remove('hidden');
 
@@ -8992,6 +8764,14 @@ if ($('btnVppAddFriend')) {
       console.error("Error sending friend request from vpp:", err);
       alert("Error: " + err.message);
     }
+  });
+}
+
+if ($('btnVppEditSelf')) {
+  $('btnVppEditSelf').addEventListener('click', () => {
+    $('mViewPlayerProfile').classList.add('hidden');
+    goTo('sProfile');
+    showToastNotification("Your Profile 👤", "Opening your personal profile dashboard.");
   });
 }
 
