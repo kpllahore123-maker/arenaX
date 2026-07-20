@@ -627,7 +627,7 @@ if (typeof tailwind !== 'undefined') {
             </span>
             <!-- Local User Popularity Badge -->
             <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-500/15 text-rose-400 rounded border border-rose-500/30 uppercase flex items-center gap-1">
-              <i class="fas fa-heart text-[8px]"></i> Popularity: <span id="pPopularityVal">0</span>
+              <img src="rose.png" class="w-3.5 h-3.5 object-contain inline-block" alt="Rose"> Popularity: <span id="pPopularityVal">0</span>
             </span>
           </div>
           <!-- Custom Earned Badges Container -->
@@ -3581,7 +3581,7 @@ if (typeof tailwind !== 'undefined') {
 
       <!-- Popularity Display Badge -->
       <div id="vPartPopularityContainer" class="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full text-[11px] font-bold shadow-[0_0_8px_rgba(244,63,94,0.1)] mt-1 animate-pulse">
-        <i class="fas fa-heart text-rose-500"></i> Popularity: <span id="vPartPopularityVal" class="font-extrabold text-white">0</span>
+        <img src="rose.png" class="w-4 h-4 object-contain inline-block animate-pulse" alt="Rose"> Popularity: <span id="vPartPopularityVal" class="font-extrabold text-white">0</span>
       </div>
     </div>
 
@@ -9350,7 +9350,9 @@ async function sendSupportMessage(customTxt) {
   if (!txt) return;
   if (!customTxt) $('chatIn').value = '';
 
-  const uid = userProfile.uid || userProfile.id;
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+  const uid = profile.uid || profile.id;
   const ticketId = uid + '_ticket';
   const messagesCol = collection(db, 'support', ticketId, 'messages');
 
@@ -9359,7 +9361,7 @@ async function sendSupportMessage(customTxt) {
     await addDoc(messagesCol, {
       text: txt,
       sender: 'user',
-      senderName: userProfile.name || 'Player',
+      senderName: profile.name || 'Player',
       createdAt: serverTimestamp()
     });
 
@@ -9368,8 +9370,8 @@ async function sendSupportMessage(customTxt) {
       id: ticketId,
       ticketId: ticketId,
       uid: uid,
-      userName: userProfile.name || 'Player',
-      userHandle: userProfile.handle || 'player',
+      userName: profile.name || 'Player',
+      userHandle: profile.handle || 'player',
       lastMsg: txt,
       status: supportEscalated ? 'escalated' : 'open',
       updatedAt: serverTimestamp()
@@ -9408,11 +9410,11 @@ async function sendSupportMessage(customTxt) {
           text: m.text
         }));
 
-      const cleanProfile = userProfile ? {
-        name: userProfile.name,
-        handle: userProfile.handle,
-        balance: userProfile.balance,
-        premium: userProfile.premium
+      const cleanProfile = profile ? {
+        name: profile.name,
+        handle: profile.handle,
+        balance: profile.balance || 0,
+        premium: profile.premium || false
       } : null;
 
       const cleanTournaments = (toursData || []).map(t => ({
