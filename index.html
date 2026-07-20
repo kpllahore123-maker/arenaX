@@ -11391,6 +11391,10 @@ let remoteAudioGainNodes = {}; // peerId -> GainNode
 // WebRTC State
 let localStream = null;
 let peerConnections = {}; // uid -> RTCPeerConnection
+let makingOffer = {}; // peerId -> boolean
+let ignoreOffer = {}; // peerId -> boolean
+let lastProcessedOfferSdp = {}; // peerId -> string
+let processedSignalIds = new Set(); // Set of processed signal message IDs
 const iceServers = {
   iceServers: [
     {
@@ -12337,12 +12341,15 @@ function createPeerConnection(peerId, isInitiator) {
 
   if (isInitiator) {
     // Generate offer
+    makingOffer[peerId] = true;
     pc.createOffer().then(offer => {
       return pc.setLocalDescription(offer);
     }).then(() => {
       sendSignal(peerId, "offer", JSON.stringify(pc.localDescription));
     }).catch(err => {
       console.error("Error creating SDP offer:", err);
+    }).finally(() => {
+      makingOffer[peerId] = false;
     });
   }
 }
@@ -12368,11 +12375,20 @@ function listenToRoomSignaling(roomId) {
   const signalingRef = collection(db, 'voice_rooms', roomId, 'signaling');
   const q = query(signalingRef, where('toId', '==', userProfile.uid));
 
-  activeRoomSignalingUnsub = onSnapshot(q, (snap) => {
+  activeRoomSignalingUnsub = onSnapshot(q, async (snap) => {
     if (!userProfile) return;
 
-    snap.forEach(d => {
+    for (const d of snap.docs) {
       const signal = d.data();
+
+      // Delete the signaling doc immediately to keep collection clean and prevent duplicate reads
+      await deleteDoc(doc(db, 'voice_rooms', roomId, 'signaling', d.id)).catch(()=>{});
+
+      // Deduplication check using signal document ID
+      if (processedSignalIds.has(d.id)) {
+        continue;
+      }
+      processedSignalIds.add(d.id);
 
       let pc = peerConnections[signal.fromId];
       if (!pc) {
@@ -12381,7 +12397,7 @@ function listenToRoomSignaling(roomId) {
         pc = peerConnections[signal.fromId];
       }
 
-      if (!pc) return;
+      if (!pc) continue;
 
       const parsedPayload = JSON.parse(signal.payload);
 
@@ -12401,34 +12417,67 @@ function listenToRoomSignaling(roomId) {
       }
 
       if (signal.type === "offer") {
-        pc.setRemoteDescription(new RTCSessionDescription(parsedPayload))
-          .then(() => pc.createAnswer())
-          .then(answer => pc.setLocalDescription(answer))
-          .then(() => {
-            sendSignal(signal.fromId, "answer", JSON.stringify(pc.localDescription));
+        // SDP-level deduplication
+        if (lastProcessedOfferSdp[signal.fromId] === parsedPayload.sdp) {
+          console.log(`[WebRTC] Ignoring duplicate SDP offer from ${signal.fromId}`);
+          continue;
+        }
+        lastProcessedOfferSdp[signal.fromId] = parsedPayload.sdp;
+
+        // Polite/Impolite role for perfect negotiation
+        // Polite peer is the one with the lexicographically larger UID
+        const polite = userProfile.uid > signal.fromId;
+        const offerCollision = makingOffer[signal.fromId] || pc.signalingState !== "stable";
+
+        if (offerCollision) {
+          if (!polite) {
+            console.log(`[WebRTC] Glare/collision detected and we are impolite. Ignoring offer from ${signal.fromId}`);
+            continue;
+          }
+          console.log(`[WebRTC] Glare/collision detected and we are polite. Rolling back local offer to process remote offer from ${signal.fromId}`);
+          try {
+            await pc.setLocalDescription({ type: "rollback" });
+          } catch (e) {
+            console.warn("[WebRTC] Error during polite offer rollback (ignoring):", e);
+          }
+        }
+
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(parsedPayload));
+          
+          // Strict state check: createAnswer only in 'have-remote-offer' state
+          if (pc.signalingState === "have-remote-offer") {
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await sendSignal(signal.fromId, "answer", JSON.stringify(pc.localDescription));
             flushIceCandidates();
-          })
-          .catch(err => console.error("Error processing SDP offer:", err));
+          } else {
+            console.warn(`[WebRTC] Skipping createAnswer because signalingState is ${pc.signalingState} instead of have-remote-offer`);
+          }
+        } catch (err) {
+          console.error("Error processing SDP offer:", err);
+        }
       } else if (signal.type === "answer") {
         if (pc.signalingState !== "stable") {
-          pc.setRemoteDescription(new RTCSessionDescription(parsedPayload))
-            .then(() => {
-              flushIceCandidates();
-            })
-            .catch(err => console.error("Error processing SDP answer:", err));
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(parsedPayload));
+            flushIceCandidates();
+          } catch (err) {
+            console.error("Error processing SDP answer:", err);
+          }
         }
       } else if (signal.type === "candidate") {
         if (pc.remoteDescription && pc.remoteDescription.type) {
-          pc.addIceCandidate(new RTCIceCandidate(parsedPayload))
-            .catch(err => console.warn("Error adding ICE candidate:", err));
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(parsedPayload));
+          } catch (err) {
+            console.warn("Error adding ICE candidate:", err);
+          }
         } else {
           pc.iceCandidateQueue.push(parsedPayload);
         }
       }
-
-      // Delete the signaling doc immediately to keep collection clean
-      deleteDoc(doc(db, 'voice_rooms', roomId, 'signaling', d.id)).catch(()=>{});
-    });
+    }
   });
 }
 
@@ -12607,6 +12656,10 @@ async function leaveVoiceRoom(goToLobby = true) {
       localStream = null;
     }
     Object.keys(peerConnections).forEach(closePeerConnection);
+    makingOffer = {};
+    ignoreOffer = {};
+    lastProcessedOfferSdp = {};
+    processedSignalIds.clear();
 
     // 3. Unsubscribe Snapshot Listeners
     if (activeRoomMembersUnsub) activeRoomMembersUnsub();
