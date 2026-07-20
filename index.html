@@ -3145,8 +3145,8 @@ if (typeof tailwind !== 'undefined') {
           <div id="vppLevel" class="text-sm font-black text-white mt-0.5">15</div>
         </div>
         <div class="bg-card border border-bdr/60 rounded-xl p-2.5 text-center">
-          <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Hearts</div>
-          <div id="vppPopularity" class="text-sm font-black text-gold mt-0.5 flex items-center justify-center gap-1"><i class="fas fa-heart text-red text-[10px]"></i> 142</div>
+          <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Popularity</div>
+          <div id="vppPopularity" class="text-sm font-black text-gold mt-0.5 flex items-center justify-center gap-1"><img src="rose.png" class="w-4 h-4 object-contain inline-block" alt="Rose"> 142</div>
         </div>
         <div class="bg-card border border-bdr/60 rounded-xl p-2.5 text-center">
           <div class="text-[8px] text-t3 uppercase font-black tracking-wider">Rounds</div>
@@ -3186,15 +3186,15 @@ if (typeof tailwind !== 'undefined') {
       <!-- Popularity Boost Section -->
       <div id="vppPopularityBoostSection" class="bg-gradient-to-r from-rose-950/20 via-pink-950/20 to-orange-950/20 border border-rose-500/10 rounded-xl p-3 space-y-2">
         <div class="text-[9px] uppercase font-black text-rose-400 tracking-wider flex items-center gap-1.5 justify-between">
-          <span class="flex items-center gap-1"><i class="fas fa-heart text-rose-500 animate-pulse"></i> Popularity Boost</span>
+          <span class="flex items-center gap-1"><img src="rose.png" class="w-3.5 h-3.5 object-contain" alt="Rose"> Popularity Boost</span>
           <span id="vppFreeRoseBadge" class="text-[8px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Free Available</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <button id="btnVppSendRose" class="py-2 px-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:brightness-110 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1 shadow">
-            <i class="fas fa-heart text-rose-300"></i> Send Rose
+          <button id="btnVppSendRose" class="py-2 px-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:brightness-110 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow">
+            <img src="rose.png" class="w-4 h-4 object-contain inline-block" alt="Rose"> Rose (+1)
           </button>
-          <button id="btnVppSendRocket" class="py-2 px-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1 shadow">
-            <i class="fas fa-rocket text-orange-200"></i> Send Rocket
+          <button id="btnVppSendRocket" class="py-2 px-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow">
+            <img src="rocket.png" class="w-4 h-4 object-contain inline-block" alt="Rocket"> Rocket (+10)
           </button>
         </div>
       </div>
@@ -3464,7 +3464,7 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <!-- Full screen Rose Popularity Splash Overlay -->
-<div id="rose-popularity-splash" class="fixed inset-0 bg-black/95 z-[300] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+<div id="rose-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
   <div class="text-center space-y-4">
     <div class="relative w-72 h-72 mx-auto">
       <lottie-player id="roseSplashLottie" src="rose.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
@@ -3477,7 +3477,7 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <!-- Full screen Rocket Popularity Splash Overlay -->
-<div id="rocket-popularity-splash" class="fixed inset-0 bg-black/95 z-[300] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+<div id="rocket-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
   <div class="text-center space-y-4">
     <div class="relative w-72 h-72 mx-auto">
       <lottie-player id="rocketSplashLottie" src="rocket.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
@@ -8417,7 +8417,7 @@ window.openPlayerProfileCard = async function(targetUid) {
   $('vppPremiumBadge').classList.add('hidden');
   $('vppBadge').classList.add('hidden');
   $('vppLevel').textContent = "--";
-  $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red/40 text-[10px]"></i> --`;
+  $('vppPopularity').innerHTML = `<img src="rose.png" class="w-4 h-4 object-contain inline-block opacity-40" alt="Rose"> --`;
   $('vppTournaments').textContent = "--";
   $('vppCountryRow').classList.add('hidden');
   $('vppFavGameRow').classList.add('hidden');
@@ -8476,7 +8476,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
     // Stats
     $('vppLevel').textContent = u.level || 1;
-    $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red text-[10px] animate-pulse"></i> ${u.popularity || 0}`;
+    $('vppPopularity').innerHTML = `<img src="rose.png" class="w-4 h-4 object-contain inline-block animate-pulse" alt="Rose"> ${u.popularity || 0}`;
     $('vppTournaments').textContent = u.tournaments || 0;
 
     // Detailed metadata rows
@@ -8618,7 +8618,7 @@ if ($('btnVppSendRose')) {
       
       // Update local card UI
       currentViewedUser.popularity = (currentViewedUser.popularity || 0) + 1;
-      $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red text-[10px] animate-pulse"></i> ${currentViewedUser.popularity}`;
+      $('vppPopularity').innerHTML = `<img src="rose.png" class="w-4 h-4 object-contain inline-block animate-pulse" alt="Rose"> ${currentViewedUser.popularity}`;
       
       // Update badge on card
       $('vppFreeRoseBadge').textContent = "Cost: 10 AX";
@@ -8708,7 +8708,7 @@ if ($('btnVppSendRocket')) {
       
       // Update local card UI
       currentViewedUser.popularity = (currentViewedUser.popularity || 0) + 10;
-      $('vppPopularity').innerHTML = `<i class="fas fa-heart text-red text-[10px] animate-pulse"></i> ${currentViewedUser.popularity}`;
+      $('vppPopularity').innerHTML = `<img src="rose.png" class="w-4 h-4 object-contain inline-block animate-pulse" alt="Rose"> ${currentViewedUser.popularity}`;
       
       showToastNotification("Rocket Sent 🚀", `You sent a Rocket Booster to ${currentViewedUser.name}!`);
       
