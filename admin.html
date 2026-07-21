@@ -626,7 +626,7 @@ tailwind.config = {
           <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full filter blur-xl"></div>
           <div class="space-y-1 relative z-10">
             <h3 class="font-display text-lg font-black text-orange-400 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-scroll"></i> Video Submission Event Review Panel</h3>
-            <p class="text-xs text-t2 leading-relaxed max-w-[800px]">Review player submitted videos promoting ArenaX on social handles. Approve submissions with appropriate tiers, reward coins, activate VIP Premium durations, and award exclusive Ninja profile badges.</p>
+            <p class="text-xs text-t2 leading-relaxed max-w-[800px]">Review player submitted videos promoting ArenaX on social handles. Approve submissions with appropriate tiers, reward coins, activate VIP Premium durations, and award exclusive profile badges.</p>
           </div>
           <div class="shrink-0 flex items-center gap-2 bg-black/40 px-3 py-2 rounded-xl border border-bdr">
             <span class="text-xs text-t3 uppercase font-bold tracking-wider">Pending Tasks</span>
@@ -662,7 +662,7 @@ tailwind.config = {
               </thead>
               <tbody id="adminSubmissionsList" class="divide-y divide-bdr/30">
                 <tr>
-                  <td colspan="7" class="p-8 text-center text-t3 font-semibold animate-pulse">Loading submissions stream from scroll...</td>
+                  <td colspan="7" class="p-8 text-center text-t3 font-semibold animate-pulse">Loading submissions stream...</td>
                 </tr>
               </tbody>
             </table>
@@ -704,11 +704,12 @@ tailwind.config = {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Squad Layout / Format *</label>
-          <select id="tTeamType" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
+          <select id="tTeamType" class="w-full bg-[#111422] border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-red">
             <option value="Solo">Solo Match</option>
             <option value="Duo (2 Players)">Duo (2 Players)</option>
             <option value="Trio (3 Players)">Trio (3 Players)</option>
             <option value="Squad (4 Players)">Squad (4 Players)</option>
+            <option value="Team War">Team War Match</option>
           </select>
         </div>
         <div>
@@ -3495,7 +3496,7 @@ function renderTournaments() {
       <td class="p-4 text-white font-bold">${t.registered || 0}/${t.maxPlayers || 32}</td>
       <td class="p-4 text-gold font-bold">${t.prize || 'TBD'}</td>
       <td class="p-4">
-        <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25 animate-pulse' : 'bg-blue/15 text-blue border border-blue/25'}">
+        <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${t.status === 'live' ? 'bg-red/15 text-red border border-red/25 animate-pulse' : t.status === 'cancelled' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' : t.status === 'ended' ? 'bg-neutral-800 text-t3 border border-neutral-700' : 'bg-blue/15 text-blue border border-blue/25'}">
           ${t.status}
         </span>
       </td>
@@ -5382,10 +5383,10 @@ function renderSubmissions() {
       actionsHtml = `
         <div class="flex items-center justify-end gap-1.5 flex-wrap">
           <select id="tierSelect_${sub.id}" class="bg-bg border border-bdr text-t1 text-[11px] font-bold rounded px-1.5 py-1 outline-none cursor-pointer focus:border-orange-500">
-            <option value="tier1">Tier 1: Genin (50 Coins)</option>
-            <option value="tier2">Tier 2: Chunin (150 Coins)</option>
-            <option value="tier3">Tier 3: Jonin (400 Coins + 1W Premium)</option>
-            <option value="tier4">Tier 4: Hokage (Cash, 1M Premium, Hokage Badge)</option>
+            <option value="tier1">Tier 1: Bronze (50 Coins)</option>
+            <option value="tier2">Tier 2: Silver (150 Coins)</option>
+            <option value="tier3">Tier 3: Gold (400 Coins + 1W Premium)</option>
+            <option value="tier4">Tier 4: Diamond (Cash, 1M Premium, Diamond Badge)</option>
           </select>
           <button class="px-2.5 py-1 bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 text-green font-bold rounded text-[10px] uppercase transition cursor-pointer" onclick="approveSubmission('${sub.id}')">
             Approve
@@ -5427,20 +5428,20 @@ async function approveSubmission(id) {
 
   switch (tier) {
     case 'tier1':
-      rewardName = 'Tier 1 - Genin Reward (50 AX Coins)';
+      rewardName = 'Tier 1 - Bronze Reward (50 AX Coins)';
       coinsToAdd = 50;
       break;
     case 'tier2':
-      rewardName = 'Tier 2 - Chunin Reward (150 AX Coins)';
+      rewardName = 'Tier 2 - Silver Reward (150 AX Coins)';
       coinsToAdd = 150;
       break;
     case 'tier3':
-      rewardName = 'Tier 3 - Jonin Reward (400 AX Coins + 1W Premium)';
+      rewardName = 'Tier 3 - Gold Reward (400 AX Coins + 1W Premium)';
       coinsToAdd = 400;
       premiumDaysToAdd = 7;
       break;
     case 'tier4':
-      rewardName = 'Tier 4 - Hokage Reward (Cash, 1M Premium, Hokage Badge)';
+      rewardName = 'Tier 4 - Diamond Reward (Cash, 1M Premium, Diamond Badge)';
       coinsToAdd = 0; // cash & badge & premium
       premiumDaysToAdd = 30;
       giveHokageBadge = true;
@@ -5532,8 +5533,8 @@ async function approveSubmission(id) {
       // Also send a player inbox mail
       await addDoc(collection(db, 'users', userId, 'mails'), {
         title: '🎬 Promotion Rewards Credited!',
-        sender: 'ArenaX Jutsu Board',
-        body: `Sensational Promo Video! Your promotional video Jutsu submission has been approved under the tier criteria. \n\nAward: ${rewardName}\n\nThank you for spreading ArenaX's fire will! Keep creating! 🍃`,
+        sender: 'ArenaX Promo Board',
+        body: `Sensational Promo Video! Your promotional video submission has been approved under our criteria. \n\nAward: ${rewardName}\n\nThank you for spreading the word about ArenaX! Keep creating! 🍃`,
         read: false,
         createdAt: serverTimestamp()
       });
