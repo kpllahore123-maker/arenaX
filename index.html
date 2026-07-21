@@ -4106,6 +4106,13 @@ let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
 let notifPopupShownThisSession = false;
 
+// Launch Fest Global States
+let launchFestTimersInitialized = false;
+let activeEventsSubTab = 'fest';
+let referralCount = 0;
+let topPlayersList = [];
+let isWheelSpinning = false;
+
 // Interactive Tutorial States & Steps config
 let currentTutorialStep = 0;
 let activeHighlightedElementId = null;
@@ -12140,235 +12147,265 @@ window.checkAndAwardTeamXP = async function(teamId, tournamentId, joinedUid) {
 };
 
 // Bind Guild Event Listeners
-$('btnHubGuilds').addEventListener('click', () => {
-  if (typeof window.closeRedReportHubDrawer === 'function') {
-    window.closeRedReportHubDrawer();
-  }
-  openGuildsModal();
-});
+const btnHubGuildsEl = $('btnHubGuilds');
+if (btnHubGuildsEl) {
+  btnHubGuildsEl.addEventListener('click', () => {
+    if (typeof window.closeRedReportHubDrawer === 'function') {
+      window.closeRedReportHubDrawer();
+    }
+    openGuildsModal();
+  });
+}
 
-$('bCloseGuildsSystem').addEventListener('click', () => {
-  $('mGuildSystemModal').classList.add('hidden');
-  if (unsubGuilds) {
-    unsubGuilds();
-    unsubGuilds = null;
-  }
-});
+const bCloseGuildsSystemEl = $('bCloseGuildsSystem');
+if (bCloseGuildsSystemEl) {
+  bCloseGuildsSystemEl.addEventListener('click', () => {
+    if ($('mGuildSystemModal')) $('mGuildSystemModal').classList.add('hidden');
+    if (unsubGuilds) {
+      unsubGuilds();
+      unsubGuilds = null;
+    }
+  });
+}
 
-$('guildSearchInput').addEventListener('input', () => {
-  renderGuildsListUI();
-});
+const guildSearchInputEl = $('guildSearchInput');
+if (guildSearchInputEl) {
+  guildSearchInputEl.addEventListener('input', () => {
+    renderGuildsListUI();
+  });
+}
 
-$('btnCreateGuildTrigger').addEventListener('click', () => {
-  if (userGuild) {
-    alert("You are already in a guild! You must leave your current guild to create a new one.");
-    return;
-  }
-  $('cgName').value = '';
-  $('cgTag').value = '';
-  $('cgDesc').value = '';
-  $('cgRequirements').value = '';
-  $('mCreateGuild').classList.remove('hidden');
-});
+const btnCreateGuildTriggerEl = $('btnCreateGuildTrigger');
+if (btnCreateGuildTriggerEl) {
+  btnCreateGuildTriggerEl.addEventListener('click', () => {
+    if (userGuild) {
+      alert("You are already in a guild! You must leave your current guild to create a new one.");
+      return;
+    }
+    if ($('cgName')) $('cgName').value = '';
+    if ($('cgTag')) $('cgTag').value = '';
+    if ($('cgDesc')) $('cgDesc').value = '';
+    if ($('cgRequirements')) $('cgRequirements').value = '';
+    if ($('mCreateGuild')) $('mCreateGuild').classList.remove('hidden');
+  });
+}
 
-$('bCloseCreateGuild').addEventListener('click', () => {
-  $('mCreateGuild').classList.add('hidden');
-});
+const bCloseCreateGuildEl = $('bCloseCreateGuild');
+if (bCloseCreateGuildEl) {
+  bCloseCreateGuildEl.addEventListener('click', () => {
+    if ($('mCreateGuild')) $('mCreateGuild').classList.add('hidden');
+  });
+}
 
-$('btnSubmitCreateGuild').addEventListener('click', async () => {
-  if (!userProfile) {
-    alert("You must be logged in to establish a Guild!");
-    return;
-  }
+const btnSubmitCreateGuildEl = $('btnSubmitCreateGuild');
+if (btnSubmitCreateGuildEl) {
+  btnSubmitCreateGuildEl.addEventListener('click', async () => {
+    if (!userProfile) {
+      alert("You must be logged in to establish a Guild!");
+      return;
+    }
 
-  if (userGuild) {
-    alert("You are already in a guild!");
-    return;
-  }
-  
-  const cost = 500;
-  const currentBalance = userProfile.balance || 0;
-  if (currentBalance < cost) {
-    alert(`Insufficient AX Coins! Establishing a Guild costs 500 AX. You currently have ${currentBalance} AX.`);
-    return;
-  }
-
-  const name = $('cgName').value.trim();
-  const tag = $('cgTag').value.trim().toUpperCase();
-  const logo = $('cgLogo').value;
-  const type = $('cgType').value;
-  const desc = $('cgDesc').value.trim();
-  const req = $('cgRequirements').value.trim();
-  
-  if (!name || !tag || !desc || !req) {
-    alert("Please fill out all required fields to establish your Guild!");
-    return;
-  }
-  
-  if (tag.length > 5) {
-    alert("Guild Tag must be maximum 5 characters.");
-    return;
-  }
-  
-  $('btnSubmitCreateGuild').disabled = true;
-  $('btnSubmitCreateGuild').textContent = 'Establishing...';
-  
-  try {
-    // 1. Create the Guild
-    const teamDocRef = await addDoc(collection(db, 'teams'), {
-      name,
-      tag,
-      logoUrl: logo,
-      type,
-      description: desc,
-      requirements: req,
-      leaderId: userProfile.uid,
-      leaderName: userProfile.name,
-      members: [userProfile.uid],
-      xp: 0,
-      level: 1,
-      createdAt: serverTimestamp()
-    });
-
-    // 2. Deduct 500 AX coins from profile
-    const userDocRef = doc(db, 'users', userProfile.uid);
-    await updateDoc(userDocRef, {
-      balance: increment(-cost)
-    });
-
-    // 3. Log transaction under deposit_requests (ledger)
-    const txnId = `GLD-${Math.floor(100000 + Math.random() * 900000)}`;
-    await addDoc(collection(db, 'deposit_requests'), {
-      userId: userProfile.uid,
-      userName: userProfile.name,
-      userHandle: userProfile.handle || '',
-      userEmail: userProfile.email || '',
-      amountPKR: 0,
-      amountAX: cost,
-      method: 'Guild Establishment',
-      txnId: txnId,
-      status: 'approved',
-      type: 'payment',
-      message: `Established Guild "${name}" (-500 AX)`,
-      submittedAt: serverTimestamp(),
-      createdAt: serverTimestamp()
-    });
-    
-    alert(`🎉 Congratulations! Your new Guild "${name}" has been established successfully!\n-500 AX Coins deducted from your wallet.`);
-    $('mCreateGuild').classList.add('hidden');
-  } catch (err) {
-    alert("Failed to create Guild: " + err.message);
-  } finally {
-    $('btnSubmitCreateGuild').disabled = false;
-    $('btnSubmitCreateGuild').textContent = 'Establish Guild (500 AX)';
-  }
-});
-
-$('btnCancelJoinRequest').addEventListener('click', () => {
-  $('mTeamJoinRequestMsgModal').classList.add('hidden');
-});
-
-$('btnSendJoinRequest').addEventListener('click', async () => {
-  if (!selectedGuild) return;
-  const msg = $('joinRequestOptionalMsg').value.trim();
-  const leaderId = selectedGuild.leaderId;
-  if (!leaderId) {
-    alert("This guild does not have an active leader.");
-    return;
-  }
-  
-  $('btnSendJoinRequest').disabled = true;
-  $('btnSendJoinRequest').textContent = 'Sending...';
-  
-  try {
-    const mailsRef = collection(db, 'users', leaderId, 'mails');
-    await addDoc(mailsRef, {
-      type: "team_join_request",
-      sender: "Guild Application",
-      title: "New Join Request",
-      body: `User @${userProfile.handle} requested to join your Guild "${selectedGuild.name}". Message: "${msg || 'No message'}"`,
-      fromUserId: userProfile.uid,
-      fromUserName: userProfile.name,
-      fromUserHandle: userProfile.handle,
-      teamId: selectedGuild.id,
-      teamName: selectedGuild.name,
-      message: msg,
-      status: "pending",
-      createdAt: serverTimestamp()
-    });
-    
-    alert("Join request sent to the Guild Leader's Inbox successfully! 🛡️");
-    $('mTeamJoinRequestMsgModal').classList.add('hidden');
-  } catch (err) {
-    alert("Failed to send request: " + err.message);
-  } finally {
-    $('btnSendJoinRequest').disabled = false;
-    $('btnSendJoinRequest').textContent = 'Send Request';
-  }
-});
-
-$('btnSquadInviteNo').addEventListener('click', () => {
-  $('mSquadInvitePromptModal').classList.add('hidden');
-});
-
-$('btnSquadInviteYes').addEventListener('click', async () => {
-  const team = window.activeSquadInviteTeam;
-  const tour = window.activeSquadInviteTour;
-  if (!team || !tour) return;
-  
-  $('btnSquadInviteYes').disabled = true;
-  $('btnSquadInviteYes').textContent = 'Inviting...';
-  
-  try {
-    const membersToInvite = (team.members || []).filter(uid => uid !== userProfile.uid);
-    if (membersToInvite.length === 0) {
-      alert("Your guild does not have any other members to invite yet.");
-      $('mSquadInvitePromptModal').classList.add('hidden');
+    if (userGuild) {
+      alert("You are already in a guild!");
       return;
     }
     
-    const participationRef = doc(db, 'teams', team.id, 'tournamentParticipations', tour.id);
-    await setDoc(participationRef, {
-      invitedMembers: membersToInvite,
-      joinedMembers: [],
-      xpAwarded: false,
-      createdAt: serverTimestamp()
-    });
+    const cost = 500;
+    const currentBalance = userProfile.balance || 0;
+    if (currentBalance < cost) {
+      alert(`Insufficient AX Coins! Establishing a Guild costs 500 AX. You currently have ${currentBalance} AX.`);
+      return;
+    }
+
+    const name = $('cgName') ? $('cgName').value.trim() : '';
+    const tag = $('cgTag') ? $('cgTag').value.trim().toUpperCase() : '';
+    const logo = $('cgLogo') ? $('cgLogo').value : '';
+    const type = $('cgType') ? $('cgType').value : '';
+    const desc = $('cgDesc') ? $('cgDesc').value.trim() : '';
+    const req = $('cgRequirements') ? $('cgRequirements').value.trim() : '';
     
-    for (const memberId of membersToInvite) {
-      const mailRef = collection(db, 'users', memberId, 'mails');
-      await addDoc(mailRef, {
-        type: "tournament_invite",
-        sender: "Guild Tournament Squad",
-        title: "Squad Tournament Invitation! 🏆",
-        body: `Your Guild leader ${userProfile.name} has registered the team for the tournament "${tour.name}". Click the button below to join the squad slot!`,
-        tournamentId: tour.id,
-        tournamentName: tour.name,
-        teamId: team.id,
+    if (!name || !tag || !desc || !req) {
+      alert("Please fill out all required fields to establish your Guild!");
+      return;
+    }
+    
+    if (tag.length > 5) {
+      alert("Guild Tag must be maximum 5 characters.");
+      return;
+    }
+    
+    btnSubmitCreateGuildEl.disabled = true;
+    btnSubmitCreateGuildEl.textContent = 'Establishing...';
+    
+    try {
+      // 1. Create the Guild
+      const teamDocRef = await addDoc(collection(db, 'teams'), {
+        name,
+        tag,
+        logoUrl: logo,
+        type,
+        description: desc,
+        requirements: req,
+        leaderId: userProfile.uid,
+        leaderName: userProfile.name,
+        members: [userProfile.uid],
+        xp: 0,
+        level: 1,
+        createdAt: serverTimestamp()
+      });
+
+      // 2. Deduct 500 AX coins from profile
+      const userDocRef = doc(db, 'users', userProfile.uid);
+      await updateDoc(userDocRef, {
+        balance: increment(-cost)
+      });
+
+      // 3. Log transaction under deposit_requests (ledger)
+      const txnId = `GLD-${Math.floor(100000 + Math.random() * 900000)}`;
+      await addDoc(collection(db, 'deposit_requests'), {
+        userId: userProfile.uid,
+        userName: userProfile.name,
+        userHandle: userProfile.handle || '',
+        userEmail: userProfile.email || '',
+        amountPKR: 0,
+        amountAX: cost,
+        method: 'Guild Establishment',
+        txnId: txnId,
+        status: 'approved',
+        type: 'payment',
+        message: `Established Guild "${name}" (-500 AX)`,
+        submittedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+      
+      alert(`🎉 Congratulations! Your new Guild "${name}" has been established successfully!\n-500 AX Coins deducted from your wallet.`);
+      if ($('mCreateGuild')) $('mCreateGuild').classList.add('hidden');
+    } catch (err) {
+      alert("Failed to create Guild: " + err.message);
+    } finally {
+      btnSubmitCreateGuildEl.disabled = false;
+      btnSubmitCreateGuildEl.textContent = 'Establish Guild (500 AX)';
+    }
+  });
+}
+
+const btnCancelJoinRequestEl = $('btnCancelJoinRequest');
+if (btnCancelJoinRequestEl) {
+  btnCancelJoinRequestEl.addEventListener('click', () => {
+    if ($('mTeamJoinRequestMsgModal')) $('mTeamJoinRequestMsgModal').classList.add('hidden');
+  });
+}
+
+const btnSendJoinRequestEl = $('btnSendJoinRequest');
+if (btnSendJoinRequestEl) {
+  btnSendJoinRequestEl.addEventListener('click', async () => {
+    if (!selectedGuild) return;
+    const msg = $('joinRequestOptionalMsg') ? $('joinRequestOptionalMsg').value.trim() : '';
+    const leaderId = selectedGuild.leaderId;
+    if (!leaderId) {
+      alert("This guild does not have an active leader.");
+      return;
+    }
+    
+    btnSendJoinRequestEl.disabled = true;
+    btnSendJoinRequestEl.textContent = 'Sending...';
+    
+    try {
+      const mailsRef = collection(db, 'users', leaderId, 'mails');
+      await addDoc(mailsRef, {
+        type: "team_join_request",
+        sender: "Guild Application",
+        title: "New Join Request",
+        body: `User @${userProfile.handle} requested to join your Guild "${selectedGuild.name}". Message: "${msg || 'No message'}"`,
+        fromUserId: userProfile.uid,
+        fromUserName: userProfile.name,
+        fromUserHandle: userProfile.handle,
+        teamId: selectedGuild.id,
+        teamName: selectedGuild.name,
+        message: msg,
         status: "pending",
         createdAt: serverTimestamp()
       });
+      
+      alert("Join request sent to the Guild Leader's Inbox successfully! 🛡️");
+      if ($('mTeamJoinRequestMsgModal')) $('mTeamJoinRequestMsgModal').classList.add('hidden');
+    } catch (err) {
+      alert("Failed to send request: " + err.message);
+    } finally {
+      btnSendJoinRequestEl.disabled = false;
+      btnSendJoinRequestEl.textContent = 'Send Request';
     }
+  });
+}
+
+const btnSquadInviteNoEl = $('btnSquadInviteNo');
+if (btnSquadInviteNoEl) {
+  btnSquadInviteNoEl.addEventListener('click', () => {
+    if ($('mSquadInvitePromptModal')) $('mSquadInvitePromptModal').classList.add('hidden');
+  });
+}
+
+const btnSquadInviteYesEl = $('btnSquadInviteYes');
+if (btnSquadInviteYesEl) {
+  btnSquadInviteYesEl.addEventListener('click', async () => {
+    const team = window.activeSquadInviteTeam;
+    const tour = window.activeSquadInviteTour;
+    if (!team || !tour) return;
     
-    alert(`🎉 Invites successfully sent to your ${membersToInvite.length} Guild members!`);
-    $('mSquadInvitePromptModal').classList.add('hidden');
-  } catch (err) {
-    alert("Failed to send invites: " + err.message);
-  } finally {
-    $('btnSquadInviteYes').disabled = false;
-    $('btnSquadInviteYes').textContent = 'Yes, Invite All!';
-  }
-});
+    btnSquadInviteYesEl.disabled = true;
+    btnSquadInviteYesEl.textContent = 'Inviting...';
+    
+    try {
+      const membersToInvite = (team.members || []).filter(uid => uid !== userProfile.uid);
+      if (membersToInvite.length === 0) {
+        alert("Your guild does not have any other members to invite yet.");
+        if ($('mSquadInvitePromptModal')) $('mSquadInvitePromptModal').classList.add('hidden');
+        return;
+      }
+      
+      const participationRef = doc(db, 'teams', team.id, 'tournamentParticipations', tour.id);
+      await setDoc(participationRef, {
+        invitedMembers: membersToInvite,
+        joinedMembers: [],
+        xpAwarded: false,
+        createdAt: serverTimestamp()
+      });
+      
+      for (const memberId of membersToInvite) {
+        const mailRef = collection(db, 'users', memberId, 'mails');
+        await addDoc(mailRef, {
+          type: "tournament_invite",
+          sender: "Guild Tournament Squad",
+          title: "Squad Tournament Invitation! 🏆",
+          body: `Your Guild leader ${userProfile.name} has registered the team for the tournament "${tour.name}". Click the button below to join the squad slot!`,
+          tournamentId: tour.id,
+          tournamentName: tour.name,
+          teamId: team.id,
+          status: "pending",
+          createdAt: serverTimestamp()
+        });
+      }
+      
+      alert(`🎉 Invites successfully sent to your ${membersToInvite.length} Guild members!`);
+      if ($('mSquadInvitePromptModal')) $('mSquadInvitePromptModal').classList.add('hidden');
+    } catch (err) {
+      alert("Failed to send invites: " + err.message);
+    } finally {
+      btnSquadInviteYesEl.disabled = false;
+      btnSquadInviteYesEl.textContent = 'Yes, Invite All!';
+    }
+  });
+}
 
 // ==========================================
 // ── ARENAX LAUNCH FEST LOGIC & RENDERING ──
 // ==========================================
 
-let activeEventsSubTab = 'fest'; // 'fest' or 'tours'
-let referralCount = 0;
-let topPlayersList = [];
-let isWheelSpinning = false;
-let launchFestTimersInitialized = false;
+activeEventsSubTab = 'fest'; // 'fest' or 'tours'
+referralCount = 0;
+topPlayersList = [];
+isWheelSpinning = false;
+launchFestTimersInitialized = false;
 
 function switchEventsSubTab(subTabId) {
   activeEventsSubTab = subTabId;
