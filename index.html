@@ -1862,14 +1862,14 @@ if (typeof tailwind !== 'undefined') {
       <span id="inboxBadgeCount" class="absolute top-2 right-2 w-5 h-5 bg-red text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
     </div>
 
-    <!-- Guilds & Teams Card -->
+    <!-- Squads & Teams Card -->
     <div id="btnHubGuilds" class="bg-card hover:bg-ele/60 border border-bdr hover:border-gold/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
       <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
         <i class="fas fa-shield-alt text-gold"></i>
       </div>
       <div>
-        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🛡️ Guild & Teams Hub</h4>
-        <p class="text-[9px] text-t3 mt-0.5">Form teams, level up & compete</p>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🛡️ Squad & Teams Hub</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Form squads, level up & compete</p>
       </div>
     </div>
 
@@ -1955,7 +1955,7 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- ==================== CREATE GUILD MODAL ==================== -->
+<!-- ==================== CREATE SQUAD MODAL ==================== -->
 <div id="mCreateGuild" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[245] flex items-center justify-center p-4 hidden animate-fade-in">
   <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full flex flex-col max-h-[90vh] shadow-2xl overflow-y-auto">
     <!-- Header -->
@@ -1965,7 +1965,7 @@ if (typeof tailwind !== 'undefined') {
           <i class="fas fa-plus-circle"></i>
         </div>
         <div>
-          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Create New Guild</h3>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Create New Squad</h3>
           <p class="text-[9px] text-t3 font-mono">Establish your tournament squad</p>
         </div>
       </div>
@@ -1975,17 +1975,17 @@ if (typeof tailwind !== 'undefined') {
     <!-- Form Fields -->
     <div class="space-y-4 mt-4">
       <div>
-        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Name <span class="text-red">*</span></label>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Squad Name <span class="text-red">*</span></label>
         <input id="cgName" type="text" placeholder="e.g. DeathSquad" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition" />
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Tag (Max 5 Chars) <span class="text-red">*</span></label>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Squad Tag (Max 5 Chars) <span class="text-red">*</span></label>
           <input id="cgTag" type="text" placeholder="e.g. DSQD" max="5" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition uppercase" />
         </div>
         <div>
-          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Shield / Logo Style</label>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Squad Shield / Logo Style</label>
           <select id="cgLogo" class="w-full bg-[#111422] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition">
             <option value="🔥">🔥 Flame Crest</option>
             <option value="🐺">🐺 Wolf Pack</option>
@@ -2010,22 +2010,22 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <div>
-        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Slogan / Description <span class="text-red">*</span></label>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Squad Slogan / Description <span class="text-red">*</span></label>
         <input id="cgDesc" type="text" placeholder="e.g. Play together, win together!" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition" />
       </div>
 
       <div>
-        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Guild Joining Requirements Text <span class="text-red">*</span></label>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Squad Joining Requirements Text <span class="text-red">*</span></label>
         <textarea id="cgRequirements" placeholder="e.g. Min Rank level 10, must join squad tournaments, active daily." rows="3" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold/50 transition scrollbar-thin"></textarea>
       </div>
 
       <!-- Action Button -->
       <div class="bg-gold/5 border border-gold/25 rounded-xl p-3 text-center mb-1 flex items-center justify-center gap-2">
         <i class="fas fa-coins text-gold text-xs"></i>
-        <span class="text-[10px] font-mono text-t2">Guild Establishment Cost: <strong class="text-gold">500 AX Coins</strong></span>
+        <span class="text-[10px] font-mono text-t2">Squad Establishment Cost: <strong class="text-gold">500 AX Coins</strong></span>
       </div>
       <button id="btnSubmitCreateGuild" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer mt-1">
-        Establish Guild (500 AX)
+        Establish Squad (500 AX)
       </button>
     </div>
   </div>
@@ -5127,7 +5127,11 @@ function renderTournaments() {
   listEl.innerHTML = '';
   const filter = activeTournamentFilter();
   const data = toursData || [];
-  const filtered = data.filter(t => filter === 'all' || t.status === filter);
+  const filtered = data.filter(t => {
+    // Team War tournaments are exclusive to the Squad Team Wars tab
+    if (t.teamType === 'Team War') return false;
+    return filter === 'all' || t.status === filter;
+  });
 
   if (filtered.length === 0) {
     listEl.innerHTML = `
@@ -11157,7 +11161,7 @@ window.renderGuildSystemModalContent = async function() {
   
   if (userGuild && !showGuildBrowser) {
     // ----------------------------------------------------
-    // ACTIVE GUILD DASHBOARD STATE (Free Fire Layout!)
+    // ACTIVE SQUAD DASHBOARD STATE (Free Fire Layout!)
     // ----------------------------------------------------
     let sidebarTabs = `
       <button onclick="window.switchGuildTab('overview')" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 ${
@@ -11186,7 +11190,7 @@ window.renderGuildSystemModalContent = async function() {
           ? 'bg-gradient-to-r from-gold to-yellow-600 text-bg shadow-[0_4px_12px_rgba(240,192,64,0.25)]' 
           : 'text-t3 hover:text-white hover:bg-white/5'
       }">
-        <i class="fas fa-shield-halved text-sm"></i> BR Guild Wars
+        <i class="fas fa-shield-halved text-sm"></i> Team Wars
       </button>
     `;
 
@@ -11213,8 +11217,8 @@ window.renderGuildSystemModalContent = async function() {
                   <span class="text-xs font-black bg-gold/10 border border-gold/30 text-gold px-2.5 py-1 rounded-lg">[${userGuild.tag || 'TEAM'}]</span>
                 </h2>
                 <div class="flex items-center justify-center gap-1.5 text-t3 text-[10px] font-mono">
-                  <span>GUILD ID: <strong class="text-white select-all font-bold">${userGuild.id}</strong></span>
-                  <button onclick="navigator.clipboard.writeText('${userGuild.id}'); alert('Guild ID copied to clipboard! ✅')" class="hover:text-white transition cursor-pointer" title="Copy ID">
+                  <span>SQUAD ID: <strong class="text-white select-all font-bold">${userGuild.id}</strong></span>
+                  <button onclick="navigator.clipboard.writeText('${userGuild.id}'); alert('Squad ID copied to clipboard! ✅')" class="hover:text-white transition cursor-pointer" title="Copy ID">
                     <i class="fas fa-copy"></i>
                   </button>
                 </div>
@@ -11225,7 +11229,7 @@ window.renderGuildSystemModalContent = async function() {
                   <p class="text-[9px] text-t3 uppercase font-bold tracking-wider">Members</p>
                   <p class="font-black text-sm text-white mt-0.5 flex items-center gap-1">
                     <i class="fas fa-users text-gold text-xs"></i>
-                    ${userGuild.members ? userGuild.members.length : 1} / 25
+                    ${userGuild.members ? userGuild.members.length : 1} / 4
                   </p>
                 </div>
                 <div class="text-center px-4">
@@ -11240,7 +11244,7 @@ window.renderGuildSystemModalContent = async function() {
               <div class="w-full max-w-sm space-y-2 pt-2">
                 <div class="flex items-center justify-between text-xs font-bold">
                   <span class="text-gold uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fas fa-medal"></i> Guild Level ${userGuild.level || 1}
+                    <i class="fas fa-medal"></i> Squad Level ${userGuild.level || 1}
                   </span>
                   <span class="text-t2 font-mono">${userGuild.xp || 0} / 4200 XP</span>
                 </div>
@@ -11252,7 +11256,7 @@ window.renderGuildSystemModalContent = async function() {
 
             <div class="bg-[#0e101d]/60 border border-bdr/20 p-3 rounded-xl flex items-center justify-between mt-2 flex-shrink-0">
               <div class="min-w-0">
-                <p class="text-[8px] text-t3 uppercase font-bold tracking-widest">Guild Slogan</p>
+                <p class="text-[8px] text-t3 uppercase font-bold tracking-widest">Squad Slogan</p>
                 <p class="text-xs text-t2 font-medium truncate italic mt-0.5">"${userGuild.description || 'Play together, win together!'}"</p>
               </div>
               <button onclick="window.switchGuildTab('members')" class="text-[10px] font-bold text-gold hover:underline shrink-0 pl-3">
@@ -11264,11 +11268,11 @@ window.renderGuildSystemModalContent = async function() {
           <!-- RIGHT COLUMN: Mini Leaderboard / Weekly Rewards / Functional Feed -->
           <div class="lg:col-span-5 flex flex-col justify-between h-full space-y-4 overflow-hidden min-h-0">
             <div class="grid grid-cols-2 gap-3 flex-shrink-0">
-              <button onclick="alert('🏆 Guild Activity Leaderboard:\\n\\nOur Guild is currently ranked #1 among active weekend challengers! Keep earning points to secure top tier weekly badges! 🥇')" class="py-2.5 bg-gradient-to-r from-[#181a30] to-[#121324] hover:from-[#212442] hover:to-[#171930] border border-gold/15 hover:border-gold/30 rounded-xl text-[10px] font-black uppercase tracking-wider text-white flex items-center justify-center gap-2 transition duration-200">
+              <button onclick="alert('🏆 Squad Activity Leaderboard:\\n\\nOur Squad is currently ranked #1 among active weekend challengers! Keep earning points to secure top tier weekly badges! 🥇')" class="py-2.5 bg-gradient-to-r from-[#181a30] to-[#121324] hover:from-[#212442] hover:to-[#171930] border border-gold/15 hover:border-gold/30 rounded-xl text-[10px] font-black uppercase tracking-wider text-white flex items-center justify-center gap-2 transition duration-200">
                 <i class="fas fa-chart-line text-gold"></i> Activity Leaderboard
               </button>
               <button onclick="window.closeGuildsModal(); window.switchTab('Wallet')" class="py-2.5 bg-gradient-to-r from-[#181a30] to-[#121324] hover:from-[#212442] hover:to-[#171930] border border-gold/15 hover:border-gold/30 rounded-xl text-[10px] font-black uppercase tracking-wider text-white flex items-center justify-center gap-2 transition duration-200">
-                <i class="fas fa-shopping-bag text-gold"></i> Guild Store
+                <i class="fas fa-shopping-bag text-gold"></i> Squad Store
               </button>
             </div>
 
@@ -11276,7 +11280,7 @@ window.renderGuildSystemModalContent = async function() {
             <div class="bg-card/25 border border-bdr/20 rounded-2xl p-4 space-y-3.5 flex-shrink-0">
               <div class="flex items-center justify-between">
                 <h4 class="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
-                  <i class="fas fa-gift text-gold"></i> Guild Weekly Activity Rewards
+                  <i class="fas fa-gift text-gold"></i> Squad Weekly Activity Rewards
                 </h4>
                 <span class="text-[9px] bg-gold/10 text-gold font-bold px-2 py-0.5 rounded border border-gold/20 font-mono">0 Points</span>
               </div>
@@ -11512,20 +11516,92 @@ window.renderGuildSystemModalContent = async function() {
         </div>
       `;
     } else if (currentGuildTab === 'events') {
+      const teamWarTours = (toursData || []).filter(t => t.teamType === 'Team War');
+      let tourCardsHtml = '';
+      
+      if (teamWarTours.length === 0) {
+        tourCardsHtml = `
+          <div class="col-span-full flex flex-col items-center justify-center text-center p-8 border border-bdr/20 bg-card/10 rounded-xl space-y-2">
+            <i class="fas fa-skull text-3xl text-t3/40 animate-pulse"></i>
+            <h5 class="text-xs font-bold text-white uppercase">No Team War Tournaments Active</h5>
+            <p class="text-[10px] text-t3 max-w-sm">Administration has not posted any active Team War tournaments. Check back soon for the ultimate clash of squads!</p>
+          </div>
+        `;
+      } else {
+        teamWarTours.forEach(t => {
+          const reg = userRegs[t.id];
+          const isRegApproved = reg && reg.status === 'approved';
+          const isRegPending = reg && reg.status === 'pending';
+          
+          const statusLabels = {
+            upcoming: 'Upcoming Match',
+            live: '🔴 LIVE NOW',
+            ended: 'Ended',
+            cancelled: '❌ Cancelled'
+          };
+          
+          tourCardsHtml += `
+            <div class="bg-card/30 border border-bdr/30 rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-gold/30 transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[8px] bg-red/10 border border-red-500/20 text-red px-1.5 py-0.5 rounded font-black uppercase tracking-widest">🔥 TEAM WAR MATCH</span>
+                  <h4 class="font-display text-sm font-black text-white uppercase mt-1 leading-tight">${t.name}</h4>
+                  <p class="text-[9px] font-mono text-t3 mt-0.5"><i class="fas fa-award text-gold"></i> Prize: <strong class="text-gold">${t.prize || 'TBD'}</strong></p>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${t.status === 'live' ? 'bg-red text-white animate-pulse' : 'bg-gold/10 text-gold border border-gold/25'}">
+                  ${statusLabels[t.status] || t.status}
+                </span>
+              </div>
+              
+              <!-- Mini stats grid -->
+              <div class="grid grid-cols-2 gap-2 bg-black/40 p-2.5 rounded-lg text-[10px] font-mono text-t2 border border-bdr/10">
+                <div>Slots filled: <strong class="text-white">${t.registered || 0}/${t.maxPlayers || 32}</strong></div>
+                <div>Entry Fee: <strong class="text-white">${t.entryFee || 'Free'}</strong></div>
+                <div>Date: <strong class="text-white">${t.date || 'TBD'}</strong></div>
+                <div>Time: <strong class="text-white">${t.time || 'TBD'}</strong></div>
+              </div>
+              
+              <div class="bg-gold/5 border border-gold/10 p-2 rounded-lg text-[9px] text-gold font-medium leading-relaxed">
+                🛡️ <strong class="text-white">+100 Squad XP Awarded</strong> to your Squad roster upon filled registration & slot confirmation!
+              </div>
+              
+              <div class="flex items-center gap-2 pt-1">
+                <button onclick="window.closeGuildsModal(); window.openTournamentParticipationById('${t.id}')" class="flex-1 py-1.5 bg-[#181a30] hover:bg-[#212442] border border-bdr/40 text-t2 hover:text-white text-[10px] font-bold uppercase rounded-lg transition">
+                  <i class="fas fa-users mr-1"></i> Slots
+                </button>
+                
+                ${t.status === 'upcoming' ? `
+                  <button onclick="window.closeGuildsModal(); window.openTournamentRegisterById('${t.id}')" class="flex-1 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-black uppercase rounded-lg transition">
+                    <i class="fas fa-gamepad mr-1"></i> Participate
+                  </button>
+                ` : ''}
+                
+                ${t.status === 'ended' ? `
+                  <button onclick="window.closeGuildsModal(); window.openTournamentLeaderboardById('${t.id}')" class="flex-1 py-1.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase rounded-lg transition">
+                    <i class="fas fa-poll mr-1"></i> Result
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+      
       mainTabContentHtml = `
-        <div class="flex flex-col h-full bg-card/10 border border-bdr/20 rounded-2xl p-6 items-center justify-center text-center space-y-4">
-          <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red text-3xl animate-pulse">
-            <i class="fas fa-shield-halved animate-bounce"></i>
+        <div class="flex flex-col h-full bg-card/10 border border-bdr/20 rounded-2xl p-4 overflow-hidden min-h-0">
+          <div class="flex items-center justify-between pb-3 border-b border-bdr/20 flex-shrink-0">
+            <div>
+              <h4 class="text-xs font-black uppercase text-white tracking-wider">🔥 Elite Team War Matches</h4>
+              <p class="text-[9px] text-t3 mt-0.5">Admin-posted squad vs squad battles. Earn extra EXP & climb the rankings!</p>
+            </div>
+            <span class="text-[10px] bg-red/10 border border-red-500/25 text-red px-2.5 py-0.5 rounded font-black uppercase tracking-widest animate-pulse">Exclusive Mode</span>
           </div>
-          <div class="space-y-1.5 max-w-md">
-            <h4 class="font-display text-sm font-black text-white uppercase tracking-widest">BR GUILD WARS: active from Friday 17:00 to Sunday 23:59</h4>
-            <p class="text-xs text-t2 leading-relaxed">
-              Register squad slots in tournament challenges to earn doubled XP multipliers and top the regional leaderboard! Current Week Status: <span class="text-gold font-bold">REGISTRATION OPEN</span>.
-            </p>
+          
+          <div class="flex-1 overflow-y-auto mt-4 pr-1 scrollbar-thin">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${tourCardsHtml}
+            </div>
           </div>
-          <button onclick="window.switchGuildTab('overview')" class="px-4 py-2 bg-gradient-to-r from-gold to-yellow-600 text-bg text-[10px] font-black uppercase rounded-xl shadow-lg hover:scale-95 transition cursor-pointer">
-            Return to Overview
-          </button>
         </div>
       `;
     }
@@ -11556,10 +11632,10 @@ window.renderGuildSystemModalContent = async function() {
 
         <div class="flex items-center gap-3">
           <button onclick="window.toggleGuildBrowser(true)" class="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-bdr/40 text-t2 hover:text-white text-[9px] font-black uppercase rounded-lg transition flex items-center gap-1.5 cursor-pointer">
-            <i class="fas fa-globe"></i> Guild List >>
+            <i class="fas fa-globe"></i> Squad List >>
           </button>
-          <button onclick="alert('❓ Guild & Teams FAQ:\\n- Team creation costs 500 AX.\\n- Max limit is 25-30 players.\\n- Complete tournament participations to level up!')" class="text-t3 hover:text-white transition cursor-pointer text-xs flex items-center gap-1">
-            <i class="fas fa-question-circle"></i> GUILD
+          <button onclick="alert('❓ Squad & Teams FAQ:\\n- Team creation costs 500 AX.\\n- Max limit is 4 players.\\n- Complete tournament participations to level up!')" class="text-t3 hover:text-white transition cursor-pointer text-xs flex items-center gap-1">
+            <i class="fas fa-question-circle"></i> SQUAD
           </button>
           <button onclick="window.closeGuildsModal()" class="text-t3 hover:text-white transition cursor-pointer text-sm w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center">
             <i class="fas fa-times"></i>
@@ -11990,8 +12066,8 @@ window.acceptTeamJoinRequest = async function(mailId, fromUserId, teamId, teamNa
       return;
     }
     const teamData = teamSnap.data();
-    if (teamData.members && teamData.members.length >= 30) {
-      alert("This guild is already full (30 members max)!");
+    if (teamData.members && teamData.members.length >= 4) {
+      alert("This squad is already full (4 members max)!");
       return;
     }
     
@@ -12121,7 +12197,15 @@ window.checkAndAwardTeamXP = async function(teamId, tournamentId, joinedUid) {
         if (teamSnap.exists()) {
           const teamData = teamSnap.data();
           const currentXp = teamData.xp || 0;
-          const newXp = currentXp + 50;
+          
+          // Determine XP Awarded - Team War gives 100 XP, others give 50 XP
+          let xpAwardAmount = 50;
+          const tourObj = (toursData || []).find(x => x.id === tournamentId);
+          if (tourObj && tourObj.teamType === 'Team War') {
+            xpAwardAmount = 100;
+          }
+          
+          const newXp = currentXp + xpAwardAmount;
           const newLevel = Math.floor(newXp / 100) + 1;
           
           transaction.update(teamRef, {
@@ -12144,6 +12228,19 @@ window.checkAndAwardTeamXP = async function(teamId, tournamentId, joinedUid) {
     console.error("Error in checkAndAwardTeamXP transaction: ", err);
     throw err;
   }
+};
+
+window.openTournamentParticipationById = function(id) {
+  const t = toursData.find(x => x.id === id);
+  if (t) openTournamentParticipation(t);
+};
+window.openTournamentRegisterById = function(id) {
+  const t = toursData.find(x => x.id === id);
+  if (t) handleTourCardClick(t);
+};
+window.openTournamentLeaderboardById = function(id) {
+  const t = toursData.find(x => x.id === id);
+  if (t) openTournamentLeaderboard(t);
 };
 
 // Bind Guild Event Listeners
