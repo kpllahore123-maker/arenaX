@@ -4539,6 +4539,11 @@ function mergeAndRenderTransactions() {
 let friendReqsUnsub = null;
 let friendsListUnsub = null;
 let notificationsUnsub = null;
+let invitationsUnsub = null;
+let activeRoomMembersUnsub = null;
+let activeRoomChatUnsub = null;
+let activeRoomSignalingUnsub = null;
+let activeRoomDocUnsub = null;
 
 function cleanupAllUserListeners() {
   console.log("[Auth Engine] Cleaning up all active user-specific snapshot listeners...");
@@ -13129,10 +13134,10 @@ window.updateInboxNotificationBadge = updateInboxNotificationBadge;
 let currentVoiceRoomId = null;
 let voiceRoomsList = [];
 let voiceRoomsUnsub = null;
-let activeRoomMembersUnsub = null;
-let activeRoomChatUnsub = null;
-let activeRoomSignalingUnsub = null;
-let activeRoomDocUnsub = null;
+activeRoomMembersUnsub = null;
+activeRoomChatUnsub = null;
+activeRoomSignalingUnsub = null;
+activeRoomDocUnsub = null;
 
 // Alone host inactivity warning countdown timer
 let aloneCountdownInterval = null;
@@ -14731,7 +14736,7 @@ async function sendVoiceRoomInvitation(friendId, friendName, btnEl) {
 }
 
 // Listen to invitations targeting me in real-time
-let invitationsUnsub = null;
+invitationsUnsub = null;
 function listenToInvitations(myUid) {
   if (invitationsUnsub) invitationsUnsub();
 
