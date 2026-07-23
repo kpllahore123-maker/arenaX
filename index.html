@@ -1873,6 +1873,17 @@ if (typeof tailwind !== 'undefined') {
       </div>
     </div>
 
+    <!-- Squad Store Card -->
+    <div onclick="window.openSquadStore()" class="bg-card hover:bg-ele/60 border border-gold/20 hover:border-gold/50 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
+      <div class="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-box-open text-gold animate-bounce"></i>
+      </div>
+      <div>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🎁 Squad Store & Crates</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Mystery Crates, XP & Squad Boosts</p>
+      </div>
+    </div>
+
     <!-- Submission Event Card -->
     <div id="btnHubSubmission" class="bg-card hover:bg-ele/60 border border-bdr hover:border-orange-500/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
       <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center text-lg flex-shrink-0">
@@ -4268,10 +4279,19 @@ function goTo(screenId) {
 }
 window.goTo = goTo;
 
+// Helper to render Verified Blue Tick badge
+window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
+  if (!userObj) return '';
+  if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick) {
+    return `<img src="/bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" onerror="this.onerror=null; this.outerHTML='<i class=\\'fas fa-check-circle text-blue-400 align-middle ml-1 text-xs\\' title=\\'Verified Badge\\'></i>'"/>`;
+  }
+  return '';
+};
+
 // Lauch Dashboard
 function boot() {
   const profile = userProfile || guestProfile;
-  $('pName').textContent = profile.name;
+  $('pName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
   $('pHandle').textContent = profile.handle;
   $('pAv').src = profile.av;
   $('avImg').src = profile.av;
@@ -7230,7 +7250,7 @@ window.openTournamentLeaderboard = async function(tour) {
       
       // Rank 1
       if (first) {
-        $('podium1Name').textContent = first.playerName;
+        $('podium1Name').innerHTML = `${first.playerName}${window.getBlueTickBadgeHtml(first)}`;
         $('podium1Score').textContent = first.score || 'Champion';
         $('podium1Av').src = first.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(first.playerName)}`;
       } else {
@@ -7241,7 +7261,7 @@ window.openTournamentLeaderboard = async function(tour) {
 
       // Rank 2
       if (second) {
-        $('podium2Name').textContent = second.playerName;
+        $('podium2Name').innerHTML = `${second.playerName}${window.getBlueTickBadgeHtml(second)}`;
         $('podium2Score').textContent = second.score || 'Runner-up';
         $('podium2Av').src = second.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(second.playerName)}`;
       } else {
@@ -7252,7 +7272,7 @@ window.openTournamentLeaderboard = async function(tour) {
 
       // Rank 3
       if (third) {
-        $('podium3Name').textContent = third.playerName;
+        $('podium3Name').innerHTML = `${third.playerName}${window.getBlueTickBadgeHtml(third)}`;
         $('podium3Score').textContent = third.score || '3rd Place';
         $('podium3Av').src = third.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(third.playerName)}`;
       } else {
@@ -7279,7 +7299,7 @@ window.openTournamentLeaderboard = async function(tour) {
           <img class="w-8 h-8 rounded-full border border-bdr object-cover" src="${e.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(e.playerName)}"/>
           <div>
             <div class="font-bold text-sm text-white flex items-center gap-1.5">
-              ${e.playerName}
+              ${e.playerName}${window.getBlueTickBadgeHtml(e)}
               ${e.userId ? `<span class="text-[8px] bg-gold/10 text-gold px-1.5 py-0.2 rounded border border-gold/20 flex items-center gap-0.5"><i class="fas fa-check-circle text-[7px]"></i> Verified</span>` : ''}
             </div>
             ${e.playerHandle ? `<div class="text-[9px] text-t3 font-medium">${e.playerHandle}</div>` : ''}
@@ -8058,7 +8078,7 @@ function loadFriendSystem() {
       item.innerHTML = `
         <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr flex-shrink-0"/>
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-white truncate">${f.name}</div>
+          <div class="text-xs font-bold text-white truncate flex items-center gap-1">${f.name}${window.getBlueTickBadgeHtml(f)}</div>
           <div class="text-[10px] text-t3 truncate mt-0.5">${f.handle}</div>
         </div>
         <i class="fas fa-comment-dots text-gold text-lg"></i>
@@ -8248,7 +8268,7 @@ function renderGlobalMessages(list) {
         </div>
         <div>
           <div class="text-[9px] text-red-400 font-extrabold mb-0.5 tracking-wider uppercase flex items-center gap-1.5">
-            ${msg.userName || 'System Admin'} <span class="bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase leading-none">Staff</span>
+            ${msg.userName || 'System Admin'}${window.getBlueTickBadgeHtml(msg)} <span class="bg-red-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase leading-none">Staff</span>
           </div>
           <div class="p-3 rounded-xl text-xs leading-relaxed bg-[#1b1216] border border-red-500/30 text-white rounded-tl-none font-semibold shadow-lg shadow-red-500/5">
             ${msg.text || ''}
@@ -8279,7 +8299,7 @@ function renderGlobalMessages(list) {
         />
         <div class="space-y-1">
           <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
-            <span class="cursor-pointer hover:text-white hover:underline transition duration-150" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}</span>
+            <span class="cursor-pointer hover:text-white hover:underline transition duration-150 flex items-center gap-1" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}${window.getBlueTickBadgeHtml(msg)}</span>
           </div>
           <div class="p-3 bg-gradient-to-br from-emerald-950/90 via-[#064e3b]/30 to-[#0a120f] border border-emerald-500/40 rounded-xl space-y-2.5 max-w-[280px] shadow-lg shadow-emerald-500/5">
             <div class="flex items-center gap-1.5 text-emerald-400 font-bold uppercase text-[9px] tracking-wider animate-pulse">
@@ -8305,7 +8325,7 @@ function renderGlobalMessages(list) {
         />
         <div>
           <div class="text-[9px] text-t3 mb-0.5 font-semibold ${isMe ? 'text-right' : ''} flex items-center gap-1.5 ${isMe ? 'justify-end' : ''}">
-            <span class="cursor-pointer hover:text-white hover:underline transition duration-150" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}</span>
+            <span class="cursor-pointer hover:text-white hover:underline transition duration-150 flex items-center gap-1" onclick="openPlayerProfileCard('${msg.userId}')">${msg.userName || 'Anonymous'}${window.getBlueTickBadgeHtml(msg)}</span>
           </div>
           <div class="p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-gold text-bg font-semibold rounded-tr-none' : 'bg-card border border-bdr text-white rounded-tl-none'}">
             ${msg.text || ''}
@@ -8465,6 +8485,7 @@ $('globalChatForm').addEventListener('submit', async (e) => {
     const msgRef = await addDoc(collection(db, 'global_chat'), {
       userId: profile.uid,
       userName: profile.name,
+      hasBlueTick: !!(profile.hasBlueTick || profile.isVerified),
       userAvatar: profile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1',
       text: filtered,
       originalText: text,
@@ -8700,7 +8721,7 @@ window.openPlayerProfileCard = async function(targetUid) {
     currentViewedUser = { uid: targetUid, ...u };
 
     // Fill data
-    $('vppName').textContent = u.name || 'ArenaX Player';
+    $('vppName').innerHTML = `${u.name || 'ArenaX Player'}${window.getBlueTickBadgeHtml(u, 'w-5 h-5')}`;
     $('vppHandle').textContent = u.handle ? `@${u.handle}` : `@user_${targetUid.slice(0, 5)}`;
     $('vppAv').src = u.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
     $('vppBio').textContent = u.bio ? `"${u.bio}"` : '"No tactical bio written yet."';
@@ -10585,6 +10606,7 @@ loadAvatarPickerGrid();
 // ── ARENAX CUSTOM BADGE & MAIL SYSTEM ──
 // ==========================================
 const PREDEFINED_BADGES = [
+  { id: 'blue_tick', name: "Verified Blue Tick", description: "Official verified badge granted by administration, displayed next to user name everywhere.", icon: "fa-check-circle", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
   { id: 'champion', name: "Arena Champion", description: "Earned by winning a premier ArenaX tournament.", icon: "fa-trophy", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
   { id: 'veteran', name: "Veteran Warrior", description: "Assigned to players with exceptional career activity.", icon: "fa-shield-halved", color: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10" },
   { id: 'moderator', name: "Staff Moderator", description: "Authorized ArenaX moderator and community manager.", icon: "fa-crown", color: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
@@ -10867,9 +10889,14 @@ async function claimMailGift(mailId, badgeId, buttonEl) {
     const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
 
     // 1. Add badge to user's badges array in Firestore
-    await updateDoc(userDocRef, {
+    const updatePayload = {
       badges: arrayUnion(badgeId)
-    });
+    };
+    if (badgeId === 'blue_tick') {
+      updatePayload.hasBlueTick = true;
+      updatePayload.isVerified = true;
+    }
+    await updateDoc(userDocRef, updatePayload);
 
     // 2. Mark mail as collected
     await updateDoc(mailDocRef, {
@@ -10983,6 +11010,20 @@ function listenToGuilds() {
 // Global actions for switching tabs and screens
 window.switchGuildTab = function(tab) {
   currentGuildTab = tab;
+  showGuildBrowser = false;
+  window.renderGuildSystemModalContent();
+};
+
+window.openSquadStore = function() {
+  if (typeof guestProfile !== 'undefined' && guestProfile) {
+    alert("Please log in or register a profile to access the Squad Store!");
+    return;
+  }
+  showGuildBrowser = false;
+  currentGuildTab = 'crates';
+  const modal = $('mGuildSystemModal');
+  if (modal) modal.classList.remove('hidden');
+  if (typeof listenToGuilds === 'function') listenToGuilds();
   window.renderGuildSystemModalContent();
 };
 
@@ -11506,11 +11547,11 @@ window.renderGuildSystemModalContent = async function() {
   const profile = userProfile;
   if (!profile) return;
   
-  if (userGuild && !showGuildBrowser) {
+  if ((userGuild || currentGuildTab === 'crates') && !showGuildBrowser) {
     // ----------------------------------------------------
-    // ACTIVE SQUAD DASHBOARD STATE (Free Fire Layout!)
+    // ACTIVE SQUAD DASHBOARD & STORE STATE (Free Fire Layout!)
     // ----------------------------------------------------
-    let sidebarTabs = `
+    let sidebarTabs = userGuild ? `
       <button onclick="window.switchGuildTab('overview')" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 ${
         currentGuildTab === 'overview' 
           ? 'bg-gradient-to-r from-gold to-yellow-600 text-bg shadow-[0_4px_12px_rgba(240,192,64,0.25)]' 
@@ -11545,6 +11586,16 @@ window.renderGuildSystemModalContent = async function() {
           : 'text-t3 hover:text-white hover:bg-white/5'
       }">
         <i class="fas fa-box-open text-sm ${currentGuildTab === 'crates' ? 'text-bg' : 'text-yellow-400 animate-pulse'}"></i> Squad Crates & Boosts
+      </button>
+    ` : `
+      <button onclick="window.toggleGuildBrowser(true)" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 text-t3 hover:text-white hover:bg-white/5">
+        <i class="fas fa-users text-sm"></i> Find / Join Squad
+      </button>
+      <button onclick="window.openCreateGuildModal()" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 text-t3 hover:text-white hover:bg-white/5">
+        <i class="fas fa-plus text-sm"></i> Establish Squad
+      </button>
+      <button onclick="window.switchGuildTab('crates')" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 bg-gradient-to-r from-gold to-yellow-600 text-bg shadow-[0_4px_12px_rgba(240,192,64,0.25)]">
+        <i class="fas fa-box-open text-sm text-bg"></i> Squad Store & Crates
       </button>
     `;
 
@@ -12119,14 +12170,14 @@ window.renderGuildSystemModalContent = async function() {
       <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-card/60 flex-shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-xl bg-gold/10 text-gold border border-gold/25 flex items-center justify-center text-lg font-black font-mono">
-            ${userGuild.logoUrl || '🦁'}
+            ${userGuild ? (userGuild.logoUrl || '🦁') : '🎁'}
           </div>
           <div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[9px] bg-gold/10 text-gold font-bold px-1.5 py-0.5 rounded border border-gold/20 font-mono">Lv. ${userGuild.level || 1}</span>
-              <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">${userGuild.name}</h3>
+              ${userGuild ? `<span class="text-[9px] bg-gold/10 text-gold font-bold px-1.5 py-0.5 rounded border border-gold/20 font-mono">Lv. ${userGuild.level || 1}</span>` : ''}
+              <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">${userGuild ? userGuild.name : 'Squad Store & Mystery Crates'}</h3>
             </div>
-            <p class="text-[9px] text-t3 font-mono">My Active Tournament Squad</p>
+            <p class="text-[9px] text-t3 font-mono">${userGuild ? 'My Active Tournament Squad' : 'Exclusive Boosts & Crate Drops'}</p>
           </div>
         </div>
         
@@ -12163,7 +12214,7 @@ window.renderGuildSystemModalContent = async function() {
       </div>
     `;
 
-    if (currentGuildTab === 'overview') {
+    if (currentGuildTab === 'overview' && userGuild) {
       window.listenToGuildChat(userGuild.id);
       
       setTimeout(() => {
@@ -13153,19 +13204,19 @@ function renderLeaderboardPodium() {
   if (players.length >= 1) {
     const p1 = players[0];
     if ($('podium1Av')) $('podium1Av').src = p1.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax1';
-    if ($('podium1Name')) $('podium1Name').textContent = p1.name || 'Player 1';
+    if ($('podium1Name')) $('podium1Name').innerHTML = `${p1.name || 'Player 1'}${window.getBlueTickBadgeHtml(p1)}`;
     if ($('podium1Bal')) $('podium1Bal').textContent = (p1.balance || 0).toLocaleString() + ' AX';
   }
   if (players.length >= 2) {
     const p2 = players[1];
     if ($('podium2Av')) $('podium2Av').src = p2.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax2';
-    if ($('podium2Name')) $('podium2Name').textContent = p2.name || 'Player 2';
+    if ($('podium2Name')) $('podium2Name').innerHTML = `${p2.name || 'Player 2'}${window.getBlueTickBadgeHtml(p2)}`;
     if ($('podium2Bal')) $('podium2Bal').textContent = (p2.balance || 0).toLocaleString() + ' AX';
   }
   if (players.length >= 3) {
     const p3 = players[2];
     if ($('podium3Av')) $('podium3Av').src = p3.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax3';
-    if ($('podium3Name')) $('podium3Name').textContent = p3.name || 'Player 3';
+    if ($('podium3Name')) $('podium3Name').innerHTML = `${p3.name || 'Player 3'}${window.getBlueTickBadgeHtml(p3)}`;
     if ($('podium3Bal')) $('podium3Bal').textContent = (p3.balance || 0).toLocaleString() + ' AX';
   }
 }
