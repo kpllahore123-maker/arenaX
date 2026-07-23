@@ -1176,6 +1176,7 @@ tailwind.config = {
           <label class="block text-[10px] uppercase font-bold text-t2 mb-1">Select Badge to Gift</label>
           <select id="giftBadgeSelect" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-t1 outline-none focus:border-emerald-500 font-semibold">
             <option value="none">None (Plain Message)</option>
+            <option value="blue_tick">✔️ Verified Blue Tick Badge</option>
             <option value="champion">🏆 Arena Champion</option>
             <option value="veteran">🛡️ Veteran Warrior</option>
             <option value="moderator">👑 Staff Moderator</option>
@@ -2365,7 +2366,7 @@ function renderUsers() {
         <div class="flex items-center gap-3">
           <img src="${u.av}" class="w-8 h-8 rounded-full border border-bdr flex-shrink-0"/>
           <div>
-            <div class="font-bold text-white text-xs">${u.name}</div>
+            <div class="font-bold text-white text-xs flex items-center gap-1">${u.name} ${u.hasBlueTick || u.isVerified ? '<img src="/bluetick.png" class="w-3.5 h-3.5 inline-block shrink-0" alt="Verified" onerror="this.onerror=null; this.outerHTML=\'<i class=\\\'fas fa-check-circle text-blue-400 text-xs\\\'></i>\'"/>' : ''}</div>
             <div class="text-[9px] text-t3 font-mono flex items-center gap-1.5 mt-0.5">
               <span>${u.handle}</span>
               ${u.fcmToken ? `
@@ -2386,6 +2387,7 @@ function renderUsers() {
       <td class="p-4 space-x-1 text-xs font-semibold font-sans flex flex-wrap gap-1">
         <button class="b-coins px-2 py-1 bg-ele border border-bdr hover:border-white text-white rounded hover:bg-card transition">Coins</button>
         <button class="b-vip px-2 py-1 bg-purple/10 border border-purple/20 hover:bg-purple/20 text-purple rounded transition">${u.premium ? 'Revoke VIP' : 'Give VIP'}</button>
+        <button class="b-bluetick px-2 py-1 ${u.hasBlueTick || u.isVerified ? 'bg-blue-500/25 text-blue-300 border-blue-500/50 font-bold' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'} border hover:bg-blue-500/30 rounded transition flex items-center gap-1 cursor-pointer"><img src="/bluetick.png" class="w-3 h-3 inline-block" onerror="this.onerror=null; this.outerHTML='<i class=\\'fas fa-check-circle text-blue-400 text-[10px]\\'></i>'"/> ${u.hasBlueTick || u.isVerified ? 'Revoke Tick' : 'Gift Tick'}</button>
         <button class="b-notify px-2 py-1 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 rounded transition"><i class="fas fa-bell"></i> Notify</button>
         <button class="b-gift px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 rounded transition"><i class="fas fa-gift"></i> Gift Mail/Badge</button>
         ${u.banned ? `
@@ -2398,6 +2400,7 @@ function renderUsers() {
 
     tr.querySelector('.b-coins').addEventListener('click', () => adjustCoins(u));
     tr.querySelector('.b-vip').addEventListener('click', () => togglePremium(u));
+    tr.querySelector('.b-bluetick').addEventListener('click', () => toggleBlueTick(u));
     tr.querySelector('.b-notify').addEventListener('click', () => openNotifModal('single', u));
     tr.querySelector('.b-gift').addEventListener('click', () => openGiftMailModal(u));
     if (u.banned) {
@@ -2408,6 +2411,24 @@ function renderUsers() {
 
     container.appendChild(tr);
   });
+}
+
+async function toggleBlueTick(u) {
+  const nextState = !(u.hasBlueTick || u.isVerified);
+  if (confirm(`${nextState ? 'Grant verified Blue Tick badge to' : 'Revoke verified Blue Tick badge from'} ${u.name}?`)) {
+    try {
+      await updateDoc(doc(db, 'users', u.id), {
+        hasBlueTick: nextState,
+        isVerified: nextState
+      });
+      u.hasBlueTick = nextState;
+      u.isVerified = nextState;
+      alert(`Blue Tick badge ${nextState ? 'granted to' : 'revoked from'} ${u.name}!`);
+      renderUsers();
+    } catch(err) {
+      alert("Error updating Blue Tick status: " + err.message);
+    }
+  }
 }
 
 // Helpers for safe Firestore Timestamp display
@@ -4891,6 +4912,7 @@ $('bSaveLeadEntry').addEventListener('click', async () => {
 // ── ADMIN STAFF MAIL & BADGES GIFT SYSTEM ──
 // ==========================================
 const PREDEFINED_BADGES = [
+  { id: 'blue_tick', name: "Verified Blue Tick", description: "Official verified status granted by administration, displayed beside user name everywhere.", icon: "fa-check-circle", color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
   { id: 'champion', name: "Arena Champion", description: "Earned by winning a premier ArenaX tournament.", icon: "fa-trophy", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
   { id: 'veteran', name: "Veteran Warrior", description: "Assigned to players with exceptional career activity.", icon: "fa-shield-halved", color: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10" },
   { id: 'moderator', name: "Staff Moderator", description: "Authorized ArenaX moderator and community manager.", icon: "fa-crown", color: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
@@ -4984,9 +5006,14 @@ $('bSendGift').addEventListener('click', async () => {
       if (method === 'direct') {
         // Direct Grant Option:
         // 1. Add directly to player badges array
-        await updateDoc(userDocRef, {
+        const directPayload = {
           badges: arrayUnion(badgeId)
-        });
+        };
+        if (badgeId === 'blue_tick') {
+          directPayload.hasBlueTick = true;
+          directPayload.isVerified = true;
+        }
+        await updateDoc(userDocRef, directPayload);
         
         // 2. Mark the gift as already claimed in mail
         mailData.collected = true;
