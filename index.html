@@ -627,7 +627,7 @@ if (typeof tailwind !== 'undefined') {
             </span>
             <!-- Local User Popularity Badge -->
             <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-500/15 text-rose-400 rounded border border-rose-500/30 uppercase flex items-center gap-1">
-              <img src="rose.png" class="w-3.5 h-3.5 object-contain inline-block" alt="Rose"> Popularity: <span id="pPopularityVal">0</span>
+              <img src="heart.png" class="w-3.5 h-3.5 object-contain inline-block" alt="Heart"> Popularity: <span id="pPopularityVal">0</span>
             </span>
           </div>
           <!-- Custom Earned Badges Container -->
@@ -1952,6 +1952,72 @@ if (typeof tailwind !== 'undefined') {
 <div id="mGuildSystemModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[240] flex items-center justify-center p-4 hidden animate-fade-in">
   <div id="guildSystemModalContent" class="bg-[#0b0c14] border border-gold/30 rounded-2xl w-full max-w-[1100px] h-[90vh] flex flex-col shadow-[0_0_50px_rgba(192,160,48,0.15)] overflow-hidden text-t1 font-sans">
     <!-- Dynamic Guild Lobby / Dashboard Content populated by renderGuildSystemModalContent() -->
+  </div>
+</div>
+
+<!-- ==================== SQUAD CRATE OPENING VIDEO & REVEAL MODAL ==================== -->
+<div id="mCrateVideoModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[350] flex flex-col items-center justify-center p-4 hidden animate-fade-in select-none">
+  <!-- Video / Animation Container -->
+  <div id="crateVideoContainer" class="relative w-full max-w-[720px] aspect-video bg-[#080912] rounded-3xl border-2 border-gold/50 shadow-[0_0_80px_rgba(240,192,64,0.35)] overflow-hidden flex items-center justify-center">
+    
+    <!-- Video Player for crate.mp4 -->
+    <video id="vCrateVideo" class="w-full h-full object-cover" playsinline preload="auto">
+      <source src="crate.mp4" type="video/mp4" />
+      <source src="public/crate.mp4" type="video/mp4" />
+    </video>
+
+    <!-- Fallback Animation (If crate.mp4 fails or while opening) -->
+    <div id="crateFallbackAnim" class="absolute inset-0 bg-gradient-to-b from-[#0e0f20] via-[#090a14] to-[#04050a] flex flex-col items-center justify-center space-y-6 hidden">
+      <div class="relative">
+        <div class="w-36 h-36 bg-gradient-to-tr from-gold via-yellow-400 to-amber-600 rounded-3xl shadow-[0_0_60px_rgba(240,192,64,0.8)] border-4 border-yellow-200 flex items-center justify-center animate-bounce">
+          <i class="fas fa-box-open text-6xl text-bg drop-shadow-lg"></i>
+        </div>
+        <div class="absolute -inset-6 bg-gold/25 rounded-full blur-2xl animate-pulse"></div>
+      </div>
+      <div class="text-center space-y-1">
+        <h3 class="font-display text-lg font-black text-gold uppercase tracking-widest animate-pulse">OPENING SQUAD MYSTERY CRATE...</h3>
+        <p class="text-[11px] text-t3 font-mono">Unlocking luck factor & rolling drop...</p>
+      </div>
+    </div>
+
+    <!-- Top Controls -->
+    <div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+      <button onclick="window.skipCrateVideo()" class="px-4 py-1.5 bg-black/80 hover:bg-black border border-gold/40 text-gold text-[10px] font-black uppercase rounded-full backdrop-blur-md transition cursor-pointer flex items-center gap-1.5 shadow-lg">
+        <i class="fas fa-forward"></i> Skip Animation
+      </button>
+    </div>
+  </div>
+
+  <!-- REVEAL REWARD POPUP (Appears when video/animation completes) -->
+  <div id="crateRevealOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[360] flex flex-col items-center justify-center p-4 hidden animate-scale-up">
+    <div class="relative bg-gradient-to-b from-[#181a2e] to-[#0a0b14] border-2 border-gold/60 rounded-3xl p-6 sm:p-8 max-w-[460px] w-full text-center space-y-5 shadow-[0_0_100px_rgba(240,192,64,0.4)] overflow-hidden">
+      <!-- Backlight Glow -->
+      <div class="absolute -inset-20 bg-gradient-to-r from-gold/20 via-rose-500/10 to-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+      
+      <!-- Rarity Tag -->
+      <div id="rRarityTag" class="relative inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] font-black uppercase tracking-widest">
+        <i class="fas fa-star text-gold"></i> <span id="rRarityText">LEGENDARY DROP</span>
+      </div>
+
+      <!-- Item Visual & Title -->
+      <div class="relative my-2 space-y-3">
+        <div id="rIcoContainer" class="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-tr from-gold/20 to-amber-500/30 border-2 border-gold flex items-center justify-center text-5xl text-gold shadow-[0_0_40px_rgba(240,192,64,0.6)] animate-bounce">
+          <i id="rIco" class="fas fa-bolt"></i>
+        </div>
+        <h2 id="rTitle" class="font-display text-2xl font-black text-white uppercase tracking-wider">XP Booster (24h)</h2>
+        <p id="rDesc" class="text-xs text-t2 font-medium max-w-xs mx-auto leading-relaxed">You unlocked 2x XP Multiplier active across all matches & lobbies for 24 hours!</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="relative pt-2 space-y-2">
+        <button onclick="window.claimCrateReward()" class="w-full py-3 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 hover:from-yellow-400 hover:to-amber-600 text-bg text-xs font-black uppercase tracking-widest rounded-xl shadow-[0_4px_20px_rgba(240,192,64,0.4)] transition cursor-pointer flex items-center justify-center gap-2">
+          <i class="fas fa-check-circle text-sm"></i> Claim & Equip Item
+        </button>
+        <button onclick="window.startSquadCrateOpening()" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-bdr/40 text-t2 hover:text-white text-[10px] font-bold uppercase rounded-lg transition cursor-pointer flex items-center justify-center gap-2">
+          <i class="fas fa-redo"></i> Open Another Crate (50 AX)
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -11042,6 +11108,287 @@ window.sendGuildChatMessage = async function() {
   }
 };
 
+// ==================== SQUAD CRATE & SHOP ENGINE ====================
+window.pendingCrateReward = null;
+
+window.startSquadCrateOpening = async function() {
+  if (!userProfile) {
+    alert("Please log in to open mystery crates!");
+    return;
+  }
+  
+  const currentBalance = userProfile.balance || 0;
+  if (currentBalance < 50) {
+    alert("⚠️ Insufficient AX Coins! Opening a Mystery Crate requires 50 AX Coins. Please top up your wallet.");
+    return;
+  }
+
+  // Deduct 50 AX Coins cost
+  try {
+    await updateDoc(doc(db, 'users', userProfile.uid), {
+      balance: increment(-50)
+    });
+    userProfile.balance = Math.max(0, currentBalance - 50);
+  } catch(e) {
+    console.error("Deduct error:", e);
+  }
+
+  // Roll weighted random item
+  const crateItems = [
+    {
+      id: 'xp_24h',
+      title: 'XP Booster (24h)',
+      type: 'xp_booster',
+      durationHours: 24,
+      icon: 'fa-bolt-lightning',
+      icoClass: 'text-yellow-300',
+      rarity: 'LEGENDARY DROP',
+      rarityBg: 'bg-yellow-400/20 border-yellow-400/40 text-yellow-300',
+      desc: 'You unlocked 2x XP Multiplier active across all matches & lobbies for a full 24 hours!',
+      weight: 12
+    },
+    {
+      id: 'xp_1h',
+      title: 'XP Booster (1h)',
+      type: 'xp_booster',
+      durationHours: 1,
+      icon: 'fa-bolt',
+      icoClass: 'text-amber-400',
+      rarity: 'RARE DROP',
+      rarityBg: 'bg-amber-500/20 border-amber-500/40 text-amber-400',
+      desc: 'You unlocked 2x XP Multiplier active across all matches & lobbies for 1 hour!',
+      weight: 25
+    },
+    {
+      id: 'squad_boost',
+      title: 'Squad Boost (+25%)',
+      type: 'squad_boost',
+      durationHours: 48,
+      icon: 'fa-shield-halved',
+      icoClass: 'text-emerald-400',
+      rarity: 'EPIC DROP',
+      rarityBg: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400',
+      desc: 'You unlocked +25% Squad Activity points & tournament XP multiplier for 48 hours!',
+      weight: 20
+    },
+    {
+      id: 'ax_500',
+      title: 'AX Coin Pack (500 AX)',
+      type: 'ax_coins',
+      amount: 500,
+      icon: 'fa-coins',
+      icoClass: 'text-gold',
+      rarity: 'EPIC DROP',
+      rarityBg: 'bg-gold/20 border-gold/40 text-gold',
+      desc: 'Jackpot! 500 AX Coins directly credited into your profile wallet balance!',
+      weight: 8
+    },
+    {
+      id: 'ax_150',
+      title: 'AX Coin Pack (150 AX)',
+      type: 'ax_coins',
+      amount: 150,
+      icon: 'fa-coins',
+      icoClass: 'text-gold',
+      rarity: 'RARE DROP',
+      rarityBg: 'bg-gold/20 border-gold/40 text-gold',
+      desc: 'Lucky spin! 150 AX Coins directly credited into your profile wallet balance!',
+      weight: 15
+    },
+    {
+      id: 'ax_50',
+      title: 'AX Coin Pack (50 AX)',
+      type: 'ax_coins',
+      amount: 50,
+      icon: 'fa-coins',
+      icoClass: 'text-amber-200',
+      rarity: 'COMMON DROP',
+      rarityBg: 'bg-white/10 border-white/20 text-t2',
+      desc: '50 AX Coins credited into your profile wallet balance (Refund Spin)!',
+      weight: 20
+    }
+  ];
+
+  const totalWeight = crateItems.reduce((acc, i) => acc + i.weight, 0);
+  let randomVal = Math.random() * totalWeight;
+  let wonItem = crateItems[0];
+  for (const item of crateItems) {
+    if (randomVal < item.weight) {
+      wonItem = item;
+      break;
+    }
+    randomVal -= item.weight;
+  }
+
+  window.pendingCrateReward = wonItem;
+
+  // Show Crate Opening Video Modal
+  const modal = $('mCrateVideoModal');
+  const overlay = $('crateRevealOverlay');
+  const fallback = $('crateFallbackAnim');
+  const video = $('vCrateVideo');
+
+  if (overlay) overlay.classList.add('hidden');
+  if (modal) modal.classList.remove('hidden');
+
+  let videoPlayed = false;
+
+  if (video) {
+    video.currentTime = 0;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        videoPlayed = true;
+        if (fallback) fallback.classList.add('hidden');
+      }).catch(err => {
+        console.warn("Video play error / crate.mp4 not found:", err);
+        if (fallback) fallback.classList.remove('hidden');
+        setTimeout(() => {
+          window.triggerCrateReveal();
+        }, 2200);
+      });
+    }
+
+    video.onended = function() {
+      window.triggerCrateReveal();
+    };
+  } else {
+    if (fallback) fallback.classList.remove('hidden');
+    setTimeout(() => {
+      window.triggerCrateReveal();
+    }, 2200);
+  }
+};
+
+window.skipCrateVideo = function() {
+  const video = $('vCrateVideo');
+  if (video) {
+    try { video.pause(); } catch(e){}
+  }
+  window.triggerCrateReveal();
+};
+
+window.triggerCrateReveal = function() {
+  const overlay = $('crateRevealOverlay');
+  const item = window.pendingCrateReward;
+  if (!item) return;
+
+  const rRarityTag = $('rRarityTag');
+  const rRarityText = $('rRarityText');
+  const rIcoContainer = $('rIcoContainer');
+  const rIco = $('rIco');
+  const rTitle = $('rTitle');
+  const rDesc = $('rDesc');
+
+  if (rRarityTag) rRarityTag.className = `relative inline-flex items-center gap-1.5 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.rarityBg}`;
+  if (rRarityText) rRarityText.textContent = item.rarity;
+  if (rIco) rIco.className = `fas ${item.icon} ${item.icoClass}`;
+  if (rTitle) rTitle.textContent = item.title;
+  if (rDesc) rDesc.textContent = item.desc;
+
+  if (overlay) overlay.classList.remove('hidden');
+};
+
+window.claimCrateReward = async function() {
+  const item = window.pendingCrateReward;
+  if (!item || !userProfile) {
+    if ($('mCrateVideoModal')) $('mCrateVideoModal').classList.add('hidden');
+    return;
+  }
+
+  try {
+    if (item.type === 'ax_coins') {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        balance: increment(item.amount)
+      });
+      userProfile.balance = (userProfile.balance || 0) + item.amount;
+    } else if (item.type === 'xp_booster') {
+      const expiresAt = Date.now() + (item.durationHours * 3600 * 1000);
+      const activeXpBooster = {
+        type: item.id,
+        title: item.title,
+        expiresAt: expiresAt,
+        multiplier: 2
+      };
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        activeXpBooster: activeXpBooster
+      });
+      userProfile.activeXpBooster = activeXpBooster;
+    } else if (item.type === 'squad_boost') {
+      const expiresAt = Date.now() + (item.durationHours * 3600 * 1000);
+      const activeSquadBoost = {
+        active: true,
+        expiresAt: expiresAt,
+        boostPct: 25
+      };
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        activeSquadBoost: activeSquadBoost
+      });
+      userProfile.activeSquadBoost = activeSquadBoost;
+    }
+
+    window.pendingCrateReward = null;
+    if ($('mCrateVideoModal')) $('mCrateVideoModal').classList.add('hidden');
+    if ($('crateRevealOverlay')) $('crateRevealOverlay').classList.add('hidden');
+
+    alert(`🎉 Successfully equipped & claimed ${item.title}!`);
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Error claiming item: " + err.message);
+  }
+};
+
+window.buySquadItem = async function(itemKey, cost) {
+  if (!userProfile) {
+    alert("Please log in first!");
+    return;
+  }
+  
+  if ((userProfile.balance || 0) < cost) {
+    alert(`⚠️ Insufficient AX Coins! You need ${cost} AX Coins to purchase this item. Top up your wallet to proceed.`);
+    return;
+  }
+
+  let title = '';
+  let durationHours = 24;
+  if (itemKey === 'squad_boost') {
+    title = 'Squad Boost (+25%)';
+    durationHours = 48;
+  } else if (itemKey === 'xp_1h') {
+    title = 'XP Booster (1h)';
+    durationHours = 1;
+  } else if (itemKey === 'xp_24h') {
+    title = 'XP Booster (24h)';
+    durationHours = 24;
+  }
+
+  if (!confirm(`Confirm purchase of ${title} for ${cost} AX Coins?`)) return;
+
+  try {
+    await updateDoc(doc(db, 'users', userProfile.uid), {
+      balance: increment(-cost)
+    });
+    userProfile.balance = Math.max(0, (userProfile.balance || 0) - cost);
+
+    const expiresAt = Date.now() + (durationHours * 3600 * 1000);
+
+    if (itemKey === 'squad_boost') {
+      const boostObj = { active: true, expiresAt: expiresAt, boostPct: 25 };
+      await updateDoc(doc(db, 'users', userProfile.uid), { activeSquadBoost: boostObj });
+      userProfile.activeSquadBoost = boostObj;
+    } else {
+      const xpObj = { type: itemKey, title: title, expiresAt: expiresAt, multiplier: 2 };
+      await updateDoc(doc(db, 'users', userProfile.uid), { activeXpBooster: xpObj });
+      userProfile.activeXpBooster = xpObj;
+    }
+
+    alert(`⚡ Item acquired! ${title} is now active on your profile.`);
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Purchase error: " + err.message);
+  }
+};
+
 // Claims Weekly Milestone Vouchers / Coins
 window.claimGuildMilestone = async function(milestoneId, rewardAmount) {
   if (!userGuild) return;
@@ -11191,6 +11538,13 @@ window.renderGuildSystemModalContent = async function() {
           : 'text-t3 hover:text-white hover:bg-white/5'
       }">
         <i class="fas fa-shield-halved text-sm"></i> Team Wars
+      </button>
+      <button onclick="window.switchGuildTab('crates')" class="w-full text-left px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-3 transition-all duration-200 ${
+        currentGuildTab === 'crates' 
+          ? 'bg-gradient-to-r from-gold to-yellow-600 text-bg shadow-[0_4px_12px_rgba(240,192,64,0.25)]' 
+          : 'text-t3 hover:text-white hover:bg-white/5'
+      }">
+        <i class="fas fa-box-open text-sm ${currentGuildTab === 'crates' ? 'text-bg' : 'text-yellow-400 animate-pulse'}"></i> Squad Crates & Boosts
       </button>
     `;
 
@@ -11604,6 +11958,160 @@ window.renderGuildSystemModalContent = async function() {
           </div>
         </div>
       `;
+    } else if (currentGuildTab === 'crates') {
+      const activeXp = userProfile ? userProfile.activeXpBooster : null;
+      const isXpActive = activeXp && activeXp.expiresAt > Date.now();
+      const xpTimeLeft = isXpActive ? Math.ceil((activeXp.expiresAt - Date.now()) / (3600 * 1000)) : 0;
+      
+      const activeSquad = userProfile ? userProfile.activeSquadBoost : null;
+      const isSquadActive = activeSquad && activeSquad.expiresAt > Date.now();
+      const squadTimeLeft = isSquadActive ? Math.ceil((activeSquad.expiresAt - Date.now()) / (3600 * 1000)) : 0;
+
+      mainTabContentHtml = `
+        <div class="flex flex-col h-full space-y-4 overflow-y-auto pr-1 scrollbar-thin">
+          <!-- Active Boosters Status Bar -->
+          <div class="bg-gradient-to-r from-[#121324] via-[#0d0e1c] to-[#121324] border border-gold/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div>
+              <span class="text-[9px] text-gold font-mono uppercase font-bold tracking-widest">Active Equipment Status</span>
+              <h4 class="text-xs font-black text-white uppercase mt-0.5">My Active Squad & XP Boosters</h4>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="px-3 py-1.5 bg-black/40 border border-bdr/20 rounded-xl flex items-center gap-2">
+                <i class="fas fa-bolt text-yellow-400 text-sm"></i>
+                <div class="text-[10px]">
+                  <span class="text-t3 block text-[8px] uppercase">XP Booster</span>
+                  <strong class="${isXpActive ? 'text-emerald-400' : 'text-t3'} font-bold">
+                    ${isXpActive ? `2x Active (${xpTimeLeft}h left)` : 'Inactive'}
+                  </strong>
+                </div>
+              </div>
+              <div class="px-3 py-1.5 bg-black/40 border border-bdr/20 rounded-xl flex items-center gap-2">
+                <i class="fas fa-shield-halved text-emerald-400 text-sm"></i>
+                <div class="text-[10px]">
+                  <span class="text-t3 block text-[8px] uppercase">Squad Boost</span>
+                  <strong class="${isSquadActive ? 'text-emerald-400' : 'text-t3'} font-bold">
+                    ${isSquadActive ? `+25% Active (${squadTimeLeft}h left)` : 'Inactive'}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Mystery Crate Opening Box -->
+          <div class="bg-gradient-to-br from-[#1b1d36] via-[#111222] to-[#0a0b14] border-2 border-gold/40 rounded-2xl p-5 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_40px_rgba(240,192,64,0.15)]">
+            <div class="space-y-2 text-center md:text-left z-10">
+              <span class="px-2.5 py-0.5 bg-gold/15 border border-gold/30 text-gold text-[9px] font-black uppercase rounded-full tracking-widest">
+                <i class="fas fa-gem"></i> MYSTERY GACHA CRATE
+              </span>
+              <h3 class="font-display text-xl font-black text-white uppercase tracking-wider">
+                Squad Mystery Crate
+              </h3>
+              <p class="text-[11px] text-t3 max-w-md leading-relaxed">
+                Test your luck! Click below to trigger the crate opening video (<strong class="text-gold">crate.mp4</strong>) and win <strong class="text-white">Squad Boosts</strong>, <strong class="text-white">AX Coin Packs</strong>, or <strong class="text-white">24h XP Boosters</strong>!
+              </p>
+              <div class="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <button onclick="window.startSquadCrateOpening()" class="px-6 py-3 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 hover:from-yellow-400 hover:to-amber-600 text-bg text-xs font-black uppercase tracking-widest rounded-xl shadow-[0_4px_20px_rgba(240,192,64,0.4)] transition cursor-pointer flex items-center gap-2">
+                  <i class="fas fa-box-open text-sm"></i> OPEN CRATE (50 AX)
+                </button>
+                <span class="text-[10px] text-t3 font-mono">Cost: 50 AX Coins per spin</span>
+              </div>
+            </div>
+
+            <div class="relative group shrink-0 my-2 z-10">
+              <div class="absolute -inset-4 bg-gold/25 rounded-full blur-xl group-hover:bg-gold/40 transition"></div>
+              <div class="relative w-32 h-32 bg-card/60 border-2 border-gold rounded-2xl flex flex-col items-center justify-center text-gold shadow-2xl cursor-pointer hover:scale-105 transition" onclick="window.startSquadCrateOpening()">
+                <i class="fas fa-box-open text-5xl drop-shadow-[0_0_15px_rgba(240,192,64,0.8)] animate-pulse"></i>
+                <span class="text-[9px] font-black uppercase tracking-widest text-white mt-2">CLICK TO OPEN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items Showcase Grid -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-black uppercase text-white tracking-wider flex items-center gap-2">
+              <i class="fas fa-store text-gold"></i> Crate Drop Items & Direct Boost Shop
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Item 1: Squad Boost -->
+              <div class="p-4 bg-card/20 border border-bdr/30 rounded-xl flex items-center justify-between hover:border-emerald-500/40 transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl shrink-0">
+                    <i class="fas fa-shield-halved"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h5 class="text-xs font-black text-white uppercase">Squad Boost (+25%)</h5>
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 uppercase">EPIC DROP</span>
+                    </div>
+                    <p class="text-[10px] text-t3 mt-0.5 leading-tight">+25% Squad activity points & team tournament XP multiplier for 48h.</p>
+                  </div>
+                </div>
+                <button onclick="window.buySquadItem('squad_boost', 100)" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg transition shrink-0 ml-2 cursor-pointer">
+                  100 AX
+                </button>
+              </div>
+
+              <!-- Item 2: AX Coin Pack -->
+              <div class="p-4 bg-card/20 border border-bdr/30 rounded-xl flex items-center justify-between hover:border-gold/40 transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center text-gold text-2xl shrink-0">
+                    <i class="fas fa-coins"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h5 class="text-xs font-black text-white uppercase">AX Coin Pack</h5>
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-gold/15 border border-gold/30 text-gold uppercase">WIN 50 - 500 AX</span>
+                    </div>
+                    <p class="text-[10px] text-t3 mt-0.5 leading-tight">Win up to 500 AX Coins instantly deposited into your balance!</p>
+                  </div>
+                </div>
+                <button onclick="window.startSquadCrateOpening()" class="px-3 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-black uppercase rounded-lg transition shrink-0 ml-2 cursor-pointer">
+                  Win Crate
+                </button>
+              </div>
+
+              <!-- Item 3: XP Booster (1h) -->
+              <div class="p-4 bg-card/20 border border-bdr/30 rounded-xl flex items-center justify-between hover:border-amber-500/40 transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl shrink-0">
+                    <i class="fas fa-bolt"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h5 class="text-xs font-black text-white uppercase">XP Booster (1h)</h5>
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 uppercase">RARE DROP</span>
+                    </div>
+                    <p class="text-[10px] text-t3 mt-0.5 leading-tight">2x XP Multiplier active across all matches & lobbies for 1 hour.</p>
+                  </div>
+                </div>
+                <button onclick="window.buySquadItem('xp_1h', 30)" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-bg text-[10px] font-black uppercase rounded-lg transition shrink-0 ml-2 cursor-pointer">
+                  30 AX
+                </button>
+              </div>
+
+              <!-- Item 4: XP Booster (24h) -->
+              <div class="p-4 bg-card/20 border border-bdr/30 rounded-xl flex items-center justify-between hover:border-yellow-400/50 transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center text-yellow-300 text-2xl shrink-0">
+                    <i class="fas fa-bolt-lightning"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h5 class="text-xs font-black text-white uppercase">XP Booster (24h)</h5>
+                      <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-yellow-400/20 border border-yellow-400/40 text-yellow-300 uppercase">LEGENDARY</span>
+                    </div>
+                    <p class="text-[10px] text-t3 mt-0.5 leading-tight">2x XP Multiplier active across all matches & lobbies for a full 24 hours.</p>
+                  </div>
+                </div>
+                <button onclick="window.buySquadItem('xp_24h', 120)" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-bg text-[10px] font-black uppercase rounded-lg transition shrink-0 ml-2 cursor-pointer">
+                  120 AX
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     innerContent.innerHTML = `
@@ -11623,7 +12131,7 @@ window.renderGuildSystemModalContent = async function() {
         </div>
         
         <div class="flex items-center gap-2 bg-[#090a12] border border-bdr/30 px-3 py-1.5 rounded-full shrink-0">
-          <img src="rose.png" class="w-3.5 h-3.5 object-contain" alt="AX" />
+          <i class="fas fa-coins text-gold text-xs"></i>
           <span class="text-xs font-black text-white font-mono">${(profile.balance || 0).toLocaleString()} AX</span>
           <button onclick="window.closeGuildsModal(); window.switchTab('Wallet')" class="text-gold hover:text-white text-[10px] ml-1 cursor-pointer" title="Recharge wallet">
             <i class="fas fa-plus-circle"></i>
