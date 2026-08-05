@@ -567,11 +567,6 @@ if (typeof tailwind !== 'undefined') {
         <span id="notifDot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red rounded-full ring-2 ring-panel hidden"></span>
       </button>
 
-      <!-- Settings Cog -->
-      <button id="bSettings" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Settings">
-        <i class="fas fa-cog"></i>
-      </button>
-
       <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-gold flex-shrink-0 ml-1">
         <img id="avImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover"/>
       </div>
@@ -594,17 +589,14 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- ── PROFILE TAB ── -->
     <section id="tProfile" class="tab space-y-4 max-w-md mx-auto">
-      <!-- Section Title & Top Settings Icon -->
+      <!-- Section Title -->
       <div class="font-display text-xl font-bold flex items-center justify-between text-white px-1">
         <span class="flex items-center gap-2">
-          <i class="fas fa-user-circle text-amber-400"></i> My Profile
+          <i class="fas fa-user-circle text-amber-400"></i> Profile & Settings
         </span>
-        <button id="bSettingsTop" class="text-xs text-t2 hover:text-amber-400 transition flex items-center gap-1.5 bg-card/80 hover:bg-card px-2.5 py-1 rounded-lg border border-bdr cursor-pointer">
-          <i class="fas fa-cog"></i> Settings
-        </button>
       </div>
 
-      <!-- GOLD PREMIUM PROFILE CARD (Matching Zomato/Mobile style from screenshot) -->
+      <!-- GOLD PREMIUM PROFILE CARD -->
       <div id="profileCard" class="relative rounded-2xl p-5 overflow-hidden border border-amber-500/35 bg-gradient-to-br from-[#1d1912] via-[#14151a] to-[#0c0d12] shadow-xl shadow-amber-500/5 transition-all">
         <!-- Subtle Pattern Overlay & Geometric Accents -->
         <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -685,47 +677,159 @@ if (typeof tailwind !== 'undefined') {
       <div id="statB" class="hidden">—</div>
       <button id="btnCustomize" class="hidden"></button>
       <button id="btnPremium" class="hidden"></button>
+      <button id="btnEditProfile" class="hidden"></button>
+      <button id="btnProfileSettings" class="hidden"></button>
+      <span id="lblEditDisplayName" class="hidden"></span>
 
-      <!-- PROFILE SETTINGS BUTTON (Clean mobile row below card) -->
-      <div class="space-y-2.5 pt-1">
-        <button id="btnProfileSettings" class="w-full bg-card hover:bg-slate-800/90 border border-bdr/80 hover:border-amber-500/40 rounded-2xl p-4 flex items-center justify-between transition cursor-pointer shadow-md group">
-          <div class="flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-base group-hover:bg-amber-500/20 transition">
-              <i class="fas fa-user-cog"></i>
-            </div>
-            <div class="text-left">
-              <h4 id="lblEditDisplayName" class="font-bold text-white text-sm group-hover:text-amber-300 transition">Your profile settings</h4>
-              <p class="text-[11px] text-t2">Display name, avatar, bio & security settings</p>
-            </div>
-          </div>
-          <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white group-hover:translate-x-0.5 transition"></i>
-        </button>
+      <!-- PROFILE & SETTINGS SECTIONS (Matching Mobile Dark Theme Screenshot) -->
+      <div class="space-y-4 pt-1">
 
-        <!-- Extra Quick Actions (Direct Messages & Sign Out) -->
-        <div class="grid grid-cols-2 gap-2.5">
-          <button id="btnPlayerChat" class="bg-card hover:bg-slate-800/90 border border-bdr rounded-2xl p-3 flex items-center justify-between transition cursor-pointer group">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs">
-                <i class="fas fa-comments"></i>
+        <!-- ACCOUNT SECTION -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Account</div>
+          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+            
+            <!-- Manage Profile -->
+            <button id="btnProfileManage" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-user-circle"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Manage Profile</span>
               </div>
-              <span id="lblDirectMessages" class="text-xs font-semibold text-slate-200 group-hover:text-white">Messages</span>
-            </div>
-            <i class="fas fa-chevron-right text-[10px] text-t2"></i>
-          </button>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
 
-          <button id="bLogout" class="bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer group">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-xs">
+            <!-- Security & Privacy -->
+            <button id="btnProfileSecurity" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Security & Privacy</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- Messages / Direct Chat -->
+            <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-comments"></i>
+                </div>
+                <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- PREFERENCES SECTION -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Preferences</div>
+          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+            
+            <!-- Notifications -->
+            <button id="btnProfileNotifications" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-bell"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Notifications</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- Dark Mode Toggle -->
+            <div class="w-full px-4 py-3.5 text-sm flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-moon"></i>
+                </div>
+                <span class="font-medium text-white">Dark Mode</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-amber-400 font-semibold">Dark</span>
+                <label class="relative inline-flex items-center cursor-pointer select-none">
+                  <input type="checkbox" checked disabled class="sr-only peer" />
+                  <div class="w-9 h-5 bg-amber-500 rounded-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-slate-950 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Language -->
+            <button id="btnProfileLanguage" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Language</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="pLangVal" class="text-xs text-t2 font-medium">English</span>
+                <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- SUPPORT SECTION -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Support</div>
+          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+            
+            <!-- Help Center -->
+            <button id="btnProfileHelp" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-question-circle"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Help Center</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- Terms & Policies -->
+            <button id="btnProfileTerms" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-book"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">Terms & Policies</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- About Us -->
+            <button id="btnProfileAbout" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-info-circle"></i>
+                </div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition">About Us</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- SIGN OUT BUTTON -->
+        <div class="pt-2">
+          <button id="bLogout" class="w-full bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-md">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
                 <i class="fas fa-sign-out-alt"></i>
               </div>
-              <span id="lblSignOut" class="text-xs font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
+              <span id="lblSignOut" class="text-sm font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
             </div>
-            <i class="fas fa-chevron-right text-[10px] text-rose-400/60"></i>
+            <i class="fas fa-chevron-right text-xs text-rose-400/60"></i>
           </button>
         </div>
+
       </div>
-      <!-- Hidden legacy button for name edit handler hook -->
-      <button id="btnEditProfile" class="hidden"></button>
     </section>
 
     <section id="tTour" class="tab space-y-4 hidden">
@@ -9418,6 +9522,46 @@ window.addEventListener('appinstalled', (event) => {
   }
   alert('ArenaX Esports installed successfully! 🎉');
 });
+
+// Profile Tab Grouped Settings Triggers
+if ($('btnProfileManage')) {
+  $('btnProfileManage').addEventListener('click', () => {
+    if ($('btnCustomize')) $('btnCustomize').click();
+    else $('mCustomize').classList.remove('hidden');
+  });
+}
+if ($('btnProfileSecurity')) {
+  $('btnProfileSecurity').addEventListener('click', () => {
+    if ($('mPrivacy')) $('mPrivacy').classList.remove('hidden');
+  });
+}
+if ($('btnProfileNotifications')) {
+  $('btnProfileNotifications').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.remove('hidden');
+  });
+}
+if ($('btnProfileLanguage')) {
+  $('btnProfileLanguage').addEventListener('click', () => {
+    if ($('mLanguageSelectionModal')) $('mLanguageSelectionModal').classList.remove('hidden');
+  });
+}
+if ($('btnProfileHelp')) {
+  $('btnProfileHelp').addEventListener('click', () => {
+    if (typeof window.openSupportDrawer === 'function') {
+      window.openSupportDrawer();
+    }
+  });
+}
+if ($('btnProfileTerms')) {
+  $('btnProfileTerms').addEventListener('click', () => {
+    if ($('mTerms')) $('mTerms').classList.remove('hidden');
+  });
+}
+if ($('btnProfileAbout')) {
+  $('btnProfileAbout').addEventListener('click', () => {
+    if ($('mPatchNotes')) $('mPatchNotes').classList.remove('hidden');
+  });
+}
 
 // Settings Modal Triggers
 if ($('bSettingsTop')) {
