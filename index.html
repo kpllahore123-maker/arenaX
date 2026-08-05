@@ -19,8 +19,15 @@
 
 <script>
 window.getAppBasePath = function() {
-  const isSubdirectory = window.location.pathname.startsWith('/arenaX') || window.location.pathname.startsWith('/arenax') || window.location.pathname.includes('/arenaX/') || window.location.pathname.includes('/arenax/');
-  return isSubdirectory ? '/arenaX/' : '/';
+  const path = window.location.pathname;
+  if (path.length > 1 && !path.endsWith('/') && !path.endsWith('.html')) {
+    return path + '/';
+  }
+  const match = path.match(/^(\/[^\/]+\/)/);
+  if (match && match[1] !== '/' && !match[1].startsWith('/index.')) {
+    return match[1];
+  }
+  return './';
 };
 
 // Dynamically adjust manifest, icon, and favicon links based on host environment
@@ -4137,7 +4144,8 @@ window.goTo = goTo;
 window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
   if (!userObj) return '';
   if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick) {
-    return `<img src="/bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" onerror="this.onerror=null; this.outerHTML='<i class=\\'fas fa-check-circle text-blue-400 align-middle ml-1 text-xs\\' title=\\'Verified Badge\\'></i>'"/>`;
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+    return `<img src="${basePath}bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" onerror="this.onerror=null; const i=document.createElement('i'); i.className='fas fa-check-circle text-blue-400 align-middle ml-1 text-xs'; i.title='Verified Badge'; if(this.parentNode){ this.parentNode.replaceChild(i, this); }"/>`;
   }
   return '';
 };
@@ -16009,8 +16017,15 @@ window.playSubmissionSplash = playSubmissionSplash;
 
 <script>
 window.getAppBasePath = function() {
-  const isSubdirectory = window.location.pathname.startsWith('/arenaX') || window.location.pathname.startsWith('/arenax') || window.location.pathname.includes('/arenaX/') || window.location.pathname.includes('/arenax/');
-  return isSubdirectory ? '/arenaX/' : '/';
+  const path = window.location.pathname;
+  if (path.length > 1 && !path.endsWith('/') && !path.endsWith('.html')) {
+    return path + '/';
+  }
+  const match = path.match(/^(\/[^\/]+\/)/);
+  if (match && match[1] !== '/' && !match[1].startsWith('/index.')) {
+    return match[1];
+  }
+  return './';
 };
 
 // Dynamically adjust manifest, icon, and favicon links based on host environment
@@ -20127,7 +20142,8 @@ window.goTo = goTo;
 window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
   if (!userObj) return '';
   if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick) {
-    return `<img src="/bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" onerror="this.onerror=null; this.outerHTML='<i class=\\'fas fa-check-circle text-blue-400 align-middle ml-1 text-xs\\' title=\\'Verified Badge\\'></i>'"/>`;
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+    return `<img src="${basePath}bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" onerror="this.onerror=null; const i=document.createElement('i'); i.className='fas fa-check-circle text-blue-400 align-middle ml-1 text-xs'; i.title='Verified Badge'; if(this.parentNode){ this.parentNode.replaceChild(i, this); }"/>`;
   }
   return '';
 };
@@ -31978,4 +31994,3 @@ window.playSubmissionSplash = playSubmissionSplash;
 </script>
 </body>
 </html>
-v
