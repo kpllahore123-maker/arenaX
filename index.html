@@ -13,6 +13,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
+<link rel="manifest" href="manifest.json" id="staticManifestLink" />
+<link rel="icon" type="image/x-icon" href="favicon.ico" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 
 <script>
 window.getAppBasePath = function() {
@@ -3782,7 +3785,7 @@ if ('serviceWorker' in navigator) {
   const registerSW = async () => {
     try {
       const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
-      const swPath = basePath + 'firebase-messaging-sw.js';
+      const swPath = basePath + 'sw.js';
       console.log('Registering Service Worker for ArenaX at:', swPath);
       const reg = await navigator.serviceWorker.register(swPath);
       console.log('Service Worker registered successfully with scope:', reg.scope);
@@ -3853,7 +3856,7 @@ async function requestFCMToken(showSuccessAlert = false) {
     }
     
     const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
-    const swPath = basePath + 'firebase-messaging-sw.js';
+    const swPath = basePath + 'sw.js';
     const reg = await navigator.serviceWorker.register(swPath);
     
     const token = await getToken(messaging, {
