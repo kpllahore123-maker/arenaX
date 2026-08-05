@@ -561,12 +561,6 @@ if (typeof tailwind !== 'undefined') {
         <i class="fas fa-bars"></i>
       </button>
 
-      <!-- Launch Fest Event Button -->
-      <button id="bLaunchFest" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-gold hover:text-white hover:border-gold/50 transition" title="Launch Fest Hub">
-        <i class="fas fa-rocket animate-pulse text-gold"></i>
-        <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red rounded-full ring-1 ring-panel animate-pulse"></span>
-      </button>
-
       <!-- Notification Bell -->
       <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Notifications">
         <i class="fas fa-bell"></i>
@@ -1479,313 +1473,6 @@ if (typeof tailwind !== 'undefined') {
       <i class="fas fa-headset text-base"></i><span id="navSupportText">Support</span>
     </button>
   </nav>
-</div>
-
-<!-- ==================== LAUNCH FEST DRAWER ==================== -->
-<!-- Drawer Backdrop -->
-<div id="mLaunchFestDrawerBackdrop" class="fixed inset-0 bg-black/60 z-[235] hidden opacity-0 transition-opacity duration-300"></div>
-
-<!-- Drawer Panel (occupies max-width: 420px) -->
-<div id="dLaunchFestDrawer" class="fixed inset-y-0 right-0 w-[420px] max-w-[92vw] h-full bg-[#0d0f1a] border-l border-bdr shadow-[0_0_40px_rgba(0,0,0,0.8)] z-[238] transform translate-x-full transition-transform duration-300 flex flex-col hidden">
-  <!-- Drawer Header -->
-  <div class="p-4 border-b border-bdr flex items-center justify-between bg-card/50 flex-shrink-0">
-    <div class="flex items-center gap-2">
-      <i class="fas fa-rocket text-gold animate-pulse text-xs"></i>
-      <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">Launch Fest Hub</h3>
-    </div>
-    <button id="bCloseLaunchFestDrawer" class="w-7 h-7 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
-      <i class="fas fa-times"></i>
-    </button>
-  </div>
-  
-  <!-- Drawer Body -->
-  <div class="flex-1 p-4 space-y-4 overflow-y-auto">
-    <!-- ── LAUNCH FEST WRAPPER ── -->
-    <div id="festWrapper" class="space-y-4">
-      <!-- Loading Skeleton -->
-      <div id="festSkeleton" class="space-y-4">
-        <div class="h-32 bg-card border border-bdr/50 rounded-xl animate-pulse flex flex-col justify-center items-center text-t3 text-xs gap-2">
-          <i class="fas fa-spinner animate-spin text-lg text-gold"></i>
-          Loading Launch Fest Content...
-        </div>
-      </div>
-
-      <!-- Real Content (hidden initially until boot / state load) -->
-      <div id="festContent" class="space-y-4 hidden">
-        
-        <!-- SECTION 1: HERO BANNER -->
-        <div class="bg-gradient-to-r from-[#e8404a]/15 via-[#f0c040]/10 to-[#e8404a]/15 border border-[#f0c040]/30 rounded-2xl p-5 text-center relative overflow-hidden shadow-[0_0_20px_rgba(240,192,64,0.06)]">
-          <!-- Animated background confetti particles -->
-          <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-            <div class="w-1.5 h-1.5 bg-gold rounded-full absolute animate-float-slow" style="top: 15%; left: 15%;"></div>
-            <div class="w-2 h-2 bg-red rounded-full absolute animate-float-medium" style="top: 45%; left: 85%;"></div>
-            <div class="w-1.5 h-1.5 bg-green rounded-full absolute animate-float-fast" style="top: 75%; left: 25%;"></div>
-            <div class="w-2 h-2 bg-blue rounded-full absolute animate-float-slow" style="top: 25%; left: 75%;"></div>
-          </div>
-          
-          <span class="inline-block bg-red/95 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-md border border-red-500/20 mb-3 animate-pulse">
-            LIMITED TIME EVENT
-          </span>
-          <h2 class="font-display text-base font-extrabold text-white tracking-tight">🎉 ArenaX Launch Fest</h2>
-          <p class="text-[11px] text-t2 mt-1 max-w-xs mx-auto leading-relaxed">Join the Revolution — Play Free, Win Big!</p>
-          
-          <!-- Countdown -->
-          <div class="grid grid-cols-4 gap-2 mt-4 max-w-[280px] mx-auto" id="festCountdown">
-            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
-              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdDays">00</span>
-              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Days</span>
-            </div>
-            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
-              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdHours">00</span>
-              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Hours</span>
-            </div>
-            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
-              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdMinutes">00</span>
-              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Mins</span>
-            </div>
-            <div class="bg-black/40 border border-bdr/30 rounded-xl p-1.5">
-              <span class="block text-base font-extrabold font-mono text-gold leading-none" id="cdSeconds">00</span>
-              <span class="text-[7px] text-t3 uppercase font-black tracking-wider block mt-1">Secs</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 2: DAILY LOGIN REWARDS -->
-        <div id="secDailyStreak" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
-          <div class="flex items-center justify-between">
-            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <i class="fas fa-fire text-[#f0c040]"></i> Daily Login Streak
-            </h3>
-            <span class="text-[9px] font-bold text-gold uppercase bg-gold/10 px-2 py-0.5 rounded border border-gold/10" id="currentStreakBadge">Streak: 0 Days</span>
-          </div>
-          
-          <!-- 7 Days Scroll -->
-          <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x" id="festStreakDays">
-            <!-- Rendered dynamically -->
-          </div>
-          
-          <button id="btnClaimDailyLogin" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase tracking-wide rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-95 shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
-            <i class="fas fa-gift"></i> Claim Today's Reward
-          </button>
-        </div>
-
-        <!-- SECTION 3: WELCOME BONUS (Show if joined < 30 days) -->
-        <div id="secWelcomeBonus" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg hidden">
-          <div class="flex items-center justify-between">
-            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <i class="fas fa-box-open text-purple"></i> New Player Welcome Pack
-            </h3>
-            <span class="text-[8px] font-bold text-purple uppercase bg-purple/10 px-2 py-0.5 rounded border border-purple/10">30-Day Welcome Pack</span>
-          </div>
-          
-          <!-- Progress Bar -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between text-[10px] font-bold text-t2">
-              <span>Progress Checklist</span>
-              <span id="welcomeBonusProgressText">0/3 Completed</span>
-            </div>
-            <div class="w-full bg-bdr/20 h-2 rounded-full overflow-hidden">
-              <div id="welcomeBonusProgressBar" class="h-full bg-gradient-to-r from-purple to-pink-500 transition-all duration-500 ease-out" style="width: 0%;"></div>
-            </div>
-          </div>
-
-          <!-- Task Items -->
-          <div class="space-y-2" id="welcomeBonusTasksContainer">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <!-- Pioneer Grand Claim Button -->
-          <div id="welcomeAllClaimContainer" class="pt-2 border-t border-bdr/30 hidden">
-            <button id="btnClaimPioneer" class="w-full py-3 bg-gradient-to-r from-purple via-[#d946ef] to-[#ec4899] hover:opacity-90 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 shadow-xl flex items-center justify-center gap-2 cursor-pointer">
-              <i class="fas fa-rocket"></i> Claim Pioneer Pack (+20 AX & Pioneer Badge)
-            </button>
-          </div>
-        </div>
-
-        <!-- SECTION 5: DAILY TASKS -->
-        <div id="secDailyQuests" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
-          <div class="flex items-center justify-between">
-            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <i class="fas fa-bolt text-[#3ddc84]"></i> Daily Quests
-            </h3>
-            <span class="text-[8px] font-mono font-bold text-t3 uppercase flex items-center gap-1" id="dailyTasksResetTimer">
-              <i class="fas fa-clock"></i> Reset in 00h 00m
-            </span>
-          </div>
-
-          <div class="space-y-2.5" id="dailyTasksContainer">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <!-- Interactive Mini Game: Lucky Spin -->
-          <div id="miniGameCard" class="bg-gradient-to-b from-card/80 to-bg border border-bdr/50 rounded-xl p-3.5 relative overflow-hidden hidden transition-all duration-300">
-            <div class="flex items-center justify-between mb-3 border-b border-bdr/30 pb-2">
-              <div class="flex items-center gap-1.5">
-                <i class="fas fa-circle-notch text-gold animate-spin"></i>
-                <span class="text-[10px] font-black text-white uppercase tracking-wider">AX Lucky Wheel</span>
-              </div>
-              <button id="btnCloseMiniGame" class="text-t3 hover:text-white text-xs cursor-pointer"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="flex flex-col items-center justify-center space-y-3 py-1 text-center">
-              <div class="relative w-24 h-24 rounded-full border-4 border-gold shadow-[0_0_20px_rgba(240,192,64,0.15)] flex items-center justify-center overflow-hidden transition-transform duration-300" id="wheelSpinner">
-                <div class="absolute inset-0 bg-gradient-to-r from-gold/10 via-transparent to-red/10 animate-spin" style="animation-duration: 8s;"></div>
-                <div class="z-10 text-center font-display flex flex-col items-center justify-center">
-                  <span class="text-sm font-extrabold text-white leading-none font-mono" id="wheelPrizeText">SPIN</span>
-                  <span class="text-[8px] text-gold uppercase tracking-wider font-black mt-1" id="wheelLabelText">Lucky AX</span>
-                </div>
-              </div>
-              <p class="text-[9px] text-t3 leading-normal max-w-xs font-medium">Cost: 10 AX / Spin. Win 0 to 50 AX Coins! First spin of the day is 100% FREE & completes your daily task!</p>
-              <div class="flex gap-2 w-full">
-                <button id="btnSpinFree" class="flex-1 py-1.5 bg-green text-bg font-black uppercase text-[10px] tracking-wider rounded-lg transition hover:scale-[1.02] active:scale-95 cursor-pointer">SPIN FREE</button>
-                <button id="btnSpinPaid" class="flex-1 py-1.5 bg-gold text-bg font-black uppercase text-[10px] tracking-wider rounded-lg transition hover:scale-[1.02] active:scale-95 cursor-pointer">SPIN (10 AX)</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 4: WEEKLY FREE TOURNAMENT -->
-        <div id="secWeeklyTour" class="bg-gradient-to-b from-red/15 to-card border border-red/40 rounded-2xl p-4 space-y-3.5 shadow-[0_0_15px_rgba(232,64,74,0.05)] relative overflow-hidden transition-all duration-300 hidden">
-          <span id="festWeeklyTourSlots" class="absolute top-4 right-4 bg-red text-white text-[8px] font-black px-2 py-0.5 rounded border border-red-400/20 uppercase tracking-wider z-10">
-            32 Players Max
-          </span>
-          <div class="space-y-1 relative z-10">
-            <h3 id="festWeeklyTourName" class="font-display text-sm font-extrabold text-white tracking-wide flex items-center gap-1.5">
-              <i class="fas fa-trophy text-gold"></i> Weekly Free Tournament
-            </h3>
-            <p id="festWeeklyTourTime" class="text-[10px] text-t2 font-medium">Every Sunday 8:00 PM PKT — FREE ENTRY!</p>
-          </div>
-          
-          <!-- Prize Pool -->
-          <div class="bg-black/30 border border-bdr/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs relative z-10">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-lg bg-gold/10 text-gold flex items-center justify-center text-[10px]"><i class="fas fa-trophy"></i></span>
-              <div>
-                <span class="block text-[8px] text-t3 uppercase font-black leading-none">1st Place</span>
-                <span class="font-bold text-white text-[10px]">200 AX + Champion</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-lg bg-slate-300/10 text-slate-300 flex items-center justify-center text-[10px]"><i class="fas fa-medal"></i></span>
-              <div>
-                <span class="block text-[8px] text-t3 uppercase font-black leading-none">2nd Place</span>
-                <span class="font-bold text-white text-[10px]">100 AX + Runner Up</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-lg bg-orange-400/10 text-orange-400 flex items-center justify-center text-[10px]"><i class="fas fa-award"></i></span>
-              <div>
-                <span class="block text-[8px] text-t3 uppercase font-black leading-none">3rd Place</span>
-                <span class="font-bold text-white text-[10px]">50 AX Coins</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-lg bg-green/10 text-green flex items-center justify-center text-[10px]"><i class="fas fa-users"></i></span>
-              <div>
-                <span class="block text-[8px] text-t3 uppercase font-black leading-none">Participation</span>
-                <span class="font-bold text-white text-[10px]">20 AX Coins</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sunday Countdown -->
-          <div class="bg-black/25 border border-bdr/20 rounded-xl p-2.5 flex items-center justify-between text-xs relative z-10">
-            <span class="text-[9px] text-t2 font-bold uppercase tracking-wider">Next Sunday Match</span>
-            <span class="font-mono text-[10px] font-black text-red uppercase tracking-wider flex items-center gap-1" id="weeklyTourCountdown">
-              <i class="fas fa-hourglass-half"></i> 00h 00m 00s
-            </span>
-          </div>
-
-          <button id="btnRegisterWeeklyTour" class="w-full py-2.5 bg-red hover:bg-[#d63b44] text-white text-xs font-black uppercase tracking-wide rounded-xl transition shadow-lg shadow-red-500/10 flex items-center justify-center gap-1.5 cursor-pointer relative z-10">
-            <i class="fas fa-check-circle"></i> Register Now
-          </button>
-        </div>
-
-        <!-- SECTION 6: REFERRAL SYSTEM -->
-        <div id="secReferrals" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
-          <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-            <i class="fas fa-users text-gold"></i> Refer Friends — Earn AX!
-          </h3>
-          <p class="text-[10px] text-t2 leading-relaxed">Earn 20 AX instantly for every friend that joins ArenaX using your custom referral code!</p>
-          
-          <div class="bg-black/30 border border-bdr/30 rounded-xl p-3 space-y-2">
-            <div class="flex justify-between text-[10px] text-t3 font-bold uppercase tracking-wider">
-              <span>Your Referral Code</span>
-              <span class="text-gold" id="referralStatsText">Referred 0 friends</span>
-            </div>
-            <div class="flex items-center gap-2 bg-card/80 border border-bdr/50 rounded-lg p-2">
-              <span class="font-mono text-xs text-white font-bold select-all tracking-widest uppercase flex-1" id="refCodeText">--------</span>
-              <button id="btnCopyRefLink" class="text-gold hover:text-white transition px-2 py-1 bg-gold/10 hover:bg-gold/20 text-[9px] font-black rounded uppercase tracking-wider flex items-center gap-1 cursor-pointer">
-                <i class="fas fa-copy"></i> Copy Link
-              </button>
-            </div>
-          </div>
-
-          <div class="flex gap-2">
-            <button id="btnShareWhatsApp" class="flex-1 py-2 bg-[#25D366] hover:opacity-90 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <i class="fab fa-whatsapp text-xs"></i> Share on WhatsApp
-            </button>
-            <div class="bg-gold/15 border border-gold/10 px-3.5 py-1.5 rounded-xl flex items-center justify-center text-center">
-              <div>
-                <span class="block text-[7px] text-t3 uppercase font-black">Total Earned</span>
-                <span class="font-mono font-black text-gold text-xs" id="refEarnedAX">0 AX</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 7: TOP PLAYERS PODIUM -->
-        <div id="secLeaders" class="bg-card border border-bdr/80 rounded-2xl p-4 space-y-3.5 shadow-lg transition-all duration-300">
-          <div class="flex items-center justify-between">
-            <h3 class="font-display text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <i class="fas fa-crown text-gold"></i> Launch Fest Leaders
-            </h3>
-            <span class="text-[8px] font-bold text-t3 uppercase tracking-wider">Top 3 Players</span>
-          </div>
-
-          <!-- Podium Visuals -->
-          <div class="flex items-end justify-center pt-8 pb-3 min-h-[140px] max-w-xs mx-auto gap-1">
-            <!-- 2nd Place -->
-            <div class="flex flex-col items-center w-20 group">
-              <div class="relative mb-1">
-                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax2" id="podium2Av" class="w-8 h-8 rounded-full border-2 border-slate-300 bg-black/60 object-cover" referrerPolicy="no-referrer"/>
-                <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 text-slate-300 text-[10px]"><i class="fas fa-medal"></i></span>
-              </div>
-              <div class="text-[9px] font-black text-white text-center truncate max-w-[70px] leading-tight" id="podium2Name">Player 2</div>
-              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium2Bal">0 AX</div>
-              <div class="w-full bg-[#1e2530] border-t-2 border-slate-300/40 rounded-t-lg h-12 flex items-center justify-center text-[10px] font-black text-slate-300">2nd</div>
-            </div>
-
-            <!-- 1st Place (Tallest, Center) -->
-            <div class="flex flex-col items-center w-24 group z-10">
-              <div class="relative mb-1">
-                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax1" id="podium1Av" class="w-10 h-10 rounded-full border-2 border-gold bg-black/60 object-cover shadow-[0_0_12px_rgba(240,192,64,0.2)]" referrerPolicy="no-referrer"/>
-                <span class="absolute -top-4.5 left-1/2 -translate-x-1/2 text-gold text-xs animate-bounce"><i class="fas fa-crown"></i></span>
-              </div>
-              <div class="text-[10px] font-black text-white text-center truncate max-w-[85px] leading-tight" id="podium1Name">Player 1</div>
-              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium1Bal">0 AX</div>
-              <div class="w-full bg-[#272f3d] border-t-2 border-gold rounded-t-lg h-16 flex items-center justify-center text-xs font-black text-gold">1st</div>
-            </div>
-
-            <!-- 3rd Place -->
-            <div class="flex flex-col items-center w-18 group">
-              <div class="relative mb-1">
-                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax3" id="podium3Av" class="w-7 h-7 rounded-full border-2 border-orange-400 bg-black/60 object-cover" referrerPolicy="no-referrer"/>
-                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-orange-400 text-[9px]"><i class="fas fa-award"></i></span>
-              </div>
-              <div class="text-[9px] font-black text-white text-center truncate max-w-[65px] leading-tight" id="podium3Name">Player 3</div>
-              <div class="text-[8px] font-mono font-bold text-gold mb-1" id="podium3Bal">0 AX</div>
-              <div class="w-full bg-[#1b202a] border-t-2 border-orange-500/40 rounded-t-lg h-10 flex items-center justify-center text-[10px] font-black text-orange-400">3rd</div>
-            </div>
-          </div>
-
-          <button id="btnViewFullLeaderboard" class="w-full py-2 border border-bdr hover:border-gold hover:text-white text-t2 text-xs font-bold rounded-xl transition cursor-pointer">
-            View Full Leaderboard
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ==================== RED REPORT & SUPPORT HUB DRAWER ==================== -->
@@ -4183,13 +3870,6 @@ let selectedAvatarSeed = AVATAR_SEEDS[0];
 let devPopupShownThisSession = false;
 let notifPopupShownThisSession = false;
 
-// Launch Fest Global States
-let launchFestTimersInitialized = false;
-let activeEventsSubTab = 'fest';
-let referralCount = 0;
-let topPlayersList = [];
-let isWheelSpinning = false;
-
 // Interactive Tutorial States & Steps config
 let currentTutorialStep = 0;
 let activeHighlightedElementId = null;
@@ -4232,8 +3912,46 @@ let selectedAvatarFrame = 'none';
 let selectedNameColor = '#ffffff';
 let selectedCustomAvatarUrl = null;
 
-// Helper selection
-const $ = (id) => document.getElementById(id);
+// Helper selection with safe recursive null fallback proxy
+const createDummyProxy = () => {
+  const dummyFn = (...args) => createDummyProxy();
+  dummyFn.classList = {
+    add: () => {},
+    remove: () => {},
+    toggle: () => {},
+    contains: () => false
+  };
+  dummyFn.style = {};
+  dummyFn.dataset = {};
+  dummyFn.children = [];
+  dummyFn.files = [];
+  dummyFn.value = '';
+  dummyFn.textContent = '';
+  dummyFn.innerHTML = '';
+  dummyFn.className = '';
+  return new Proxy(dummyFn, {
+    get(target, prop) {
+      if (prop === 'classList') return target.classList;
+      if (prop === 'style') return target.style;
+      if (prop === 'dataset') return target.dataset;
+      if (prop === 'children') return [];
+      if (prop === 'files') return [];
+      if (prop === Symbol.toPrimitive || prop === 'toString' || prop === 'valueOf') return () => '';
+      if (prop in target) return target[prop];
+      return dummyFn;
+    },
+    set(target, prop, value) {
+      target[prop] = value;
+      return true;
+    }
+  });
+};
+
+const $ = (id) => {
+  const el = document.getElementById(id);
+  return el || createDummyProxy();
+};
+window.$ = $;
 
 // Capture referral parameter and store it in localStorage
 const urlParams = new URLSearchParams(window.location.search);
@@ -4484,9 +4202,6 @@ function boot() {
   }, 3000);
   loadLiveNotifications();
   initGlobalChat();
-  if (userProfile) {
-    renderLaunchFestUI();
-  }
   goTo('sDash');
 
   if (!devPopupShownThisSession) {
@@ -4865,10 +4580,6 @@ onAuthStateChanged(auth, async (fireUser) => {
       try { window.unsubReferrals(); } catch (e) {}
       window.unsubReferrals = null;
     }
-    if (window.unsubLaunchFestLeaderboard) {
-      try { window.unsubLaunchFestLeaderboard(); } catch (e) {}
-      window.unsubLaunchFestLeaderboard = null;
-    }
     userProfile = null;
     goTo('sLogin');
   }
@@ -5233,9 +4944,7 @@ function renderTournaments() {
     const borderCls = reg && reg.status === 'approved' ? 'border-green bg-green/5' : reg && reg.status === 'rejected' ? 'border-red/40 bg-red/5' : 'border-bdr';
 
     let dynamicCardClasses = `p-4 bg-card border ${borderCls} rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer`;
-    if (t.isLaunchFest) {
-      dynamicCardClasses = `p-5 bg-gradient-to-br from-fuchsia-950/20 via-[#10111e] to-card/95 border-2 border-fuchsia-500/50 hover:border-pink-400 rounded-2xl space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_rgba(236,72,153,0.25)] cursor-pointer group jelly-hover`;
-    } else if (t.accentTheme === 'crimson') {
+    if (t.accentTheme === 'crimson') {
       dynamicCardClasses = `p-4 bg-gradient-to-b from-red/10 to-card/95 border border-red/40 rounded-xl space-y-3 relative transition hover:border-red duration-200 cursor-pointer shadow-[0_0_12px_rgba(232,64,74,0.05)]`;
     } else if (t.accentTheme === 'gold') {
       dynamicCardClasses = `p-4 bg-gradient-to-b from-gold/10 to-card/95 border border-gold/40 rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer shadow-[0_0_12px_rgba(240,192,64,0.05)]`;
@@ -5252,113 +4961,7 @@ function renderTournaments() {
     const card = document.createElement('div');
     card.className = dynamicCardClasses;
 
-    if (t.isLaunchFest) {
-      card.innerHTML = `
-        <!-- Jelly Theme Floating Bubbles -->
-        <div class="absolute inset-0 opacity-[0.08] pointer-events-none select-none overflow-hidden">
-          <div class="absolute rounded-full bg-fuchsia-500 w-12 h-12 blur-md top-2 left-6 animate-pulse"></div>
-          <div class="absolute rounded-full bg-pink-500 w-16 h-16 blur-lg bottom-4 right-10 animate-pulse" style="animation-delay: 1.5s;"></div>
-        </div>
-
-        <!-- Glowing Accent Line -->
-        <div class="absolute top-0 left-1/4 w-1/2 h-[2px] bg-gradient-to-r from-transparent via-fuchsia-400 to-transparent"></div>
-
-        <!-- Live Tracker Mode Widget -->
-        ${getLiveTrackerWidgetHTML(t)}
-
-        <div class="flex justify-between items-start gap-3 relative z-10">
-          <div>
-            <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
-              <span class="px-2 py-0.5 bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-300 text-[8px] font-black uppercase tracking-widest rounded-md animate-pulse">
-                🚀 LAUNCH FEST
-              </span>
-              <span class="px-2 py-0.5 bg-pink-500/15 border border-pink-500/30 text-pink-300 text-[8px] font-black uppercase tracking-widest rounded-md">
-                🍬 JELLY THEME
-              </span>
-              ${t.isComingSoon ? `
-                <span class="px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[8px] font-black uppercase tracking-widest rounded-md">
-                  🔒 COMING SOON
-                </span>
-              ` : ''}
-            </div>
-            <h4 class="font-display font-black text-lg text-white leading-tight uppercase tracking-wide group-hover:text-fuchsia-300 transition-colors">${t.name}</h4>
-            <p class="text-[10px] text-fuchsia-400 font-bold mt-0.5 flex items-center gap-1">
-              <i class="fas fa-gamepad"></i> ${t.game || 'Grand RP Mobile'}
-            </p>
-          </div>
-          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${t.isComingSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'live' ? 'bg-red text-white animate-pulse' : t.status === 'cancelled' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : t.status === 'ended' ? 'bg-neutral-800 text-t3 border border-neutral-700' : 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/35'}">
-            ${t.isComingSoon ? 'Coming Soon' : t.status === 'live' ? '🔴 Live' : t.status === 'cancelled' ? '❌ Cancelled' : t.status === 'ended' ? 'Ended' : 'Upcoming'}
-          </span>
-        </div>
-
-        <!-- Jelly-Style Scoreboard Grid -->
-        <div class="grid grid-cols-3 gap-2 text-xs font-semibold text-t2 bg-black/50 p-3 rounded-xl border border-fuchsia-500/15 relative z-10">
-          <div class="text-center border-r border-fuchsia-500/10">
-            <span class="text-[9px] text-fuchsia-400/60 uppercase font-black tracking-wider block mb-0.5">Prize Pool</span>
-            <span class="text-gold font-display text-base font-black tracking-tight">${t.isComingSoon ? 'Coming Soon' : (t.prize || 'TBD')}</span>
-          </div>
-          <div class="text-center border-r border-fuchsia-500/10">
-            <span class="text-[9px] text-fuchsia-400/60 uppercase font-black tracking-wider block mb-0.5">Slots Filled</span>
-            <span class="text-white font-mono text-sm font-bold">${t.isComingSoon ? 'Coming Soon' : `${t.registered || 0}/${t.maxPlayers || 32}`}</span>
-          </div>
-          <div class="text-center">
-            <span class="text-[9px] text-fuchsia-400/60 uppercase font-black tracking-wider block mb-0.5">Entry Fee</span>
-            <span class="text-fuchsia-300 font-bold font-mono text-sm">${t.isComingSoon ? 'Coming Soon' : (t.entryFee || 'Free')}</span>
-          </div>
-        </div>
-
-        <!-- Dynamic Map & Per Kill optional items -->
-        <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-t3 font-medium relative z-10 pt-1">
-          <span class="flex items-center gap-1 text-fuchsia-400/90"><i class="fas fa-calendar-alt text-fuchsia-400"></i> ${t.isComingSoon ? 'Coming Soon' : (t.date || 'TBA')}</span>
-          <span class="flex items-center gap-1 text-fuchsia-400/90"><i class="fas fa-clock text-fuchsia-400"></i> ${t.isComingSoon ? 'Coming Soon' : (t.time || 'TBA')}</span>
-          <span class="flex items-center gap-1 text-fuchsia-400/90"><i class="fas fa-users text-fuchsia-400"></i> ${t.teamType || 'Solo'}</span>
-          ${t.map ? `<span class="flex items-center gap-1 text-fuchsia-400/90"><i class="fas fa-map-marked-alt text-fuchsia-400"></i> Map: <strong class="text-white">${t.map}</strong></span>` : ''}
-          ${t.perKill ? `<span class="flex items-center gap-1 text-pink-400"><i class="fas fa-crosshairs text-pink-400"></i> Per Kill: <strong class="text-white">${t.perKill}</strong></span>` : ''}
-        </div>
-
-        ${reg && !t.isComingSoon ? `
-          <div class="pt-2 border-t border-fuchsia-500/10 flex justify-between items-center text-xs relative z-10">
-            <span class="font-bold uppercase tracking-wider text-[10px] ${reg.status==='approved'?'text-fuchsia-400':reg.status==='rejected'?'text-red':'text-gold'}">
-              ${reg.status === 'approved' ? '✓ Registered' : reg.status === 'rejected' ? 'Rejected' : 'Verification Pending...'}
-            </span>
-            <span class="text-[10px] text-t3 font-mono">TXN: ${reg.txnId}</span>
-          </div>
-        ` : ''}
-
-        ${t.liveMessage ? `
-          <div class="p-2.5 ${t.status === 'cancelled' ? 'bg-amber-500/5 border border-amber-500/20 text-amber-400' : 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-fuchsia-300'} rounded-lg text-[11px] font-medium flex gap-2 items-start leading-normal relative z-10">
-            <i class="fas ${t.status === 'cancelled' ? 'fa-exclamation-triangle animate-pulse text-amber-400' : 'fa-bullhorn animate-bounce text-fuchsia-400'} text-xs mt-0.5"></i>
-            <div>
-              <span class="font-bold uppercase text-[9px] block mb-0.5 tracking-wider ${t.status === 'cancelled' ? 'text-amber-400' : 'text-fuchsia-400'}">
-                ${t.status === 'cancelled' ? '⚠️ Cancellation Notice' : '🔴 Live Notice'}
-              </span>
-              ${t.liveMessage}
-            </div>
-          </div>
-        ` : ''}
-
-        <div class="pt-2 flex gap-2 flex-wrap relative z-10">
-          ${t.isComingSoon ? `
-            <button class="b-coming-soon flex-1 py-2 bg-neutral-800/80 border border-neutral-700 text-t3 text-[11px] font-black uppercase tracking-wider rounded-lg transition">
-              🔒 Locked (Coming Soon)
-            </button>
-          ` : t.status === 'cancelled' ? '' : `
-            <button class="b-part flex-1 min-w-[120px] py-1.5 bg-fuchsia-500/15 border border-fuchsia-500/35 hover:bg-fuchsia-500/25 text-fuchsia-300 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-              <i class="fas fa-users mr-1"></i> Slots
-            </button>
-            ${t.status === 'ended' ? `
-              <button class="b-result flex-1 min-w-[120px] py-1.5 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/25 text-blue-400 text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-                <i class="fas fa-poll mr-1"></i> Match Result
-              </button>
-            ` : t.status === 'upcoming' ? `
-              <button class="b-register flex-1 min-w-[120px] py-1.5 bg-gold/15 border border-gold/30 hover:bg-gold/25 text-gold text-[11px] font-black uppercase tracking-wider rounded-lg transition" data-tid="${t.id}" data-tname="${t.name}">
-                <i class="fas fa-gamepad mr-1"></i> Participate
-              </button>
-            ` : ''}
-          `}
-        </div>
-      `;
-    } else if (t.accentTheme === 'soccer') {
+    if (t.accentTheme === 'soccer') {
       card.innerHTML = `
         <!-- Soccer Pitch Visual Gridlines -->
         <div class="absolute inset-0 opacity-[0.05] pointer-events-none select-none">
@@ -5639,9 +5242,6 @@ function renderTournaments() {
 
     listEl.appendChild(card);
   });
-  if (typeof renderLaunchFestUI === 'function') {
-    renderLaunchFestUI();
-  }
 }
 
 function activeTournamentFilter() {
@@ -6031,50 +5631,8 @@ window.closeRedReportHubDrawer = function() {
   }, 300);
 };
 
-// Launch Fest Drawer controls
-window.openLaunchFestDrawer = function() {
-  const drawer = $('dLaunchFestDrawer');
-  const backdrop = $('mLaunchFestDrawerBackdrop');
-  if (!drawer || !backdrop) return;
-  drawer.classList.remove('hidden');
-  backdrop.classList.remove('hidden');
-  setTimeout(() => {
-    drawer.classList.remove('translate-x-full');
-    backdrop.classList.remove('opacity-0');
-    backdrop.classList.add('opacity-100');
-  }, 20);
-};
-
-window.closeLaunchFestDrawer = function() {
-  const drawer = $('dLaunchFestDrawer');
-  const backdrop = $('mLaunchFestDrawerBackdrop');
-  if (!drawer || !backdrop) return;
-  drawer.classList.add('translate-x-full');
-  backdrop.classList.remove('opacity-100');
-  backdrop.classList.add('opacity-0');
-  setTimeout(() => {
-    drawer.classList.add('hidden');
-    backdrop.classList.add('hidden');
-  }, 300);
-};
-
-window.openLaunchFestSection = function(sectionId) {
-  const el = $(sectionId);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // Visual pulse effect
-    el.classList.add('ring-2', 'ring-gold/60', 'scale-[1.01]');
-    setTimeout(() => {
-      el.classList.remove('ring-2', 'ring-gold/60', 'scale-[1.01]');
-    }, 1500);
-  }
-};
-
-$('bCloseLaunchFestDrawer').addEventListener('click', () => closeLaunchFestDrawer());
-$('mLaunchFestDrawerBackdrop').addEventListener('click', () => closeLaunchFestDrawer());
-
-$('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
-$('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
+if ($('bCloseRedReportHubDrawer')) $('bCloseRedReportHubDrawer').addEventListener('click', () => closeRedReportHubDrawer());
+if ($('mRedReportHubDrawerBackdrop')) $('mRedReportHubDrawerBackdrop').addEventListener('click', () => closeRedReportHubDrawer());
 
 $('btnHubRules').addEventListener('click', () => {
   closeRedReportHubDrawer();
@@ -7316,7 +6874,7 @@ window.openTournamentLeaderboard = async function(tour) {
       `;
 
       if (e.userId) {
-        item.querySelector('.b-view-p-card').addEventListener('click', (ev) => {
+        item.querySelector('.b-view-p-card')?.addEventListener('click', (ev) => {
           ev.stopPropagation();
           // Fetch registration data placeholder to reuse the profile display modal
           const dummyReg = {
@@ -8049,8 +7607,8 @@ function loadFriendSystem() {
         </div>
       `;
 
-      item.querySelector('.b-acc').addEventListener('click', (e) => acceptFriendRequest(e.currentTarget.dataset));
-      item.querySelector('.b-dec').addEventListener('click', (e) => declineFriendRequest(e.currentTarget.dataset.uid));
+      item.querySelector('.b-acc')?.addEventListener('click', (e) => acceptFriendRequest(e.currentTarget.dataset));
+      item.querySelector('.b-dec')?.addEventListener('click', (e) => declineFriendRequest(e.currentTarget.dataset.uid));
       listEl.appendChild(item);
     });
   }, (err) => {
@@ -9810,34 +9368,35 @@ if (bOpenPremium) {
 }
 
 // Topbar Menu Click Handler (Opens Menu Hub Drawer)
-$('bTopbarMenu').addEventListener('click', () => {
-  if (typeof window.openRedReportHubDrawer === 'function') {
-    window.openRedReportHubDrawer();
-  }
-});
-
-// Topbar Launch Fest Event Click Handler (Opens Launch Fest Drawer)
-$('bLaunchFest').addEventListener('click', () => {
-  if (typeof window.openLaunchFestDrawer === 'function') {
-    window.openLaunchFestDrawer();
-  }
-});
+if ($('bTopbarMenu')) {
+  $('bTopbarMenu').addEventListener('click', () => {
+    if (typeof window.openRedReportHubDrawer === 'function') {
+      window.openRedReportHubDrawer();
+    }
+  });
+}
 
 // Patch Notes Modal Handlers
-$('btnHubPatchNotes').addEventListener('click', () => {
-  if (typeof window.closeRedReportHubDrawer === 'function') {
-    window.closeRedReportHubDrawer();
-  }
-  $('mPatchNotes').classList.remove('hidden');
-});
+if ($('btnHubPatchNotes')) {
+  $('btnHubPatchNotes').addEventListener('click', () => {
+    if (typeof window.closeRedReportHubDrawer === 'function') {
+      window.closeRedReportHubDrawer();
+    }
+    if ($('mPatchNotes')) $('mPatchNotes').classList.remove('hidden');
+  });
+}
 
-$('bClosePatchNotes').addEventListener('click', () => {
-  $('mPatchNotes').classList.add('hidden');
-});
+if ($('bClosePatchNotes')) {
+  $('bClosePatchNotes').addEventListener('click', () => {
+    if ($('mPatchNotes')) $('mPatchNotes').classList.add('hidden');
+  });
+}
 
-$('bClosePatchNotesCross').addEventListener('click', () => {
-  $('mPatchNotes').classList.add('hidden');
-});
+if ($('bClosePatchNotesCross')) {
+  $('bClosePatchNotesCross').addEventListener('click', () => {
+    if ($('mPatchNotes')) $('mPatchNotes').classList.add('hidden');
+  });
+}
 
 // PWA Installation Flow
 let deferredPrompt;
@@ -13057,48 +12616,8 @@ if (btnSquadInviteYesEl) {
 // ── ARENAX LAUNCH FEST LOGIC & RENDERING ──
 // ==========================================
 
-activeEventsSubTab = 'fest'; // 'fest' or 'tours'
-referralCount = 0;
-topPlayersList = [];
-isWheelSpinning = false;
-launchFestTimersInitialized = false;
-
-function switchEventsSubTab(subTabId) {
-  activeEventsSubTab = subTabId;
-  
-  const btnFest = $('btnSubFest');
-  const btnTours = $('btnSubTours');
-  const wrapperFest = $('festWrapper');
-  const wrapperTours = $('toursWrapper');
-
-  if (subTabId === 'fest') {
-    btnFest.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-gold bg-ele/80 border border-gold/15 transition cursor-pointer";
-    btnTours.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-t3 hover:text-white transition cursor-pointer";
-    wrapperFest.classList.remove('hidden');
-    wrapperTours.classList.add('hidden');
-    renderLaunchFestUI();
-  } else {
-    btnTours.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-gold bg-ele/80 border border-gold/15 transition cursor-pointer";
-    btnFest.className = "flex-1 py-2 text-center text-xs font-black uppercase tracking-wider rounded-lg text-t3 hover:text-white transition cursor-pointer";
-    wrapperTours.classList.remove('hidden');
-    wrapperFest.classList.add('hidden');
-    
-    // Set daily tasks visit flag to true
-    if (userProfile) {
-      const todayStr = new Date(Date.now() + (5 * 60 * 60 * 1000)).toISOString().split('T')[0];
-      updateDoc(doc(db, 'users', userProfile.uid), {
-        'dailyTasks.visit': true,
-        'dailyTasks.date': todayStr
-      }).catch(e => console.warn(e));
-    }
-
-    // Force tournament list render
-    if (typeof window.renderTournaments === 'function') {
-      window.renderTournaments();
-    }
-  }
-}
-window.switchEventsSubTab = switchEventsSubTab;
+window.renderLaunchFestUI = function() {};
+window.switchEventsSubTab = function() {};
 
 function startLaunchFestTimers() {
   if (launchFestTimersInitialized) return;
@@ -13696,9 +13215,6 @@ if ($('btnRegisterWeeklyTour')) {
 
     const weeklyFreeTour = (toursData || []).find(t => t.isWeeklyFree === true);
     if (weeklyFreeTour) {
-      if (typeof closeLaunchFestDrawer === 'function') {
-        closeLaunchFestDrawer();
-      }
       handleTourCardClick(weeklyFreeTour);
     } else {
       btn.disabled = true;
@@ -13816,7 +13332,7 @@ if ($('btnViewFullLeaderboard')) {
   });
 }
 
-window.renderLaunchFestUI = renderLaunchFestUI;
+window.renderLaunchFestUI = function() {};
 
 window.renderInboxUI = renderInboxUI;
 window.claimMailGift = claimMailGift;
@@ -14345,7 +13861,7 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
       </div>
     `;
 
-    card.querySelector('.btn-join-voice').addEventListener('click', () => {
+    card.querySelector('.btn-join-voice')?.addEventListener('click', () => {
       if (isPrivate) {
         const pass = prompt("Enter room password:");
         if (pass !== room.password) {
@@ -14645,10 +14161,10 @@ function listenToRoomMembers(roomId) {
               <button class="btn-mute-peer w-full py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow text-[8px] font-black uppercase tracking-wider rounded border border-yellow-500/20 transition" data-uid="${m.uid}">${m.muted ? 'Unmute' : 'Mute'}</button>
             `;
             
-            hostActions.querySelector('.btn-kick-peer').addEventListener('click', () => {
+            hostActions.querySelector('.btn-kick-peer')?.addEventListener('click', () => {
               kickParticipant(m.uid);
             });
-            hostActions.querySelector('.btn-mute-peer').addEventListener('click', () => {
+            hostActions.querySelector('.btn-mute-peer')?.addEventListener('click', () => {
               toggleParticipantMute(m.uid, !m.muted);
             });
             card.appendChild(hostActions);
@@ -14776,7 +14292,12 @@ function createPeerConnection(peerId, isInitiator) {
   // Handle ICE candidates
   pc.onicecandidate = (event) => {
     if (event.candidate) {
-      sendSignal(peerId, "candidate", JSON.stringify(event.candidate));
+      const candObj = typeof event.candidate.toJSON === 'function' ? event.candidate.toJSON() : {
+        candidate: event.candidate.candidate,
+        sdpMid: event.candidate.sdpMid,
+        sdpMLineIndex: event.candidate.sdpMLineIndex
+      };
+      sendSignal(peerId, "candidate", JSON.stringify(candObj));
     }
   };
 
@@ -14798,7 +14319,11 @@ function createPeerConnection(peerId, isInitiator) {
     pc.createOffer().then(offer => {
       return pc.setLocalDescription(offer);
     }).then(() => {
-      sendSignal(peerId, "offer", JSON.stringify(pc.localDescription));
+      const descObj = typeof pc.localDescription.toJSON === 'function' ? pc.localDescription.toJSON() : {
+        type: pc.localDescription.type,
+        sdp: pc.localDescription.sdp
+      };
+      sendSignal(peerId, "offer", JSON.stringify(descObj));
     }).catch(err => {
       console.error("Error creating SDP offer:", err);
     }).finally(() => {
@@ -14902,7 +14427,11 @@ function listenToRoomSignaling(roomId) {
           if (pc.signalingState === "have-remote-offer") {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            await sendSignal(signal.fromId, "answer", JSON.stringify(pc.localDescription));
+            const answerDescObj = typeof pc.localDescription.toJSON === 'function' ? pc.localDescription.toJSON() : {
+              type: pc.localDescription.type,
+              sdp: pc.localDescription.sdp
+            };
+            await sendSignal(signal.fromId, "answer", JSON.stringify(answerDescObj));
             flushIceCandidates();
           } else {
             console.warn(`[WebRTC] Skipping createAnswer because signalingState is ${pc.signalingState} instead of have-remote-offer`);
@@ -15373,7 +14902,7 @@ function openVoiceInviteModal() {
       </button>
     `;
 
-    row.querySelector('.btn-send-room-invite').addEventListener('click', (e) => {
+    row.querySelector('.btn-send-room-invite')?.addEventListener('click', (e) => {
       sendVoiceRoomInvitation(friend.uid, friend.name, e.target);
     });
 
@@ -15479,7 +15008,7 @@ function showVoiceRoomInviteToast(inviteId, invite) {
   `;
 
   // Join handler
-  toast.querySelector('.btn-accept-invite').addEventListener('click', () => {
+  toast.querySelector('.btn-accept-invite')?.addEventListener('click', () => {
     switchTab("Voice");
     joinVoiceRoom(invite.roomId);
     toast.remove();
@@ -15490,7 +15019,7 @@ function showVoiceRoomInviteToast(inviteId, invite) {
   });
 
   // Decline handler
-  toast.querySelector('.btn-reject-invite').addEventListener('click', () => {
+  toast.querySelector('.btn-reject-invite')?.addEventListener('click', () => {
     toast.remove();
     if (userProfile) {
       deleteDoc(doc(db, 'users', userProfile.uid, 'invitations', inviteId)).catch(()=>{});
