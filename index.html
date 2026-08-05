@@ -573,9 +573,9 @@ if (typeof tailwind !== 'undefined') {
       <img src="arenax_logo_user_1783946436893.jpg" onerror="this.onerror=null; this.src='arenax_logo.jpg';" alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
-      <!-- PWA Download Button -->
-      <button id="btnDownloadApp" class="hidden items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-lg text-xs font-bold transition shadow-md active:scale-[0.98] cursor-pointer z-50">
-        <span class="sm:hidden">📲 Install</span>
+      <!-- App Download Button (Opens Download Options Modal) -->
+      <button id="btnDownloadApp" class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-lg text-xs font-bold transition shadow-md active:scale-[0.98] cursor-pointer z-50">
+        <span class="sm:hidden">📲 App</span>
         <span class="hidden sm:inline">📲 Download App</span>
       </button>
 
@@ -1559,14 +1559,14 @@ if (typeof tailwind !== 'undefined') {
       </div>
     </div>
 
-    <!-- PWA Install Card -->
-    <div id="btnHubInstallApp" class="bg-card hover:bg-ele/60 border border-emerald-500/20 hover:border-emerald-400/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] hidden">
+    <!-- App Download Card in Menu Hub -->
+    <div id="btnHubInstallApp" class="bg-card hover:bg-ele/60 border border-emerald-500/20 hover:border-emerald-400/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
       <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
         <i class="fas fa-download"></i>
       </div>
       <div>
-        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📲 Install App</h4>
-        <p class="text-[9px] text-t3 mt-0.5">Install on home screen</p>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📲 Download ArenaX App</h4>
+        <p class="text-[9px] text-t3 mt-0.5">Android APK & PC Desktop PWA</p>
       </div>
     </div>
   </div>
@@ -9551,25 +9551,17 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  const installBtn = $('btnHubInstallApp');
-  if (installBtn) {
-    installBtn.classList.remove('hidden');
-  }
+  window.pwaDeferredPrompt = e;
 });
 
 const installBtn = $('btnHubInstallApp');
 if (installBtn) {
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      if (typeof window.closeRedReportHubDrawer === 'function') {
-        window.closeRedReportHubDrawer();
-      }
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to install prompt: ${outcome}`);
-      deferredPrompt = null;
-      installBtn.classList.add('hidden');
+  installBtn.addEventListener('click', () => {
+    if (typeof window.closeRedReportHubDrawer === 'function') {
+      window.closeRedReportHubDrawer();
     }
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
+    if ($('mAppDownloadOptions')) $('mAppDownloadOptions').classList.remove('hidden');
   });
 }
 
@@ -15770,6 +15762,85 @@ window.playSubmissionSplash = playSubmissionSplash;
   </div>
 </div>
 
+<!-- ==================== APP DOWNLOAD OPTIONS MODAL ==================== -->
+<div id="mAppDownloadOptions" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-md z-[330] flex items-center justify-center p-4 hidden animate-fade-in" onclick="if(event.target===this) this.classList.add('hidden');">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[460px] w-full space-y-4 shadow-2xl relative" onclick="event.stopPropagation();">
+    <!-- Close Cross Button -->
+    <button onclick="document.getElementById('mAppDownloadOptions').classList.add('hidden')" class="absolute top-4 right-4 w-7 h-7 rounded-full bg-card hover:bg-ele text-t2 hover:text-white border border-bdr flex items-center justify-center text-xs transition cursor-pointer">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 border-b border-bdr/40 pb-3">
+      <div class="w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 text-lg">
+        <i class="fas fa-download"></i>
+      </div>
+      <div>
+        <h3 class="font-display text-base font-bold text-white">Download ArenaX App</h3>
+        <p class="text-[11px] text-t2 font-medium">Select platform for your device</p>
+      </div>
+    </div>
+
+    <!-- Options Container -->
+    <div class="space-y-3">
+      <!-- Option 1: Android APK Download -->
+      <div class="bg-card hover:bg-ele/80 border border-emerald-500/30 rounded-xl p-3.5 space-y-2.5 transition">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-base">
+              <i class="fab fa-android"></i>
+            </div>
+            <div>
+              <h4 class="font-display text-xs font-bold text-white flex items-center gap-1.5">
+                Android App (APK)
+                <span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">Android & Mobile</span>
+              </h4>
+              <p class="text-[10px] text-t2 mt-0.5">Direct APK file installation for all Android devices</p>
+            </div>
+          </div>
+        </div>
+        <a id="btnDownloadApkDirect" href="arenaX.apk" download="arenaX.apk" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer no-underline">
+          <i class="fas fa-file-download text-xs"></i> Download arenaX.apk (Android)
+        </a>
+      </div>
+
+      <!-- Option 2: Desktop / Computer PWA -->
+      <div class="bg-card hover:bg-ele/80 border border-gold/30 rounded-xl p-3.5 space-y-2.5 transition">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gold/15 text-gold flex items-center justify-center text-base">
+              <i class="fas fa-desktop"></i>
+            </div>
+            <div>
+              <h4 class="font-display text-xs font-bold text-white flex items-center gap-1.5">
+                Desktop Web App (PWA)
+                <span class="px-1.5 py-0.5 text-[9px] font-bold bg-gold/20 text-gold border border-gold/30 rounded">Computer & PC</span>
+              </h4>
+              <p class="text-[10px] text-t2 mt-0.5">Lightweight desktop application for Windows & Mac</p>
+            </div>
+          </div>
+        </div>
+        <button id="btnInstallPwaDesktop" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-gold hover:from-amber-400 hover:to-gold/90 text-slate-950 font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer">
+          <i class="fas fa-desktop text-xs"></i> Install Desktop PWA
+        </button>
+      </div>
+
+      <!-- Option 3: iOS Safari Note -->
+      <div id="iosSafariNote" class="bg-slate-900/60 border border-purple-500/20 rounded-xl p-3 flex items-start gap-2.5 hidden">
+        <i class="fab fa-apple text-purple-400 text-base mt-0.5 flex-shrink-0"></i>
+        <div class="text-[10px] text-t2 leading-relaxed">
+          <strong class="text-white">iPhone / iPad users:</strong> Tap <i class="fas fa-share-square text-purple-400 mx-0.5"></i> Share in Safari and select <strong class="text-purple-300">"Add to Home Screen"</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Close Button -->
+    <button onclick="document.getElementById('mAppDownloadOptions').classList.add('hidden')" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white text-xs font-semibold rounded-lg transition cursor-pointer">
+      Close
+    </button>
+  </div>
+</div>
+
 <!-- iOS Install Tooltip -->
 <div id="iosInstallTooltip" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0a110d]/95 backdrop-blur-md border border-gold/30 p-4 rounded-xl shadow-2xl max-w-sm w-[90%] z-[200] hidden transition-all duration-300 transform scale-95 opacity-0">
   <div class="flex items-start gap-3">
@@ -15790,10 +15861,10 @@ window.playSubmissionSplash = playSubmissionSplash;
   </div>
 </div>
 
-<!-- PWA Install Handling -->
+<!-- App Download & PWA Handling Script -->
 <script>
   (function() {
-    let deferredPrompt = null;
+    let localDeferredPrompt = null;
 
     function isIosSafari() {
       const ua = window.navigator.userAgent;
@@ -15802,71 +15873,62 @@ window.playSubmissionSplash = playSubmissionSplash;
       const isIOS = isIPad || isIPhone;
       const isWebkit = !!ua.match(/WebKit/i);
       const isSafari = isWebkit && !ua.match(/CriOS/i) && !ua.match(/FxiOS/i) && !ua.match(/OPiOS/i) && !ua.match(/mercury/i);
-      // Also check if app is not already running in standalone mode (i.e. installed)
       const isStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
       return isIOS && isSafari && !isStandalone;
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later.
-      deferredPrompt = e;
-      // Show the button
-      const btn = document.getElementById('btnDownloadApp');
-      if (btn) {
-        btn.style.setProperty('display', 'inline-flex', 'important');
-      }
+      localDeferredPrompt = e;
+      window.pwaDeferredPrompt = e;
     });
 
     window.addEventListener('appinstalled', (evt) => {
       console.log('ArenaX: App was successfully installed!');
-      const btn = document.getElementById('btnDownloadApp');
-      if (btn) {
-        btn.style.setProperty('display', 'none', 'important');
-      }
-      const tooltip = document.getElementById('iosInstallTooltip');
-      if (tooltip) {
-        tooltip.classList.remove('opacity-100', 'scale-100');
-        tooltip.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => tooltip.classList.add('hidden'), 300);
-      }
+      const modal = document.getElementById('mAppDownloadOptions');
+      if (modal) modal.classList.add('hidden');
     });
 
-    // Handle button display & interactions when DOM is ready
     window.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('btnDownloadApp');
-      if (btn) {
-        if (isIosSafari()) {
-          btn.style.setProperty('display', 'inline-flex', 'important');
-        }
+      const btnDownloadApp = document.getElementById('btnDownloadApp');
+      const modal = document.getElementById('mAppDownloadOptions');
+      const iosNote = document.getElementById('iosSafariNote');
 
-        btn.addEventListener('click', async () => {
-          if (deferredPrompt) {
-            // Show the prompt
-            deferredPrompt.prompt();
-            // Wait for the user to respond to the prompt
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`ArenaX: User response to the install prompt: ${outcome}`);
-            deferredPrompt = null;
-            btn.style.setProperty('display', 'none', 'important');
+      if (btnDownloadApp) {
+        btnDownloadApp.addEventListener('click', () => {
+          if (modal) {
+            modal.classList.remove('hidden');
+            if (isIosSafari() && iosNote) {
+              iosNote.classList.remove('hidden');
+            }
+          }
+        });
+      }
+
+      // Desktop PWA Install Handler inside Modal
+      const btnInstallPwaDesktop = document.getElementById('btnInstallPwaDesktop');
+      if (btnInstallPwaDesktop) {
+        btnInstallPwaDesktop.addEventListener('click', async () => {
+          const promptEvent = window.pwaDeferredPrompt || localDeferredPrompt;
+          if (promptEvent) {
+            promptEvent.prompt();
+            const { outcome } = await promptEvent.userChoice;
+            console.log(`ArenaX Desktop PWA Install outcome: ${outcome}`);
+            window.pwaDeferredPrompt = null;
+            localDeferredPrompt = null;
+            if (modal) modal.classList.add('hidden');
           } else if (isIosSafari()) {
-            // Toggle the iOS tooltip/banner
             const tooltip = document.getElementById('iosInstallTooltip');
             if (tooltip) {
-              if (tooltip.classList.contains('hidden')) {
-                tooltip.classList.remove('hidden');
-                // Allow layout repaint before animation
-                setTimeout(() => {
-                  tooltip.classList.remove('opacity-0', 'scale-95');
-                  tooltip.classList.add('opacity-100', 'scale-100');
-                }, 10);
-              } else {
-                tooltip.classList.remove('opacity-100', 'scale-100');
-                tooltip.classList.add('opacity-0', 'scale-95');
-                setTimeout(() => tooltip.classList.add('hidden'), 300);
-              }
+              tooltip.classList.remove('hidden');
+              setTimeout(() => {
+                tooltip.classList.remove('opacity-0', 'scale-95');
+                tooltip.classList.add('opacity-100', 'scale-100');
+              }, 10);
             }
+            if (modal) modal.classList.add('hidden');
+          } else {
+            alert("🖥️ PC Desktop PWA:\n\nTo install ArenaX as a Desktop App on Windows/Mac, click the ⊕ or Install icon located in your browser's address bar (top-right on Chrome/Edge)!");
           }
         });
       }
