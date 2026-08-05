@@ -230,6 +230,33 @@ if (typeof tailwind !== 'undefined') {
   100% { transform: translateX(-110%); }
 }
 
+@keyframes prmFloatParticles {
+  0% {
+    transform: translateY(100%) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-160px) scale(1.3);
+    opacity: 0;
+  }
+}
+.prm-particle {
+  position: absolute;
+  bottom: -15px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(216, 180, 254, 0.9) 0%, rgba(168, 85, 247, 0.5) 60%, rgba(147, 51, 234, 0) 100%);
+  pointer-events: none;
+  animation: prmFloatParticles linear infinite;
+  filter: blur(1px);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
 /* ==================== PREMIUM CARD CUSTOM STYLES ==================== */
 .prm-card {
   overflow: hidden;
@@ -2270,63 +2297,77 @@ if (typeof tailwind !== 'undefined') {
 
 
 <!-- ==================== PREMIUM PLAN MODAL ==================== -->
-<div id="mPremium" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[540px] w-full space-y-4">
+<div id="mPremium" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-md z-[320] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[540px] w-full space-y-4 shadow-2xl relative">
     <!-- Purchase View -->
     <div id="prmPurchaseView" class="space-y-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-purple/10 border border-purple/20 rounded-full flex items-center justify-center text-purple text-lg"><i class="fas fa-crown"></i></div>
-        <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
-      </div>
-
-      <!-- Premium Promo Video -->
-      <div class="relative overflow-hidden rounded-xl border border-purple/30 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
-        <video class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
-          <source src="premium.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
-      </div>
-      <!-- Premium Cards Grid -->
-      <div class="grid grid-cols-2 gap-3">
-        <!-- Weekly Card: AX Pro -->
-        <div id="prmWeekly" class="prm-card border-2 border-purple cursor-pointer relative">
-          <span class="prm-card-title">AX Pro</span>
-          <p class="prm-card-pricing">199 AX <span class="prm-card-pricing-time">/ weekly</span></p>
-          <span class="prm-card-sub-title">Everything on Basic plus:
-            <ul class="prm-card-list">
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
-            </ul>
-            <div class="prm-card-button">
-              <span class="prm-card-text-button">Select Weekly</span>
-            </div>
-          </span>
-        </div>
-
-        <!-- Monthly Card: AX Pro Ultra -->
-        <div id="prmMonthly" class="prm-card border-2 border-bdr cursor-pointer relative">
-          <span class="prm-card-title">AX Pro Ultra</span>
-          <p class="prm-card-pricing">399 AX <span class="prm-card-pricing-time">/ monthly</span></p>
-          <span class="prm-card-sub-title">Everything on Basic plus:
-            <ul class="prm-card-list">
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
-              <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
-            </ul>
-            <div class="prm-card-button">
-              <span class="prm-card-text-button">Select Monthly</span>
-            </div>
-          </span>
+        <div>
+          <h3 class="font-display text-xl font-bold text-purple">ArenaX Premium VIP</h3>
+          <p class="text-[11px] text-t2 font-medium">Select your VIP pass tier to unlock exclusive rewards</p>
         </div>
       </div>
 
-      <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider">Upgrade Weekly — 199 AX Coins</button>
+      <!-- Premium Cards Relative Container with Purple Particles & Scroll Button -->
+      <div class="relative p-1 rounded-2xl bg-slate-950/60 border border-purple/30 shadow-inner overflow-hidden">
+        
+        <!-- Floating Purple Particles -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <div class="prm-particle w-3 h-3 left-[8%]" style="animation-duration: 3.2s; animation-delay: 0s;"></div>
+          <div class="prm-particle w-2 h-2 left-[22%]" style="animation-duration: 4.1s; animation-delay: 0.7s;"></div>
+          <div class="prm-particle w-4 h-4 left-[42%]" style="animation-duration: 3.6s; animation-delay: 0.3s;"></div>
+          <div class="prm-particle w-2.5 h-2.5 left-[62%]" style="animation-duration: 4.4s; animation-delay: 1.1s;"></div>
+          <div class="prm-particle w-3.5 h-3.5 left-[80%]" style="animation-duration: 3.8s; animation-delay: 0.4s;"></div>
+          <div class="prm-particle w-2 h-2 left-[92%]" style="animation-duration: 4.6s; animation-delay: 1.6s;"></div>
+        </div>
+
+        <!-- Horizontal Cards Scroll Container -->
+        <div id="prmCardScrollContainer" class="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none p-1.5 relative z-10 scroll-smooth">
+          <!-- Weekly Card: AX Pro -->
+          <div id="prmWeekly" class="prm-card border-2 border-purple cursor-pointer relative min-w-[220px] sm:min-w-[240px] flex-1 snap-center">
+            <span class="prm-card-title">AX Pro</span>
+            <p class="prm-card-pricing">199 AX <span class="prm-card-pricing-time">/ weekly</span></p>
+            <span class="prm-card-sub-title">Everything on Basic plus:
+              <ul class="prm-card-list">
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
+              </ul>
+              <div class="prm-card-button">
+                <span class="prm-card-text-button">Select Weekly</span>
+              </div>
+            </span>
+          </div>
+
+          <!-- Monthly Card: AX Pro Ultra -->
+          <div id="prmMonthly" class="prm-card border-2 border-bdr cursor-pointer relative min-w-[220px] sm:min-w-[240px] flex-1 snap-center">
+            <span class="prm-card-title">AX Pro Ultra</span>
+            <p class="prm-card-pricing">399 AX <span class="prm-card-pricing-time">/ monthly</span></p>
+            <span class="prm-card-sub-title">Everything on Basic plus:
+              <ul class="prm-card-list">
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Direct DM Chat</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Avatars</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Custom Profile Bio</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> VIP Profile Badge</li>
+                <li class="prm-card-list-item"><span class="prm-card-check">✓</span> Priority Support</li>
+              </ul>
+              <div class="prm-card-button">
+                <span class="prm-card-text-button">Select Monthly</span>
+              </div>
+            </span>
+          </div>
+        </div>
+
+        <!-- Right Scroll Button in the middle between/beside cards -->
+        <button id="prmScrollNextBtn" title="Scroll to Monthly Plan" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center text-xs font-bold shadow-xl shadow-purple-950/90 z-20 transition active:scale-90 cursor-pointer border border-purple-300/40">
+          <i id="prmScrollIcon" class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <button id="bBuyPremium" class="w-full py-3 bg-purple hover:bg-[#8b5cf6] text-white font-bold rounded-lg text-sm transition tracking-wider shadow-lg shadow-purple-900/30">Upgrade Weekly — 199 AX Coins</button>
       <button id="bClosePremium" class="w-full py-2 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
     </div>
 
@@ -2345,17 +2386,8 @@ if (typeof tailwind !== 'undefined') {
         </span>
       </div>
 
-      <!-- Premium Video Looping -->
-      <div class="relative overflow-hidden rounded-xl border border-purple/40 h-[140px] w-full bg-black shadow-lg shadow-purple/10 flex items-center justify-center">
-        <video id="prmActiveVideo" class="w-full h-full object-cover opacity-90" autoplay loop muted playsinline>
-          <source src="premium.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#111420] via-transparent to-black/10 pointer-events-none"></div>
-      </div>
-
       <!-- Stylish Thank You Text -->
-      <div class="bg-gradient-to-b from-purple-950/20 to-card/90 border border-purple-500/15 p-4 rounded-xl space-y-1 text-center">
+      <div class="bg-gradient-to-b from-purple-950/40 to-card/90 border border-purple-500/25 p-4 rounded-xl space-y-1 text-center shadow-lg">
         <h4 class="text-xs font-black text-purple uppercase tracking-wider flex items-center justify-center gap-1.5">
           <i class="fas fa-heart text-pink-500 animate-pulse"></i> Thank You For Subscribing! <i class="fas fa-heart text-pink-500 animate-pulse"></i>
         </h4>
@@ -2378,7 +2410,7 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <!-- ==================== CUSTOMIZE PROFILE MODAL ==================== -->
-<div id="mCustomize" class="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+<div id="mCustomize" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-md z-[320] flex items-center justify-center p-4 hidden">
   <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl">
     <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
       <div class="flex items-center gap-3">
@@ -9422,6 +9454,7 @@ $('btnEditProfile').addEventListener('click', () => {
 
 // Trigger customise modal
 $('btnCustomize').addEventListener('click', () => {
+  if ($('mSettings')) $('mSettings').classList.add('hidden');
   if (!userProfile) return;
 
   // Basic Info Values
@@ -9483,8 +9516,12 @@ $('btnCustomize').addEventListener('click', () => {
 });
 
 $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
-$('btnPlayerChat').addEventListener('click', () => switchTab('Chat'));
+$('btnPlayerChat').addEventListener('click', () => {
+  if ($('mSettings')) $('mSettings').classList.add('hidden');
+  switchTab('Chat');
+});
 $('btnPremium').addEventListener('click', () => {
+  if ($('mSettings')) $('mSettings').classList.add('hidden');
   syncPremiumModalState();
   $('mPremium').classList.remove('hidden');
 });
@@ -9492,8 +9529,29 @@ $('btnPremium').addEventListener('click', () => {
 const bOpenPremium = document.getElementById('bOpenPremium');
 if (bOpenPremium) {
   bOpenPremium.addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     syncPremiumModalState();
     $('mPremium').classList.remove('hidden');
+  });
+}
+
+// Premium Card Scroll Button Handler
+let currentCardScroll = 'weekly';
+const prmScrollNextBtn = $('prmScrollNextBtn');
+if (prmScrollNextBtn) {
+  prmScrollNextBtn.addEventListener('click', () => {
+    const container = $('prmCardScrollContainer');
+    if (currentCardScroll === 'weekly') {
+      if ($('prmMonthly')) $('prmMonthly').click();
+      if (container) container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      currentCardScroll = 'monthly';
+      if ($('prmScrollIcon')) $('prmScrollIcon').className = 'fas fa-chevron-left';
+    } else {
+      if ($('prmWeekly')) $('prmWeekly').click();
+      if (container) container.scrollTo({ left: 0, behavior: 'smooth' });
+      currentCardScroll = 'weekly';
+      if ($('prmScrollIcon')) $('prmScrollIcon').className = 'fas fa-chevron-right';
+    }
   });
 }
 
@@ -9568,27 +9626,31 @@ window.addEventListener('appinstalled', (event) => {
 // Profile Tab Grouped Settings Triggers
 if ($('btnProfileManage')) {
   $('btnProfileManage').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if ($('btnCustomize')) $('btnCustomize').click();
     else $('mCustomize').classList.remove('hidden');
   });
 }
 if ($('btnProfileSecurity')) {
   $('btnProfileSecurity').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if ($('mPrivacy')) $('mPrivacy').classList.remove('hidden');
   });
 }
 if ($('btnProfileNotifications')) {
   $('btnProfileNotifications').addEventListener('click', () => {
-    if ($('mSettings')) $('mSettings').classList.remove('hidden');
+    if ($('mEnableNotifications')) $('mEnableNotifications').classList.remove('hidden');
   });
 }
 if ($('btnProfileLanguage')) {
   $('btnProfileLanguage').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if ($('mLanguageSelectionModal')) $('mLanguageSelectionModal').classList.remove('hidden');
   });
 }
 if ($('btnProfileHelp')) {
   $('btnProfileHelp').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if (typeof window.openSupportDrawer === 'function') {
       window.openSupportDrawer();
     }
@@ -9596,11 +9658,13 @@ if ($('btnProfileHelp')) {
 }
 if ($('btnProfileTerms')) {
   $('btnProfileTerms').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if ($('mTerms')) $('mTerms').classList.remove('hidden');
   });
 }
 if ($('btnProfileAbout')) {
   $('btnProfileAbout').addEventListener('click', () => {
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
     if ($('mPatchNotes')) $('mPatchNotes').classList.remove('hidden');
   });
 }
