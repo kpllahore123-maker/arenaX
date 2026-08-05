@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
 <link rel="manifest" href="manifest.json" id="staticManifestLink" />
-<link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" type="image/x-icon" href="favicon.ico" id="staticFaviconLink" />
+<link rel="apple-touch-icon" href="icon-192.png" id="staticAppleIconLink" />
 
 <script>
 window.getAppBasePath = function() {
@@ -27,21 +27,14 @@ window.getAppBasePath = function() {
 (function() {
   const basePath = window.getAppBasePath();
   
-  const manifestLink = document.createElement('link');
-  manifestLink.rel = 'manifest';
-  manifestLink.href = basePath + 'manifest.json';
-  document.head.appendChild(manifestLink);
+  const manifestLink = document.getElementById('staticManifestLink');
+  if (manifestLink) manifestLink.href = basePath + 'manifest.json';
   
-  const appleIconLink = document.createElement('link');
-  appleIconLink.rel = 'apple-touch-icon';
-  appleIconLink.href = basePath + 'icon-192.png';
-  document.head.appendChild(appleIconLink);
+  const appleIconLink = document.getElementById('staticAppleIconLink');
+  if (appleIconLink) appleIconLink.href = basePath + 'icon-192.png';
   
-  const faviconLink = document.createElement('link');
-  faviconLink.rel = 'icon';
-  faviconLink.type = 'image/x-icon';
-  faviconLink.href = basePath + 'favicon.ico';
-  document.head.appendChild(faviconLink);
+  const faviconLink = document.getElementById('staticFaviconLink');
+  if (faviconLink) faviconLink.href = basePath + 'favicon.ico';
 })();
 
 if ('serviceWorker' in navigator) {
