@@ -589,11 +589,15 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- ── PROFILE TAB ── -->
     <section id="tProfile" class="tab space-y-4 max-w-md mx-auto">
-      <!-- Section Title -->
+      <!-- Section Title & Top Right Settings Button -->
       <div class="font-display text-xl font-bold flex items-center justify-between text-white px-1">
         <span class="flex items-center gap-2">
-          <i class="fas fa-user-circle text-amber-400"></i> Profile & Settings
+          <i class="fas fa-user-circle text-amber-400"></i> Profile
         </span>
+        <button id="bSettingsTop" title="Settings" class="text-xs text-t2 hover:text-amber-400 transition flex items-center gap-1.5 bg-card hover:bg-slate-800/90 px-3 py-1.5 rounded-xl border border-bdr/80 cursor-pointer shadow-sm group">
+          <i class="fas fa-cog text-amber-400 group-hover:rotate-45 transition-transform duration-300"></i>
+          <span class="font-semibold text-slate-200">Settings</span>
+        </button>
       </div>
 
       <!-- GOLD PREMIUM PROFILE CARD -->
@@ -675,13 +679,9 @@ if (typeof tailwind !== 'undefined') {
       <div id="statW" class="hidden">0</div>
       <div id="statWR" class="hidden">0%</div>
       <div id="statB" class="hidden">—</div>
-      <button id="btnCustomize" class="hidden"></button>
-      <button id="btnPremium" class="hidden"></button>
-      <button id="btnEditProfile" class="hidden"></button>
       <button id="btnProfileSettings" class="hidden"></button>
-      <span id="lblEditDisplayName" class="hidden"></span>
 
-      <!-- PROFILE & SETTINGS SECTIONS (Matching Mobile Dark Theme Screenshot) -->
+      <!-- PROFILE & SETTINGS SECTIONS -->
       <div class="space-y-4 pt-1">
 
         <!-- ACCOUNT SECTION -->
@@ -689,13 +689,49 @@ if (typeof tailwind !== 'undefined') {
           <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Account</div>
           <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
             
-            <!-- Manage Profile -->
-            <button id="btnProfileManage" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+            <!-- Edit Display Name -->
+            <button id="btnEditProfile" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-user-circle"></i>
+                  <i class="fas fa-pen"></i>
                 </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Manage Profile</span>
+                <span id="lblEditDisplayName" class="font-medium text-white group-hover:text-amber-300 transition">Edit Display Name</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- Customize Profile -->
+            <button id="btnCustomize" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-palette"></i>
+                </div>
+                <span id="lblCustomizeProfile" class="font-medium text-white group-hover:text-amber-300 transition">Customize Profile</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] bg-purple/15 text-purple border border-purple/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
+                <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              </div>
+            </button>
+
+            <!-- Direct Messages -->
+            <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-comments"></i>
+                </div>
+                <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </button>
+
+            <!-- Premium Passes -->
+            <button id="btnPremium" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-crown"></i>
+                </div>
+                <span id="lblPremiumPasses" class="font-medium text-white group-hover:text-amber-300 transition">Premium Passes</span>
               </div>
               <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
             </button>
@@ -707,17 +743,6 @@ if (typeof tailwind !== 'undefined') {
                   <i class="fas fa-shield-alt"></i>
                 </div>
                 <span class="font-medium text-white group-hover:text-amber-300 transition">Security & Privacy</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Messages / Direct Chat -->
-            <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-comments"></i>
-                </div>
-                <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
               </div>
               <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
             </button>
@@ -9371,10 +9396,26 @@ $('bBell').addEventListener('click', async () => {
 // Button upgrades redirections
 $('gUpgradeBtn').addEventListener('click', () => alert('Exit guest profile, and connect real Google or email ID to save AX earnings!'));
 $('btnEditProfile').addEventListener('click', () => {
-  if ($('btnCustomize')) {
-    $('btnCustomize').click();
-  } else {
-    $('mCustomize').classList.remove('hidden');
+  if (guestProfile) {
+    alert('Connect a full account first to change Display Name!');
+    return;
+  }
+  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+  if (userProfile && userProfile.lastNameChangeAt && (Date.now() - userProfile.lastNameChangeAt < fourteenDaysMs)) {
+    const msLeft = fourteenDaysMs - (Date.now() - userProfile.lastNameChangeAt);
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    alert(`You can change your name only after 14 days! Please wait ${daysLeft} more day(s).`);
+    return;
+  }
+  const currentName = userProfile ? userProfile.name : 'Player';
+  const n = prompt('Enter your new Display Name:', currentName);
+  if (n && n.trim() && userProfile && n.trim() !== userProfile.name) {
+    updateDoc(doc(db, 'users', userProfile.uid), { 
+      name: n.trim(),
+      lastNameChangeAt: Date.now()
+    })
+      .then(() => alert('Name updated successfully!'))
+      .catch(err => alert(err.message));
   }
 });
 
