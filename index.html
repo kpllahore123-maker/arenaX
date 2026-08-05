@@ -593,140 +593,139 @@ if (typeof tailwind !== 'undefined') {
   <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-[80px]">
 
     <!-- ── PROFILE TAB ── -->
-    <section id="tProfile" class="tab space-y-4">
-      <div class="font-display text-xl font-bold flex items-center gap-2">
-        <i class="fas fa-user-circle text-gold"></i> My Profile
+    <section id="tProfile" class="tab space-y-4 max-w-md mx-auto">
+      <!-- Section Title & Top Settings Icon -->
+      <div class="font-display text-xl font-bold flex items-center justify-between text-white px-1">
+        <span class="flex items-center gap-2">
+          <i class="fas fa-user-circle text-amber-400"></i> My Profile
+        </span>
+        <button id="bSettingsTop" class="text-xs text-t2 hover:text-amber-400 transition flex items-center gap-1.5 bg-card/80 hover:bg-card px-2.5 py-1 rounded-lg border border-bdr cursor-pointer">
+          <i class="fas fa-cog"></i> Settings
+        </button>
       </div>
 
-      <div id="profileCard" class="p-4 bg-card border border-bdr rounded-xl flex items-center gap-4 relative overflow-hidden">
-        <div class="relative flex-shrink-0">
-          <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-16 h-16 rounded-full border-2 border-gold"/>
-          <button id="btnChangeAv" class="absolute -bottom-1 -right-1 w-6 h-6 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-[10px] transition">
-            <i class="fas fa-camera"></i>
+      <!-- GOLD PREMIUM PROFILE CARD (Matching Zomato/Mobile style from screenshot) -->
+      <div id="profileCard" class="relative rounded-2xl p-5 overflow-hidden border border-amber-500/35 bg-gradient-to-br from-[#1d1912] via-[#14151a] to-[#0c0d12] shadow-xl shadow-amber-500/5 transition-all">
+        <!-- Subtle Pattern Overlay & Geometric Accents -->
+        <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+
+        <!-- TOP PART: Avatar + User Details -->
+        <div class="relative z-10 flex items-center gap-4">
+          <!-- Avatar Container -->
+          <div class="relative flex-shrink-0">
+            <div class="p-0.5 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 shadow-md shadow-amber-500/20">
+              <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-16 h-16 rounded-full object-cover bg-slate-900"/>
+            </div>
+            <button id="btnChangeAv" title="Change Avatar" class="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition cursor-pointer">
+              <i class="fas fa-camera"></i>
+            </button>
+          </div>
+
+          <!-- User Details -->
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <h3 id="pName" class="font-display text-xl font-bold text-white leading-tight flex items-center gap-1.5 truncate">
+              Player
+            </h3>
+            <p id="pHandle" class="text-xs text-amber-200/80 font-medium truncate">@player#0000</p>
+            
+            <button id="btnViewActivity" class="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer">
+              <span>View activity</span>
+              <i class="fas fa-chevron-right text-[9px]"></i>
+            </button>
+
+            <!-- Badges & Popularity -->
+            <div class="flex flex-wrap gap-1 pt-1">
+              <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded-full border border-neutral-700 uppercase hidden">Guest</span>
+              <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 uppercase hidden">
+                <i class="fas fa-crown mr-1"></i> Premium
+              </span>
+              <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20 uppercase hidden">
+                <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
+              </span>
+              <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-500/15 text-rose-300 rounded-full border border-rose-500/30 uppercase flex items-center gap-1">
+                <img src="heart.png" class="w-3 h-3 object-contain inline-block" alt="Heart"/> <span id="pPopularityVal">0</span>
+              </span>
+            </div>
+            
+            <p id="pBio" class="text-[11px] text-slate-300 italic hidden"></p>
+            <div id="userEarnedBadges" class="flex flex-wrap gap-1 mt-1 w-full"></div>
+          </div>
+        </div>
+
+        <!-- DIVIDER INSIDE CARD -->
+        <div class="relative z-10 border-t border-amber-500/20 my-3.5"></div>
+
+        <!-- BOTTOM BAR INSIDE CARD: Gold Member Status + Offer Pill -->
+        <div class="relative z-10 flex items-center justify-between gap-2">
+          <!-- Gold Member / Status -->
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-xs flex-shrink-0 shadow-inner">
+              <i class="fas fa-crown"></i>
+            </div>
+            <span class="text-sm font-bold text-amber-100 tracking-wide">
+              Gold member
+            </span>
+          </div>
+
+          <!-- Offer / Pass Button Pill -->
+          <button id="bOpenPremium" class="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/10 hover:from-amber-500/30 hover:to-yellow-500/20 border border-amber-400/40 text-amber-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+            <span>1 new offer</span>
+            <i class="fas fa-chevron-right text-[10px]"></i>
           </button>
         </div>
-        <div class="min-w-0 flex-1">
-          <h3 id="pName" class="font-display text-lg font-bold text-white leading-tight flex items-center gap-2">Player</h3>
-          <p id="pHandle" class="text-xs text-t2 mb-1">@player#0000</p>
-          <p id="pBio" class="text-[11px] text-t2 italic mb-2 hidden"></p>
-          
-          <div class="flex flex-wrap gap-1.5">
-            <span class="px-2 py-0.5 text-[9px] font-bold bg-gold/10 text-gold rounded border border-gold/20 uppercase">
-              <i class="fas fa-star mr-1"></i> Unranked
-            </span>
-            <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded border border-neutral-700 uppercase hidden">Guest</span>
-            <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-purple/20 text-purple rounded border border-purple/30 uppercase hidden"><i class="fas fa-crown mr-1"></i> Premium</span>
-            <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 uppercase hidden">
-              <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
-            </span>
-            <!-- Local User Popularity Badge -->
-            <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-500/15 text-rose-400 rounded border border-rose-500/30 uppercase flex items-center gap-1">
-              <img src="heart.png" class="w-3.5 h-3.5 object-contain inline-block" alt="Heart"> Popularity: <span id="pPopularityVal">0</span>
-            </span>
-          </div>
-          <!-- Custom Earned Badges Container -->
-          <div id="userEarnedBadges" class="flex flex-wrap gap-1.5 mt-1.5 w-full"></div>
-        </div>
       </div>
 
-      <!-- PREMIUM PROMO -->
-      <div id="prmPromo" class="p-4 bg-gradient-to-br from-purple/15 to-[#7c3aed]/5 border border-purple/20 rounded-xl flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center text-lg text-purple border border-purple/20 flex-shrink-0">
-            <i class="fas fa-crown"></i>
-          </div>
-          <div>
-            <h4 class="font-bold text-purple text-sm">Go Premium!</h4>
-            <p class="text-[11px] text-t2">Unlock player Direct Messages, customized profiles, and priority queue.</p>
-          </div>
-        </div>
-        <button id="bOpenPremium" class="px-3.5 py-1.5 bg-purple hover:bg-[#8b5cf6] text-white text-xs font-bold rounded-lg transition">Upgrade</button>
-      </div>
+      <!-- Hidden compatibility placeholders for code expectations -->
+      <div id="prmPromo" class="hidden"></div>
+      <div id="pDetailsCard" class="hidden"></div>
+      <div id="statT" class="hidden">0</div>
+      <div id="statW" class="hidden">0</div>
+      <div id="statWR" class="hidden">0%</div>
+      <div id="statB" class="hidden">—</div>
+      <button id="btnCustomize" class="hidden"></button>
+      <button id="btnPremium" class="hidden"></button>
 
-      <!-- STATS -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
-          <div id="statT" class="font-display text-2xl font-bold text-gold">0</div>
-          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Tournaments</div>
-        </div>
-        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
-          <div id="statW" class="font-display text-2xl font-bold text-gold">0</div>
-          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Wins</div>
-        </div>
-        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
-          <div id="statWR" class="font-display text-2xl font-bold text-gold">0%</div>
-          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Win Rate</div>
-        </div>
-        <div class="p-3 bg-card border border-bdr rounded-xl text-center">
-          <div id="statB" class="font-display text-2xl font-bold text-gold">—</div>
-          <div class="text-[10px] uppercase text-t2 tracking-wider mt-0.5">Best Finish</div>
-        </div>
-      </div>
+      <!-- PROFILE SETTINGS BUTTON (Clean mobile row below card) -->
+      <div class="space-y-2.5 pt-1">
+        <button id="btnProfileSettings" class="w-full bg-card hover:bg-slate-800/90 border border-bdr/80 hover:border-amber-500/40 rounded-2xl p-4 flex items-center justify-between transition cursor-pointer shadow-md group">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-base group-hover:bg-amber-500/20 transition">
+              <i class="fas fa-user-cog"></i>
+            </div>
+            <div class="text-left">
+              <h4 id="lblEditDisplayName" class="font-bold text-white text-sm group-hover:text-amber-300 transition">Your profile settings</h4>
+              <p class="text-[11px] text-t2">Display name, avatar, bio & security settings</p>
+            </div>
+          </div>
+          <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white group-hover:translate-x-0.5 transition"></i>
+        </button>
 
+        <!-- Extra Quick Actions (Direct Messages & Sign Out) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <button id="btnPlayerChat" class="bg-card hover:bg-slate-800/90 border border-bdr rounded-2xl p-3 flex items-center justify-between transition cursor-pointer group">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs">
+                <i class="fas fa-comments"></i>
+              </div>
+              <span id="lblDirectMessages" class="text-xs font-semibold text-slate-200 group-hover:text-white">Messages</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2"></i>
+          </button>
 
-      
-      <!-- EXTRA DETAILS -->
-      <div id="pDetailsCard" class="p-4 bg-card border border-bdr rounded-xl space-y-3 hidden">
-        <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold border-b border-bdr/40 pb-1.5 flex items-center gap-1.5">
-          <i class="fas fa-id-card"></i> Game Info & Socials
-        </h4>
-        <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-left">
-          <div id="pDetailCountryContainer" class="hidden">
-            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Country / Region</span>
-            <span id="pDetailCountry" class="text-white font-bold flex items-center gap-1.5 mt-0.5">🌍 Other</span>
-          </div>
-          <div id="pDetailFavGameContainer" class="hidden">
-            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Favorite Game</span>
-            <span id="pDetailFavGame" class="text-white font-bold mt-0.5">None</span>
-          </div>
-          <div id="pDetailGameUIDContainer" class="hidden">
-            <span class="text-t3 block text-[9px] uppercase tracking-wider font-semibold">Game UID / IGN</span>
-            <span id="pDetailGameUID" class="text-gold font-mono font-extrabold mt-0.5">None</span>
-          </div>
-        </div>
-        
-        <!-- Social badges -->
-        <div id="pDetailSocials" class="flex flex-wrap gap-2 pt-2 border-t border-bdr/20 hidden">
-          <a id="pSocialDiscord" href="#" target="_blank" class="px-2.5 py-1 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
-            <i class="fab fa-discord"></i> <span id="pSocialDiscordText">username</span>
-          </a>
-          <a id="pSocialInstagram" href="#" target="_blank" class="px-2.5 py-1 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] border border-[#E1306C]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
-            <i class="fab fa-instagram"></i> <span id="pSocialInstagramText">handle</span>
-          </a>
-          <a id="pSocialYoutube" href="#" target="_blank" class="px-2.5 py-1 bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000] border border-[#FF0000]/20 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition hidden">
-            <i class="fab fa-youtube"></i> YouTube
-          </a>
+          <button id="bLogout" class="bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer group">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-xs">
+                <i class="fas fa-sign-out-alt"></i>
+              </div>
+              <span id="lblSignOut" class="text-xs font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-rose-400/60"></i>
+          </button>
         </div>
       </div>
-
-      <!-- ACCOUNT NAVIGATION -->
-      <div class="bg-card border border-bdr rounded-xl divide-y divide-bdr overflow-hidden">
-        <div id="lblAccNavHeader" class="px-4 py-2.5 text-[10px] font-semibold text-t2 uppercase tracking-wider bg-panel/50">Account Navigation</div>
-        
-        <button id="btnEditProfile" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-pen text-gold w-4"></i> <span id="lblEditDisplayName">Edit Display Name</span></span>
-          <i class="fas fa-chevron-right text-xs"></i>
-        </button>
-        <button id="btnCustomize" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-palette text-gold w-4"></i> <span id="lblCustomizeProfile">Customize Profile</span></span>
-          <span class="flex items-center gap-2">
-            <span class="text-[9px] bg-purple/15 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium</span>
-            <i class="fas fa-chevron-right text-xs"></i>
-          </span>
-        </button>
-        <button id="btnPlayerChat" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-comments text-gold w-4"></i> <span id="lblDirectMessages">Direct Messages</span></span>
-          <i class="fas fa-chevron-right text-xs"></i>
-        </button>
-        <button id="btnPremium" class="w-full text-left px-4 py-3 hover:bg-ele text-sm flex items-center justify-between text-t2 hover:text-white transition">
-          <span class="flex items-center gap-3"><i class="fas fa-crown text-gold w-4"></i> <span id="lblPremiumPasses">Premium Passes</span></span>
-          <i class="fas fa-chevron-right text-xs"></i>
-        </button>
-        <button id="bLogout" class="w-full text-left px-4 py-3 hover:bg-red/10 text-sm flex items-center justify-between text-red transition">
-          <span class="flex items-center gap-3"><i class="fas fa-sign-out-alt w-4"></i> <span id="lblSignOut">Sign Out</span></span>
-          <i class="fas fa-chevron-right text-xs"></i>
-        </button>
-      </div>
+      <!-- Hidden legacy button for name edit handler hook -->
+      <button id="btnEditProfile" class="hidden"></button>
     </section>
 
     <section id="tTour" class="tab space-y-4 hidden">
@@ -9436,6 +9435,30 @@ window.addEventListener('appinstalled', (event) => {
 });
 
 // Settings Modal Triggers
+if ($('bSettingsTop')) {
+  $('bSettingsTop').addEventListener('click', () => {
+    $('mSettings').classList.remove('hidden');
+    if (typeof window.updateDiagnosticUI === 'function') {
+      window.updateDiagnosticUI();
+    }
+  });
+}
+if ($('btnProfileSettings')) {
+  $('btnProfileSettings').addEventListener('click', () => {
+    $('mSettings').classList.remove('hidden');
+    if (typeof window.updateDiagnosticUI === 'function') {
+      window.updateDiagnosticUI();
+    }
+  });
+}
+if ($('btnViewActivity')) {
+  $('btnViewActivity').addEventListener('click', () => {
+    const prof = userProfile || guestProfile;
+    if (prof && prof.uid && typeof window.openPlayerProfileCard === 'function') {
+      window.openPlayerProfileCard(prof.uid);
+    }
+  });
+}
 $('bSettings').addEventListener('click', () => {
   $('mSettings').classList.remove('hidden');
   if (typeof window.updateDiagnosticUI === 'function') {
