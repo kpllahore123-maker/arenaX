@@ -681,180 +681,6 @@ if (typeof tailwind !== 'undefined') {
       <div id="statB" class="hidden">—</div>
       <button id="btnProfileSettings" class="hidden"></button>
 
-      <!-- PROFILE & SETTINGS SECTIONS -->
-      <div class="space-y-4 pt-1">
-
-        <!-- ACCOUNT SECTION -->
-        <div class="space-y-1.5">
-          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Account</div>
-          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
-            
-            <!-- Edit Display Name -->
-            <button id="btnEditProfile" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-pen"></i>
-                </div>
-                <span id="lblEditDisplayName" class="font-medium text-white group-hover:text-amber-300 transition">Edit Display Name</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Customize Profile -->
-            <button id="btnCustomize" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-palette"></i>
-                </div>
-                <span id="lblCustomizeProfile" class="font-medium text-white group-hover:text-amber-300 transition">Customize Profile</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[9px] bg-purple/15 text-purple border border-purple/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
-                <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-              </div>
-            </button>
-
-            <!-- Direct Messages -->
-            <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-comments"></i>
-                </div>
-                <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Premium Passes -->
-            <button id="btnPremium" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-crown"></i>
-                </div>
-                <span id="lblPremiumPasses" class="font-medium text-white group-hover:text-amber-300 transition">Premium Passes</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Security & Privacy -->
-            <button id="btnProfileSecurity" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-shield-alt"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Security & Privacy</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-          </div>
-        </div>
-
-        <!-- PREFERENCES SECTION -->
-        <div class="space-y-1.5">
-          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Preferences</div>
-          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
-            
-            <!-- Notifications -->
-            <button id="btnProfileNotifications" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-bell"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Notifications</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Dark Mode Toggle -->
-            <div class="w-full px-4 py-3.5 text-sm flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-moon"></i>
-                </div>
-                <span class="font-medium text-white">Dark Mode</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-amber-400 font-semibold">Dark</span>
-                <label class="relative inline-flex items-center cursor-pointer select-none">
-                  <input type="checkbox" checked disabled class="sr-only peer" />
-                  <div class="w-9 h-5 bg-amber-500 rounded-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-slate-950 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Language -->
-            <button id="btnProfileLanguage" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-globe"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Language</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span id="pLangVal" class="text-xs text-t2 font-medium">English</span>
-                <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-              </div>
-            </button>
-
-          </div>
-        </div>
-
-        <!-- SUPPORT SECTION -->
-        <div class="space-y-1.5">
-          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Support</div>
-          <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
-            
-            <!-- Help Center -->
-            <button id="btnProfileHelp" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-question-circle"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Help Center</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- Terms & Policies -->
-            <button id="btnProfileTerms" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-book"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">Terms & Policies</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-            <!-- About Us -->
-            <button id="btnProfileAbout" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                  <i class="fas fa-info-circle"></i>
-                </div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition">About Us</span>
-              </div>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
-            </button>
-
-          </div>
-        </div>
-
-        <!-- SIGN OUT BUTTON -->
-        <div class="pt-2">
-          <button id="bLogout" class="w-full bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-md">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
-                <i class="fas fa-sign-out-alt"></i>
-              </div>
-              <span id="lblSignOut" class="text-sm font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
-            </div>
-            <i class="fas fa-chevron-right text-xs text-rose-400/60"></i>
-          </button>
-        </div>
-
-      </div>
     </section>
 
     <section id="tTour" class="tab space-y-4 hidden">
@@ -2727,104 +2553,270 @@ if (typeof tailwind !== 'undefined') {
 
 <!-- ==================== SETTINGS MODAL ==================== -->
 <div id="mSettings" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden animate-fade-in">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
-    <div class="flex items-center justify-between border-b border-bdr/40 pb-3">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[440px] w-full max-h-[88vh] flex flex-col space-y-4 shadow-2xl">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg">
+        <div class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center text-amber-400 text-lg">
           <i class="fas fa-cog"></i>
         </div>
-        <h3 class="font-display text-xl font-bold text-white">ArenaX Settings</h3>
-      </div>
-      <button id="bCloseSettingsCross" class="text-t3 hover:text-white transition"><i class="fas fa-times"></i></button>
-    </div>
-
-    <!-- Notification Settings -->
-    <div class="space-y-3">
-      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Notification Preferences</h4>
-      <div class="space-y-2">
-        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
-          <div class="flex flex-col">
-            <span class="text-xs font-semibold text-white">Announcement Alerts</span>
-            <span class="text-[9px] text-t3">Real-time alerts for system announcements</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input id="setNotifAnnounce" type="checkbox" checked class="sr-only peer" />
-            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
-          </label>
-        </div>
-
-        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
-          <div class="flex flex-col">
-            <span class="text-xs font-semibold text-white">Friend Request Alerts</span>
-            <span class="text-[9px] text-t3">Alerts when someone sends a friend request</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input id="setNotifFriends" type="checkbox" checked class="sr-only peer" />
-            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
-          </label>
-        </div>
-
-        <div class="flex items-center justify-between p-3 bg-card border border-bdr rounded-xl">
-          <div class="flex flex-col">
-            <span class="text-xs font-semibold text-white">Tournament Updates</span>
-            <span class="text-[9px] text-t3">Get alerts about event brackets & slots</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input id="setNotifTours" type="checkbox" checked class="sr-only peer" />
-            <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold"></div>
-          </label>
+        <div>
+          <h3 class="font-display text-xl font-bold text-white leading-none">ArenaX Settings</h3>
+          <p class="text-[10px] text-t3 mt-1">Manage your account, preferences & support</p>
         </div>
       </div>
+      <button id="bCloseSettingsCross" class="text-t3 hover:text-white transition p-1.5 cursor-pointer"><i class="fas fa-times text-base"></i></button>
     </div>
 
-    <!-- Language Selection -->
-    <div class="space-y-3">
-      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">App Language / زبان منتخب کریں</h4>
-      <div class="flex gap-2">
-        <button id="btnSettingsLangEn" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-lg text-xs font-semibold transition hover:border-gold/50 flex items-center justify-center gap-1.5 cursor-pointer">
-          🇺🇸 English
-        </button>
-        <button id="btnSettingsLangUr" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-lg text-xs font-semibold transition hover:border-gold/50 flex items-center justify-center gap-1.5 cursor-pointer">
-          🇵🇰 Urdu / Roman Urdu (اردو)
-        </button>
-      </div>
-    </div>
+    <!-- Modal Body (Scrollable Container) -->
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
 
-    <!-- Legal Documents -->
-    <div class="space-y-3">
-      <h4 class="text-[10px] uppercase tracking-wider text-t3 font-bold">Legal Agreements</h4>
-      <div class="grid grid-cols-2 gap-2">
-        <button id="bViewTerms" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
-          <i class="fas fa-file-contract text-gold/80"></i> Terms & Conditions
-        </button>
-        <button id="bViewPrivacy" class="py-2.5 bg-card hover:bg-card/80 border border-bdr text-t2 hover:text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
-          <i class="fas fa-user-shield text-gold/80"></i> Privacy Policy
-        </button>
-      </div>
-    </div>
-
-    <!-- Redeem Promo Code -->
-    <div class="space-y-3 border-t border-bdr/40 pt-3">
-      <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold flex items-center gap-1.5">
-        <i class="fas fa-ticket-alt"></i> Redeem Promo Code
-      </h4>
-      <div class="space-y-2.5 bg-card border border-bdr p-3 rounded-xl text-xs">
-        <p class="text-[10px] text-t3 leading-normal">
-          Enter an active promo code below to claim exclusive AX Coins instantly credited to your wallet balance.
-        </p>
-        <div class="flex gap-2">
-          <input id="inpPromoCode" type="text" placeholder="e.g. WELCOME50" class="flex-1 bg-bg border border-bdr text-xs px-3 py-2 rounded-lg text-white font-mono uppercase tracking-wider focus:outline-none focus:border-gold/50" />
-          <button id="btnRedeemPromo" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-            Apply
+      <!-- ACCOUNT SECTION -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <i class="fas fa-user-circle"></i> Account
+        </div>
+        <div class="bg-card border border-bdr/80 rounded-xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+          
+          <!-- Edit Display Name -->
+          <button id="btnEditProfile" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-pen"></i>
+              </div>
+              <span id="lblEditDisplayName" class="font-medium text-white group-hover:text-amber-300 transition">Edit Display Name</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
           </button>
+
+          <!-- Customize Profile -->
+          <button id="btnCustomize" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-palette"></i>
+              </div>
+              <span id="lblCustomizeProfile" class="font-medium text-white group-hover:text-amber-300 transition">Customize Profile</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[8px] bg-purple/15 text-purple border border-purple/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
+              <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+            </div>
+          </button>
+
+          <!-- Direct Messages -->
+          <button id="btnPlayerChat" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-comments"></i>
+              </div>
+              <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Premium Passes -->
+          <button id="btnPremium" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-crown"></i>
+              </div>
+              <span id="lblPremiumPasses" class="font-medium text-white group-hover:text-amber-300 transition">Premium Passes</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Security & Privacy -->
+          <button id="btnProfileSecurity" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">Security & Privacy</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
         </div>
-        <div id="promoMsg" class="hidden text-[10px] p-2.5 rounded-lg border leading-normal mt-2"></div>
       </div>
+
+      <!-- PREFERENCES SECTION -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <i class="fas fa-sliders-h"></i> Preferences
+        </div>
+        <div class="bg-card border border-bdr/80 rounded-xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+          
+          <!-- Notifications -->
+          <button id="btnProfileNotifications" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-bell"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">Notification Preferences</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Notification Toggles Box -->
+          <div class="p-3 bg-bg/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-white">Announcement Alerts</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="setNotifAnnounce" type="checkbox" checked class="sr-only peer" />
+                <div class="w-8 h-4 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-400"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-white">Friend Request Alerts</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="setNotifFriends" type="checkbox" checked class="sr-only peer" />
+                <div class="w-8 h-4 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-400"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-white">Tournament Updates</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="setNotifTours" type="checkbox" checked class="sr-only peer" />
+                <div class="w-8 h-4 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-400"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dark Mode Toggle -->
+          <div class="w-full px-3.5 py-3 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-moon"></i>
+              </div>
+              <span class="font-medium text-white">Dark Mode</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-amber-400 font-semibold">Dark</span>
+              <label class="relative inline-flex items-center cursor-pointer select-none">
+                <input type="checkbox" checked disabled class="sr-only peer" />
+                <div class="w-8 h-4 bg-amber-500 rounded-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[1px] after:right-[1px] after:bg-slate-950 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Language -->
+          <button id="btnProfileLanguage" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-globe"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">App Language</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="pLangVal" class="text-xs text-t2 font-medium">English</span>
+              <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+            </div>
+          </button>
+
+          <div class="p-2.5 bg-bg/40 flex gap-2">
+            <button id="btnSettingsLangEn" class="flex-1 py-1.5 px-2 bg-card border border-bdr text-white rounded-lg text-[11px] font-semibold transition hover:border-amber-400/50 flex items-center justify-center gap-1 cursor-pointer">
+              🇺🇸 English
+            </button>
+            <button id="btnSettingsLangUr" class="flex-1 py-1.5 px-2 bg-card border border-bdr text-white rounded-lg text-[11px] font-semibold transition hover:border-amber-400/50 flex items-center justify-center gap-1 cursor-pointer">
+              🇵🇰 Urdu / Roman Urdu
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SUPPORT SECTION -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <i class="fas fa-headset"></i> Support & Legal
+        </div>
+        <div class="bg-card border border-bdr/80 rounded-xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+          
+          <!-- Help Center -->
+          <button id="btnProfileHelp" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-question-circle"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">Help Center / Support</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Terms & Policies -->
+          <button id="btnProfileTerms" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-book"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">Terms & Conditions</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Privacy Policy -->
+          <button id="bViewPrivacy" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-user-shield"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">Privacy Policy</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- About Us / Patch Notes -->
+          <button id="btnProfileAbout" class="w-full px-3.5 py-3 hover:bg-slate-800/80 text-xs flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fas fa-info-circle"></i>
+              </div>
+              <span class="font-medium text-white group-hover:text-amber-300 transition">About Us / Patch Notes</span>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-t2 group-hover:text-white transition"></i>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- REDEEM PROMO CODE SECTION -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <i class="fas fa-ticket-alt"></i> Redeem Promo Code
+        </div>
+        <div class="space-y-2 bg-card border border-bdr/80 p-3 rounded-xl text-xs shadow-md">
+          <p class="text-[10px] text-t3 leading-normal">
+            Enter an active promo code below to claim exclusive AX Coins instantly credited to your wallet balance.
+          </p>
+          <div class="flex gap-2">
+            <input id="inpPromoCode" type="text" placeholder="e.g. WELCOME50" class="flex-1 bg-bg border border-bdr text-xs px-3 py-2 rounded-lg text-white font-mono uppercase tracking-wider focus:outline-none focus:border-amber-400/50" />
+            <button id="btnRedeemPromo" class="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-lg transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+              Apply
+            </button>
+          </div>
+          <div id="promoMsg" class="hidden text-[10px] p-2.5 rounded-lg border leading-normal mt-2"></div>
+        </div>
+      </div>
+
+      <!-- SIGN OUT BUTTON -->
+      <div class="pt-2">
+        <button id="bLogout" class="w-full bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-xl p-3 flex items-center justify-between transition cursor-pointer group shadow-md text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-xs">
+              <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <span id="lblSignOut" class="text-xs font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
+          </div>
+          <i class="fas fa-chevron-right text-[10px] text-rose-400/60"></i>
+        </button>
+      </div>
+
     </div>
 
-    <div class="flex gap-2 border-t border-bdr/40 pt-3">
-      <button id="bSaveSettings" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition">Save Settings</button>
-      <button id="bCloseSettings" class="flex-1 py-2.5 bg-ele hover:bg-card border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Close</button>
+    <!-- Modal Footer -->
+    <div class="flex gap-2 border-t border-bdr/40 pt-3 flex-shrink-0">
+      <button id="bSaveSettings" class="flex-1 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-lg transition cursor-pointer">Save Settings</button>
+      <button id="bCloseSettings" class="flex-1 py-2 bg-ele hover:bg-card border border-bdr text-t2 hover:text-white text-xs font-semibold rounded-lg transition cursor-pointer">Close</button>
     </div>
   </div>
 </div>
