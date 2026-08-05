@@ -9267,25 +9267,10 @@ $('bBell').addEventListener('click', async () => {
 // Button upgrades redirections
 $('gUpgradeBtn').addEventListener('click', () => alert('Exit guest profile, and connect real Google or email ID to save AX earnings!'));
 $('btnEditProfile').addEventListener('click', () => {
-  if (guestProfile) {
-    alert('Connect a full account first to change Display Name!');
-    return;
-  }
-  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-  if (userProfile.lastNameChangeAt && (Date.now() - userProfile.lastNameChangeAt < fourteenDaysMs)) {
-    const msLeft = fourteenDaysMs - (Date.now() - userProfile.lastNameChangeAt);
-    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
-    alert(`You can change your name only after 14 days! Please wait ${daysLeft} more day(s).`);
-    return;
-  }
-  const n = prompt('Enter your new Display Name:', userProfile.name);
-  if (n && n.trim() && n.trim() !== userProfile.name) {
-    updateDoc(doc(db, 'users', userProfile.uid), { 
-      name: n.trim(),
-      lastNameChangeAt: Date.now()
-    })
-      .then(() => alert('Name updated successfully!'))
-      .catch(err => alert(err.message));
+  if ($('btnCustomize')) {
+    $('btnCustomize').click();
+  } else {
+    $('mCustomize').classList.remove('hidden');
   }
 });
 
@@ -9445,9 +9430,10 @@ if ($('bSettingsTop')) {
 }
 if ($('btnProfileSettings')) {
   $('btnProfileSettings').addEventListener('click', () => {
-    $('mSettings').classList.remove('hidden');
-    if (typeof window.updateDiagnosticUI === 'function') {
-      window.updateDiagnosticUI();
+    if ($('btnCustomize')) {
+      $('btnCustomize').click();
+    } else {
+      $('mCustomize').classList.remove('hidden');
     }
   });
 }
