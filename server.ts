@@ -3,12 +3,24 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { 
+  initializeDiscordBot, 
+  botLogs, 
+  botStats, 
+  getBotConfig, 
+  saveBotConfig 
+} from "./discord-bot";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+  // Initialize Discord Bot
+  initializeDiscordBot().catch((err) => {
+    console.error("Failed to initialize Discord Bot on startup:", err);
+  });
 
   app.use(express.json());
 
@@ -69,10 +81,10 @@ CRITICAL INSTRUCTIONS:
 Be human-like, supportive, and extremely clear.`;
 
       // Map history to Gemini format
-      const contents: any[] = [];
+      const rawContents: any[] = [];
       if (Array.isArray(history)) {
         history.slice(-10).forEach((h: any) => {
-          contents.push({
+          rawContents.push({
             role: h.role === 'user' ? 'user' : 'model',
             parts: [{ text: h.text }]
           });
@@ -80,10 +92,26 @@ Be human-like, supportive, and extremely clear.`;
       }
 
       // Add the latest message
-      contents.push({
+      rawContents.push({
         role: "user",
         parts: [{ text: message }]
       });
+
+      // Merge consecutive turns with the same role and ensure first turn is user
+      const contents: any[] = [];
+      rawContents.forEach((turn) => {
+        if (contents.length > 0 && contents[contents.length - 1].role === turn.role) {
+          // Merge text with the previous turn
+          contents[contents.length - 1].parts[0].text += "\n" + turn.parts[0].text;
+        } else {
+          contents.push(turn);
+        }
+      });
+
+      // Ensure the first turn is 'user'
+      while (contents.length > 0 && contents[0].role === 'model') {
+        contents.shift();
+      }
 
       // Query Gemini
       const response = await ai.models.generateContent({
@@ -100,6 +128,50 @@ Be human-like, supportive, and extremely clear.`;
     } catch (error: any) {
       console.error("Gemini Support Chat Error:", error);
       res.status(500).json({ error: error.message || "An internal error occurred." });
+    }
+  });
+
+  // --- DISCORD BOT API ENDPOINTS ---
+  app.get("/api/discord-bot/status", (req, res) => {
+    res.json({
+      stats: botStats,
+      config: getBotConfig()
+    });
+  });
+
+  app.get("/api/discord-bot/logs", (req, res) => {
+    res.json({ logs: botLogs });
+  });
+
+  app.post("/api/discord-bot/config", (req, res) => {
+    try {
+      const { prefix, systemInstruction, temperature } = req.body;
+      const updated = saveBotConfig({
+        prefix,
+        systemInstruction,
+        temperature: Number(temperature)
+      });
+      res.json({ success: true, config: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/discord-bot/restart", async (req, res) => {
+    try {
+      const { token, geminiKey } = req.body;
+      if (token) {
+        process.env.DISCORD_TOKEN = token;
+      }
+      if (geminiKey) {
+        process.env.GEMINI_API_KEY = geminiKey;
+      }
+      
+      // Re-initialize the bot
+      await initializeDiscordBot();
+      res.json({ success: true, stats: botStats });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
