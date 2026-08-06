@@ -9,7 +9,7 @@ import {
   botStats, 
   getBotConfig, 
   saveBotConfig 
-} from "./discord-bot";
+} from "./discord-bot.ts";
 
 dotenv.config();
 
