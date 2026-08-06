@@ -44,6 +44,27 @@ window.getAppBasePath = function() {
   if (faviconLink) faviconLink.href = basePath + 'favicon.ico';
 })();
 
+// Global Asset & Lottie Path Resolver
+document.addEventListener('DOMContentLoaded', () => {
+  const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+  
+  // Resolve lottie-player src attributes to ensure instant loading
+  document.querySelectorAll('lottie-player').forEach(player => {
+    let src = player.getAttribute('src');
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
+      player.setAttribute('src', basePath + src);
+    }
+  });
+
+  // Ensure img elements resolve local paths properly
+  document.querySelectorAll('img').forEach(img => {
+    let src = img.getAttribute('src');
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
+      img.setAttribute('src', basePath + src);
+    }
+  });
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // Force-delete older caches on startup to prevent stale pages in dev preview
@@ -448,7 +469,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
     <div class="flex flex-col items-center gap-1 pt-2">
       <!-- Lottie Animation Loader placed in the loading progress area --> 
-       <lottie-player src="loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
+       <lottie-player src="./loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px;" loop autoplay class="mx-auto"></lottie-player>  
   <span class="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest font-mono animate-pulse">Entering Arena...</span>  
 </div>
 
@@ -1008,7 +1029,7 @@ if (typeof tailwind !== 'undefined') {
             <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
           </div>
           <div class="w-full md:w-64 h-36 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10 relative overflow-hidden">
-            <lottie-player src="animation.json" background="transparent" speed="1.0" style="width: 240px; height: 160px;" loop autoplay></lottie-player>
+            <lottie-player src="./animation.json" background="transparent" speed="1.0" style="width: 240px; height: 160px;" loop autoplay></lottie-player>
           </div>
         </div>
 
@@ -1258,7 +1279,7 @@ if (typeof tailwind !== 'undefined') {
     <section id="tSubmission" class="tab space-y-6 hidden pb-20">
       <!-- Top Video Banner -->
       <div class="relative w-full max-w-[1335px] mx-auto rounded-2xl overflow-hidden border border-orange-500/30 shadow-[0_0_25px_rgba(239,104,10,0.2)] bg-black/40">
-        <video id="narutoVideo" class="w-full h-[220px] sm:h-[300px] md:h-[400px] object-cover pointer-events-none" autoplay loop muted playsinline>
+        <video id="narutoVideo" class="w-full h-[220px] sm:h-[300px] md:h-[400px] object-cover pointer-events-none" autoplay loop muted playsinline poster="under_development_1782817800106.jpg">
           <source src="naruto.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
@@ -1662,9 +1683,8 @@ if (typeof tailwind !== 'undefined') {
   <div id="crateVideoContainer" class="relative w-full max-w-[720px] aspect-video bg-[#080912] rounded-3xl border-2 border-gold/50 shadow-[0_0_80px_rgba(240,192,64,0.35)] overflow-hidden flex items-center justify-center">
     
     <!-- Video Player for crate.mp4 -->
-    <video id="vCrateVideo" class="w-full h-full object-cover" playsinline preload="auto">
+    <video id="vCrateVideo" class="w-full h-full object-cover" playsinline preload="auto" poster="website_under_dev_1782818353395.jpg">
       <source src="crate.mp4" type="video/mp4" />
-      <source src="public/crate.mp4" type="video/mp4" />
     </video>
 
     <!-- Fallback Animation (If crate.mp4 fails or while opening) -->
@@ -1904,187 +1924,306 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- ==================== SUPPORT SIDE DRAWER ==================== -->
-<!-- Drawer Backdrop -->
-<div id="mSupportDrawerBackdrop" class="fixed inset-0 bg-black/75 z-[240] hidden opacity-0 transition-opacity duration-300"></div>
+<!-- ==================== SUPPORT FULL PAGE OVERLAY ==================== -->
+<!-- Backdrop -->
+<div id="mSupportDrawerBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[240] hidden opacity-0 transition-opacity duration-300"></div>
 
-<!-- Drawer Panel (occupies less than half screen: w-[410px]) -->
-<div id="dSupportDrawer" class="fixed inset-y-0 right-0 w-[410px] max-w-[85vw] h-full bg-[#0d0f1a]/95 backdrop-blur-md border-l border-bdr shadow-[0_0_50px_rgba(0,0,0,0.85)] z-[250] transform translate-x-full transition-transform duration-300 flex flex-col hidden">
-  <!-- Drawer Header -->
-  <div class="p-4 border-b border-bdr flex items-center justify-between bg-card/50 flex-shrink-0">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs">
-        <i class="fas fa-headset"></i>
-      </div>
+<!-- Full Page Panel -->
+<div id="dSupportDrawer" class="fixed inset-0 w-full h-full bg-[#080a14] z-[250] flex flex-col hidden opacity-0 transition-all duration-300 overflow-hidden">
+  <!-- Top Navigation Header -->
+  <div id="dSupportMainHeader" class="px-4 py-3 bg-[#0c0e1c]/90 border-b border-white/10 flex items-center justify-between flex-shrink-0 z-20 backdrop-blur-md">
+    <div class="flex items-center gap-3">
+      <button id="bCloseSupportDrawer" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white transition flex items-center justify-center cursor-pointer text-sm">
+        <i class="fas fa-arrow-left"></i>
+      </button>
       <div>
-        <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">ArenaX Help Desk</h3>
-        <p class="text-[9px] text-t3">Live Chat, Cheater Ban & Support</p>
+        <h3 class="font-display text-xs sm:text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          ArenaX Support Center
+        </h3>
+        <p class="text-[9px] sm:text-[10px] text-slate-400 font-medium">Live Chat, Cheater Ban & Support</p>
       </div>
     </div>
-    <button id="bCloseSupportDrawer" class="w-8 h-8 rounded-full bg-white/5 hover:bg-red/20 hover:text-red text-t3 transition flex items-center justify-center cursor-pointer text-xs">
-      <i class="fas fa-times"></i>
+
+    <!-- Top Navigation Tabs (Desktop Pill style) -->
+    <div class="hidden sm:flex bg-[#070810] border border-white/10 rounded-full p-1 gap-1">
+      <button id="bSubSlabSupport" class="sub-slab-btn px-3 py-1.5 rounded-full text-xs font-bold text-slate-950 bg-amber-400 transition flex items-center gap-1.5 cursor-pointer">
+        <i class="fas fa-comments"></i> Live Chat
+      </button>
+      <button id="bSubSlabRating" class="sub-slab-btn px-3 py-1.5 rounded-full text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+        <i class="fas fa-star text-amber-400"></i> Rate Us
+      </button>
+      <button id="bSubSlabRedReport" class="sub-slab-btn px-3 py-1.5 rounded-full text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+        <i class="fas fa-flag-checkered text-red-500"></i> Red Report
+      </button>
+      <button id="bSubSlabFAQ" class="sub-slab-btn px-3 py-1.5 rounded-full text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+        <i class="fas fa-info-circle text-blue-400"></i> FAQ
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="alert('ArenaX Support Center v2.5 - 24/7 Live Assistance Enabled')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 transition flex items-center justify-center text-xs cursor-pointer">
+        <i class="fas fa-cog"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Tab Bar (Visible on smaller screens) -->
+  <div id="dSupportMobileTabs" class="sm:hidden flex bg-[#0c0e1c] border-b border-white/10 p-1.5 w-full flex-shrink-0 gap-1 overflow-x-auto">
+    <button id="bSubSlabSupportMob" onclick="switchSupportSubSlab('Support')" class="sub-slab-btn flex-1 py-1.5 px-2 text-center rounded-lg text-[11px] font-bold text-slate-950 bg-amber-400 transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap">
+      <i class="fas fa-comments"></i> Live Chat
+    </button>
+    <button id="bSubSlabRatingMob" onclick="switchSupportSubSlab('Rating')" class="sub-slab-btn flex-1 py-1.5 px-2 text-center rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap">
+      <i class="fas fa-star text-amber-400"></i> Rate Us
+    </button>
+    <button id="bSubSlabRedReportMob" onclick="switchSupportSubSlab('RedReport')" class="sub-slab-btn flex-1 py-1.5 px-2 text-center rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap">
+      <i class="fas fa-flag-checkered text-red-500"></i> Red Report
+    </button>
+    <button id="bSubSlabFAQMob" onclick="switchSupportSubSlab('FAQ')" class="sub-slab-btn flex-1 py-1.5 px-2 text-center rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap">
+      <i class="fas fa-info-circle text-blue-400"></i> FAQ
     </button>
   </div>
 
-  <!-- Drawer Body (Scrollable container for our 3-slab layout) -->
-  <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-    <!-- 3 Slab Selector -->
-    <div class="flex bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full flex-shrink-0">
-      <button id="bSubSlabSupport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-bg bg-gold transition flex items-center justify-center gap-1.5 cursor-pointer">
-        <i class="fas fa-comments"></i> Support
-      </button>
-      <button id="bSubSlabRedReport" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
-        <i class="fas fa-flag-checkered text-red"></i> Red Report
-      </button>
-      <button id="bSubSlabFAQ" class="sub-slab-btn flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
-        <i class="fas fa-info-circle"></i> FAQ Guide
-      </button>
-    </div>
+  <!-- Main Scrollable Body Container -->
+  <div class="flex-1 overflow-y-auto min-h-0 bg-[#080a14] flex flex-col">
+    <!-- Live Support Content -->
+    <div id="dSupportChatContent" class="h-full flex-1 flex flex-col">
+      
+      <!-- 1. Live Chat Intro View (Matching user's reference image!) -->
+      <div id="dSupportIntroView" class="max-w-md mx-auto w-full flex-1 p-6 flex flex-col items-center justify-between text-center space-y-6">
+        
+        <div class="w-full flex flex-col items-center space-y-5 my-auto">
+          <!-- Animated Video Sticker (help.mp4) -->
+          <div class="relative w-full max-w-[320px] sm:max-w-[360px] rounded-3xl overflow-hidden border-2 border-amber-500/30 shadow-[0_0_45px_rgba(240,192,64,0.2)] bg-white flex items-center justify-center group p-1.5 min-h-[200px]">
+            <video id="vHelpSupportSticker" class="w-full h-auto max-h-[280px] object-contain rounded-2xl" autoplay loop muted playsinline poster="website_under_dev_1782818353395.jpg">
+              <source src="help.mp4" type="video/mp4" />
+              <source src="public/help.mp4" type="video/mp4" />
+            </video>
+            <!-- Subtle glow ring overlay -->
+            <div class="absolute inset-0 ring-1 ring-inset ring-amber-400/20 rounded-3xl pointer-events-none"></div>
+          </div>
 
-    <!-- Live Support Chat Slab content -->
-    <div id="dSupportChatContent" class="space-y-4">
-      <div class="font-display text-[11px] font-extrabold uppercase tracking-wider text-t2 flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Support System
-      </div>
+          <!-- Live Chat Title & Subtitle -->
+          <div class="space-y-1.5">
+            <h2 class="font-display text-2xl sm:text-3xl font-black text-white tracking-tight">Live Chat</h2>
+            <p class="text-xs sm:text-sm text-slate-400 font-medium">Chat with our live representative.</p>
+          </div>
 
-      <div id="sLock" class="p-6 bg-card border border-bdr rounded-xl text-center space-y-3 hidden">
-        <i class="fas fa-lock text-t3 text-3xl"></i>
-        <p class="text-xs text-t2">Live support chat not available for Guest accounts.</p>
-        <button class="px-4 py-2 bg-gold text-bg font-bold rounded-lg text-xs" onclick="alert('Authenticate a full profile to access real-time live support chat.')">Link Account</button>
-      </div>
+          <!-- Reply time badge -->
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs font-semibold shadow-inner">
+            <i class="far fa-clock text-amber-400 text-sm"></i>
+            <span>~5 min reply time</span>
+          </div>
 
-      <div id="chatBox" class="bg-card border border-bdr rounded-2xl flex flex-col h-[380px] overflow-hidden">
-        <!-- Support Header / Status Bar -->
-        <div id="chatStatusHeader" class="bg-ele/40 border-b border-bdr/40 px-3 py-2 flex items-center justify-between text-[10px] font-bold flex-shrink-0">
-          <span id="supportStatusLabel" class="text-t2 flex items-center gap-1.5">
-            <span id="statusIndicatorDot" class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-            <span id="statusIndicatorText">AI Chatbot Active</span>
-          </span>
-          <button id="bConnectAdmin" class="px-2.5 py-1 bg-red hover:bg-[#cc3540] text-white text-[9px] font-black rounded-lg transition flex items-center gap-1 cursor-pointer">
-            <i class="fas fa-headset"></i> 🔴 Connect with Admin
-          </button>
-          <button id="bEndChat" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-t2 hover:text-white text-[9px] font-bold rounded-lg transition flex items-center gap-1 cursor-pointer hidden">
-            <i class="fas fa-times-circle"></i> End Session
-          </button>
+          <!-- Representative Avatars Stack -->
+          <div class="flex items-center justify-center gap-2.5 pt-1">
+            <div class="flex -space-x-3 overflow-hidden p-0.5">
+              <img class="inline-block h-10 w-10 rounded-full ring-2 ring-[#080a14] object-cover bg-slate-800" src="https://api.dicebear.com/7.x/bottts/svg?seed=support1" alt="Support Agent 1" />
+              <img class="inline-block h-10 w-10 rounded-full ring-2 ring-[#080a14] object-cover bg-slate-800" src="https://api.dicebear.com/7.x/bottts/svg?seed=support2" alt="Support Agent 2" />
+              <div class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-black text-xs ring-2 ring-[#080a14] shadow-md">HS</div>
+              <img class="inline-block h-10 w-10 rounded-full ring-2 ring-[#080a14] object-cover bg-slate-800" src="https://api.dicebear.com/7.x/bottts/svg?seed=support3" alt="Support Agent 3" />
+            </div>
+            <span class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              +5 Online
+            </span>
+          </div>
         </div>
 
-        <!-- Messages -->
-        <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-          <!-- Welcome message -->
-          <div class="flex gap-2">
-            <div class="w-7 h-7 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xs flex-shrink-0">
-              <i class="fas fa-robot"></i>
+        <!-- Start Live Chat Button & Privacy Footer -->
+        <div class="w-full space-y-3 pb-4">
+          <button id="bStartLiveChatBtn" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_10px_30px_rgba(240,192,64,0.35)] hover:shadow-[0_15px_35px_rgba(240,192,64,0.5)] hover:scale-[1.02] active:scale-[0.98] transition duration-200 cursor-pointer flex items-center justify-center gap-2">
+            <span>Start Live Chat</span>
+            <i class="fas fa-comment-dots text-base"></i>
+          </button>
+
+          <p class="text-[11px] text-slate-400 font-medium flex items-center justify-center gap-1.5">
+            <i class="fas fa-lock text-amber-400/80"></i> All conversations are safe & private.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Active Chat View (Full Page Borderless View) -->
+      <div id="dSupportActiveChatView" class="hidden w-full h-full flex-1 flex flex-col bg-[#080a14] overflow-hidden">
+        <!-- Dedicated Active Chat Top Header (Replaces main header) -->
+        <div id="chatStatusHeader" class="bg-[#0c0e1c] border-b border-white/10 px-4 py-3 flex items-center justify-between text-xs font-bold flex-shrink-0 z-20">
+          <div class="flex items-center gap-3">
+            <button id="bBackToIntro" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 transition flex items-center justify-center cursor-pointer text-xs" title="Back to Support Hub">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <span id="supportStatusLabel" class="text-white font-bold text-xs sm:text-sm flex items-center gap-2">
+              <span id="statusIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span id="statusIndicatorText">AI Chatbot Active</span>
+            </span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button id="bConnectAdmin" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-[10px] sm:text-xs font-black rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-red-600/30">
+              <i class="fas fa-headset"></i> 🔴 Connect with Admin
+            </button>
+            <button id="bEndChat" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] sm:text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer hidden">
+              <i class="fas fa-times-circle"></i> End Session
+            </button>
+            <button onclick="closeSupportDrawer()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition flex items-center justify-center text-xs cursor-pointer ml-1" title="Close Support">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Guest Lock Warning -->
+        <div id="sLock" class="p-6 bg-[#0f1224] border border-white/10 rounded-2xl text-center space-y-3 hidden my-auto max-w-md mx-auto">
+          <i class="fas fa-lock text-amber-400 text-4xl"></i>
+          <p class="text-xs text-slate-300">Live support chat is restricted for Guest accounts.</p>
+          <button class="px-5 py-2.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-300 transition" onclick="alert('Authenticate a full profile to access real-time live support chat.')">Link Account</button>
+        </div>
+
+        <!-- Main Chat Container (Full Page, No Outer Card Border) -->
+        <div id="chatBox" class="bg-[#080a14] flex flex-col flex-1 overflow-hidden w-full h-full min-h-0 border-0 rounded-none">
+          <!-- Messages List Area -->
+          <div id="chatMsgs" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs max-w-4xl mx-auto w-full">
+            <!-- Date Divider -->
+            <div class="flex justify-center my-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-900/90 px-3.5 py-1 rounded-full border border-white/5">Today</span>
             </div>
-            <div class="max-w-[75%] bg-ele border border-bdr text-t1 rounded-xl p-3 rounded-tl-none space-y-2 leading-relaxed">
-              <p>👋 Welcome to ArenaX support chat! How can we assist you today?</p>
-              <div class="flex flex-wrap gap-1.5 pt-1.5">
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to deposit?">How to deposit?</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to register for tournament?">Tournament Registration</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="How to withdraw?">How to withdraw?</button>
-                <button class="qrb px-2.5 py-1 bg-gold/5 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] rounded-full transition" data-m="Account banned?">Account Banned?</button>
+
+            <!-- Welcome Bot Message -->
+            <div class="flex gap-3 max-w-[85%] sm:max-w-[75%]">
+              <div class="w-9 h-9 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
+                <i class="fas fa-robot"></i>
               </div>
+              <div class="bg-[#141830] border border-white/10 text-slate-200 rounded-2xl rounded-tl-none p-4 space-y-3 leading-relaxed shadow-md">
+                <p class="font-medium text-xs sm:text-sm">👋 Welcome to ArenaX support chat! How can we assist you today?</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                  <button class="qrb px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full transition cursor-pointer" data-m="How to deposit?">How to deposit?</button>
+                  <button class="qrb px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full transition cursor-pointer" data-m="How to register for tournament?">Tournament Reg</button>
+                  <button class="qrb px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full transition cursor-pointer" data-m="How to withdraw?">Withdrawal</button>
+                  <button class="qrb px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full transition cursor-pointer" data-m="Account banned?">Account Banned?</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Chat Input Bar -->
+          <div class="p-3 sm:p-4 bg-[#0c0e1c] border-t border-white/10 w-full flex-shrink-0">
+            <div class="max-w-4xl mx-auto flex items-center gap-2.5">
+              <button id="bChatVoiceIn" class="w-10 h-10 rounded-full bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 flex items-center justify-center transition text-sm cursor-pointer shrink-0" title="Voice Input">
+                <i class="fas fa-microphone"></i>
+              </button>
+
+              <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#060812] border border-white/10 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400 transition"/>
+
+              <button id="bChatAttach" class="w-10 h-10 rounded-full bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 flex items-center justify-center transition text-sm cursor-pointer shrink-0" title="Attach file or screenshot" onclick="alert('Attach file feature: select image or match screenshot')">
+                <i class="fas fa-paperclip"></i>
+              </button>
+
+              <button id="chatSend" class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black rounded-full flex items-center justify-center text-sm transition shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer shrink-0">
+                <i class="fas fa-paper-plane"></i>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Input -->
-        <div class="p-3 border-t border-bdr/40 flex gap-2">
-          <input id="chatIn" type="text" placeholder="Type message or queries..." class="flex-1 bg-[#111420] border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
-          <button id="chatSend" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
-        </div>
       </div>
 
-      <!-- Rating Box -->
-      <div id="ratingBox" class="bg-card border border-bdr rounded-2xl p-6 text-center space-y-4 hidden h-[380px] flex flex-col justify-center items-center">
-        <div class="w-12 h-12 rounded-full bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-xl">
-          <i class="fas fa-star-half-alt"></i>
+      <!-- 3. Rating Page View (`#ratingBox` / `#dSupportRatingView`) -->
+      <div id="ratingBox" class="max-w-md mx-auto w-full flex-1 p-6 flex flex-col items-center justify-center text-center space-y-6 hidden">
+        <!-- Top Rating Graphic Container -->
+        <div class="relative w-full max-w-[280px] aspect-[4/3] rounded-3xl overflow-hidden border-2 border-amber-500/20 bg-[#0e1122] flex flex-col items-center justify-center p-4 shadow-xl">
+          <div class="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-2xl mb-2 shadow-inner">
+            <i class="fas fa-star text-amber-400 animate-pulse"></i>
+          </div>
+          <p class="text-xs font-bold text-slate-300">Support Session Feedback</p>
         </div>
-        <div>
-          <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider">Session Ended</h4>
-          <p class="text-[11px] text-t3 mt-1">Rate your experience with our Support Administrator</p>
+
+        <div class="space-y-1.5">
+          <h2 class="font-display text-2xl font-black text-white uppercase tracking-wider">Rate Our App</h2>
+          <p class="text-xs text-slate-400 font-medium">Like the app? Rate our app then.</p>
         </div>
         
-        <!-- 5 Star Rating Button Row -->
-        <div class="flex gap-2 justify-center py-2">
-          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="1"><i class="fas fa-star"></i></button>
-          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="2"><i class="fas fa-star"></i></button>
-          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="3"><i class="fas fa-star"></i></button>
-          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="4"><i class="fas fa-star"></i></button>
-          <button class="star-btn text-2xl text-t3 hover:text-gold transition focus:outline-none" data-val="5"><i class="fas fa-star"></i></button>
+        <!-- 5 Star Interactive Rating Row -->
+        <div class="flex gap-3 justify-center py-1">
+          <button class="star-btn text-3xl text-slate-600 hover:text-amber-400 transition transform hover:scale-110 focus:outline-none cursor-pointer" data-val="1"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-3xl text-slate-600 hover:text-amber-400 transition transform hover:scale-110 focus:outline-none cursor-pointer" data-val="2"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-3xl text-slate-600 hover:text-amber-400 transition transform hover:scale-110 focus:outline-none cursor-pointer" data-val="3"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-3xl text-slate-600 hover:text-amber-400 transition transform hover:scale-110 focus:outline-none cursor-pointer" data-val="4"><i class="fas fa-star"></i></button>
+          <button class="star-btn text-3xl text-slate-600 hover:text-amber-400 transition transform hover:scale-110 focus:outline-none cursor-pointer" data-val="5"><i class="fas fa-star"></i></button>
         </div>
         
         <!-- Feedback Textarea -->
-        <div class="w-full max-w-[280px]">
-          <textarea id="feedbackText" placeholder="Add optional comments or feedback..." class="w-full h-16 bg-[#111420] border border-bdr rounded-xl px-3 py-2 text-xs text-t1 outline-none focus:border-gold transition resize-none"></textarea>
+        <div class="w-full space-y-1 text-left">
+          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Your Experience so far</label>
+          <textarea id="feedbackText" placeholder="Enter your feedback here..." class="w-full h-24 bg-[#0e1122] border border-white/10 rounded-2xl p-3.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400 transition resize-none"></textarea>
         </div>
         
-        <button id="bSubmitRating" class="w-full max-w-[280px] py-2 bg-gold text-bg font-bold text-xs rounded-xl hover:bg-[#e8b830] transition active:scale-95">
+        <button id="bSubmitRating" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl hover:brightness-110 transition active:scale-95 shadow-lg shadow-amber-500/20 cursor-pointer">
           Submit Rating
         </button>
       </div>
+
     </div>
 
-    <!-- Red Report Slab content -->
-    <div id="dRedReportContent" class="space-y-4 hidden">
-      <div class="bg-gradient-to-r from-red-950/20 to-neutral-950/20 border border-red/25 rounded-xl p-4 flex flex-col items-center justify-between gap-3 text-center sm:text-left">
-        <div class="w-full">
-          <h3 class="font-display text-xs font-black text-red uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-            <i class="fas fa-gavel"></i> Red Report Portal
+    <!-- Red Report Content (Full Page View) -->
+    <div id="dRedReportContent" class="max-w-3xl mx-auto w-full p-4 sm:p-6 space-y-5 hidden">
+      <div class="bg-gradient-to-r from-red-950/40 via-red-900/20 to-slate-950 border border-red-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 class="font-display text-sm font-black text-red-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fas fa-gavel"></i> Red Report Anti-Cheat Portal
           </h3>
-          <p class="text-[10px] text-t3 mt-1 leading-normal">Report hacks, cheats, or match collusion directly. Admins review match logs and evidence to issue bans. ✅</p>
+          <p class="text-xs text-slate-300 mt-1">Report hacks, cheats, or match collusion directly. Admins review match logs & evidence to issue permanent bans. ✅</p>
         </div>
-        <button id="bFileRedReport" class="w-full px-4 py-2 bg-red hover:bg-[#cc3540] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition whitespace-nowrap active:scale-95 cursor-pointer">
+        <button id="bFileRedReport" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 transition whitespace-nowrap active:scale-95 cursor-pointer shadow-lg shadow-red-600/30 shrink-0">
           <i class="fas fa-plus"></i> File Red Report
         </button>
       </div>
 
-      <!-- 4-segment switcher (sub-slabs) for Red Reports -->
-      <div class="grid grid-cols-2 gap-1 bg-[#0c0e17] border border-bdr rounded-xl p-1 w-full">
-        <button id="bRedSubAll" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-white bg-red/20 transition flex items-center justify-center gap-0.5 cursor-pointer">
-          All Reports <span id="allReportsCount" class="bg-white/10 px-1.5 py-0.5 rounded text-[8px] text-t2 font-mono ml-1">0</span>
+      <!-- Red Report Sub Tabs -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[#0e1122] border border-white/10 rounded-2xl p-1.5">
+        <button id="bRedSubAll" class="red-sub-tab py-2 text-center rounded-xl text-xs font-bold text-white bg-red-500/20 transition flex items-center justify-center gap-1 cursor-pointer">
+          All Reports <span id="allReportsCount" class="bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-slate-300 font-mono ml-1">0</span>
         </button>
-        <button id="bRedSubCreated" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
-          Created <span id="createdReportsCount" class="bg-red/25 px-1.5 py-0.5 rounded text-[8px] text-red-400 font-mono ml-1">0</span>
+        <button id="bRedSubCreated" class="red-sub-tab py-2 text-center rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer">
+          Created <span id="createdReportsCount" class="bg-red-500/20 px-1.5 py-0.5 rounded text-[10px] text-red-400 font-mono ml-1">0</span>
         </button>
-        <button id="bRedSubReviewed" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
-          Reviewed <span id="reviewedReportsCount" class="bg-emerald-500/10 px-1.5 py-0.5 rounded text-[8px] text-emerald-400 font-mono ml-1">0</span>
+        <button id="bRedSubReviewed" class="red-sub-tab py-2 text-center rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer">
+          Reviewed <span id="reviewedReportsCount" class="bg-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] text-emerald-400 font-mono ml-1">0</span>
         </button>
-        <button id="bRedSubFromMe" class="red-sub-tab py-1.5 text-center rounded-lg text-[9px] font-bold text-t3 hover:text-white transition flex items-center justify-center gap-0.5 cursor-pointer">
-          From Me <span id="fromMeReportsCount" class="bg-gold/10 px-1.5 py-0.5 rounded text-[8px] text-gold font-mono ml-1">0</span>
+        <button id="bRedSubFromMe" class="red-sub-tab py-2 text-center rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer">
+          From Me <span id="fromMeReportsCount" class="bg-amber-500/20 px-1.5 py-0.5 rounded text-[10px] text-amber-400 font-mono ml-1">0</span>
         </button>
       </div>
 
-      <!-- Reports list container -->
-      <div id="dRedReportsList" class="space-y-3 pr-1">
-        <p class="text-center text-xs text-t3 py-8">Loading reports...</p>
+      <!-- Red Reports List -->
+      <div id="dRedReportsList" class="space-y-3">
+        <p class="text-center text-xs text-slate-400 py-12">Loading reports...</p>
       </div>
     </div>
 
-    <!-- Support FAQ / Guide Slab content -->
-    <div id="dSupportFAQContent" class="space-y-4 hidden">
-      <div class="bg-[#111420] border border-bdr rounded-2xl p-4 space-y-4">
-        <h3 class="font-display text-xs font-bold text-white uppercase tracking-wider border-b border-bdr/40 pb-2 flex items-center gap-1.5">
-          <i class="fas fa-book-reader text-gold"></i> ArenaX Support Guide
+    <!-- Support FAQ Content -->
+    <div id="dSupportFAQContent" class="max-w-3xl mx-auto w-full p-4 sm:p-6 space-y-4 hidden">
+      <div class="bg-[#0e1122] border border-white/10 rounded-2xl p-5 space-y-5">
+        <h3 class="font-display text-sm font-bold text-white uppercase tracking-wider border-b border-white/10 pb-3 flex items-center gap-2">
+          <i class="fas fa-book-reader text-amber-400"></i> ArenaX Official Support FAQ
         </h3>
         
-        <div class="space-y-3 text-[11px] leading-relaxed">
-          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
-            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-coins text-xs"></i> Deposit / Recharge Coins?</h4>
-            <p class="text-t2">Send PKR to JazzCash (0302-4686897) or NayaPay (0303-9229405), then head to Wallet -> Recharge. Enter PKR amount & TXN ID. Verified in 15-30 mins!</p>
+        <div class="space-y-4 text-xs leading-relaxed">
+          <div class="p-4 bg-[#141830] border border-white/10 rounded-xl space-y-1.5">
+            <h4 class="font-bold text-amber-400 flex items-center gap-2 text-sm"><i class="fas fa-coins text-xs"></i> How to Deposit / Recharge AX Coins?</h4>
+            <p class="text-slate-300">Send PKR to JazzCash or NayaPay, then navigate to Wallet -> Recharge. Enter the PKR amount and Transaction ID. Verification takes 15-30 minutes!</p>
           </div>
 
-          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
-            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-clock"></i> Withdrawal Speed?</h4>
-            <p class="text-t2">Processed securely within 24 to 48 hours directly to your designated JazzCash or NayaPay account.</p>
+          <div class="p-4 bg-[#141830] border border-white/10 rounded-xl space-y-1.5">
+            <h4 class="font-bold text-amber-400 flex items-center gap-2 text-sm"><i class="fas fa-clock text-xs"></i> How long do Withdrawals take?</h4>
+            <p class="text-slate-300">Withdrawals are processed securely within 24 to 48 hours directly to your designated JazzCash or NayaPay account.</p>
           </div>
 
-          <div class="p-3 bg-ele/40 border border-bdr/60 rounded-xl space-y-1">
-            <h4 class="font-bold text-gold flex items-center gap-1"><i class="fas fa-gavel"></i> Red Report Program</h4>
-            <p class="text-t2">We freeze cheater balances permanently. Report players utilizing hacks or illegal scripts with video links or uploaded evidence right here.</p>
+          <div class="p-4 bg-[#141830] border border-white/10 rounded-xl space-y-1.5">
+            <h4 class="font-bold text-amber-400 flex items-center gap-2 text-sm"><i class="fas fa-gavel text-xs"></i> Red Report Anti-Cheat Policy</h4>
+            <p class="text-slate-300">We permanently ban cheaters and confiscate funds. Report any player using hacks, aimbots, or scripts with proof links directly in the Red Report portal.</p>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -2098,7 +2237,7 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- Top Graphic Banner -->
     <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <video id="eventBannerImg" class="w-full h-full object-cover" autoplay loop muted playsinline>
+      <video id="eventBannerImg" class="w-full h-full object-cover" autoplay loop muted playsinline poster="event_banner_1783187383925.jpg">
         <source src="code.mp4" type="video/mp4">
         Your browser does not support the video tag.
       </video>
@@ -2106,7 +2245,7 @@ if (typeof tailwind !== 'undefined') {
         (function() {
           var video = document.getElementById('eventBannerImg');
           if (video) {
-            var basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+            var basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
             var source = video.querySelector('source');
             if (source) {
               source.src = basePath + 'code.mp4';
@@ -2664,6 +2803,34 @@ if (typeof tailwind !== 'undefined') {
             <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
           </button>
 
+          <!-- Email Verification -->
+          <button id="btnResendVerifyEmail" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fas fa-envelope-circle-check"></i>
+              </div>
+              <div>
+                <span class="font-medium text-white group-hover:text-emerald-300 transition block">Verify Email Address</span>
+                <span id="lblVerifyStatus" class="text-[10px] text-t3 font-normal">Send verification link to inbox</span>
+              </div>
+            </div>
+            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Password Reset Link -->
+          <button id="btnSendResetPassword" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fas fa-key"></i>
+              </div>
+              <div>
+                <span class="font-medium text-white group-hover:text-amber-300 transition block">Reset Password</span>
+                <span class="text-[10px] text-t3 font-normal">Send password reset email</span>
+              </div>
+            </div>
+            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-white transition"></i>
+          </button>
+
         </div>
       </div>
 
@@ -2985,7 +3152,7 @@ if (typeof tailwind !== 'undefined') {
       <div class="bg-gradient-to-br from-gold/10 to-blue/5 border border-bdr rounded-xl p-5 text-center space-y-3 relative overflow-hidden">
         <!-- Lottie Animation Loader for play.json -->
         <div class="w-24 h-24 mx-auto mb-2">
-          <lottie-player src="play.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay class="mx-auto"></lottie-player>
+          <lottie-player src="./play.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay class="mx-auto"></lottie-player>
         </div>
         <div>
           <h3 id="tdetName" class="font-display text-2xl font-black text-white leading-tight">Tournament</h3>
@@ -3520,7 +3687,7 @@ if (typeof tailwind !== 'undefined') {
 <div id="rose-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
   <div class="text-center space-y-4">
     <div class="relative w-72 h-72 mx-auto">
-      <lottie-player id="roseSplashLottie" src="rose.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
+      <lottie-player id="roseSplashLottie" src="./rose.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
     </div>
     <div class="space-y-1">
       <h2 class="font-display text-2xl font-black text-rose-500 tracking-wider uppercase animate-bounce">Rose Received! 🌹</h2>
@@ -3533,7 +3700,7 @@ if (typeof tailwind !== 'undefined') {
 <div id="rocket-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
   <div class="text-center space-y-4">
     <div class="relative w-72 h-72 mx-auto">
-      <lottie-player id="rocketSplashLottie" src="rocket.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
+      <lottie-player id="rocketSplashLottie" src="./rocket.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
     </div>
     <div class="space-y-1">
       <h2 class="font-display text-2xl font-black text-orange-500 tracking-wider uppercase animate-bounce">Rocket Launched! 🚀</h2>
@@ -3608,7 +3775,7 @@ if (typeof tailwind !== 'undefined') {
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -3803,7 +3970,7 @@ if ('serviceWorker' in navigator) {
 
   const registerSW = async () => {
     try {
-      const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+      const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
       const swPath = basePath + 'sw.js';
       console.log('Registering Service Worker for ArenaX at:', swPath);
       const reg = await navigator.serviceWorker.register(swPath);
@@ -3823,7 +3990,7 @@ if ('serviceWorker' in navigator) {
             // Show foreground notification as browser notification if possible
             if (Notification.permission === 'granted') {
               const title = payload.notification?.title || 'ArenaX Tournament Alert';
-              const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+              const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
               const options = {
                 body: payload.notification?.body || '',
                 icon: payload.notification?.icon || basePath + 'icon-192.png',
@@ -3874,7 +4041,7 @@ async function requestFCMToken(showSuccessAlert = false) {
       messaging = getMessaging(app);
     }
     
-    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
     const swPath = basePath + 'sw.js';
     const reg = await navigator.serviceWorker.register(swPath);
     
@@ -4831,9 +4998,17 @@ $('bEmail').addEventListener('click', async () => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, em, pw);
       await updateProfile(cred.user, { displayName: username });
+      
+      // Automatically send Firebase Email Verification to user's inbox
+      try {
+        await sendEmailVerification(cred.user);
+        alert('✉️ Account created! A verification email has been sent to ' + em + '.\n\nPlease check your inbox and click the verification link to verify your email address.');
+      } catch (vErr) {
+        console.warn('Email verification send error:', vErr);
+      }
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
-        $('loginErr').textContent = '⚠️ This email address is already registered. Please sign in.';
+        $('loginErr').textContent = '⚠️ This email address is already registered. Please sign in or reset password.';
       } else {
         $('loginErr').textContent = err.message;
       }
@@ -4856,7 +5031,7 @@ $('bEmail').addEventListener('click', async () => {
       await signInWithEmailAndPassword(auth, em, pw);
     } catch (err) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        $('loginErr').textContent = '⚠️ Incorrect email or password. Please try again or sign up!';
+        $('loginErr').textContent = '⚠️ Incorrect email or password. Please try again or click Forgot Password!';
       } else {
         $('loginErr').textContent = err.message;
       }
@@ -4869,16 +5044,22 @@ $('bEmail').addEventListener('click', async () => {
 $('lnkForgot').addEventListener('click', async () => {
   const em = $('iEmail').value.trim();
   if (!em) {
-    $('loginErr').textContent = '⚠️ Please enter your email address first to reset password.';
+    $('loginErr').textContent = '⚠️ Please enter your email address in the Email field above to reset your password.';
     $('loginErr').classList.remove('hidden');
     return;
   }
   try {
     await sendPasswordResetEmail(auth, em);
-    alert('✉️ Password reset link has been sent to your email address!');
+    alert('✉️ Password reset link sent!\n\nWe have sent a password reset email to: ' + em + '\nPlease check your inbox and spam folder.');
     $('loginErr').classList.add('hidden');
   } catch (err) {
-    $('loginErr').textContent = err.message;
+    if (err.code === 'auth/user-not-found') {
+      $('loginErr').textContent = '⚠️ No registered user found with this email address. Please sign up!';
+    } else if (err.code === 'auth/invalid-email') {
+      $('loginErr').textContent = '⚠️ Please enter a valid email address.';
+    } else {
+      $('loginErr').textContent = '⚠️ ' + err.message;
+    }
     $('loginErr').classList.remove('hidden');
   }
 });
@@ -5740,41 +5921,56 @@ window.activeReviewReportId = '';
 window.openSupportDrawer = function() {
   const drawer = $('dSupportDrawer');
   const backdrop = $('mSupportDrawerBackdrop');
-  if (!drawer || !backdrop) return;
+  if (!drawer) return;
 
   drawer.classList.remove('hidden');
-  backdrop.classList.remove('hidden');
+  if (backdrop) backdrop.classList.remove('hidden');
 
   setTimeout(() => {
-    drawer.classList.remove('translate-x-full');
-    backdrop.classList.remove('opacity-0');
-    backdrop.classList.add('opacity-100');
+    drawer.classList.remove('opacity-0');
+    drawer.classList.add('opacity-100');
+    if (backdrop) backdrop.classList.add('opacity-100');
   }, 20);
 
-  if (window.activeRedReportSlab === 'Support') {
-    loadLiveSupportChat();
+  // Play video sticker
+  const helpVid = $('vHelpSupportSticker');
+  if (helpVid) {
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+    const source = helpVid.querySelector('source');
+    if (source && !source.src.includes('help.mp4')) {
+      source.src = basePath + 'help.mp4';
+    }
+    helpVid.play().catch(e => console.log('Auto-play help sticker:', e));
+  }
+
+  if (window.activeRedReportSlab === 'Support' || !window.activeRedReportSlab) {
+    switchSupportSubSlab('Support');
   } else if (window.activeRedReportSlab === 'RedReport') {
-    initRedReportsListener();
+    switchSupportSubSlab('RedReport');
+  } else if (window.activeRedReportSlab === 'Rating') {
+    switchSupportSubSlab('Rating');
+  } else if (window.activeRedReportSlab === 'FAQ') {
+    switchSupportSubSlab('FAQ');
   }
 };
 
 window.closeSupportDrawer = function() {
   const drawer = $('dSupportDrawer');
   const backdrop = $('mSupportDrawerBackdrop');
-  if (!drawer || !backdrop) return;
+  if (!drawer) return;
 
-  drawer.classList.add('translate-x-full');
-  backdrop.classList.remove('opacity-100');
-  backdrop.classList.add('opacity-0');
+  drawer.classList.remove('opacity-100');
+  drawer.classList.add('opacity-0');
+  if (backdrop) backdrop.classList.remove('opacity-100');
 
   setTimeout(() => {
     drawer.classList.add('hidden');
-    backdrop.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
   }, 300);
 };
 
-$('bCloseSupportDrawer').addEventListener('click', () => closeSupportDrawer());
-$('mSupportDrawerBackdrop').addEventListener('click', () => closeSupportDrawer());
+if ($('bCloseSupportDrawer')) $('bCloseSupportDrawer').addEventListener('click', () => closeSupportDrawer());
+if ($('mSupportDrawerBackdrop')) $('mSupportDrawerBackdrop').addEventListener('click', () => closeSupportDrawer());
 
 // Floating Red Report & Support Hub Drawer Controls
 window.openRedReportHubDrawer = function() {
@@ -5827,11 +6023,15 @@ $('btnHubRedReport').addEventListener('click', () => {
 window.switchSupportSubSlab = function(slab) {
   window.activeRedReportSlab = slab;
   
+  // Ensure main top headers are visible when switching sub-slabs
+  if ($('dSupportMainHeader')) $('dSupportMainHeader').classList.remove('hidden');
+  if ($('dSupportMobileTabs')) $('dSupportMobileTabs').classList.remove('hidden');
+
   // Update Slabs styling
   const subBtns = document.querySelectorAll('.sub-slab-btn');
   subBtns.forEach(btn => {
-    btn.classList.remove('bg-gold', 'text-bg');
-    btn.classList.add('text-t3', 'hover:text-white');
+    btn.classList.remove('bg-amber-400', 'text-slate-950');
+    btn.classList.add('text-slate-400', 'hover:text-white');
   });
 
   // Hide all sections
@@ -5840,24 +6040,66 @@ window.switchSupportSubSlab = function(slab) {
   $('dSupportFAQContent').classList.add('hidden');
 
   if (slab === 'Support') {
-    $('bSubSlabSupport').classList.add('bg-gold', 'text-bg');
-    $('bSubSlabSupport').classList.remove('text-t3', 'hover:text-white');
+    if ($('bSubSlabSupport')) {
+      $('bSubSlabSupport').classList.add('bg-amber-400', 'text-slate-950');
+      $('bSubSlabSupport').classList.remove('text-slate-400');
+    }
     $('dSupportChatContent').classList.remove('hidden');
+    if ($('dSupportIntroView')) $('dSupportIntroView').classList.remove('hidden');
+    if ($('dSupportActiveChatView')) $('dSupportActiveChatView').classList.add('hidden');
+    if ($('ratingBox')) $('ratingBox').classList.add('hidden');
+  } else if (slab === 'Rating') {
+    if ($('bSubSlabRating')) {
+      $('bSubSlabRating').classList.add('bg-amber-400', 'text-slate-950');
+      $('bSubSlabRating').classList.remove('text-slate-400');
+    }
+    $('dSupportChatContent').classList.remove('hidden');
+    if ($('dSupportIntroView')) $('dSupportIntroView').classList.add('hidden');
+    if ($('dSupportActiveChatView')) $('dSupportActiveChatView').classList.add('hidden');
+    if ($('ratingBox')) $('ratingBox').classList.remove('hidden');
   } else if (slab === 'RedReport') {
-    $('bSubSlabRedReport').classList.add('bg-gold', 'text-bg');
-    $('bSubSlabRedReport').classList.remove('text-t3', 'hover:text-white');
+    if ($('bSubSlabRedReport')) {
+      $('bSubSlabRedReport').classList.add('bg-amber-400', 'text-slate-950');
+      $('bSubSlabRedReport').classList.remove('text-slate-400');
+    }
     $('dRedReportContent').classList.remove('hidden');
     initRedReportsListener();
   } else if (slab === 'FAQ') {
-    $('bSubSlabFAQ').classList.add('bg-gold', 'text-bg');
-    $('bSubSlabFAQ').classList.remove('text-t3', 'hover:text-white');
+    if ($('bSubSlabFAQ')) {
+      $('bSubSlabFAQ').classList.add('bg-amber-400', 'text-slate-950');
+      $('bSubSlabFAQ').classList.remove('text-slate-400');
+    }
     $('dSupportFAQContent').classList.remove('hidden');
   }
 }
 
-$('bSubSlabSupport').addEventListener('click', () => switchSupportSubSlab('Support'));
-$('bSubSlabRedReport').addEventListener('click', () => switchSupportSubSlab('RedReport'));
-$('bSubSlabFAQ').addEventListener('click', () => switchSupportSubSlab('FAQ'));
+if ($('bSubSlabSupport')) $('bSubSlabSupport').addEventListener('click', () => switchSupportSubSlab('Support'));
+if ($('bSubSlabRating')) $('bSubSlabRating').addEventListener('click', () => switchSupportSubSlab('Rating'));
+if ($('bSubSlabRedReport')) $('bSubSlabRedReport').addEventListener('click', () => switchSupportSubSlab('RedReport'));
+if ($('bSubSlabFAQ')) $('bSubSlabFAQ').addEventListener('click', () => switchSupportSubSlab('FAQ'));
+
+if ($('bStartLiveChatBtn')) {
+  $('bStartLiveChatBtn').addEventListener('click', () => {
+    // Hide main top nav & mobile tabs to give full focus to active chat
+    if ($('dSupportMainHeader')) $('dSupportMainHeader').classList.add('hidden');
+    if ($('dSupportMobileTabs')) $('dSupportMobileTabs').classList.add('hidden');
+    if ($('dSupportIntroView')) $('dSupportIntroView').classList.add('hidden');
+    if ($('dSupportActiveChatView')) $('dSupportActiveChatView').classList.remove('hidden');
+    loadLiveSupportChat();
+    const chatMsgs = $('chatMsgs');
+    if (chatMsgs) chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  });
+}
+
+if ($('bBackToIntro')) {
+  $('bBackToIntro').addEventListener('click', () => {
+    // Restore main top nav & mobile tabs when leaving active chat
+    if ($('dSupportMainHeader')) $('dSupportMainHeader').classList.remove('hidden');
+    if ($('dSupportMobileTabs')) $('dSupportMobileTabs').classList.remove('hidden');
+    if ($('dSupportActiveChatView')) $('dSupportActiveChatView').classList.add('hidden');
+    if ($('dSupportIntroView')) $('dSupportIntroView').classList.remove('hidden');
+  });
+}
 
 // Setup sub-filter switching for Red Reports
 window.activeRedReportFilter = 'all';
@@ -9641,6 +9883,38 @@ if ($('btnProfileSecurity')) {
     if ($('mPrivacy')) $('mPrivacy').classList.remove('hidden');
   });
 }
+if ($('btnResendVerifyEmail')) {
+  $('btnResendVerifyEmail').addEventListener('click', async () => {
+    if (!auth.currentUser) {
+      alert('⚠️ Please sign in with your email account first.');
+      return;
+    }
+    if (auth.currentUser.emailVerified) {
+      alert('✅ Your email address (' + auth.currentUser.email + ') is already verified!');
+      return;
+    }
+    try {
+      await sendEmailVerification(auth.currentUser);
+      alert('✉️ Verification email sent to ' + auth.currentUser.email + '!\n\nPlease check your inbox and click the verification link.');
+    } catch (err) {
+      alert('⚠️ Could not send verification email: ' + err.message);
+    }
+  });
+}
+if ($('btnSendResetPassword')) {
+  $('btnSendResetPassword').addEventListener('click', async () => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      alert('⚠️ Please sign in with an email account first.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, auth.currentUser.email);
+      alert('✉️ Password reset link sent to: ' + auth.currentUser.email + '\n\nPlease check your inbox to reset your password.');
+    } catch (err) {
+      alert('⚠️ Could not send password reset email: ' + err.message);
+    }
+  });
+}
 if ($('btnProfileNotifications')) {
   $('btnProfileNotifications').addEventListener('click', () => {
     if ($('mEnableNotifications')) $('mEnableNotifications').classList.remove('hidden');
@@ -9679,6 +9953,22 @@ function openSettingsPage() {
   if ($('setName')) $('setName').innerHTML = `${prof.name || 'Player'}${window.getBlueTickBadgeHtml(prof)}`;
   if ($('setHandle')) $('setHandle').textContent = prof.handle || '@player#0000';
   if ($('setAv')) $('setAv').src = prof.av;
+  
+  if ($('lblVerifyStatus')) {
+    if (auth.currentUser) {
+      if (auth.currentUser.emailVerified) {
+        $('lblVerifyStatus').textContent = '✅ Verified (' + auth.currentUser.email + ')';
+        $('lblVerifyStatus').className = 'text-[10px] text-emerald-400 font-bold';
+      } else {
+        $('lblVerifyStatus').textContent = '⚠️ Unverified - Click to resend verification link to ' + auth.currentUser.email;
+        $('lblVerifyStatus').className = 'text-[10px] text-amber-400 font-medium';
+      }
+    } else {
+      $('lblVerifyStatus').textContent = 'Send verification link to inbox';
+      $('lblVerifyStatus').className = 'text-[10px] text-t3 font-normal';
+    }
+  }
+
   $('mSettings').classList.remove('hidden');
   if (typeof window.updateDiagnosticUI === 'function') {
     window.updateDiagnosticUI();
