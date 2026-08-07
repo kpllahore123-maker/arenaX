@@ -50,6 +50,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [showHamburger, setShowHamburger] = useState(false);
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [showTasksModal, setShowTasksModal] = useState(false);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
 
   // Auth Inputs
   const [email, setEmail] = useState('');
@@ -1803,10 +1804,25 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   </div>
                 </div>
 
+                {/* Direct Messages Top Button */}
+                <button
+                  onClick={() => setActiveTab('Chat')}
+                  className="flex flex-col items-center justify-center transition group cursor-pointer relative"
+                  title="Direct Messages"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#1b2a4a] border border-sky-400/40 flex items-center justify-center text-sky-400 text-base shadow group-hover:scale-110 transition relative">
+                    <i className="fas fa-paper-plane"></i>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-[#1b2a4a]">
+                      3
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-0.5">DMs</span>
+                </button>
+
                 {/* Events Button (Star icon + label) */}
                 <button
                   onClick={() => alert('Events section coming soon!')}
-                  className="flex flex-col items-center justify-center transition group"
+                  className="flex flex-col items-center justify-center transition group cursor-pointer"
                 >
                   <div className="w-9 h-9 rounded-full bg-[#17253d] border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-base shadow group-hover:scale-110 transition">
                     <i className="fas fa-star"></i>
@@ -1815,20 +1831,36 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 </button>
               </div>
 
-              {/* 3 Circular Action Icons matching provided image */}
-              <div className="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
+              {/* 4 Circular Action Icons matching provided image */}
+              <div className="relative z-10 grid grid-cols-4 gap-2 pt-1 text-center">
                 {/* Ranking */}
                 <div
                   onClick={() => setShowRankingModal(true)}
                   className="flex flex-col items-center cursor-pointer group"
                 >
-                  <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-                    <div className="absolute -top-1 -left-1 text-[#f0c040] text-base drop-shadow">
+                  <div className="relative w-14 h-14 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="absolute -top-1 -left-1 text-[#f0c040] text-xs drop-shadow">
                       <i className="fas fa-crown"></i>
                     </div>
-                    <img src={currentUser.av} alt="Ranking" className="w-12 h-12 rounded-full object-cover" />
+                    <img src={currentUser.av} alt="Ranking" className="w-11 h-11 rounded-full object-cover" />
                   </div>
-                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Ranking</span>
+                  <span className="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
+                </div>
+
+                {/* Direct Messages Button */}
+                <div
+                  onClick={() => setActiveTab('Chat')}
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div className="relative w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#0369a1] to-[#0c4a6e] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-black text-[9px] rounded-full flex items-center justify-center border border-[#0c4a6e] shadow-md animate-pulse">
+                      3
+                    </span>
+                    <div className="w-10 h-10 bg-[#38bdf8]/20 rounded-xl flex items-center justify-center text-xl">
+                      <i className="fas fa-comments text-[#7dd3fc]"></i>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-1.5">Direct Msg</span>
                 </div>
 
                 {/* Tasks */}
@@ -1836,12 +1868,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   onClick={() => setShowTasksModal(true)}
                   className="flex flex-col items-center cursor-pointer group"
                 >
-                  <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-                    <div className="w-11 h-11 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-2xl">
+                  <div className="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="w-10 h-10 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-xl">
                       <i className="fas fa-clipboard-check text-[#ef4444]"></i>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Tasks</span>
+                  <span className="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Tasks</span>
                 </div>
 
                 {/* Friends */}
@@ -1849,12 +1881,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   onClick={() => setShowAddFriendModal(true)}
                   className="flex flex-col items-center cursor-pointer group"
                 >
-                  <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-                    <div className="w-11 h-11 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-2xl">
+                  <div className="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="w-10 h-10 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-xl">
                       <i className="fas fa-user-alt text-[#34d399]"></i>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Friends</span>
+                  <span className="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Friends</span>
                 </div>
               </div>
             </div>
@@ -2320,20 +2352,49 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="ff-title text-xl font-bold flex items-center gap-2">
-                <i className="fas fa-comments text-[#f0c040]"></i> Player DMs
+                <i className="fas fa-comments text-[#f0c040]"></i> Message
               </div>
-              <button
-                onClick={() => {
-                  if (isGuest) {
-                    alert('Register a full account first!');
-                    return;
-                  }
-                  setShowAddFriendModal(true);
-                }}
-                className="px-3 py-1 bg-[#f0c040]/10 hover:bg-[#f0c040]/20 border border-[#f0c040]/20 text-[#f0c040] rounded-lg text-xs font-bold transition flex items-center gap-1"
-              >
-                <i className="fas fa-user-plus"></i> Add Friend
-              </button>
+
+              {/* Red-Circled Header Buttons: Human Icon (Friends) & Plus Icon (Add Friend + Requests) */}
+              <div className="flex items-center gap-2">
+                {/* Human Icon Button (Shows all added friends) */}
+                <button
+                  onClick={() => {
+                    if (isGuest) {
+                      alert('Register a full account first!');
+                      return;
+                    }
+                    setShowFriendsModal(true);
+                  }}
+                  className="relative w-9 h-9 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/40 rounded-full flex items-center justify-center text-white transition cursor-pointer shadow-xs group"
+                  title="All Added Friends"
+                >
+                  <i className="fas fa-user-friends text-sm text-[#38bdf8] group-hover:scale-110 transition-transform"></i>
+                  <span className="absolute -top-1 -right-1.5 bg-red-500 text-white font-black text-[9px] min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center border border-[#111420] shadow-xs">
+                    {friends.length || 3}
+                  </span>
+                </button>
+
+                {/* Plus Icon Button (Add Friend & Friend Requests) */}
+                <button
+                  onClick={() => {
+                    if (isGuest) {
+                      alert('Register a full account first!');
+                      return;
+                    }
+                    setShowAddFriendModal(true);
+                  }}
+                  className="relative w-9 h-9 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/40 rounded-full flex items-center justify-center text-white transition cursor-pointer shadow-xs group"
+                  title="Add Friend & Requests"
+                >
+                  <i className="fas fa-plus text-sm text-[#f0c040] group-hover:scale-110 transition-transform"></i>
+                  {friendRequests.length > 0 && (
+                    <span className="absolute -top-1 -right-1.5 bg-red-500 text-white font-black text-[9px] min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center border border-[#111420] shadow-xs animate-pulse">
+                      {friendRequests.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {isGuest && (
@@ -2394,20 +2455,40 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {friends.map((friend) => (
-                        <div
-                          key={friend.uid}
-                          onClick={() => openDM(friend)}
-                          className="p-3 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/30 rounded-xl flex items-center gap-3 text-xs cursor-pointer transition"
-                        >
-                          <img src={friend.av} alt="Avatar" className="w-10 h-10 rounded-full border border-[#252a45]" />
-                          <div className="flex-1">
-                            <div className="font-semibold text-white leading-tight">{friend.name}</div>
-                            <div className="text-[10px] text-[#8890b0] mt-0.5">{friend.handle}</div>
+                      {friends.map((friend, fIdx) => {
+                        const isOfficial = friend.name?.toLowerCase().includes('bot') || friend.name?.toLowerCase().includes('official');
+                        const badgeNum = (fIdx % 3) + 1;
+                        return (
+                          <div
+                            key={friend.uid}
+                            onClick={() => openDM(friend)}
+                            className="p-3 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/30 rounded-xl flex items-center gap-3.5 text-xs cursor-pointer transition relative group"
+                          >
+                            <div className="relative shrink-0">
+                              <img src={friend.av} alt="Avatar" className="w-11 h-11 rounded-full border border-[#252a45] object-cover" />
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-[#171b2e]">
+                                {badgeNum}
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="font-bold text-white truncate flex items-center gap-1">
+                                  <span>{friend.name}</span>
+                                  {isOfficial && (
+                                    <span className="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">
+                                      Official
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[9px] text-[#8890b0] shrink-0 font-medium">30/07/2026</span>
+                              </div>
+                              <p className="text-[11px] text-[#8890b0] truncate leading-snug font-normal">
+                                Tap to open direct chat...
+                              </p>
+                            </div>
                           </div>
-                          <i className="fas fa-chevron-right text-[#4a5070] text-xs"></i>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -3434,31 +3515,84 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         </div>
       )}
 
-      {/* FRIEND ADD MODAL */}
+      {/* FRIEND ADD & REQUESTS MODAL */}
       {showAddFriendModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4">
-            <h3 className="font-sans text-lg font-bold text-[#f0c040] flex items-center gap-1.5">
-              <i className="fas fa-user-plus"></i> Add Friend
-            </h3>
-            
-            <p className="text-xs text-[#8890b0]">Search by handles (e.g. @player#1234):</p>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. @player#1234"
-                value={searchHandle}
-                onChange={(e) => setSearchHandle(e.target.value)}
-                className="flex-1 bg-[#171b2e] border border-[#252a45] rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
-              />
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[440px] w-full animate-fade-in space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <h3 className="font-sans text-lg font-bold text-[#f0c040] flex items-center gap-1.5">
+                <i className="fas fa-user-plus"></i> Add Friend & Requests
+              </h3>
               <button
-                onClick={handleSearchFriend}
-                disabled={searching}
-                className="px-4 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-xl transition"
+                onClick={() => { setShowAddFriendModal(false); setSearchResult(null); setSearchHandle(''); }}
+                className="text-[#8890b0] hover:text-white transition cursor-pointer p-1"
               >
-                {searching ? '...' : 'Search'}
+                <i className="fas fa-times"></i>
               </button>
+            </div>
+            
+            {/* Friend Requests Queue inside modal */}
+            {friendRequests.length > 0 && (
+              <div className="space-y-2 bg-[#1e2340]/50 p-3 border border-[#252a45] rounded-xl">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] text-[#a78bfa] uppercase tracking-wider font-bold flex items-center gap-1.5">
+                    <i className="fas fa-bell text-red-400"></i> Friend Requests
+                  </h4>
+                  <span className="bg-red-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full">
+                    {friendRequests.length}
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                  {friendRequests.map((req) => (
+                    <div key={req.uid} className="bg-[#171b2e] border border-[#252a45] p-2 rounded-lg flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={req.av} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45] object-cover" />
+                        <div className="truncate">
+                          <div className="font-semibold text-white leading-tight">{req.name}</div>
+                          <div className="text-[9px] text-[#8890b0]">{req.handle}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => handleAcceptFriend(req)}
+                          className="p-1.5 bg-[#3ddc84]/15 hover:bg-[#3ddc84]/25 text-[#3ddc84] rounded transition cursor-pointer"
+                          title="Accept"
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          onClick={() => handleDeclineFriend(req)}
+                          className="p-1.5 bg-[#e8404a]/15 hover:bg-[#e8404a]/25 text-[#e8404a] rounded transition cursor-pointer"
+                          title="Decline"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-xs text-[#8890b0]">Search by handles (e.g. @player#1234):</p>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. @player#1234"
+                  value={searchHandle}
+                  onChange={(e) => setSearchHandle(e.target.value)}
+                  className="flex-1 bg-[#171b2e] border border-[#252a45] rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
+                />
+                <button
+                  onClick={handleSearchFriend}
+                  disabled={searching}
+                  className="px-4 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  {searching ? '...' : 'Search'}
+                </button>
+              </div>
             </div>
 
             {searchResult && (
@@ -3472,7 +3606,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 </div>
                 <button
                   onClick={handleSendFriendRequest}
-                  className="px-2.5 py-1.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-[10px] font-bold rounded"
+                  className="px-2.5 py-1.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-[10px] font-bold rounded cursor-pointer"
                 >
                   Send Invite
                 </button>
@@ -3487,73 +3621,202 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
             <button
               onClick={() => { setShowAddFriendModal(false); setSearchResult(null); setSearchHandle(''); }}
-              className="w-full py-2 bg-[#1e2340] hover:bg-[#171b2e] border border-[#252a45] text-[#8890b0] text-xs font-semibold rounded-lg transition"
+              className="w-full py-2 bg-[#171b2e] border border-[#252a45] text-[#8890b0] hover:text-white font-bold rounded-xl text-xs transition cursor-pointer"
             >
-              Cancel
+              Close
             </button>
           </div>
         </div>
       )}
 
-      {/* DIRECT MESSAGE CHAT WINDOW */}
-      {showDMChat && activeFriend && (
+      {/* ALL ADDED FRIENDS MODAL */}
+      {showFriendsModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-filter backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-[#111420] border border-[#252a45] rounded-2xl w-full max-w-[440px] h-[480px] flex flex-col overflow-hidden animate-fade-in relative shadow-2xl">
-            {/* Header */}
-            <div className="p-4 border-b border-[#252a45] bg-[#111420] flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <img src={activeFriend.av} alt="Friend avatar" className="w-9 h-9 rounded-full border border-[#252a45]" />
-                <div className="truncate">
-                  <div className="font-bold text-white text-sm leading-tight">{activeFriend.name}</div>
-                  <div className="text-[10px] text-green-400">Online</div>
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-5 max-w-[440px] w-full animate-fade-in space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-[#38bdf8]/10 text-[#38bdf8] rounded-full flex items-center justify-center text-base border border-[#38bdf8]/20">
+                  <i className="fas fa-user-friends"></i>
+                </div>
+                <div>
+                  <h3 className="font-sans text-lg font-bold text-white leading-tight">My Added Friends ({friends.length})</h3>
+                  <p className="text-[10px] text-[#8890b0]">All connected players & chat contacts</p>
                 </div>
               </div>
-              <button
-                onClick={() => { setShowDMChat(false); setActiveFriend(null); }}
-                className="text-[#8890b0] hover:text-[#f0c040] text-lg transition"
-              >
+              <button onClick={() => setShowFriendsModal(false)} className="text-[#8890b0] hover:text-white transition cursor-pointer p-1 text-base">
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            {/* DMs lists */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0a0c12]/30">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {friends.length === 0 ? (
+                <div className="p-8 text-center text-[#4a5070] bg-[#171b2e] border border-[#252a45] rounded-xl text-xs space-y-2">
+                  <i className="fas fa-user-friends text-3xl"></i>
+                  <p className="font-medium text-white">No friends added yet.</p>
+                  <p className="text-[10px] text-[#8890b0]">Click the + button to search and add players!</p>
+                </div>
+              ) : (
+                friends.map((friend) => (
+                  <div
+                    key={friend.uid}
+                    className="p-3 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] rounded-xl flex items-center justify-between gap-3 text-xs transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img src={friend.av} alt="Avatar" className="w-10 h-10 rounded-full border border-[#252a45] object-cover shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate">{friend.name}</div>
+                        <div className="text-[10px] text-[#8890b0] truncate">{friend.handle}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowFriendsModal(false);
+                        openDM(friend);
+                      }}
+                      className="px-3 py-1.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0 shadow-xs"
+                    >
+                      <i className="fas fa-paper-plane"></i> Chat
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowFriendsModal(false)}
+              className="w-full py-2.5 bg-[#171b2e] border border-[#252a45] text-[#8890b0] hover:text-white font-bold rounded-xl text-xs transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DIRECT MESSAGE FULL SCREEN CHAT PAGE */}
+      {showDMChat && activeFriend && (
+        <div className="fixed inset-0 bg-[#f4f4f6] z-[9999] flex flex-col w-full h-full h-screen overflow-hidden animate-fade-in">
+          <div className="w-full h-full flex flex-col bg-[#f4f4f6]">
+            {/* Full Width Top Header (Image 1 Style) */}
+            <div className="w-full px-4 py-3 bg-white border-b border-gray-200/90 flex items-center justify-between shadow-xs shrink-0 z-10">
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  onClick={() => { setShowDMChat(false); setActiveFriend(null); }}
+                  className="text-gray-700 hover:text-gray-950 transition text-lg p-1.5 cursor-pointer flex items-center justify-center rounded-lg hover:bg-gray-100"
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+                <div className="flex items-center gap-2 cursor-pointer min-w-0">
+                  <span className="text-xs text-gray-400 font-bold shrink-0">6</span>
+                  <h4 className="text-sm font-bold text-gray-900 truncate tracking-wide">{activeFriend.name}</h4>
+                </div>
+              </div>
+              <button className="text-gray-600 hover:text-gray-900 transition text-base p-2 cursor-pointer hover:bg-gray-100 rounded-lg">
+                <i className="fas fa-ellipsis-h"></i>
+              </button>
+            </div>
+
+            {/* DMs messages stream (Image 1 Style Full Screen Stream) */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#f4f4f6]">
               {dms.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-[#4a5070] text-xs gap-1">
-                  <i className="fas fa-comment-alt text-2xl"></i>
-                  <p>Say hello to your friend!</p>
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 text-xs gap-1 py-12">
+                  <i className="far fa-comments text-3xl text-gray-300"></i>
+                  <p className="font-medium">No messages yet with {activeFriend.name}</p>
+                  <p className="text-[10px] text-gray-400">Say hello to start the conversation!</p>
                 </div>
               ) : (
                 dms.map((msg, mIdx) => {
-                  const isMe = msg.sender === currentUser.uid;
+                  const isMe = msg.sender === currentUser?.uid;
+
+                  // Format time badge string
+                  let timeStr = '30/07/2026 01:37';
+                  if (msg.createdAt) {
+                    const dt = msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(msg.createdAt);
+                    const day = String(dt.getDate()).padStart(2, '0');
+                    const month = String(dt.getMonth() + 1).padStart(2, '0');
+                    const year = dt.getFullYear();
+                    const hrs = String(dt.getHours()).padStart(2, '0');
+                    const mins = String(dt.getMinutes()).padStart(2, '0');
+                    timeStr = `${day}/${month}/${year} ${hrs}:${mins}`;
+                  }
+
+                  const prevMsg = mIdx > 0 ? dms[mIdx - 1] : null;
+                  let showBadge = mIdx === 0;
+                  if (prevMsg && prevMsg.createdAt && msg.createdAt) {
+                    const dt1 = prevMsg.createdAt.toDate ? prevMsg.createdAt.toDate() : new Date(prevMsg.createdAt);
+                    const dt2 = msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(msg.createdAt);
+                    if (dt2.getTime() - dt1.getTime() > 10 * 60 * 1000) {
+                      showBadge = true;
+                    }
+                  }
+
                   return (
-                    <div key={mIdx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] p-3 rounded-xl text-xs leading-relaxed ${isMe ? 'bg-[#f0c040] text-[#0a0c12] font-semibold rounded-tr-none' : 'bg-[#171b2e] border border-[#252a45] text-white rounded-tl-none'}`}>
-                        {msg.text}
-                      </div>
-                    </div>
+                    <React.Fragment key={mIdx}>
+                      {showBadge && (
+                        <div className="flex justify-center my-2">
+                          <span className="bg-[#d1d5db] text-white text-[10px] px-2.5 py-0.5 rounded-md font-semibold tracking-wide shadow-2xs">
+                            {timeStr}
+                          </span>
+                        </div>
+                      )}
+                      {isMe ? (
+                        /* Sent Message - Cyan bubble right, Avatar right */
+                        <div className="flex items-start justify-end gap-2 max-w-[88%] ml-auto">
+                          <div className="flex items-center gap-1 max-w-[80%]">
+                            <div className="px-3.5 py-2 bg-[#dcf8ff] text-slate-900 rounded-2xl rounded-tr-xs text-xs font-normal shadow-2xs border border-sky-100 break-words leading-relaxed">
+                              {msg.text}
+                            </div>
+                          </div>
+                          <img
+                            src={currentUser?.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser?.uid}`}
+                            alt="My avatar"
+                            className="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"
+                          />
+                        </div>
+                      ) : (
+                        /* Received Message - White bubble left, Avatar left */
+                        <div className="flex items-start justify-start gap-2 max-w-[88%]">
+                          <img
+                            src={activeFriend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${activeFriend.uid}`}
+                            alt="Friend avatar"
+                            className="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"
+                          />
+                          <div className="px-3.5 py-2 bg-white text-slate-900 rounded-2xl rounded-tl-xs text-xs font-normal shadow-2xs border border-gray-100 max-w-[80%] break-words leading-relaxed">
+                            {msg.text}
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}
               <div ref={dmEndRef} />
             </div>
 
-            {/* Form footer */}
-            <div className="p-3 bg-[#111420] border-t border-[#252a45] flex gap-2">
+            {/* Full Width Input bar (Image 1 Style) */}
+            <div className="w-full px-4 py-3 bg-white border-t border-gray-200/90 flex items-center gap-3 shadow-md shrink-0">
+              <div className="w-1 h-6 bg-emerald-500 rounded-full shrink-0"></div>
               <input
                 type="text"
-                placeholder="Type a message..."
+                placeholder="Type direct message..."
                 value={dmText}
                 onChange={(e) => setDmText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendDM()}
-                className="flex-1 bg-[#171b2e] border border-[#252a45] rounded-xl px-4 py-2 text-xs outline-none text-white focus:border-[#f0c040] transition"
+                className="flex-1 bg-[#f0f2f5] text-gray-900 text-xs rounded-full px-4 py-2.5 outline-none border border-transparent focus:border-sky-400 font-medium transition placeholder-gray-400"
               />
-              <button
-                onClick={handleSendDM}
-                className="w-9 h-9 bg-[#f0c040] text-[#0a0c12] rounded-xl flex items-center justify-center text-xs hover:bg-[#e8b830] transition"
-              >
-                <i className="fas fa-paper-plane"></i>
-              </button>
+              <div className="flex items-center gap-2.5 shrink-0 text-gray-500">
+                <button type="button" className="hover:text-gray-800 text-lg transition cursor-pointer p-1.5" title="Stickers/Emoji">
+                  <i className="far fa-smile"></i>
+                </button>
+                <button type="button" className="hover:scale-110 text-lg transition cursor-pointer p-1.5 text-pink-500" title="Send Gift">
+                  🎁
+                </button>
+                <button
+                  onClick={handleSendDM}
+                  className="w-9 h-9 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center text-xs transition cursor-pointer shadow-sm active:scale-95"
+                >
+                  <i className="fas fa-paper-plane"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3673,4 +3936,3 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     </div>
   );
 };
-v
