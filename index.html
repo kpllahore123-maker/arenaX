@@ -670,15 +670,6 @@ if (typeof tailwind !== 'undefined') {
             </div>
           </div>
 
-          <!-- Direct Messages Top Button -->
-          <button onclick="switchTab('Chat'); setTimeout(() => { const btnDM = document.getElementById('btnSubDM'); if (btnDM) btnDM.click(); }, 50);" class="flex flex-col items-center justify-center transition group cursor-pointer relative" title="Direct Messages">
-            <div class="w-9 h-9 rounded-full bg-[#1b2a4a] border border-sky-400/40 flex items-center justify-center text-sky-400 text-base shadow group-hover:scale-110 transition relative">
-              <i class="fas fa-paper-plane"></i>
-              <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-[#1b2a4a]">3</span>
-            </div>
-            <span class="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-0.5">DMs</span>
-          </button>
-
           <!-- Events Star Button -->
           <button onclick="alert('Events section coming soon!')" class="flex flex-col items-center justify-center transition group cursor-pointer">
             <div class="w-9 h-9 rounded-full bg-[#17253d] border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-base shadow group-hover:scale-110 transition">
@@ -688,8 +679,8 @@ if (typeof tailwind !== 'undefined') {
           </button>
         </div>
 
-        <!-- 4 Circular Action Items: Ranking, Direct Msg, Tasks, Friends -->
-        <div class="relative z-10 grid grid-cols-4 gap-2 pt-1 text-center">
+        <!-- 3 Circular Action Items: Ranking, Tasks, Friends -->
+        <div class="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
           <!-- Ranking -->
           <div onclick="openRankingModal()" class="flex flex-col items-center cursor-pointer group">
             <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
@@ -699,19 +690,6 @@ if (typeof tailwind !== 'undefined') {
               <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover"/>
             </div>
             <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
-          </div>
-
-          <!-- Direct Messages Button -->
-          <div onclick="switchTab('Chat'); setTimeout(() => { const btnDM = document.getElementById('btnSubDM'); if (btnDM) btnDM.click(); }, 50);" class="flex flex-col items-center cursor-pointer group">
-            <div class="relative w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#0369a1] to-[#0c4a6e] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-black text-[9px] rounded-full flex items-center justify-center border border-[#0c4a6e] shadow-md animate-pulse">
-                3
-              </span>
-              <div class="w-10 h-10 bg-[#38bdf8]/20 rounded-xl flex items-center justify-center text-xl">
-                <i class="fas fa-comments text-[#7dd3fc]"></i>
-              </div>
-            </div>
-            <span class="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-1.5">Direct Msg</span>
           </div>
 
           <!-- Tasks -->
@@ -748,6 +726,31 @@ if (typeof tailwind !== 'undefined') {
         <button onclick="switchTab('Tour')" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95 cursor-pointer">
           Join Now
         </button>
+      </div>
+
+      <!-- Explore Section -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-base font-extrabold text-white flex items-center gap-2">
+            <i class="fas fa-compass text-gold"></i> Explore
+          </h3>
+        </div>
+        <div class="grid grid-cols-1 gap-2.5">
+          <div onclick="switchTab('Chat')" class="p-3.5 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white text-sm group-hover:text-gold transition">Message</h4>
+                <p class="text-xs text-t2">chat with your friend</p>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-ele border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-white transition text-xs">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -5162,20 +5165,30 @@ $('bEmail').addEventListener('click', async () => {
   const em = $('iEmail').value.trim();
   const pw = $('iPass').value.trim();
 
+  const validateEmailFormat = (str) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(str);
+
+  if (!em || !pw) {
+    $('loginErr').textContent = '⚠️ Please enter both email address and password.';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+
+  if (!validateEmailFormat(em)) {
+    $('loginErr').textContent = '⚠️ Please enter a valid real email address (e.g. name@example.com).';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+
+  if (pw.length < 6) {
+    $('loginErr').textContent = '⚠️ Password must be at least 6 characters.';
+    $('loginErr').classList.remove('hidden');
+    return;
+  }
+
   if (currentLoginMode === 'signup') {
     const username = $('iUsername').value.trim();
     if (!username) {
       $('loginErr').textContent = 'Please enter a username.';
-      $('loginErr').classList.remove('hidden');
-      return;
-    }
-    if (!em || !pw) {
-      $('loginErr').textContent = 'Please enter email and password.';
-      $('loginErr').classList.remove('hidden');
-      return;
-    }
-    if (pw.length < 6) {
-      $('loginErr').textContent = 'Password must be at least 6 characters.';
       $('loginErr').classList.remove('hidden');
       return;
     }
@@ -5185,39 +5198,49 @@ $('bEmail').addEventListener('click', async () => {
       const cred = await createUserWithEmailAndPassword(auth, em, pw);
       await updateProfile(cred.user, { displayName: username });
       
-      // Automatically send Firebase Email Verification to user's inbox
+      // Send verification email
       try {
         await sendEmailVerification(cred.user);
-        alert('✉️ Account created! A verification email has been sent to ' + em + '.\n\nPlease check your inbox and click the verification link to verify your email address.');
       } catch (vErr) {
         console.warn('Email verification send error:', vErr);
       }
+
+      // Force sign out until email is verified
+      await signOut(auth);
+
+      alert('✉️ Account created successfully! A verification email has been sent to ' + em + '.\n\nPlease check your inbox and spam folder and click the verification link before signing in.');
+      
+      // Switch UI to login mode
+      $('lnkSignup').click();
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         $('loginErr').textContent = '⚠️ This email address is already registered. Please sign in or reset password.';
+      } else if (err.code === 'auth/invalid-email') {
+        $('loginErr').textContent = '⚠️ Please enter a valid email address.';
+      } else if (err.code === 'auth/weak-password') {
+        $('loginErr').textContent = '⚠️ Password must be at least 6 characters.';
       } else {
         $('loginErr').textContent = err.message;
       }
       $('loginErr').classList.remove('hidden');
     }
   } else {
-    if (!em || !pw) {
-      $('loginErr').textContent = 'Please enter email and password.';
-      $('loginErr').classList.remove('hidden');
-      return;
-    }
-    if (pw.length < 6) {
-      $('loginErr').textContent = 'Password must be at least 6 characters.';
-      $('loginErr').classList.remove('hidden');
-      return;
-    }
-
     $('loginErr').classList.add('hidden');
     try {
-      await signInWithEmailAndPassword(auth, em, pw);
+      const cred = await signInWithEmailAndPassword(auth, em, pw);
+
+      // Block unverified logins
+      if (!cred.user.emailVerified) {
+        await signOut(auth);
+        $('loginErr').textContent = '⚠️ Email Not Verified! We sent a verification link to ' + em + '. Please check your inbox and click the link to verify before logging in.';
+        $('loginErr').classList.remove('hidden');
+        return;
+      }
     } catch (err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         $('loginErr').textContent = '⚠️ Incorrect email or password. Please try again or click Forgot Password!';
+      } else if (err.code === 'auth/invalid-email') {
+        $('loginErr').textContent = '⚠️ Please enter a valid email address.';
       } else {
         $('loginErr').textContent = err.message;
       }
@@ -8147,6 +8170,21 @@ $('bSaveCustomize').addEventListener('click', async () => {
     if (userProfile && userProfile.uid) {
       await updateDoc(doc(db, 'users', userProfile.uid), updateData);
       Object.assign(userProfile, updateData);
+
+      // Sync updated avatar and name to all friends' friend list documents
+      try {
+        if (updateData.av || updateData.name) {
+          const syncData = {};
+          if (updateData.av) syncData.av = updateData.av;
+          if (updateData.name) syncData.name = updateData.name;
+          const friendsSnap = await getDocs(collection(db, 'users', userProfile.uid, 'friends'));
+          friendsSnap.forEach(fDoc => {
+            updateDoc(doc(db, 'users', fDoc.id, 'friends', userProfile.uid), syncData).catch(() => {});
+          });
+        }
+      } catch (e) {
+        console.warn("Failed syncing profile update to friends:", e);
+      }
     } else if (guestProfile) {
       Object.assign(guestProfile, updateData);
       try {
@@ -8309,7 +8347,7 @@ function loadFriendSystem() {
   });
 
   // Real-time listen to friends list
-  friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
+  friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), async (snap) => {
     const listEl = $('friendsList');
     const modalListEl = $('friendsModalList');
     if (listEl) listEl.innerHTML = '';
@@ -8339,8 +8377,30 @@ function loadFriendSystem() {
       return;
     }
 
+    const rawFriends = [];
     snap.forEach(d => {
-      const f = d.data();
+      rawFriends.push(d.data());
+    });
+
+    const friends = await Promise.all(rawFriends.map(async (f) => {
+      try {
+        if (f.uid) {
+          const uSnap = await getDoc(doc(db, 'users', f.uid));
+          if (uSnap.exists()) {
+            const uData = uSnap.data();
+            return {
+              ...f,
+              name: uData.name || f.name,
+              av: uData.av || f.av,
+              handle: uData.handle || f.handle
+            };
+          }
+        }
+      } catch (e) {}
+      return f;
+    }));
+
+    friends.forEach(f => {
       const item = document.createElement('div');
       item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-3.5 cursor-pointer transition relative group';
       
@@ -8902,12 +8962,35 @@ $('bSendFriendReq').addEventListener('click', async () => {
 
 // DM CHAT OPEN & LISTEN
 let dmUnsub = null;
+let activeDMFriendUnsub = null;
 let activeDMFriendUid = '';
 function openFriendDM(friend) {
   const profile = userProfile || guestProfile;
   if (!profile) return;
 
   activeDMFriendUid = friend.uid;
+
+  if (activeDMFriendUnsub) {
+    activeDMFriendUnsub();
+    activeDMFriendUnsub = null;
+  }
+
+  // Listen live to target friend's profile to update avatar & name in real time
+  if (friend.uid) {
+    activeDMFriendUnsub = onSnapshot(doc(db, 'users', friend.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        const uData = docSnap.data();
+        if (uData.av) friend.av = uData.av;
+        if (uData.name) friend.name = uData.name;
+        if ($('dmChatName')) $('dmChatName').textContent = friend.name || 'Player Chat';
+        if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+        document.querySelectorAll(`.dm-msg-av-${friend.uid}`).forEach(img => {
+          img.src = friend.av;
+        });
+      }
+    });
+  }
+
   if ($('dmChatName')) $('dmChatName').textContent = friend.name || 'Player Chat';
   if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
   if ($('dmChatNum')) $('dmChatNum').textContent = friend.badgeNum || '6';
@@ -8994,13 +9077,13 @@ function openFriendDM(friend) {
                 ${m.text}
               </div>
             </div>
-            <img src="${myAv}" class="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
+            <img src="${myAv}" class="dm-msg-av-${myUid} w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
           `;
         } else {
           // Received Message (Left) - Image 1 Style: White bubble, Avatar on left
           bubble.className = 'flex items-start justify-start gap-2 max-w-[88%]';
           bubble.innerHTML = `
-            <img src="${friendAv}" class="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
+            <img src="${friendAv}" class="dm-msg-av-${friend.uid} w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
             <div class="px-3.5 py-2 bg-white text-slate-900 rounded-2xl rounded-tl-xs text-xs font-normal shadow-2xs border border-gray-100 max-w-[80%] break-words leading-relaxed">
               ${m.text}
             </div>
@@ -9028,6 +9111,10 @@ $('bCloseDMChat').addEventListener('click', () => {
   if (dmUnsub) {
     dmUnsub();
     dmUnsub = null;
+  }
+  if (activeDMFriendUnsub) {
+    activeDMFriendUnsub();
+    activeDMFriendUnsub = null;
   }
 });
 
