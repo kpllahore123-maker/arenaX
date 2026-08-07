@@ -23,6 +23,7 @@ import {
   orderBy,
   serverTimestamp,
   where,
+  limit,
   arrayUnion
 } from 'firebase/firestore';
 import {
@@ -44,6 +45,23 @@ interface PlayerAppProps {
 }
 
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
+
+export function getNumericPlayerId(uid: string, currentHandle?: string): string {
+  if (currentHandle) {
+    const digitsOnly = String(currentHandle).replace(/^ID:\s*/i, '').replace(/^@/, '').trim();
+    if (/^\d{6,8}$/.test(digitsOnly)) {
+      return digitsOnly;
+    }
+  }
+  if (!uid) return String(Math.floor(100000 + Math.random() * 900000));
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i);
+    hash |= 0;
+  }
+  const numericId = 100000 + (Math.abs(hash) % 900000);
+  return String(numericId);
+}
 
 export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUID }) => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -219,7 +237,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               id: fireUser.uid,
               uid: fireUser.uid,
               name: data.name || fireUser.displayName || fireUser.email?.split('@')[0] || 'Player',
-              handle: data.handle || '@' + (fireUser.displayName || 'player').toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4),
+              handle: getNumericPlayerId(fireUser.uid, data.handle),
               av: data.av || fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`,
               email: data.email || fireUser.email || '',
               premium: data.premium || false,
@@ -234,7 +252,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           } else {
             // Document doesn't exist, bootstrap it
             const defaultName = fireUser.displayName || fireUser.email?.split('@')[0] || 'Player';
-            const defaultHandle = '@' + defaultName.toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4);
+            const defaultHandle = getNumericPlayerId(fireUser.uid);
             const defaultAv = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
             
             const newProfile: any = {
@@ -458,13 +476,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
 
-    const unsubFriends = onSnapshot(collection(db, 'users', currentUser.uid, 'friends'), async (snap) => {
+    const unsubFriends = onSnapshot(collection(db, 'users', currentUser.uid, 'friends'), (snap) => {
       const rawList: Friend[] = [];
       snap.forEach((d) => {
         rawList.push(d.data() as Friend);
       });
 
-      const updatedList = await Promise.all(rawList.map(async (f) => {
+      // Render raw list immediately so friends load instantly on mobile!
+      setFriends(rawList);
+
+      // Asynchronously enrich friend details without blocking state updates
+      Promise.all(rawList.map(async (f) => {
         try {
           if (f.uid) {
             const uSnap = await getDoc(doc(db, 'users', f.uid));
@@ -474,15 +496,15 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 ...f,
                 name: uData.name || f.name,
                 av: uData.av || f.av,
-                handle: uData.handle || f.handle
+                handle: getNumericPlayerId(f.uid, uData.handle || f.handle)
               };
             }
           }
         } catch (e) {}
         return f;
-      }));
-
-      setFriends(updatedList);
+      })).then((updatedList) => {
+        setFriends(updatedList);
+      }).catch((err) => console.warn("Enrich friends error:", err));
     }, (err) => {
       console.warn("Failed to listen to friends:", err);
     });
@@ -1099,23 +1121,56 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   // Friend Request Add
   const handleSearchFriend = async () => {
-    const queryStr = searchHandle.trim().toLowerCase();
-    if (queryStr.length < 3) {
-      alert('Search handle must be at least 3 characters.');
+    const rawStr = searchHandle.trim();
+    const queryStr = rawStr.replace(/^ID:\s*/i, '').replace(/^ID\s*/i, '').replace(/^@/, '').trim().toLowerCase();
+
+    if (!queryStr) {
+      alert('Please enter a Numeric Player ID (e.g. 849201) or Username to search.');
       return;
     }
     setSearching(true);
     setSearchResult(null);
     try {
+      let found: any = null;
+
+      // 1. Direct query on handle
       const qUser = query(collection(db, 'users'), where('handle', '==', queryStr));
       const snap = await getDocs(qUser);
-      let found: any = null;
       snap.forEach((d) => {
         const u = d.data();
         if (!found && u.uid !== currentUser?.uid) {
           found = { id: d.id, ...u };
         }
       });
+
+      // 2. Query with '@'
+      if (!found) {
+        const qUserAt = query(collection(db, 'users'), where('handle', '==', '@' + queryStr));
+        const snapAt = await getDocs(qUserAt);
+        snapAt.forEach((d) => {
+          const u = d.data();
+          if (!found && u.uid !== currentUser?.uid) {
+            found = { id: d.id, ...u };
+          }
+        });
+      }
+
+      // 3. Scan user list for matching numeric ID or handle or name
+      if (!found) {
+        const allUsersSnap = await getDocs(query(collection(db, 'users'), limit(100)));
+        allUsersSnap.forEach((d) => {
+          const u = d.data();
+          if (!found && u.uid !== currentUser?.uid) {
+            const uNumId = getNumericPlayerId(u.uid, u.handle);
+            const uHandleClean = (u.handle || '').replace(/^@/, '').toLowerCase();
+            const uNameClean = (u.name || '').toLowerCase();
+            if (uNumId === queryStr || uHandleClean === queryStr || uNameClean.includes(queryStr) || u.uid === queryStr) {
+              found = { id: d.id, ...u };
+            }
+          }
+        });
+      }
+
       setSearchResult(found);
     } catch (error) {
       console.error(error);
@@ -2246,7 +2301,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               <i className="fas fa-user-circle text-[#f0c040]"></i> My Profile
             </div>
 
-            <div className={`p-4 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center gap-4 relative overflow-hidden ${currentUser.premium ? 'border-[#a78bfa]/30 shadow-[0_0_20px_rgba(167,139,250,0.08)]' : ''}`}>
+            <div id="profileCard" className={`p-4 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center gap-4 relative overflow-hidden ${currentUser.premium ? 'border-[#a78bfa]/30 shadow-[0_0_20px_rgba(167,139,250,0.08)]' : ''}`}>
               <div className="relative flex-shrink-0">
                 <img src={currentUser.av} alt="Avatar" className={`w-16 h-16 rounded-full border-2 ${currentUser.premium ? 'border-[#a78bfa]' : 'border-[#f0c040]'}`} />
                 <button
@@ -2269,7 +2324,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   {currentUser.name}
                   {currentUser.premium && <i className="fas fa-crown text-[#a78bfa] text-sm" title="Premium"></i>}
                 </h3>
-                <p className="text-xs text-[#8890b0] mb-2">{currentUser.handle}</p>
+                <p id="pHandle" className="text-xs text-[#f0c040] font-mono font-bold mb-2">ID: {getNumericPlayerId(currentUser.uid, currentUser.handle)}</p>
                 <p className="text-[11px] text-[#8890b0] italic mb-2 max-w-[200px] truncate">{custBio || 'No bio written yet.'}</p>
                 
                 <div className="flex flex-wrap gap-1.5">
@@ -3859,12 +3914,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             )}
 
             <div className="space-y-2">
-              <p className="text-xs text-[#8890b0]">Search by handles (e.g. @player#1234):</p>
+              <p className="text-xs text-[#8890b0]">Search by Numeric Player ID (e.g. 849201):</p>
               
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="e.g. @player#1234"
+                  placeholder="Enter Player ID (e.g. 849201)"
                   value={searchHandle}
                   onChange={(e) => setSearchHandle(e.target.value)}
                   className="flex-1 bg-[#171b2e] border border-[#252a45] rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-[#f0c040] transition"
@@ -3885,7 +3940,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <img src={searchResult.av} alt="Avatar" className="w-8 h-8 rounded-full border border-[#252a45]" />
                   <div className="truncate">
                     <div className="font-bold text-white">{searchResult.name}</div>
-                    <div className="text-[10px] text-[#8890b0]">{searchResult.handle}</div>
+                    <div className="text-[10px] text-[#f0c040] font-bold font-mono">ID: {getNumericPlayerId(searchResult.uid, searchResult.handle)}</div>
                   </div>
                 </div>
                 <button
