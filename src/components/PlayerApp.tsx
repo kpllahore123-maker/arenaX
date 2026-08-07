@@ -5,7 +5,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile
+  updateProfile,
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import {
   collection,
@@ -13,6 +15,7 @@ import {
   addDoc,
   setDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   updateDoc,
   onSnapshot,
@@ -52,11 +55,15 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
 
-  // Auth Inputs
+  // Auth Inputs & Modes
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authUsername, setAuthUsername] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authError, setAuthError] = useState('');
+  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [showResendVerifyBtn, setShowResendVerifyBtn] = useState(false);
   const [showGuestWarning, setShowGuestWarning] = useState(false);
 
   // Firestore Lists
@@ -195,6 +202,14 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (fireUser) => {
       if (fireUser && !isGuest) {
+        // Enforce Email Verification for Password auth provider users
+        const isPasswordProvider = fireUser.providerData.some(p => p.providerId === 'password');
+        if (isPasswordProvider && !fireUser.emailVerified) {
+          setCurrentUser(null);
+          await signOut(auth);
+          return;
+        }
+
         // Real-time Firestore document for current user profile
         const userDocRef = doc(db, 'users', fireUser.uid);
         onSnapshot(userDocRef, (docSnap) => {
@@ -443,12 +458,31 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
 
-    const unsubFriends = onSnapshot(collection(db, 'users', currentUser.uid, 'friends'), (snap) => {
-      const list: Friend[] = [];
+    const unsubFriends = onSnapshot(collection(db, 'users', currentUser.uid, 'friends'), async (snap) => {
+      const rawList: Friend[] = [];
       snap.forEach((d) => {
-        list.push(d.data() as Friend);
+        rawList.push(d.data() as Friend);
       });
-      setFriends(list);
+
+      const updatedList = await Promise.all(rawList.map(async (f) => {
+        try {
+          if (f.uid) {
+            const uSnap = await getDoc(doc(db, 'users', f.uid));
+            if (uSnap.exists()) {
+              const uData = uSnap.data();
+              return {
+                ...f,
+                name: uData.name || f.name,
+                av: uData.av || f.av,
+                handle: uData.handle || f.handle
+              };
+            }
+          }
+        } catch (e) {}
+        return f;
+      }));
+
+      setFriends(updatedList);
     }, (err) => {
       console.warn("Failed to listen to friends:", err);
     });
@@ -490,6 +524,30 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
     return () => unsubDMs();
   }, [currentUser, activeFriend, showDMChat]);
+
+  // Real-time listener for active DM friend's profile updates
+  useEffect(() => {
+    if (!activeFriend?.uid || !showDMChat) return;
+    const unsubFriendProfile = onSnapshot(doc(db, 'users', activeFriend.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        const uData = docSnap.data();
+        if (uData.av || uData.name) {
+          setActiveFriend((prev) => {
+            if (!prev) return null;
+            if (prev.av !== uData.av || prev.name !== uData.name) {
+              return {
+                ...prev,
+                name: uData.name || prev.name,
+                av: uData.av || prev.av
+              };
+            }
+            return prev;
+          });
+        }
+      }
+    });
+    return () => unsubFriendProfile();
+  }, [activeFriend?.uid, showDMChat]);
 
   // Listen to Support Messages
   useEffect(() => {
@@ -622,14 +680,47 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     seedChampions();
   }, [currentUser, isGuest]);
 
+  // Auth Validation & Helper Functions
+  const validateEmailFormat = (emailStr: string): boolean => {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(emailStr.trim());
+  };
+
+  const getFriendlyAuthErrorMessage = (err: any): string => {
+    if (!err) return 'An unexpected error occurred.';
+    const code = err.code || '';
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return '⚠️ This email address is already registered. Please switch to Sign In or click Forgot Password.';
+      case 'auth/invalid-email':
+        return '⚠️ Please enter a valid real email address (e.g. name@example.com).';
+      case 'auth/user-not-found':
+        return '⚠️ No registered account found with this email. Please check your email or click Sign Up.';
+      case 'auth/wrong-password':
+        return '⚠️ Incorrect password. Please try again or click Forgot Password.';
+      case 'auth/invalid-credential':
+        return '⚠️ Incorrect email or password. Please check your credentials or create a new account.';
+      case 'auth/weak-password':
+        return '⚠️ Password must be at least 6 characters long.';
+      case 'auth/too-many-requests':
+        return '⚠️ Access blocked due to too many failed attempts. Please reset password or try again later.';
+      case 'auth/network-request-failed':
+        return '⚠️ Network error. Please check your internet connection.';
+      default:
+        return err.message || 'Authentication failed. Please check your details.';
+    }
+  };
+
   // Google Login
   const handleGoogleLogin = async () => {
     if (!agreedToTerms) {
       setAuthError('⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+      setAuthSuccessMsg('');
       return;
     }
     setAuthLoading(true);
     setAuthError('');
+    setAuthSuccessMsg('');
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
@@ -642,44 +733,138 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     }
   };
 
-  // Email Sign In or Create
+  // Email Sign In or Sign Up
   const handleEmailAuth = async () => {
     if (!agreedToTerms) {
       setAuthError('⚠️ You must agree to the Terms & Conditions and Privacy Policy to enter the Arena!');
+      setAuthSuccessMsg('');
       return;
     }
-    if (!email || !password) {
-      setAuthError('Please enter email and password.');
+
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setAuthError('⚠️ Please enter email address and password.');
+      setAuthSuccessMsg('');
       return;
     }
-    if (password.length < 6) {
-      setAuthError('Password must be at least 6 characters.');
+
+    if (!validateEmailFormat(trimmedEmail)) {
+      setAuthError('⚠️ Please enter a valid email address (e.g. user@gmail.com).');
+      setAuthSuccessMsg('');
+      return;
+    }
+
+    if (trimmedPassword.length < 6) {
+      setAuthError('⚠️ Password must be at least 6 characters long.');
+      setAuthSuccessMsg('');
       return;
     }
 
     setAuthLoading(true);
     setAuthError('');
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (signInErr: any) {
-      if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
-        // Try creating account instead
+    setAuthSuccessMsg('');
+    setShowResendVerifyBtn(false);
+
+    if (authMode === 'signup') {
+      const trimmedUsername = authUsername.trim() || trimmedEmail.split('@')[0];
+      try {
+        // Create account
+        const cred = await createUserWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+        await updateProfile(cred.user, { displayName: trimmedUsername });
+
+        // Send verification email
         try {
-          const cred = await createUserWithEmailAndPassword(auth, email, password);
-          const displayName = email.split('@')[0];
-          await updateProfile(cred.user, { displayName });
-          
-          // Profile doc will be bootstrapped by onAuthStateChanged
-        } catch (signUpErr: any) {
-          if (signUpErr.code === 'auth/email-already-in-use') {
-            setAuthError('⚠️ Incorrect password for this email address. Please try again.');
-          } else {
-            setAuthError(signUpErr.message);
-          }
+          await sendEmailVerification(cred.user);
+        } catch (vErr) {
+          console.warn('Send verification email error:', vErr);
         }
-      } else {
-        setAuthError(signInErr.message);
+
+        // Sign out user until they verify email
+        await signOut(auth);
+
+        setAuthSuccessMsg(`✉️ Registration successful! A verification email has been sent to ${trimmedEmail}.\n\nPlease check your email inbox (and spam folder) and click the verification link before signing in.`);
+        setAuthMode('login');
+        setPassword('');
+      } catch (signUpErr: any) {
+        setAuthError(getFriendlyAuthErrorMessage(signUpErr));
+      } finally {
+        setAuthLoading(false);
       }
+    } else {
+      // Sign In mode
+      try {
+        const cred = await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+
+        // Enforce Email Verification!
+        if (!cred.user.emailVerified) {
+          await signOut(auth);
+          setAuthError(`⚠️ Email Not Verified! A verification link was sent to ${trimmedEmail}.\n\nPlease verify your email address in your inbox before logging in.`);
+          setShowResendVerifyBtn(true);
+          setAuthLoading(false);
+          return;
+        }
+
+        setAuthSuccessMsg('✅ Sign in successful!');
+      } catch (signInErr: any) {
+        setAuthError(getFriendlyAuthErrorMessage(signInErr));
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setAuthError('⚠️ Please enter your registered email and password above to resend the verification email.');
+      setAuthSuccessMsg('');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthSuccessMsg('');
+    try {
+      const cred = await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+      if (cred.user.emailVerified) {
+        setAuthSuccessMsg(`✅ Your email (${trimmedEmail}) is already verified! You can sign in now.`);
+        setShowResendVerifyBtn(false);
+      } else {
+        await sendEmailVerification(cred.user);
+        setAuthSuccessMsg(`✉️ A verification email has been sent to ${trimmedEmail}. Please check your inbox and spam folder.`);
+      }
+      await signOut(auth);
+    } catch (err: any) {
+      setAuthError(getFriendlyAuthErrorMessage(err));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setAuthError('⚠️ Please enter your email address in the Email field above to reset your password.');
+      setAuthSuccessMsg('');
+      return;
+    }
+    if (!validateEmailFormat(trimmedEmail)) {
+      setAuthError('⚠️ Please enter a valid email address.');
+      setAuthSuccessMsg('');
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthSuccessMsg('');
+    try {
+      await sendPasswordResetEmail(auth, trimmedEmail);
+      setAuthSuccessMsg(`✉️ Password reset link sent to ${trimmedEmail}! Please check your inbox and spam folder.`);
+    } catch (err: any) {
+      setAuthError(getFriendlyAuthErrorMessage(err));
     } finally {
       setAuthLoading(false);
     }
@@ -1052,6 +1237,20 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         av: avToSave,
         bio: custBio.trim()
       });
+
+      // Sync avatar and name to all friends' documents
+      try {
+        const friendsSnap = await getDocs(collection(db, 'users', currentUser.uid, 'friends'));
+        friendsSnap.forEach((fDoc) => {
+          updateDoc(doc(db, 'users', fDoc.id, 'friends', currentUser.uid), {
+            name: nameToSave,
+            av: avToSave
+          }).catch(() => {});
+        });
+      } catch (e) {
+        console.warn("Failed syncing profile update to friends:", e);
+      }
+
       setCurrentUser(prev => prev ? { ...prev, name: nameToSave, av: avToSave, bio: custBio.trim() } : null);
       setShowCustomizeModal(false);
       alert('Profile customization saved successfully! ✅');
@@ -1379,13 +1578,49 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
           <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 shadow-xl space-y-5">
             <div>
-              <h2 className="font-sans text-xl font-bold">Enter the Arena</h2>
-              <p className="text-xs text-[#8890b0]">Choose how you want to continue</p>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-sans text-xl font-bold">
+                  {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
+                </h2>
+                <div className="flex bg-[#171b2e] p-1 rounded-lg border border-[#252a45]">
+                  <button
+                    onClick={() => {
+                      setAuthMode('login');
+                      setAuthError('');
+                      setAuthSuccessMsg('');
+                      setShowResendVerifyBtn(false);
+                    }}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition ${authMode === 'login' ? 'bg-[#f0c040] text-[#0a0c12]' : 'text-[#8890b0] hover:text-white'}`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAuthMode('signup');
+                      setAuthError('');
+                      setAuthSuccessMsg('');
+                      setShowResendVerifyBtn(false);
+                    }}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition ${authMode === 'signup' ? 'bg-[#f0c040] text-[#0a0c12]' : 'text-[#8890b0] hover:text-white'}`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-[#8890b0]">
+                {authMode === 'login' ? 'Sign in to access your ArenaX account' : 'Register with a real email to verify your account'}
+              </p>
             </div>
 
             {authError && (
-              <div className="p-3 bg-[#e8404a]/10 border border-[#e8404a]/30 rounded-lg text-xs text-[#e8404a] text-center">
+              <div className="p-3 bg-[#e8404a]/10 border border-[#e8404a]/30 rounded-lg text-xs text-[#e8404a] text-left leading-relaxed whitespace-pre-line">
                 {authError}
+              </div>
+            )}
+
+            {authSuccessMsg && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs text-emerald-400 text-left leading-relaxed whitespace-pre-line">
+                {authSuccessMsg}
               </div>
             )}
 
@@ -1422,33 +1657,85 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
             <div className="flex items-center gap-3 text-xs text-[#4a5070]">
               <div className="flex-1 h-[1px] bg-[#252a45]"></div>
-              <span>or</span>
+              <span>or email</span>
               <div className="flex-1 h-[1px] bg-[#252a45]"></div>
             </div>
 
             <div className="space-y-3">
+              {authMode === 'signup' && (
+                <input
+                  type="text"
+                  placeholder="Username / Gamer Tag"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#f0c040] transition text-white"
+                />
+              )}
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder="Real Email address (e.g. name@gmail.com)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#f0c040] transition text-white"
               />
-              <input
-                type="password"
-                placeholder="Password (min 6 chars)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#f0c040] transition text-white"
-              />
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password (min 6 chars)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#171b2e] border border-[#252a45] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#f0c040] transition text-white"
+                />
+                {authMode === 'login' && (
+                  <div className="flex justify-end mt-1.5">
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-[11px] text-[#f0c040] hover:underline cursor-pointer"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleEmailAuth}
                 disabled={authLoading}
                 className="w-full py-3 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] rounded-lg text-sm font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.98]"
               >
                 {authLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-envelope"></i>}
-                Continue with Email
+                {authMode === 'login' ? 'Sign In with Email' : 'Create Account & Send Verification'}
               </button>
+
+              {showResendVerifyBtn && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={authLoading}
+                  className="w-full py-2.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition"
+                >
+                  <i className="fas fa-paper-plane"></i>
+                  Resend Verification Email Link
+                </button>
+              )}
+            </div>
+
+            <div className="text-center pt-1">
+              <p className="text-xs text-[#8890b0]">
+                {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                <button
+                  onClick={() => {
+                    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                    setAuthError('');
+                    setAuthSuccessMsg('');
+                    setShowResendVerifyBtn(false);
+                  }}
+                  className="text-[#f0c040] font-bold hover:underline ml-1 cursor-pointer"
+                >
+                  {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-[#4a5070]">
@@ -1804,21 +2091,6 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   </div>
                 </div>
 
-                {/* Direct Messages Top Button */}
-                <button
-                  onClick={() => setActiveTab('Chat')}
-                  className="flex flex-col items-center justify-center transition group cursor-pointer relative"
-                  title="Direct Messages"
-                >
-                  <div className="w-9 h-9 rounded-full bg-[#1b2a4a] border border-sky-400/40 flex items-center justify-center text-sky-400 text-base shadow group-hover:scale-110 transition relative">
-                    <i className="fas fa-paper-plane"></i>
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-[#1b2a4a]">
-                      3
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-0.5">DMs</span>
-                </button>
-
                 {/* Events Button (Star icon + label) */}
                 <button
                   onClick={() => alert('Events section coming soon!')}
@@ -1831,8 +2103,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 </button>
               </div>
 
-              {/* 4 Circular Action Icons matching provided image */}
-              <div className="relative z-10 grid grid-cols-4 gap-2 pt-1 text-center">
+              {/* 3 Circular Action Icons */}
+              <div className="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
                 {/* Ranking */}
                 <div
                   onClick={() => setShowRankingModal(true)}
@@ -1845,22 +2117,6 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     <img src={currentUser.av} alt="Ranking" className="w-11 h-11 rounded-full object-cover" />
                   </div>
                   <span className="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
-                </div>
-
-                {/* Direct Messages Button */}
-                <div
-                  onClick={() => setActiveTab('Chat')}
-                  className="flex flex-col items-center cursor-pointer group"
-                >
-                  <div className="relative w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#0369a1] to-[#0c4a6e] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-black text-[9px] rounded-full flex items-center justify-center border border-[#0c4a6e] shadow-md animate-pulse">
-                      3
-                    </span>
-                    <div className="w-10 h-10 bg-[#38bdf8]/20 rounded-xl flex items-center justify-center text-xl">
-                      <i className="fas fa-comments text-[#7dd3fc]"></i>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-1.5">Direct Msg</span>
                 </div>
 
                 {/* Tasks */}
@@ -1905,10 +2161,38 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   setActiveTab('Tour');
                   setActiveTournamentFilter('all');
                 }}
-                className="px-4 py-2 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95"
+                className="px-4 py-2 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95 cursor-pointer"
               >
                 Join Now
               </button>
+            </div>
+
+            {/* Explore Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="ff-title text-base font-extrabold text-white flex items-center gap-2">
+                  <i className="fas fa-compass text-[#f0c040]"></i> Explore
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 gap-2.5">
+                <div
+                  onClick={() => setActiveTab('Chat')}
+                  className="p-3.5 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 bg-[#38bdf8]/10 border border-[#38bdf8]/30 text-[#38bdf8] rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                      <i className="fas fa-comments"></i>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm group-hover:text-[#f0c040] transition">Message</h4>
+                      <p className="text-xs text-[#8890b0]">chat with your friend</p>
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-[#111420] border border-[#252a45] group-hover:border-[#f0c040]/40 flex items-center justify-center text-[#8890b0] group-hover:text-white transition text-xs">
+                    <i className="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Quick Tournaments List */}
