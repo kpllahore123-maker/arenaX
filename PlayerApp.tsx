@@ -46,7 +46,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [guestId, setGuestId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'Profile' | 'Rules' | 'Wallet' | 'Chat' | 'Tour' | 'Support'>('Profile');
+  const [activeTab, setActiveTab] = useState<'Home' | 'Profile' | 'Rules' | 'Wallet' | 'Chat' | 'Tour' | 'Support'>('Home');
+  const [showHamburger, setShowHamburger] = useState(false);
+  const [showRankingModal, setShowRankingModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
 
   // Auth Inputs
   const [email, setEmail] = useState('');
@@ -178,6 +181,13 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [notifTours, setNotifTours] = useState(true);
   const [premiumPlan, setPremiumPlan] = useState<'weekly' | 'monthly'>('weekly');
 
+  // FCM Debug states
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [notifPermission, setNotifPermission] = useState<string>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+  const [fcmError, setFcmError] = useState<string | null>(null);
+
   // Listen to Auth & Firestore profile
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (fireUser) => {
@@ -238,12 +248,33 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsub();
   }, [isGuest]);
 
+  const handleRequestFcmToken = async () => {
+    if (!currentUser) return;
+    setFcmError(null);
+    try {
+      console.log("FCM: Manually requesting permission and token...");
+      const token = await requestNotificationPermissionAndGetToken(currentUser.uid);
+      if (token) {
+        setFcmToken(token);
+      } else {
+        setFcmError("Failed to retrieve token. Please make sure notifications are enabled in your browser settings for this site.");
+      }
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setNotifPermission(Notification.permission);
+      }
+    } catch (err: any) {
+      console.error("FCM manual request failed:", err);
+      setFcmError(err?.message || String(err));
+    }
+  };
+
   // Automatically ask for notification permission as soon as the app opens
   useEffect(() => {
     console.log("FCM: Triggering automatic permission request on app startup...");
     autoRequestPermission()
       .then((permission) => {
         console.log("FCM: Auto-request permission complete. Permission level:", permission);
+        if (permission) setNotifPermission(permission);
       })
       .catch((err) => {
         console.error("FCM: Auto-request permission failed:", err);
@@ -259,9 +290,18 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         .then((token) => {
           console.log("FCM: requestNotificationPermissionAndGetToken resolved successfully.");
           console.log("FCM: Token value obtained:", token);
+          if (token) {
+            setFcmToken(token);
+          } else {
+            setFcmError("Automatic token generation failed. Please generate manually below.");
+          }
+          if (typeof window !== 'undefined' && 'Notification' in window) {
+            setNotifPermission(Notification.permission);
+          }
         })
         .catch((err) => {
           console.error("FCM: Error while calling requestNotificationPermissionAndGetToken:", err);
+          setFcmError(err?.message || String(err));
         });
     } else {
       console.log("FCM: Hook skipped. currentUser:", currentUser ? "Available" : "Null", "UID:", currentUser?.uid, "isGuest:", isGuest);
@@ -295,7 +335,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     const unsubTours = onSnapshot(qTours, (snap) => {
       const list: Tournament[] = [];
       snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() } as Tournament);
+        const data = d.data();
+        // Completely remove and ignore any FIFA or FIFA-related tournaments
+        if (data.name && data.name.toLowerCase().includes('fifa')) return;
+        if (data.game && data.game.toLowerCase().includes('fifa')) return;
+        list.push({ id: d.id, ...data } as Tournament);
       });
       
       // Sort client-side by createdAt descending to ensure resilience
@@ -305,15 +349,15 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         return timeB - timeA;
       });
 
-      // Ensure FIFA World Cup is always in the list
-      const hasFIFA = list.some(t => t.name === 'FIFA World Cup');
-      if (!hasFIFA) {
+      // Ensure ArenaX Champions Cup is always in the list
+      const hasChampionsCup = list.some(t => t.name === 'ArenaX Champions Cup');
+      if (!hasChampionsCup) {
         list.unshift({
-          id: 'demo_fifa',
-          name: 'FIFA World Cup',
-          game: 'FIFA Mobile / FC 24',
+          id: 'demo_champions',
+          name: 'ArenaX Champions Cup',
+          game: 'eFootball / FC 24',
           status: 'upcoming',
-          registered: 0,
+          registered: 12,
           maxPlayers: 32,
           prize: '50,000 AX Coins',
           date: 'Jul 15, 2026',
@@ -324,7 +368,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         });
       }
 
-      if (list.length === 1 && list[0].id === 'demo_fifa') {
+      if (list.length === 1 && list[0].id === 'demo_champions') {
         // Fallback demo data if Firestore is empty except for our injected one
         setTournaments([
           list[0],
@@ -540,21 +584,21 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsubscribe();
   }, [selectedTournament]);
 
-  // Auto-seed the "FIFA World Cup" special tournament
+  // Auto-seed the "ArenaX Champions Cup" special tournament
   useEffect(() => {
     if (!currentUser || isGuest) return;
-    const seedFIFA = async () => {
+    const seedChampions = async () => {
       try {
         const q = query(
           collection(db, 'tournaments'),
-          where('name', '==', 'FIFA World Cup')
+          where('name', '==', 'ArenaX Champions Cup')
         );
         const snap = await getDocs(q);
         if (snap.empty) {
           // Add the special event
           await addDoc(collection(db, 'tournaments'), {
-            name: 'FIFA World Cup',
-            game: 'FIFA Mobile / FC 24',
+            name: 'ArenaX Champions Cup',
+            game: 'eFootball / FC 24',
             prize: '50,000 AX Coins',
             maxPlayers: 32,
             date: 'Jul 15, 2026',
@@ -563,16 +607,16 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             teamType: 'Squad (4 Players)',
             status: 'upcoming',
             hasTeams: true,
-            registered: 0,
+            registered: 12,
             createdAt: serverTimestamp()
           });
-          console.log('FIFA World Cup tournament successfully auto-provisioned!');
+          console.log('ArenaX Champions Cup tournament successfully auto-provisioned!');
         }
       } catch (err) {
-        console.warn('Failed to seed FIFA tournament:', err);
+        console.warn('Failed to seed Champions tournament:', err);
       }
     };
-    seedFIFA();
+    seedChampions();
   }, [currentUser, isGuest]);
 
   // Google Login
@@ -1139,7 +1183,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
 
-    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('champions');
     if (isSquadEvent && !tregSelectedTeamColor) {
       alert('Please select a Squad / Team Color theme!');
       return;
@@ -1467,24 +1511,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
       {/* TOPBAR */}
       <nav className="h-[56px] bg-[#111420] border-b border-[#252a45] flex items-center justify-between px-4 z-20">
-        <div className="ff-title text-xl font-bold tracking-wider text-white">
-          <i className="fas fa-trophy text-[#f0c040] mr-2"></i>Arena<span className="text-[#f0c040]">X</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowHamburger(true)}
+            className="w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-center text-[#f0c040] hover:bg-[#1e2340] transition active:scale-95 shadow-sm"
+            title="Menu"
+          >
+            <i className="fas fa-bars text-base"></i>
+          </button>
+          <div className="ff-title text-xl font-bold tracking-wider text-white flex items-center gap-1.5">
+            <i className="fas fa-trophy text-[#f0c040]"></i>Arena<span className="text-[#f0c040]">X</span>
+          </div>
         </div>
+
         <div className="flex items-center gap-2">
           {/* Admin panel switch option for staff */}
           {(isAdminUID || (currentUser && currentUser.email === 'admin@arenax.com')) && (
             <button
               onClick={onSwitchToAdmin}
-              className="px-3 py-1 bg-[#e8404a] text-white text-[11px] uppercase font-bold rounded hover:bg-[#cc3540] transition tracking-wider flex items-center gap-1"
+              className="px-2.5 py-1 bg-[#e8404a] text-white text-[10px] uppercase font-bold rounded hover:bg-[#cc3540] transition tracking-wider flex items-center gap-1"
             >
-              <i className="fas fa-shield-alt"></i> Staff Admin
+              <i className="fas fa-shield-alt"></i> Staff
             </button>
           )}
 
           {/* Topbar Support Chat */}
           <button
             onClick={() => setActiveTab('Support')}
-            className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            className="relative w-8 h-8 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-xs text-[#8890b0] hover:text-[#f0c040] transition"
             title="Support Chat"
           >
             <i className="fas fa-headset"></i>
@@ -1493,29 +1547,152 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           {/* Notification Bell */}
           <button
             onClick={handleOpenNotifications}
-            className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            className="relative w-8 h-8 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-xs text-[#8890b0] hover:text-[#f0c040] transition"
             title="Notifications"
           >
             <i className="fas fa-bell"></i>
             {unreadNotifsCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#e8404a] rounded-full ring-2 ring-[#111420]"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-[#e8404a] rounded-full ring-2 ring-[#111420]"></span>
             )}
           </button>
 
           {/* Settings Cog */}
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="relative w-9 h-9 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-sm text-[#8890b0] hover:text-[#f0c040] transition"
+            className="relative w-8 h-8 bg-[#171b2e] border border-[#252a45] rounded-full flex items-center justify-center text-xs text-[#8890b0] hover:text-[#f0c040] transition"
             title="Settings"
           >
             <i className="fas fa-cog"></i>
           </button>
 
-          <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[#f0c040] flex-shrink-0 ml-1">
+          <div
+            onClick={() => setActiveTab('Profile')}
+            className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#f0c040] flex-shrink-0 ml-1 cursor-pointer hover:scale-105 transition"
+          >
             <img src={currentUser.av} alt="Avatar" className="w-full h-full object-cover" />
           </div>
         </div>
       </nav>
+
+      {/* HAMBURGER SIDE DRAWER SECTION */}
+      {showHamburger && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex justify-start">
+          <div className="w-[280px] max-w-[85vw] h-full bg-[#111420] border-r border-[#252a45] p-5 flex flex-col justify-between animate-slide-right space-y-6 overflow-y-auto">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-[#252a45]">
+                <div className="ff-title text-lg font-bold text-white flex items-center gap-2">
+                  <i className="fas fa-bars text-[#f0c040]"></i> Hamburger Section
+                </div>
+                <button
+                  onClick={() => setShowHamburger(false)}
+                  className="w-8 h-8 rounded-full bg-[#171b2e] text-[#8890b0] hover:text-white flex items-center justify-center text-xs transition"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+
+              {/* User Brief */}
+              <div className="my-4 p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center gap-3">
+                <img src={currentUser.av} alt="Avatar" className="w-10 h-10 rounded-full border border-[#f0c040]" />
+                <div className="min-w-0">
+                  <div className="font-bold text-xs text-white truncate">{currentUser.name}</div>
+                  <div className="text-[10px] text-[#8890b0]">{currentUser.handle}</div>
+                  <div className="text-[10px] font-bold text-[#f0c040]">{currentUser.balance || 0} AX Coins</div>
+                </div>
+              </div>
+
+              {/* Navigation Items */}
+              <div className="space-y-2">
+                <div className="text-[10px] uppercase font-bold text-[#4a5070] tracking-wider px-1">Menu Options</div>
+
+                {/* Chat button placed in hamburger section */}
+                <button
+                  onClick={() => {
+                    setActiveTab('Chat');
+                    setShowHamburger(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                    activeTab === 'Chat'
+                      ? 'bg-[#f0c040] text-[#0a0c12]'
+                      : 'bg-[#171b2e] text-white hover:bg-[#1e2340] border border-[#252a45]'
+                  }`}
+                >
+                  <i className="fas fa-comments text-base text-[#f0c040]"></i>
+                  <span>Player Chats & DMs</span>
+                  <span className="ml-auto text-[9px] bg-[#f0c040]/20 text-[#f0c040] px-1.5 py-0.5 rounded font-bold uppercase">Chat</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('Home');
+                    setShowHamburger(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#171b2e] text-[#8890b0] hover:text-white hover:bg-[#1e2340] border border-[#252a45] transition"
+                >
+                  <i className="fas fa-home text-base text-[#f0c040]"></i>
+                  <span>Home Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('Support');
+                    setShowHamburger(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#171b2e] text-[#8890b0] hover:text-white hover:bg-[#1e2340] border border-[#252a45] transition"
+                >
+                  <i className="fas fa-headset text-base text-[#f0c040]"></i>
+                  <span>Support Center</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setShowHamburger(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#171b2e] text-[#8890b0] hover:text-white hover:bg-[#1e2340] border border-[#252a45] transition"
+                >
+                  <i className="fas fa-cog text-base text-[#f0c040]"></i>
+                  <span>App Settings</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('Rules');
+                    setShowHamburger(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#171b2e] text-[#8890b0] hover:text-white hover:bg-[#1e2340] border border-[#252a45] transition"
+                >
+                  <i className="fas fa-book-open text-base text-[#f0c040]"></i>
+                  <span>Tournament Guidelines</span>
+                </button>
+
+                {(isAdminUID || (currentUser && currentUser.email === 'admin@arenax.com')) && (
+                  <button
+                    onClick={() => {
+                      onSwitchToAdmin();
+                      setShowHamburger(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition"
+                  >
+                    <i className="fas fa-shield-alt text-base"></i>
+                    <span>Staff Admin Panel</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowHamburger(false);
+                handleLogout();
+              }}
+              className="w-full py-2.5 bg-[#e8404a]/10 border border-[#e8404a]/30 text-[#e8404a] hover:bg-[#e8404a]/20 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2"
+            >
+              <i className="fas fa-sign-out-alt"></i> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Banners */}
       {isGuest && (
@@ -1540,6 +1717,167 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
       {/* MAIN BODY SCROLL */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* ── HOME TAB ── */}
+        {activeTab === 'Home' && (
+          <div className="space-y-5 animate-fade-in">
+            {/* Top Interface Bar matching user image */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#1d2238] p-4 shadow-xl bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/bg.png')" }}>
+              {/* Overlay for readability */}
+              <div className="absolute inset-0 bg-black/25 pointer-events-none"></div>
+
+              {/* Background Mosque Silhouette & Sparkles */}
+              <div className="absolute inset-0 opacity-15 pointer-events-none flex items-end justify-center">
+                <svg viewBox="0 0 500 150" className="w-full h-full text-[#4a5580] fill-current">
+                  <path d="M50,150 L50,80 L60,80 L60,150 M440,150 L440,80 L450,80 L450,150 M250,150 C200,150 190,70 250,50 C310,70 300,150 250,150 Z M190,150 L190,100 L200,100 L200,150 M300,150 L300,100 L310,100 L310,150" />
+                </svg>
+              </div>
+
+              {/* User Header Row */}
+              <div className="relative z-10 flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  {/* User Profile Avatar */}
+                  <div
+                    onClick={() => setActiveTab('Profile')}
+                    className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#3d4566] cursor-pointer hover:scale-105 transition shadow-md flex-shrink-0"
+                  >
+                    <img src={currentUser.av} alt="Avatar" className="w-full h-full object-cover" />
+                  </div>
+
+                  {/* AX Coins Badge Pill */}
+                  <div
+                    onClick={() => setActiveTab('Wallet')}
+                    className="flex items-center gap-2 bg-[#23273e]/90 hover:bg-[#2c324e] border border-[#383f60] px-3.5 py-1.5 rounded-full cursor-pointer transition shadow-inner"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-xs font-black shadow">
+                      <i className="fas fa-coins"></i>
+                    </div>
+                    <span className="font-extrabold text-sm text-white tracking-wide">
+                      {currentUser?.balance || 0}
+                    </span>
+                    <span className="text-[#d4a017] font-bold text-sm ml-0.5">+</span>
+                  </div>
+                </div>
+
+                {/* Events Button (Star icon + label) */}
+                <button
+                  onClick={() => alert('Events section coming soon!')}
+                  className="flex flex-col items-center justify-center transition group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#17253d] border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-base shadow group-hover:scale-110 transition">
+                    <i className="fas fa-star"></i>
+                  </div>
+                  <span className="text-[11px] font-medium text-[#a0a8c8] group-hover:text-white transition mt-0.5">Events</span>
+                </button>
+              </div>
+
+              {/* 3 Circular Action Icons matching provided image */}
+              <div className="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
+                {/* Ranking */}
+                <div
+                  onClick={() => setShowRankingModal(true)}
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="absolute -top-1 -left-1 text-[#f0c040] text-base drop-shadow">
+                      <i className="fas fa-crown"></i>
+                    </div>
+                    <img src={currentUser.av} alt="Ranking" className="w-12 h-12 rounded-full object-cover" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Ranking</span>
+                </div>
+
+                {/* Tasks */}
+                <div
+                  onClick={() => setShowTasksModal(true)}
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="w-11 h-11 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-2xl">
+                      <i className="fas fa-clipboard-check text-[#ef4444]"></i>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Tasks</span>
+                </div>
+
+                {/* Friends */}
+                <div
+                  onClick={() => setShowAddFriendModal(true)}
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+                    <div className="w-11 h-11 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-2xl">
+                      <i className="fas fa-user-alt text-[#34d399]"></i>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Friends</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Featured Event Banner */}
+            <div className="p-4 bg-gradient-to-r from-[#f0c040]/15 via-[#171b2e] to-[#f0c040]/5 border border-[#f0c040]/30 rounded-2xl flex items-center justify-between gap-4 shadow-lg">
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#f0c040] bg-[#f0c040]/10 px-2 py-0.5 rounded border border-[#f0c040]/20">
+                  Featured Championship
+                </span>
+                <h3 className="ff-title text-lg font-extrabold text-white">ArenaX Champions Cup</h3>
+                <p className="text-xs text-[#8890b0]">Assemble or claim a spot in a 4-Player squad! 50,000 AX prize pool.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveTab('Tour');
+                  setActiveTournamentFilter('all');
+                }}
+                className="px-4 py-2 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95"
+              >
+                Join Now
+              </button>
+            </div>
+
+            {/* Quick Tournaments List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="ff-title text-lg font-bold text-white flex items-center gap-2">
+                  <i className="fas fa-trophy text-[#f0c040]"></i> Active Tournaments
+                </h3>
+                <button
+                  onClick={() => setActiveTab('Tour')}
+                  className="text-xs text-[#f0c040] hover:underline font-semibold"
+                >
+                  View All ({tournaments.length})
+                </button>
+              </div>
+
+              {tournaments.slice(0, 3).map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => {
+                    setSelectedTournament(t);
+                    setTregStep(1);
+                  }}
+                  className="bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/50 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white truncate">{t.name}</span>
+                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-[#f0c040]/10 text-[#f0c040] border border-[#f0c040]/20">
+                        {t.mode || 'Battle Royale'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#8890b0] flex items-center gap-3">
+                      <span>Prize: <strong className="text-[#f0c040]">{t.prize}</strong></span>
+                      <span>Entry: <strong>{t.entryFee}</strong></span>
+                    </div>
+                  </div>
+                  <button className="px-3 py-1.5 bg-[#1e2340] hover:bg-[#f0c040] hover:text-[#0a0c12] border border-[#252a45] rounded-lg text-xs font-bold text-[#f0c040] transition">
+                    Details
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── PROFILE TAB ── */}
         {activeTab === 'Profile' && (
@@ -1599,7 +1937,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <i className="fas fa-trophy"></i>
                 </div>
                 <div>
-                  <h4 className="font-bold text-[#f0c040] text-sm">FIFA World Cup Squad Event!</h4>
+                  <h4 className="font-bold text-[#f0c040] text-sm">ArenaX Champions Cup Squad Event!</h4>
                   <p className="text-[11px] text-[#8890b0] leading-normal">
                     Assemble or claim a spot in a 4-Player squad! Choose one of 8 team colors. Rs 200 entry / 50,000 AX prize!
                   </p>
@@ -1814,7 +2152,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 <i className="fas fa-coins text-[#f0c040] text-lg"></i>
               </div>
               <div className="ff-title text-4xl font-black text-[#f0c040] leading-none mb-1">
-                {isGuest ? 'Restricted' : currentUser.balance.toLocaleString()}
+                {isGuest ? 'Restricted' : (currentUser?.balance ?? 0).toLocaleString()}
               </div>
               <div className="text-[10px] text-[#8890b0] mb-4">AX Coins</div>
               
@@ -2222,11 +2560,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       {/* BOTTOM NAV */}
       <nav className="fixed bottom-0 left-0 right-0 h-[64px] bg-[#111420] border-t border-[#252a45] flex z-20">
         {[
-          { tab: 'Profile', label: 'Profile', icon: 'fa-user' },
-          { tab: 'Rules', label: 'Rules', icon: 'fa-book-open' },
+          { tab: 'Home', label: 'Home', icon: 'fa-home' },
           { tab: 'Wallet', label: 'Wallet', icon: 'fa-wallet' },
-          { tab: 'Chat', label: 'Chat', icon: 'fa-comments' },
-          { tab: 'Tour', label: 'Events', icon: 'fa-trophy' }
+          { tab: 'Tour', label: 'Events', icon: 'fa-trophy' },
+          { tab: 'Voice', label: 'Voice', icon: 'fa-microphone' },
+          { tab: 'Profile', label: 'Profile', icon: 'fa-user' }
         ].map((item) => (
           <button
             key={item.tab}
@@ -2237,9 +2575,6 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             <span className="font-semibold">{item.label}</span>
             {activeTab === item.tab && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[2px] bg-[#f0c040] rounded-b"></span>
-            )}
-            {item.tab === 'Chat' && !isGuest && friendRequests.length > 0 && (
-              <span className="absolute top-2 right-4 w-2 h-2 bg-[#e8404a] rounded-full"></span>
             )}
           </button>
         ))}
@@ -2428,6 +2763,89 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     <div className="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f0c040]"></div>
                   </label>
                 </div>
+              </div>
+            </div>
+
+            {/* FCM Notification Diagnostics */}
+            <div className="space-y-3 border-t border-[#252a45]/50 pt-3">
+              <h4 className="text-[10px] uppercase tracking-wider text-[#f0c040] font-bold flex items-center gap-1.5">
+                <i className="fas fa-satellite-dish animate-pulse"></i> Firebase Notification Diagnostics
+              </h4>
+              <div className="space-y-2 bg-[#171b2e] border border-[#252a45] p-3 rounded-xl text-xs space-y-2.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[#8890b0]">Browser Permission:</span>
+                  <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase ${
+                    notifPermission === 'granted' ? 'bg-green/10 text-green border border-green/20' :
+                    notifPermission === 'denied' ? 'bg-red/10 text-red border border-red/20' :
+                    'bg-[#1e2340] text-[#8890b0] border border-[#252a45]'
+                  }`}>
+                    {notifPermission}
+                  </span>
+                </div>
+
+                {fcmError && (
+                  <div className="bg-red/5 border border-red/20 rounded p-2 text-[10px] text-red select-text break-all">
+                    <strong>FCM Error:</strong> {fcmError}
+                  </div>
+                )}
+
+                {notifPermission !== 'granted' && (
+                  <div className="bg-red/5 border border-red/20 rounded p-2.5 space-y-1.5">
+                    <p className="text-[10px] text-red leading-snug">
+                      ⚠️ **Notifications are blocked/not allowed.** Please click the lock icon next to the browser URL and allow notifications.
+                    </p>
+                    <button
+                      onClick={handleRequestFcmToken}
+                      className="w-full py-1 bg-red text-white text-[10px] font-bold rounded hover:bg-red/90 transition flex items-center justify-center gap-1"
+                    >
+                      <i className="fas fa-bell"></i> Allow & Request Token
+                    </button>
+                  </div>
+                )}
+
+                {notifPermission === 'granted' && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[#8890b0] font-medium">Your FCM Token:</span>
+                      <button
+                        onClick={async () => {
+                          if (fcmToken) {
+                            await navigator.clipboard.writeText(fcmToken);
+                            alert('📋 FCM Token copied to clipboard!');
+                          } else {
+                            handleRequestFcmToken();
+                          }
+                        }}
+                        className="text-[10px] text-[#f0c040] hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        {fcmToken ? (
+                          <>
+                            <i className="fas fa-copy"></i> Copy Token
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-sync animate-spin"></i> Generate
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    {fcmToken ? (
+                      <div className="p-2 bg-bg border border-[#252a45] rounded font-mono text-[9px] text-[#8890b0] break-all select-all max-h-[60px] overflow-y-auto">
+                        {fcmToken}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleRequestFcmToken}
+                        className="w-full py-1.5 bg-[#f0c040] text-[#0a0c12] text-[10px] font-bold rounded hover:bg-[#e8b830] transition"
+                      >
+                        Generate Token
+                      </button>
+                    )}
+                    <p className="text-[9px] text-[#8890b0] leading-snug mt-1">
+                      ℹ️ Copy this token and paste it under **Firebase Console &gt; Cloud Messaging &gt; Test message** to test sending notification!
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2746,7 +3164,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   </div>
 
                   {(() => {
-                    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+                    const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('champions');
                     if (!isSquadEvent) return null;
 
                     const squadColors = [
@@ -2834,7 +3252,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                         alert('Fill all fields!');
                         return;
                       }
-                      const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('fifa');
+                      const isSquadEvent = selectedTournament.hasTeams || selectedTournament.name.toLowerCase().includes('champions');
                       if (isSquadEvent && !tregSelectedTeamColor) {
                         alert('Please select a Squad / Team Color theme!');
                         return;
@@ -3074,6 +3492,105 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 <i className="fas fa-paper-plane"></i>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* RANKING LEADERBOARD MODAL */}
+      {showRankingModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4">
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-[#f0c040]/10 text-[#f0c040] rounded-full flex items-center justify-center text-lg border border-[#f0c040]/20">
+                  <i className="fas fa-crown"></i>
+                </div>
+                <h3 className="font-sans text-xl font-bold text-white">ArenaX Leaderboard</h3>
+              </div>
+              <button onClick={() => setShowRankingModal(false)} className="text-[#8890b0] hover:text-white transition">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {[
+                { rank: 1, name: currentUser.name, pts: '2,450 AX', badge: '🥇 1st Place' },
+                { rank: 2, name: 'ApexPredator', pts: '1,980 AX', badge: '🥈 2nd Place' },
+                { rank: 3, name: 'ViperKing', pts: '1,620 AX', badge: '🥉 3rd Place' },
+                { rank: 4, name: 'ShadowNinja', pts: '1,200 AX', badge: 'Top 10' },
+                { rank: 5, name: 'GhostRider', pts: '950 AX', badge: 'Top 10' }
+              ].map((r, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-[#171b2e] border border-[#252a45] rounded-xl text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-[#f0c040] w-4">{r.rank}</span>
+                    <span className="font-bold text-white">{r.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[#8890b0] bg-[#111420] px-2 py-0.5 rounded border border-[#252a45]">{r.badge}</span>
+                    <span className="font-bold text-[#f0c040]">{r.pts}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowRankingModal(false)}
+              className="w-full py-2.5 bg-[#f0c040] text-[#0a0c12] font-bold rounded-xl text-xs transition"
+            >
+              Close Leaderboard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TASKS MODAL */}
+      {showTasksModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4">
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-[#e8404a]/10 text-[#e8404a] rounded-full flex items-center justify-center text-lg border border-[#e8404a]/20">
+                  <i className="fas fa-clipboard-check"></i>
+                </div>
+                <h3 className="font-sans text-xl font-bold text-white">Daily Tasks & Quests</h3>
+              </div>
+              <button onClick={() => setShowTasksModal(false)} className="text-[#8890b0] hover:text-white transition">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                { task: 'Join 1 Tournament Match', reward: '+50 AX', progress: '0/1', done: false },
+                { task: 'Add 1 Friend to List', reward: '+30 AX', progress: `${friends.length > 0 ? 1 : 0}/1`, done: friends.length > 0 },
+                { task: 'Check Tournament Guidelines', reward: '+20 AX', progress: '1/1', done: true }
+              ].map((t, idx) => (
+                <div key={idx} className="p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-white">{t.task}</div>
+                    <div className="text-[10px] text-[#8890b0]">Reward: <span className="text-[#f0c040] font-bold">{t.reward}</span></div>
+                  </div>
+                  <button
+                    disabled={t.done}
+                    onClick={() => alert(`Task reward claimed! ${t.reward}`)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      t.done
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-default'
+                        : 'bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830]'
+                    }`}
+                  >
+                    {t.done ? 'Claimed ✓' : t.progress}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowTasksModal(false)}
+              className="w-full py-2.5 bg-[#1e2340] border border-[#252a45] text-[#8890b0] font-bold rounded-xl text-xs transition hover:text-white"
+            >
+              Close Tasks
+            </button>
           </div>
         </div>
       )}
