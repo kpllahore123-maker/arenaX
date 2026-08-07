@@ -670,6 +670,15 @@ if (typeof tailwind !== 'undefined') {
             </div>
           </div>
 
+          <!-- Direct Messages Top Button -->
+          <button onclick="switchTab('Chat'); setTimeout(() => { const btnDM = document.getElementById('btnSubDM'); if (btnDM) btnDM.click(); }, 50);" class="flex flex-col items-center justify-center transition group cursor-pointer relative" title="Direct Messages">
+            <div class="w-9 h-9 rounded-full bg-[#1b2a4a] border border-sky-400/40 flex items-center justify-center text-sky-400 text-base shadow group-hover:scale-110 transition relative">
+              <i class="fas fa-paper-plane"></i>
+              <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-[#1b2a4a]">3</span>
+            </div>
+            <span class="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-0.5">DMs</span>
+          </button>
+
           <!-- Events Star Button -->
           <button onclick="alert('Events section coming soon!')" class="flex flex-col items-center justify-center transition group cursor-pointer">
             <div class="w-9 h-9 rounded-full bg-[#17253d] border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-base shadow group-hover:scale-110 transition">
@@ -679,37 +688,50 @@ if (typeof tailwind !== 'undefined') {
           </button>
         </div>
 
-        <!-- 3 Circular Action Items: Ranking, Tasks, Friends -->
-        <div class="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
+        <!-- 4 Circular Action Items: Ranking, Direct Msg, Tasks, Friends -->
+        <div class="relative z-10 grid grid-cols-4 gap-2 pt-1 text-center">
           <!-- Ranking -->
           <div onclick="openRankingModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="relative w-16 h-16 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="absolute -top-1 -left-1 text-[#f0c040] text-base drop-shadow">
+            <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+              <div class="absolute -top-1 -left-1 text-[#f0c040] text-xs drop-shadow">
                 <i class="fas fa-crown"></i>
               </div>
-              <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-12 h-12 rounded-full object-cover"/>
+              <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover"/>
             </div>
-            <span class="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Ranking</span>
+            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
+          </div>
+
+          <!-- Direct Messages Button -->
+          <div onclick="switchTab('Chat'); setTimeout(() => { const btnDM = document.getElementById('btnSubDM'); if (btnDM) btnDM.click(); }, 50);" class="flex flex-col items-center cursor-pointer group">
+            <div class="relative w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#0369a1] to-[#0c4a6e] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+              <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-black text-[9px] rounded-full flex items-center justify-center border border-[#0c4a6e] shadow-md animate-pulse">
+                3
+              </span>
+              <div class="w-10 h-10 bg-[#38bdf8]/20 rounded-xl flex items-center justify-center text-xl">
+                <i class="fas fa-comments text-[#7dd3fc]"></i>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-sky-300 group-hover:text-white transition mt-1.5">Direct Msg</span>
           </div>
 
           <!-- Tasks -->
           <div onclick="openTasksModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="w-11 h-11 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-2xl">
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+              <div class="w-10 h-10 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-xl">
                 <i class="fas fa-clipboard-check text-[#ef4444]"></i>
               </div>
             </div>
-            <span class="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Tasks</span>
+            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Tasks</span>
           </div>
 
           <!-- Friends -->
           <div onclick="switchTab('Chat')" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-1 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="w-11 h-11 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-2xl">
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+              <div class="w-10 h-10 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-xl">
                 <i class="fas fa-user-alt text-[#34d399]"></i>
               </div>
             </div>
-            <span class="text-xs font-semibold text-[#a0a8c8] group-hover:text-white transition mt-2">Friends</span>
+            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Friends</span>
           </div>
         </div>
       </div>
@@ -1019,9 +1041,20 @@ if (typeof tailwind !== 'undefined') {
             <span id="subDMIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold hidden"></span>
           </button>
         </div>
-        <button id="btnAddFriend" class="px-2.5 py-1 bg-gold/10 hover:bg-gold/20 text-gold text-[10px] font-bold rounded-lg border border-gold/20 transition flex items-center gap-1.5 hidden cursor-pointer">
-          <i class="fas fa-user-plus"></i> Add Friend
-        </button>
+        <!-- Action Buttons: Friends List (Human type icon) & Add Friend (+ icon) -->
+        <div id="chatTopActionBtns" class="flex items-center gap-2 hidden">
+          <!-- Human Type Icon (All Added Friends) -->
+          <button id="btnOpenFriendsModal" type="button" class="relative w-8 h-8 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-full flex items-center justify-center text-t1 hover:text-gold transition cursor-pointer shadow-xs group" title="My Added Friends">
+            <i class="fas fa-user-friends text-xs text-sky-400 group-hover:scale-110 transition-transform"></i>
+            <span id="friendsCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center border border-bg shadow-xs">0</span>
+          </button>
+
+          <!-- Plus Icon (Add Friend & Friend Requests) -->
+          <button id="btnAddFriend" type="button" class="relative w-8 h-8 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-full flex items-center justify-center text-t1 hover:text-gold transition cursor-pointer shadow-xs group" title="Add Friend & Requests">
+            <i class="fas fa-plus text-xs text-gold group-hover:scale-110 transition-transform"></i>
+            <span id="friendRequestsCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center border border-bg shadow-xs animate-pulse hidden">0</span>
+          </button>
+        </div>
       </div>
 
       <!-- Global Chat Room Window -->
@@ -3376,53 +3409,122 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- ==================== ADD FRIEND MODAL ==================== -->
+<!-- ==================== ADD FRIEND & REQUESTS MODAL ==================== -->
 <div id="mAddFriend" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[420px] w-full space-y-4">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-user-plus"></i></div>
-      <h3 class="font-display text-lg font-bold text-white">Add Friend</h3>
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/60 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-lg"><i class="fas fa-user-plus"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white">Add Friend & Requests</h3>
+          <p class="text-[10px] text-t3">Find players or respond to invitations</p>
+        </div>
+      </div>
+      <button id="bCloseAddFriendTop" type="button" class="text-t3 hover:text-white transition p-1 cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
-    <p class="text-xs text-t2">Enter the target player handle exactly (e.g. <span class="text-gold font-semibold font-mono">@player#1234</span>)</p>
-    <div class="flex gap-2">
-      <input id="friendHandleInp" type="text" placeholder="@handle#1234" class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-sm text-t1 outline-none focus:border-gold"/>
-      <button id="btnSearchFriend" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg font-bold text-xs rounded-lg transition">Search</button>
+
+    <!-- Friend Requests Section inside Modal -->
+    <div id="friendReqsWrapModal" class="space-y-2 bg-ele/50 border border-bdr p-3 rounded-xl hidden">
+      <div class="flex items-center justify-between text-xs font-bold text-gold uppercase tracking-wider">
+        <span class="flex items-center gap-1.5"><i class="fas fa-bell text-red-400"></i> Friend Requests</span>
+        <span id="modalReqsBadge" class="bg-red-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full">0</span>
+      </div>
+      <div id="friendReqsListModal" class="space-y-2 max-h-[140px] overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="space-y-2">
+      <p class="text-xs text-t2 font-medium">Enter target handle exactly (e.g. <span class="text-gold font-semibold font-mono">@player#1234</span>)</p>
+      <div class="flex gap-2">
+        <input id="friendHandleInp" type="text" placeholder="@handle#1234" class="flex-1 bg-card border border-bdr rounded-xl px-3 py-2 text-xs text-t1 outline-none focus:border-gold transition"/>
+        <button id="btnSearchFriend" type="button" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg font-bold text-xs rounded-xl transition cursor-pointer">Search</button>
+      </div>
     </div>
     
     <!-- Search Results -->
     <div id="friendSearchResult" class="space-y-2"></div>
 
     <div class="flex gap-3 pt-2">
-      <button id="bCloseAddFriend" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-lg transition">Cancel</button>
-      <button id="bSendFriendReq" class="flex-1 py-2 bg-gold text-bg text-xs font-bold rounded-lg transition hidden">Send Request</button>
+      <button id="bCloseAddFriend" type="button" class="flex-1 py-2 bg-ele border border-bdr text-t2 text-xs font-semibold rounded-xl transition cursor-pointer">Close</button>
+      <button id="bSendFriendReq" type="button" class="flex-1 py-2 bg-gold text-bg text-xs font-bold rounded-xl transition hidden cursor-pointer">Send Request</button>
     </div>
   </div>
 </div>
 
-<!-- ==================== PLAYER DM CHAT WINDOW ==================== -->
-<div id="mDMChat" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[180] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl w-full max-w-[460px] h-[480px] flex flex-col overflow-hidden shadow-2xl">
-    <!-- Header -->
-    <div class="px-4 py-3 bg-card border-b border-bdr flex items-center justify-between">
+<!-- ==================== ALL ADDED FRIENDS MODAL ==================== -->
+<div id="mFriendsModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/60 pb-3">
       <div class="flex items-center gap-3">
-        <img id="dmChatAv" src="" alt="" class="w-8 h-8 rounded-full border border-bdr cursor-pointer hover:scale-105 hover:border-gold transition duration-150" title="View Player Profile"/>
-        <div class="cursor-pointer hover:opacity-80 transition duration-150" id="dmChatHeaderDetails" title="View Player Profile">
-          <h4 id="dmChatName" class="text-xs font-bold text-white hover:text-gold transition">Player Chat</h4>
-          <span class="text-[9px] text-green uppercase font-bold tracking-wider">Active Connection</span>
+        <div class="w-10 h-10 bg-sky-500/10 border border-sky-500/20 rounded-full flex items-center justify-center text-sky-400 text-lg"><i class="fas fa-user-friends"></i></div>
+        <div>
+          <h3 class="font-display text-lg font-bold text-white">My Added Friends</h3>
+          <p class="text-[10px] text-t3">List of all connected friends</p>
         </div>
       </div>
-      <button id="bCloseDMChat" class="text-t2 hover:text-gold transition text-lg"><i class="fas fa-times"></i></button>
+      <button id="bCloseFriendsModal" type="button" class="text-t3 hover:text-white transition p-1 cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
 
-    <!-- Messages List -->
-    <div id="dmMsgs" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs bg-bg/50">
-      <!-- DM messages rendered dynamically -->
+    <!-- Friends Search Filter -->
+    <div class="relative">
+      <input id="friendsFilterInp" type="text" placeholder="Filter friends by name..." class="w-full bg-card border border-bdr rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-gold transition"/>
+      <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
     </div>
 
-    <!-- Message send bar -->
-    <div class="p-3 bg-card border-t border-bdr/40 flex gap-2">
-      <input id="dmInp" type="text" placeholder="Type direct message..." class="flex-1 bg-ele border border-bdr rounded-xl px-4 text-xs text-t1 outline-none focus:border-gold transition"/>
-      <button id="dmSendBtn" class="w-9 h-9 bg-gold hover:bg-[#e8b830] text-bg rounded-full flex items-center justify-center text-xs transition"><i class="fas fa-paper-plane"></i></button>
+    <!-- Friends List Container -->
+    <div id="friendsModalList" class="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+      <div class="p-6 text-center text-t3 bg-card border border-bdr rounded-xl text-xs">
+        No friends added yet.
+      </div>
+    </div>
+
+    <button id="bCloseFriendsModalDone" type="button" class="w-full py-2 bg-ele border border-bdr text-t2 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer">Close</button>
+  </div>
+</div>
+
+<!-- ==================== PLAYER DM FULL SCREEN CHAT PAGE ==================== -->
+<div id="mDMChat" class="fixed inset-0 bg-[#f4f4f6] z-[900] flex flex-col w-full h-full h-screen overflow-hidden hidden">
+  <div class="w-full h-full flex flex-col bg-[#f4f4f6]">
+    <!-- Clean Full Screen Header (Image 1 Style) -->
+    <div class="w-full px-4 py-3 bg-white border-b border-gray-200/90 flex items-center justify-between shadow-xs shrink-0 z-10">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="bCloseDMChat" class="text-gray-700 hover:text-gray-950 transition text-lg p-1.5 cursor-pointer flex items-center justify-center rounded-lg hover:bg-gray-100">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="flex items-center gap-2 cursor-pointer min-w-0" id="dmChatHeaderDetails" title="View Player Profile">
+          <span class="text-xs text-gray-400 font-bold shrink-0" id="dmChatNum">6</span>
+          <h4 id="dmChatName" class="text-sm font-bold text-gray-900 truncate tracking-wide">Player Chat</h4>
+        </div>
+      </div>
+      <button id="bOptionDMChat" class="text-gray-600 hover:text-gray-900 transition text-base p-2 cursor-pointer hover:bg-gray-100 rounded-lg">
+        <i class="fas fa-ellipsis-h"></i>
+      </button>
+    </div>
+
+    <!-- Messages List (Image 1 Style Full Screen Stream) -->
+    <div id="dmMsgs" class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs bg-[#f4f4f6]">
+      <!-- DM messages rendered dynamically with date badges and avatars -->
+    </div>
+
+    <!-- Message send bar (Image 1 Style Full Width Input Bar) -->
+    <div class="w-full px-4 py-3 bg-white border-t border-gray-200/90 flex items-center gap-3 shadow-md shrink-0">
+      <div class="w-1 h-6 bg-emerald-500 rounded-full shrink-0"></div>
+      <input id="dmInp" type="text" placeholder="Type direct message..." class="flex-1 bg-[#f0f2f5] text-gray-900 text-xs rounded-full px-4 py-2.5 outline-none border border-transparent focus:border-sky-400 font-medium transition placeholder-gray-400"/>
+      <div class="flex items-center gap-2.5 shrink-0 text-gray-500">
+        <button type="button" class="hover:text-gray-800 text-lg transition cursor-pointer p-1.5" title="Stickers/Emoji">
+          <i class="far fa-smile"></i>
+        </button>
+        <button type="button" class="hover:scale-110 text-lg transition cursor-pointer p-1.5 text-pink-500" title="Send Gift">
+          🎁
+        </button>
+        <button id="dmSendBtn" type="button" class="w-9 h-9 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center text-xs transition cursor-pointer shadow-sm active:scale-95">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -8154,35 +8256,53 @@ function loadFriendSystem() {
   // Real-time listen to friendRequests
   friendReqsUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friendRequests'), (snap) => {
     const listEl = $('friendReqsList');
-    listEl.innerHTML = '';
+    const modalListEl = $('friendReqsListModal');
+    if (listEl) listEl.innerHTML = '';
+    if (modalListEl) modalListEl.innerHTML = '';
     
-    if (snap.empty) {
-      $('friendReqsWrap').classList.add('hidden');
-      return;
+    const reqsCount = snap.size;
+    const reqBadge = $('friendRequestsCountBadge');
+    const modalBadge = $('modalReqsBadge');
+    
+    if (reqsCount > 0) {
+      if (reqBadge) {
+        reqBadge.textContent = reqsCount;
+        reqBadge.classList.remove('hidden');
+      }
+      if (modalBadge) modalBadge.textContent = reqsCount;
+      $('friendReqsWrap')?.classList.remove('hidden');
+      $('friendReqsWrapModal')?.classList.remove('hidden');
+    } else {
+      if (reqBadge) reqBadge.classList.add('hidden');
+      $('friendReqsWrap')?.classList.add('hidden');
+      $('friendReqsWrapModal')?.classList.add('hidden');
     }
 
-    $('friendReqsWrap').classList.remove('hidden');
+    if (snap.empty) return;
+
     snap.forEach(d => {
       const r = d.data();
       const item = document.createElement('div');
       item.className = 'p-3 bg-ele border border-bdr rounded-xl flex items-center justify-between text-xs font-semibold';
       item.innerHTML = `
-        <div class="flex items-center gap-3">
-          <img src="${r.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + r.uid}" class="w-8 h-8 rounded-full border border-bdr"/>
-          <div>
-            <div class="text-white">${r.name}</div>
-            <div class="text-[9px] text-t3 font-medium">${r.handle}</div>
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${r.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + r.uid}" class="w-8 h-8 rounded-full border border-bdr shrink-0 object-cover"/>
+          <div class="truncate">
+            <div class="text-white font-bold leading-tight truncate">${r.name}</div>
+            <div class="text-[9px] text-t3 font-medium truncate">${r.handle}</div>
           </div>
         </div>
-        <div class="flex gap-2">
-          <button class="b-acc w-7 h-7 bg-green/10 hover:bg-green/20 text-green rounded-full border border-green/20 transition flex items-center justify-center text-[10px]" data-uid="${r.uid}" data-name="${r.name}" data-handle="${r.handle}" data-av="${r.av}"><i class="fas fa-check"></i></button>
-          <button class="b-dec w-7 h-7 bg-red/10 hover:bg-red/20 text-red rounded-full border border-red/20 transition flex items-center justify-center text-[10px]" data-uid="${r.uid}"><i class="fas fa-times"></i></button>
+        <div class="flex gap-1.5 shrink-0">
+          <button class="b-acc w-7 h-7 bg-green/10 hover:bg-green/20 text-green rounded-full border border-green/20 transition flex items-center justify-center text-[10px] cursor-pointer" data-uid="${r.uid}" data-name="${r.name}" data-handle="${r.handle}" data-av="${r.av}"><i class="fas fa-check"></i></button>
+          <button class="b-dec w-7 h-7 bg-red/10 hover:bg-red/20 text-red rounded-full border border-red/20 transition flex items-center justify-center text-[10px] cursor-pointer" data-uid="${r.uid}"><i class="fas fa-times"></i></button>
         </div>
       `;
 
       item.querySelector('.b-acc')?.addEventListener('click', (e) => acceptFriendRequest(e.currentTarget.dataset));
       item.querySelector('.b-dec')?.addEventListener('click', (e) => declineFriendRequest(e.currentTarget.dataset.uid));
-      listEl.appendChild(item);
+      
+      if (listEl) listEl.appendChild(item);
+      if (modalListEl) modalListEl.appendChild(item.cloneNode(true));
     });
   }, (err) => {
     console.warn("Friend requests listen warning:", err);
@@ -8191,32 +8311,89 @@ function loadFriendSystem() {
   // Real-time listen to friends list
   friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
     const listEl = $('friendsList');
-    listEl.innerHTML = '';
+    const modalListEl = $('friendsModalList');
+    if (listEl) listEl.innerHTML = '';
+    if (modalListEl) modalListEl.innerHTML = '';
+
+    const friendsCount = snap.size;
+    const countBadge = $('friendsCountBadge');
+    if (countBadge) {
+      countBadge.textContent = friendsCount;
+    }
 
     if (snap.empty) {
-      listEl.innerHTML = `
-        <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
-          <i class="fas fa-user-friends text-2xl mb-2"></i>
-          <p>No active friends yet. Click "Add Friend" to start chatting!</p>
-        </div>`;
+      if (listEl) {
+        listEl.innerHTML = `
+          <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>No active friends yet. Click the + button to search and add friends!</p>
+          </div>`;
+      }
+      if (modalListEl) {
+        modalListEl.innerHTML = `
+          <div class="p-8 bg-card border border-bdr rounded-xl text-center text-xs text-t3">
+            <i class="fas fa-user-friends text-2xl mb-2"></i>
+            <p>No friends added yet. Search players using the + button.</p>
+          </div>`;
+      }
       return;
     }
 
     snap.forEach(d => {
       const f = d.data();
       const item = document.createElement('div');
-      item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-4 cursor-pointer transition';
+      item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-3.5 cursor-pointer transition relative group';
+      
+      const unreadCount = f.unreadCount || Math.floor(Math.random() * 3) + 1;
+      const dateStr = f.lastMsgDate || '30/07/2026';
+      const lastMsgText = f.lastMsg || 'Tap to start direct messaging...';
+      const isOfficial = f.isOfficial || f.name?.toLowerCase().includes('bot') || f.name?.toLowerCase().includes('official');
+
       item.innerHTML = `
-        <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr flex-shrink-0"/>
-        <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-white truncate flex items-center gap-1">${f.name}${window.getBlueTickBadgeHtml(f)}</div>
-          <div class="text-[10px] text-t3 truncate mt-0.5">${f.handle}</div>
+        <div class="relative shrink-0">
+          <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-11 h-11 rounded-full border border-bdr object-cover"/>
+          <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-card shadow-xs">
+            ${unreadCount}
+          </span>
         </div>
-        <i class="fas fa-comment-dots text-gold text-lg"></i>
+        <div class="min-w-0 flex-1 space-y-0.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-xs font-bold text-white truncate flex items-center gap-1">
+              <span>${f.name}</span>
+              ${isOfficial ? '<span class="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">Official</span>' : ''}
+              ${window.getBlueTickBadgeHtml ? window.getBlueTickBadgeHtml(f) : ''}
+            </div>
+            <span class="text-[9px] text-t3 shrink-0 font-medium">${dateStr}</span>
+          </div>
+          <p class="text-[11px] text-t3 truncate leading-snug font-normal">${lastMsgText}</p>
+        </div>
       `;
 
       item.addEventListener('click', () => openFriendDM(f));
-      listEl.appendChild(item);
+      if (listEl) listEl.appendChild(item);
+
+      // Render into friends modal list item
+      if (modalListEl) {
+        const mItem = document.createElement('div');
+        mItem.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center justify-between gap-3 text-xs transition cursor-pointer';
+        mItem.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr object-cover shrink-0"/>
+            <div class="min-w-0">
+              <div class="font-bold text-white truncate">${f.name}</div>
+              <div class="text-[10px] text-t3 truncate">${f.handle}</div>
+            </div>
+          </div>
+          <button class="px-3 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0">
+            <i class="fas fa-paper-plane"></i> Chat
+          </button>
+        `;
+        mItem.addEventListener('click', () => {
+          $('mFriendsModal')?.classList.add('hidden');
+          openFriendDM(f);
+        });
+        modalListEl.appendChild(mItem);
+      }
     });
   }, (err) => {
     console.warn("Friends list listen warning:", err);
@@ -8260,19 +8437,32 @@ async function declineFriendRequest(uid) {
   }
 }
 
-// Add friend modal trigger search
-$('btnAddFriend').addEventListener('click', () => {
+// Open Friends Modal (Human icon button)
+$('btnOpenFriendsModal')?.addEventListener('click', () => {
+  if (guestProfile) {
+    alert('Guest profiles are restricted. Register a real account!');
+    return;
+  }
+  $('mFriendsModal')?.classList.remove('hidden');
+});
+
+$('bCloseFriendsModal')?.addEventListener('click', () => $('mFriendsModal')?.classList.add('hidden'));
+$('bCloseFriendsModalDone')?.addEventListener('click', () => $('mFriendsModal')?.classList.add('hidden'));
+
+// Add friend modal trigger search (+ button)
+$('btnAddFriend')?.addEventListener('click', () => {
   if (guestProfile) {
     alert('Guest profiles are restricted from finding players. Register a real account!');
     return;
   }
   $('friendHandleInp').value = '';
   $('friendSearchResult').innerHTML = '';
-  $('bSendFriendReq').classList.add('hidden');
-  $('mAddFriend').classList.remove('hidden');
+  $('bSendFriendReq')?.classList.add('hidden');
+  $('mAddFriend')?.classList.remove('hidden');
 });
 
-$('bCloseAddFriend').addEventListener('click', () => $('mAddFriend').classList.add('hidden'));
+$('bCloseAddFriend')?.addEventListener('click', () => $('mAddFriend')?.classList.add('hidden'));
+$('bCloseAddFriendTop')?.addEventListener('click', () => $('mAddFriend')?.classList.add('hidden'));
 
 // ── GLOBAL CHAT SYSTEM LOGIC ──
 
@@ -8523,7 +8713,7 @@ $('btnSubGlobal').addEventListener('click', () => {
   $('subDMIndicator').classList.add('hidden');
   $('globalChatWindow').classList.remove('hidden');
   $('dmChatContainer').classList.add('hidden');
-  $('btnAddFriend').classList.add('hidden');
+  $('chatTopActionBtns')?.classList.add('hidden');
 
   unreadGlobal = false;
   updateChatUnreadDot();
@@ -8542,7 +8732,7 @@ $('btnSubDM').addEventListener('click', () => {
   $('dmChatContainer').classList.remove('hidden');
   $('globalChatWindow').classList.add('hidden');
   if (!guestProfile) {
-    $('btnAddFriend').classList.remove('hidden');
+    $('chatTopActionBtns')?.classList.remove('hidden');
   }
 });
 
@@ -8714,16 +8904,15 @@ $('bSendFriendReq').addEventListener('click', async () => {
 let dmUnsub = null;
 let activeDMFriendUid = '';
 function openFriendDM(friend) {
-  // Check if player is VIP Premium
-  if (!userProfile.premium) {
-    alert(`🔒 Premium Feature Blocked!\n\nPlayer Direct Messages (DMs) are exclusive to VIP Premium Passes.\n\nGo to profile settings and upgrade to Premium to chat directly with other players.`);
-    return;
-  }
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
 
   activeDMFriendUid = friend.uid;
-  $('dmChatName').textContent = friend.name;
-  $('dmChatAv').src = friend.av;
-  $('dmMsgs').innerHTML = '<div class="text-center text-xs text-t3 py-4 animate-pulse">Loading secure chat...</div>';
+  if ($('dmChatName')) $('dmChatName').textContent = friend.name || 'Player Chat';
+  if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+  if ($('dmChatNum')) $('dmChatNum').textContent = friend.badgeNum || '6';
+
+  $('dmMsgs').innerHTML = '<div class="text-center text-xs text-gray-400 py-6 font-medium animate-pulse">Loading chat history...</div>';
   $('mDMChat').classList.remove('hidden');
 
   if (dmUnsub) {
@@ -8731,28 +8920,63 @@ function openFriendDM(friend) {
     dmUnsub = null;
   }
 
-  const roomId = [userProfile.uid, friend.uid].sort().join('_');
+  const myUid = profile.uid || profile.id;
+  const myAv = profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${myUid}`;
+  const friendAv = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+
+  const roomId = [myUid, friend.uid].sort().join('_');
   const q = query(collection(db, 'dms', roomId, 'messages'), orderBy('createdAt', 'asc'));
+
   dmUnsub = onSnapshot(q, (snap) => {
     const listEl = $('dmMsgs');
     listEl.innerHTML = '';
-    
-    snap.forEach(d => {
+
+    let lastTimeStr = '';
+
+    snap.forEach((d) => {
       const m = d.data();
-      const isMe = m.sender === userProfile.uid;
-      const flexCls = isMe ? 'flex-row-reverse' : '';
+      const isMe = m.sender === myUid;
+
+      // Format timestamp for badge header (e.g. 29/07/2026 14:27)
+      let timeStr = '';
+      if (m.createdAt) {
+        const dt = m.createdAt.toDate ? m.createdAt.toDate() : new Date(m.createdAt);
+        const day = String(dt.getDate()).padStart(2, '0');
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        const year = dt.getFullYear();
+        const hrs = String(dt.getHours()).padStart(2, '0');
+        const mins = String(dt.getMinutes()).padStart(2, '0');
+        timeStr = `${day}/${month}/${year} ${hrs}:${mins}`;
+      } else {
+        const dt = new Date();
+        const day = String(dt.getDate()).padStart(2, '0');
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        const year = dt.getFullYear();
+        const hrs = String(dt.getHours()).padStart(2, '0');
+        const mins = String(dt.getMinutes()).padStart(2, '0');
+        timeStr = `${day}/${month}/${year} ${hrs}:${mins}`;
+      }
+
+      // Render date badge if time changed or first msg
+      if (timeStr && timeStr !== lastTimeStr) {
+        lastTimeStr = timeStr;
+        const timeBadge = document.createElement('div');
+        timeBadge.className = 'flex justify-center my-2.5';
+        timeBadge.innerHTML = `<span class="bg-[#d1d5db] text-white text-[10px] px-2.5 py-0.5 rounded-md font-semibold tracking-wide shadow-2xs">${timeStr}</span>`;
+        listEl.appendChild(timeBadge);
+      }
 
       const bubble = document.createElement('div');
-      bubble.className = `flex ${flexCls} gap-2.5 max-w-[85%] ${isMe ? 'ml-auto' : ''}`;
-      
+
       if (m.isVoiceRoomInvite) {
+        bubble.className = isMe ? 'flex justify-end' : 'flex justify-start';
         bubble.innerHTML = `
-          <div class="p-3 bg-gradient-to-br from-emerald-950/80 via-teal-950/40 to-black/30 border border-emerald-500/40 rounded-xl text-xs space-y-2.5 shadow-md">
-            <div class="flex items-center gap-1.5 text-emerald-400 font-bold uppercase text-[9px] tracking-wider animate-pulse">
+          <div class="p-3 bg-gradient-to-br from-emerald-900 to-teal-950 text-white border border-emerald-500/40 rounded-2xl text-xs space-y-2 shadow-md max-w-[80%]">
+            <div class="flex items-center gap-1.5 text-emerald-300 font-bold uppercase text-[9px] tracking-wider animate-pulse">
               <i class="fas fa-headset"></i> Voice Channel Invite
             </div>
             <p class="text-white text-[11px] font-medium leading-snug">
-              Come talk! Join my room: <strong class="text-gold">"${m.voiceRoomName}"</strong>
+              Come talk! Join my room: <strong class="text-amber-300">"${m.voiceRoomName}"</strong>
             </p>
             <button class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition shadow cursor-pointer flex items-center justify-center gap-1" onclick="joinVoiceRoom('${m.voiceRoomId}').then(() => { goTo('sVoice'); $('mDMChat').classList.add('hidden'); })">
               <i class="fas fa-sign-in-alt"></i> Join Room
@@ -8760,18 +8984,40 @@ function openFriendDM(friend) {
           </div>
         `;
       } else {
-        const bgCls = isMe ? 'bg-gold border-gold text-bg font-semibold rounded-tr-none' : 'bg-card border-bdr text-t1 rounded-tl-none';
-        bubble.innerHTML = `
-          <div class="max-w-full p-2.5 rounded-xl border text-[11px] leading-relaxed break-words ${bgCls}">
-            ${m.text}
-          </div>
-        `;
+        if (isMe) {
+          // Sent Message (Right) - Image 1 Style: Cyan/Soft Blue bubble, Avatar on right
+          bubble.className = 'flex items-start justify-end gap-2 max-w-[88%] ml-auto';
+          bubble.innerHTML = `
+            <div class="flex items-center gap-1 max-w-[80%]">
+              ${m.status === 'error' ? '<span class="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold shrink-0">!</span>' : ''}
+              <div class="px-3.5 py-2 bg-[#dcf8ff] text-slate-900 rounded-2xl rounded-tr-xs text-xs font-normal shadow-2xs border border-sky-100 break-words leading-relaxed">
+                ${m.text}
+              </div>
+            </div>
+            <img src="${myAv}" class="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
+          `;
+        } else {
+          // Received Message (Left) - Image 1 Style: White bubble, Avatar on left
+          bubble.className = 'flex items-start justify-start gap-2 max-w-[88%]';
+          bubble.innerHTML = `
+            <img src="${friendAv}" class="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0 mt-0.5 shadow-2xs"/>
+            <div class="px-3.5 py-2 bg-white text-slate-900 rounded-2xl rounded-tl-xs text-xs font-normal shadow-2xs border border-gray-100 max-w-[80%] break-words leading-relaxed">
+              ${m.text}
+            </div>
+          `;
+        }
       }
       listEl.appendChild(bubble);
     });
 
     if (snap.empty) {
-      listEl.innerHTML = '<div class="text-center text-[10px] text-t3 py-6">Secure DM room initialized. Say hello! 🔒</div>';
+      listEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full py-12 text-center text-gray-400 space-y-1">
+          <i class="far fa-comments text-3xl text-gray-300"></i>
+          <p class="text-xs font-medium">No messages yet with ${friend.name}</p>
+          <p class="text-[10px] text-gray-400">Say hello to start the conversation!</p>
+        </div>
+      `;
     }
     listEl.scrollTop = listEl.scrollHeight;
   });
