@@ -3439,9 +3439,9 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- Search Section -->
     <div class="space-y-2">
-      <p class="text-xs text-t2 font-medium">Enter target handle exactly (e.g. <span class="text-gold font-semibold font-mono">@player#1234</span>)</p>
+      <p class="text-xs text-t2 font-medium">Enter target Player Numeric ID (e.g. <span class="text-gold font-bold font-mono">849201</span>)</p>
       <div class="flex gap-2">
-        <input id="friendHandleInp" type="text" placeholder="@handle#1234" class="flex-1 bg-card border border-bdr rounded-xl px-3 py-2 text-xs text-t1 outline-none focus:border-gold transition"/>
+        <input id="friendHandleInp" type="text" placeholder="Enter Player ID (e.g. 849201)" class="flex-1 bg-card border border-bdr rounded-xl px-3 py-2 text-xs text-t1 outline-none focus:border-gold transition"/>
         <button id="btnSearchFriend" type="button" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg font-bold text-xs rounded-xl transition cursor-pointer">Search</button>
       </div>
     </div>
@@ -4023,6 +4023,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+function getNumericPlayerId(uid, currentHandle) {
+  if (currentHandle) {
+    const digitsOnly = String(currentHandle).replace(/^ID:\s*/i, '').replace(/^@/, '').trim();
+    if (/^\d{6,8}$/.test(digitsOnly)) {
+      return digitsOnly;
+    }
+  }
+  if (!uid) return String(Math.floor(100000 + Math.random() * 900000));
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i);
+    hash |= 0;
+  }
+  const numericId = 100000 + (Math.abs(hash) % 900000);
+  return String(numericId);
+}
+window.getNumericPlayerId = getNumericPlayerId;
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
@@ -4530,15 +4548,16 @@ window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
 // Lauch Dashboard
 function boot() {
   const profile = userProfile || guestProfile;
+  const numId = 'ID: ' + getNumericPlayerId(profile.uid, profile.handle);
   $('pName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
-  $('pHandle').textContent = profile.handle;
+  $('pHandle').textContent = numId;
   $('pAv').src = profile.av;
   $('avImg').src = profile.av;
   if ($('homeAvImg')) $('homeAvImg').src = profile.av;
   if ($('homeRankingAv')) $('homeRankingAv').src = profile.av;
   if ($('homeCoinsVal')) $('homeCoinsVal').textContent = (profile.balance || 0).toLocaleString();
   if ($('setName')) $('setName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
-  if ($('setHandle')) $('setHandle').textContent = profile.handle;
+  if ($('setHandle')) $('setHandle').textContent = numId;
   if ($('setAv')) $('setAv').src = profile.av;
   $('wBal').textContent = (profile.balance || 0).toLocaleString();
   $('pPopularityVal').textContent = profile.popularity || 0;
@@ -5009,7 +5028,7 @@ onAuthStateChanged(auth, async (fireUser) => {
       } else {
         // Bootstrap new user in Firestore
         const defaultName = fireUser.displayName || (fireUser.email ? fireUser.email.split('@')[0] : 'ArenaX Player');
-        const defaultHandle = '@' + defaultName.toLowerCase().replace(/\s+/g, '') + '#' + fireUser.uid.slice(-4);
+        const defaultHandle = getNumericPlayerId(fireUser.uid);
         const defaultAv = fireUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${fireUser.uid}`;
 
         const refId = localStorage.getItem('arenaX_ref');
@@ -8347,11 +8366,9 @@ function loadFriendSystem() {
   });
 
   // Real-time listen to friends list
-  friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), async (snap) => {
+  friendsListUnsub = onSnapshot(collection(db, 'users', profile.uid, 'friends'), (snap) => {
     const listEl = $('friendsList');
     const modalListEl = $('friendsModalList');
-    if (listEl) listEl.innerHTML = '';
-    if (modalListEl) modalListEl.innerHTML = '';
 
     const friendsCount = snap.size;
     const countBadge = $('friendsCountBadge');
@@ -8382,7 +8399,73 @@ function loadFriendSystem() {
       rawFriends.push(d.data());
     });
 
-    const friends = await Promise.all(rawFriends.map(async (f) => {
+    const renderFriendItems = (friendsArr) => {
+      if (listEl) listEl.innerHTML = '';
+      if (modalListEl) modalListEl.innerHTML = '';
+
+      friendsArr.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-3.5 cursor-pointer transition relative group';
+        
+        const unreadCount = f.unreadCount || Math.floor(Math.random() * 3) + 1;
+        const dateStr = f.lastMsgDate || '30/07/2026';
+        const lastMsgText = f.lastMsg || 'Tap to start direct messaging...';
+        const isOfficial = f.isOfficial || f.name?.toLowerCase().includes('bot') || f.name?.toLowerCase().includes('official');
+        const displayHandle = 'ID: ' + getNumericPlayerId(f.uid, f.handle);
+
+        item.innerHTML = `
+          <div class="relative shrink-0">
+            <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-11 h-11 rounded-full border border-bdr object-cover"/>
+            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-card shadow-xs">
+              ${unreadCount}
+            </span>
+          </div>
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-xs font-bold text-white truncate flex items-center gap-1">
+                <span>${f.name}</span>
+                ${isOfficial ? '<span class="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">Official</span>' : ''}
+                ${window.getBlueTickBadgeHtml ? window.getBlueTickBadgeHtml(f) : ''}
+              </div>
+              <span class="text-[9px] text-t3 shrink-0 font-medium">${dateStr}</span>
+            </div>
+            <p class="text-[11px] text-t3 truncate leading-snug font-normal">${lastMsgText}</p>
+          </div>
+        `;
+
+        item.addEventListener('click', () => openFriendDM(f));
+        if (listEl) listEl.appendChild(item);
+
+        // Render into friends modal list item
+        if (modalListEl) {
+          const mItem = document.createElement('div');
+          mItem.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center justify-between gap-3 text-xs transition cursor-pointer';
+          mItem.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr object-cover shrink-0"/>
+              <div class="min-w-0">
+                <div class="font-bold text-white truncate">${f.name}</div>
+                <div class="text-[10px] text-t3 truncate font-mono">${displayHandle}</div>
+              </div>
+            </div>
+            <button class="px-3 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0">
+              <i class="fas fa-paper-plane"></i> Chat
+            </button>
+          `;
+          mItem.addEventListener('click', () => {
+            $('mFriendsModal')?.classList.add('hidden');
+            openFriendDM(f);
+          });
+          modalListEl.appendChild(mItem);
+        }
+      });
+    };
+
+    // Render immediately so mobile users see friends instantly!
+    renderFriendItems(rawFriends);
+
+    // Asynchronously enrich in background
+    Promise.all(rawFriends.map(async (f) => {
       try {
         if (f.uid) {
           const uSnap = await getDoc(doc(db, 'users', f.uid));
@@ -8398,63 +8481,9 @@ function loadFriendSystem() {
         }
       } catch (e) {}
       return f;
-    }));
-
-    friends.forEach(f => {
-      const item = document.createElement('div');
-      item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-3.5 cursor-pointer transition relative group';
-      
-      const unreadCount = f.unreadCount || Math.floor(Math.random() * 3) + 1;
-      const dateStr = f.lastMsgDate || '30/07/2026';
-      const lastMsgText = f.lastMsg || 'Tap to start direct messaging...';
-      const isOfficial = f.isOfficial || f.name?.toLowerCase().includes('bot') || f.name?.toLowerCase().includes('official');
-
-      item.innerHTML = `
-        <div class="relative shrink-0">
-          <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-11 h-11 rounded-full border border-bdr object-cover"/>
-          <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-card shadow-xs">
-            ${unreadCount}
-          </span>
-        </div>
-        <div class="min-w-0 flex-1 space-y-0.5">
-          <div class="flex items-center justify-between gap-2">
-            <div class="text-xs font-bold text-white truncate flex items-center gap-1">
-              <span>${f.name}</span>
-              ${isOfficial ? '<span class="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">Official</span>' : ''}
-              ${window.getBlueTickBadgeHtml ? window.getBlueTickBadgeHtml(f) : ''}
-            </div>
-            <span class="text-[9px] text-t3 shrink-0 font-medium">${dateStr}</span>
-          </div>
-          <p class="text-[11px] text-t3 truncate leading-snug font-normal">${lastMsgText}</p>
-        </div>
-      `;
-
-      item.addEventListener('click', () => openFriendDM(f));
-      if (listEl) listEl.appendChild(item);
-
-      // Render into friends modal list item
-      if (modalListEl) {
-        const mItem = document.createElement('div');
-        mItem.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center justify-between gap-3 text-xs transition cursor-pointer';
-        mItem.innerHTML = `
-          <div class="flex items-center gap-3 min-w-0">
-            <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr object-cover shrink-0"/>
-            <div class="min-w-0">
-              <div class="font-bold text-white truncate">${f.name}</div>
-              <div class="text-[10px] text-t3 truncate">${f.handle}</div>
-            </div>
-          </div>
-          <button class="px-3 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0">
-            <i class="fas fa-paper-plane"></i> Chat
-          </button>
-        `;
-        mItem.addEventListener('click', () => {
-          $('mFriendsModal')?.classList.add('hidden');
-          openFriendDM(f);
-        });
-        modalListEl.appendChild(mItem);
-      }
-    });
+    })).then((enriched) => {
+      renderFriendItems(enriched);
+    }).catch(e => console.warn("Friend enrich warning:", e));
   }, (err) => {
     console.warn("Friends list listen warning:", err);
   });
@@ -8902,38 +8931,73 @@ $('globalChatForm').addEventListener('submit', async (e) => {
 
 let searchFriendTarget = null;
 $('btnSearchFriend').addEventListener('click', async () => {
-  const handle = $('friendHandleInp').value.trim().toLowerCase();
-  if (handle.length < 3) {
-    alert('Please enter a search handle of at least 3 characters!');
+  const rawInput = $('friendHandleInp').value.trim();
+  const searchClean = rawInput.replace(/^ID:\s*/i, '').replace(/^ID\s*/i, '').replace(/^@/, '').trim().toLowerCase();
+
+  if (!searchClean) {
+    alert('Please enter a Numeric Player ID (e.g. 849201) or Username to search!');
     return;
   }
 
-  $('friendSearchResult').innerHTML = '<div class="text-xs text-t3 animate-pulse">Scanning database...</div>';
+  $('friendSearchResult').innerHTML = '<div class="text-xs text-t3 animate-pulse">Scanning database for player ID...</div>';
   $('bSendFriendReq').classList.add('hidden');
 
   try {
-    const qUser = query(collection(db, 'users'), where('handle', '==', handle));
-    const snap = await getDocs(qUser);
     let found = null;
+    const currentUid = (userProfile || guestProfile)?.uid;
+
+    // 1. Direct query on handle
+    const qUser = query(collection(db, 'users'), where('handle', '==', searchClean));
+    const snap = await getDocs(qUser);
     snap.forEach(d => {
       const u = d.data();
-      if (!found && u.uid !== userProfile.uid) {
+      if (!found && u.uid !== currentUid) {
         found = { id: d.id, ...u };
       }
     });
 
+    // 2. Query with '@' prefix
     if (!found) {
-      $('friendSearchResult').innerHTML = '<div class="text-xs text-red font-semibold">No profile matches this handle. Try again!</div>';
+      const qUserAt = query(collection(db, 'users'), where('handle', '==', '@' + searchClean));
+      const snapAt = await getDocs(qUserAt);
+      snapAt.forEach(d => {
+        const u = d.data();
+        if (!found && u.uid !== currentUid) {
+          found = { id: d.id, ...u };
+        }
+      });
+    }
+
+    // 3. Scan user list for matching numeric ID or handle or name
+    if (!found) {
+      const allUsersSnap = await getDocs(query(collection(db, 'users'), limit(100)));
+      allUsersSnap.forEach(d => {
+        const u = d.data();
+        if (!found && u.uid !== currentUid) {
+          const uNumId = getNumericPlayerId(u.uid, u.handle);
+          const uHandleClean = (u.handle || '').replace(/^@/, '').toLowerCase();
+          const uNameClean = (u.name || '').toLowerCase();
+          if (uNumId === searchClean || uHandleClean === searchClean || uNameClean.includes(searchClean) || u.uid === searchClean) {
+            found = { id: d.id, ...u };
+          }
+        }
+      });
+    }
+
+    if (!found) {
+      $('friendSearchResult').innerHTML = '<div class="text-xs text-red font-semibold">No player found matching ID "' + rawInput + '". Double check the ID!</div>';
       return;
     }
 
     searchFriendTarget = found;
+    const foundDisplayHandle = 'ID: ' + getNumericPlayerId(found.uid, found.handle);
+
     $('friendSearchResult').innerHTML = `
       <div class="p-3 bg-card border border-bdr rounded-xl flex items-center gap-3">
-        <img src="${found.av}" class="w-9 h-9 rounded-full border border-bdr"/>
+        <img src="${found.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + found.uid}" class="w-9 h-9 rounded-full border border-bdr object-cover"/>
         <div>
           <div class="text-xs font-bold text-white">${found.name}</div>
-          <div class="text-[10px] text-t3 font-medium font-mono">${found.handle}</div>
+          <div class="text-[10px] text-gold font-bold font-mono">${foundDisplayHandle}</div>
         </div>
       </div>
     `;
