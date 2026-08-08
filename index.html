@@ -2818,7 +2818,7 @@ if (typeof tailwind !== 'undefined') {
             <div class="flex items-center gap-3 min-w-0">
               <div id="custModalFramePreviewContainer" class="relative w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-[#0a0c12]">
                 <img id="custModalFrameAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-10 h-10 rounded-full object-cover" />
-                <img id="custModalFrameOverlay" src="/avatarframe1.svg" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-20 scale-125 object-contain" />
+                <img id="custModalFrameOverlay" src="/avatarframe1.svg" onerror="if(window.VIP_FRAME_DATA_URL)this.src=window.VIP_FRAME_DATA_URL" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-20 scale-125 object-contain" />
               </div>
               <div class="min-w-0">
                 <div class="text-xs font-bold text-white truncate flex items-center gap-1">
@@ -3545,7 +3545,7 @@ if (typeof tailwind !== 'undefined') {
         <div class="flex items-center gap-3 min-w-0">
           <div class="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
             <img id="taskModalUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
-            <img src="/avatarframe1.svg" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-10 scale-125 object-contain" />
+            <img src="/avatarframe1.svg" onerror="if(window.VIP_FRAME_DATA_URL)this.src=window.VIP_FRAME_DATA_URL" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-10 scale-125 object-contain" />
           </div>
           <div class="min-w-0">
             <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
@@ -4766,7 +4766,8 @@ window.applyAvatarFrame = function(imgElement, isEquipped) {
     if (!existingFrame) {
       existingFrame = document.createElement('img');
       existingFrame.className = 'avatar-frame-overlay absolute -inset-2.5 w-[calc(100%+20px)] h-[calc(100%+20px)] pointer-events-none z-20 max-w-none scale-125 object-contain';
-      existingFrame.src = '/avatarframe1.svg';
+      existingFrame.src = window.VIP_FRAME_DATA_URL || '/avatarframe1.svg';
+      existingFrame.onerror = function() { if (window.VIP_FRAME_DATA_URL) this.src = window.VIP_FRAME_DATA_URL; };
       existingFrame.alt = 'Avatar Frame';
       parent.appendChild(existingFrame);
     }
