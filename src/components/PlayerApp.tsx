@@ -70,6 +70,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [activeTab, setActiveTab] = useState<'Home' | 'Profile' | 'Rules' | 'Wallet' | 'Chat' | 'Tour' | 'Support'>('Home');
   const [showHamburger, setShowHamburger] = useState(false);
   const [showRankingModal, setShowRankingModal] = useState(false);
+  const [rankingCategory, setRankingCategory] = useState<'AX Coins' | 'Weekly'>('AX Coins');
+  const [leaderboardList, setLeaderboardList] = useState<any[]>([]);
+  const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
 
@@ -233,7 +236,14 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setCurrentUser({
+            const isEquippedLocal = localStorage.getItem('user_frame_equipped') === 'true';
+            const localExpiry = localStorage.getItem('user_frame_expiry');
+            const isExpired = localExpiry ? Date.now() > Number(localExpiry) : false;
+
+            const hasFrame = data.hasFrame || (localStorage.getItem('user_has_frame') === 'true');
+            const frameEquipped = !isExpired && (data.frameEquipped ?? isEquippedLocal);
+
+            const updatedProf = {
               id: fireUser.uid,
               uid: fireUser.uid,
               name: data.name || fireUser.displayName || fireUser.email?.split('@')[0] || 'Player',
@@ -246,9 +256,16 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               banReason: data.banReason || '',
               banUntil: data.banUntil || null,
               balance: data.balance || 0,
+              hasFrame: hasFrame,
+              frameEquipped: frameEquipped,
+              frameExpiresAt: data.frameExpiresAt || null,
               createdAt: data.createdAt || new Date().toISOString(),
               transactions: data.transactions || []
-            });
+            };
+            setCurrentUser(updatedProf);
+            (window as any).currentUser = updatedProf;
+            (window as any).userProfile = updatedProf;
+            if ((window as any).updateAllAvatarFrames) (window as any).updateAllAvatarFrames();
           } else {
             // Document doesn't exist, bootstrap it
             const defaultName = fireUser.displayName || fireUser.email?.split('@')[0] || 'Player';
@@ -524,6 +541,130 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       unsubReqs();
     };
   }, [currentUser, isGuest]);
+
+  // Fetch Leaderboard data (AX Coins Ranking)
+  useEffect(() => {
+    const loadLeaderboardData = async () => {
+      try {
+        const qUsers = query(collection(db, 'users'), limit(100));
+        const snap = await getDocs(qUsers);
+        let fetched: any[] = [];
+        snap.forEach((doc) => {
+          const data = doc.data();
+          fetched.push({
+            uid: doc.id,
+            name: data.name || data.displayName || data.username || 'Player',
+            balance: Number(data.balance || data.coins || 0),
+            av: data.av || data.avatar || data.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${doc.id}`
+          });
+        });
+
+        if (currentUser) {
+          const exists = fetched.some((u) => u.uid === currentUser.uid);
+          if (!exists) {
+            fetched.push({
+              uid: currentUser.uid,
+              name: currentUser.name || 'You',
+              balance: Number(currentUser.balance || 0),
+              av: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`
+            });
+          } else {
+            fetched = fetched.map((u) =>
+              u.uid === currentUser.uid
+                ? {
+                    ...u,
+                    name: currentUser.name || u.name,
+                    balance: Number(currentUser.balance ?? u.balance),
+                    av: currentUser.av || u.av
+                  }
+                : u
+            );
+          }
+        }
+
+        fetched.sort((a, b) => b.balance - a.balance);
+        setLeaderboardList(fetched);
+
+        // Update homeRankingAv image with #1 top player's avatar
+        if (fetched[0]?.av) {
+          const el = document.getElementById('homeRankingAv') as HTMLImageElement | null;
+          if (el) el.src = fetched[0].av;
+        }
+      } catch (err) {
+        console.warn("Leaderboard error:", err);
+      }
+    };
+
+    loadLeaderboardData();
+
+    // Attach global helpers so onclick="openRankingModal()" and "openTasksModal()" work anywhere
+    (window as any).openRankingModal = () => {
+      setShowRankingModal(true);
+      loadLeaderboardData();
+    };
+    (window as any).openTasksModal = () => {
+      setShowTasksModal(true);
+    };
+    (window as any).reactOpenTasksModal = () => {
+      setShowTasksModal(true);
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    const handleOpenTasks = () => setShowTasksModal(true);
+    (window as any).openTasksModal = handleOpenTasks;
+    (window as any).reactOpenTasksModal = handleOpenTasks;
+    window.addEventListener('open-tasks-modal', handleOpenTasks);
+    return () => {
+      window.removeEventListener('open-tasks-modal', handleOpenTasks);
+    };
+  }, []);
+
+  // Helper function to claim or toggle VIP Avatar Frame
+  const handleClaimOrToggleFrame = async () => {
+    if (!currentUser) return;
+    const isCurrentlyEquipped = !!currentUser.frameEquipped;
+    const newEquipped = !isCurrentlyEquipped;
+    const expiryTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    localStorage.setItem('user_has_frame', 'true');
+    localStorage.setItem('user_frame_equipped', String(newEquipped));
+    localStorage.setItem('user_frame_expiry', String(Date.now() + 3 * 24 * 60 * 60 * 1000));
+
+    const updated = {
+      ...currentUser,
+      hasFrame: true,
+      frameEquipped: newEquipped,
+      frameExpiresAt: expiryTime
+    };
+
+    setCurrentUser(updated);
+    (window as any).currentUser = updated;
+    (window as any).userProfile = updated;
+
+    if (!isGuest && currentUser.uid) {
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userRef, {
+          hasFrame: true,
+          frameEquipped: newEquipped,
+          frameExpiresAt: expiryTime
+        });
+      } catch (e) {
+        console.warn("Failed to update user frame in Firestore:", e);
+      }
+    }
+
+    if ((window as any).updateAllAvatarFrames) {
+      setTimeout(() => (window as any).updateAllAvatarFrames(), 50);
+    }
+
+    if (!currentUser.hasFrame) {
+      alert("🎉 Congratulations! You received the VIP Avatar Frame for 3 Days! Frame is now equipped across your profile.");
+    } else {
+      alert(newEquipped ? "VIP Avatar Frame Equipped! ✨" : "VIP Avatar Frame Unequipped.");
+    }
+  };
 
   // Listen to DM Messages when open
   useEffect(() => {
@@ -1954,9 +2095,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
           <div
             onClick={() => setActiveTab('Profile')}
-            className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#f0c040] flex-shrink-0 ml-1 cursor-pointer hover:scale-105 transition"
+            className="w-8 h-8 rounded-full border-2 border-[#f0c040] flex-shrink-0 ml-1 cursor-pointer hover:scale-105 transition relative flex items-center justify-center"
           >
-            <img src={currentUser.av} alt="Avatar" className="w-full h-full object-cover" />
+            <img src={currentUser.av} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+            {currentUser.frameEquipped && (
+              <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+            )}
           </div>
         </div>
       </nav>
@@ -1980,7 +2124,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
               {/* User Brief */}
               <div className="my-4 p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center gap-3">
-                <img src={currentUser.av} alt="Avatar" className="w-10 h-10 rounded-full border border-[#f0c040]" />
+                <div className="relative shrink-0 flex items-center justify-center">
+                  <img src={currentUser.av} alt="Avatar" className="w-10 h-10 rounded-full border border-[#f0c040]" />
+                  {currentUser.frameEquipped && (
+                    <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                  )}
+                </div>
                 <div className="min-w-0">
                   <div className="font-bold text-xs text-white truncate">{currentUser.name}</div>
                   <div className="text-[10px] text-[#8890b0]">{currentUser.handle}</div>
@@ -2126,9 +2275,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   {/* User Profile Avatar */}
                   <div
                     onClick={() => setActiveTab('Profile')}
-                    className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#3d4566] cursor-pointer hover:scale-105 transition shadow-md flex-shrink-0"
+                    className="w-12 h-12 rounded-full border-2 border-[#3d4566] cursor-pointer hover:scale-105 transition shadow-md flex-shrink-0 relative flex items-center justify-center"
                   >
-                    <img src={currentUser.av} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={currentUser.av} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    {currentUser.frameEquipped && (
+                      <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-2.5 w-[calc(100%+20px)] h-[calc(100%+20px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                    )}
                   </div>
 
                   {/* AX Coins Badge Pill */}
@@ -2169,7 +2321,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     <div className="absolute -top-1 -left-1 text-[#f0c040] text-xs drop-shadow">
                       <i className="fas fa-crown"></i>
                     </div>
-                    <img src={currentUser.av} alt="Ranking" className="w-11 h-11 rounded-full object-cover" />
+                    <img id="homeRankingAv" src={leaderboardList[0]?.av || currentUser.av} alt="Ranking" className="w-11 h-11 rounded-full object-cover" />
                   </div>
                   <span className="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
                 </div>
@@ -2302,8 +2454,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             </div>
 
             <div id="profileCard" className={`p-4 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center gap-4 relative overflow-hidden ${currentUser.premium ? 'border-[#a78bfa]/30 shadow-[0_0_20px_rgba(167,139,250,0.08)]' : ''}`}>
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 flex items-center justify-center">
                 <img src={currentUser.av} alt="Avatar" className={`w-16 h-16 rounded-full border-2 ${currentUser.premium ? 'border-[#a78bfa]' : 'border-[#f0c040]'}`} />
+                {currentUser.frameEquipped && (
+                  <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-3 w-[calc(100%+24px)] h-[calc(100%+24px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                )}
                 <button
                   onClick={() => {
                     if (isGuest) {
@@ -2314,7 +2469,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     setCustBio(custBio);
                     setShowCustomizeModal(true);
                   }}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] rounded-full flex items-center justify-center text-[10px] transition"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] rounded-full flex items-center justify-center text-[10px] transition z-30"
                 >
                   <i className="fas fa-pen"></i>
                 </button>
@@ -2341,8 +2496,53 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                       Premium
                     </span>
                   )}
+                  {currentUser.frameEquipped && (
+                    <span className="px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 uppercase">
+                      VIP Frame Active
+                    </span>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* AVATAR FRAME MANAGEMENT CARD */}
+            <div className="p-4 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
+                  <img src={currentUser.av} alt="Preview" className="w-9 h-9 rounded-full object-cover" />
+                  <img src="/avatarframe1.png" alt="Frame Preview" className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-10 scale-125 object-contain" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-white text-xs sm:text-sm truncate flex items-center gap-1.5">
+                    VIP Avatar Frame
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 font-bold">3-Day Item</span>
+                  </h4>
+                  <p className="text-[10px] text-[#8890b0] truncate">
+                    {currentUser?.hasFrame
+                      ? (currentUser?.frameEquipped ? 'Equipped across profile' : 'Unlocked & Ready to equip')
+                      : 'Earn in Tasks by logging in 1 day!'}
+                  </p>
+                </div>
+              </div>
+              {currentUser?.hasFrame ? (
+                <button
+                  onClick={handleClaimOrToggleFrame}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                    currentUser.frameEquipped
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                      : 'bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830]'
+                  }`}
+                >
+                  {currentUser.frameEquipped ? 'Unequip' : 'Equip Frame'}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowTasksModal(true)}
+                  className="px-3 py-1.5 bg-[#f0c040]/10 hover:bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 rounded-lg text-xs font-bold transition shrink-0"
+                >
+                  Get Frame
+                </button>
+              )}
             </div>
 
             {/* FEATURED SQUAD TOURNAMENT CALLOUT */}
@@ -4161,52 +4361,233 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         </div>
       )}
 
-      {/* RANKING LEADERBOARD MODAL */}
-      {showRankingModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[420px] w-full animate-fade-in space-y-4">
-            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-[#f0c040]/10 text-[#f0c040] rounded-full flex items-center justify-center text-lg border border-[#f0c040]/20">
-                  <i className="fas fa-crown"></i>
-                </div>
-                <h3 className="font-sans text-xl font-bold text-white">ArenaX Leaderboard</h3>
-              </div>
-              <button onClick={() => setShowRankingModal(false)} className="text-[#8890b0] hover:text-white transition">
-                <i className="fas fa-times"></i>
+      {/* RANKING LEADERBOARD FULL PAGE OVERLAY */}
+      {showRankingModal && (() => {
+        const rank1Player = leaderboardList[0] || {
+          name: currentUser?.name || 'No Player',
+          balance: currentUser?.balance || 0,
+          av: currentUser?.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=p1'
+        };
+
+        const rank2Player = leaderboardList[1] || {
+          name: '—',
+          balance: 0,
+          av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p2'
+        };
+
+        const rank3Player = leaderboardList[2] || {
+          name: '—',
+          balance: 0,
+          av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p3'
+        };
+
+        const remainingPlayers = leaderboardList.length > 3 ? leaderboardList.slice(3) : [];
+
+        return (
+          <div className="fixed inset-0 bg-gradient-to-b from-[#8b5cf6] via-[#7c3aed] to-[#6d28d9] z-[9999] flex flex-col overflow-y-auto animate-fade-in font-sans">
+            {/* TOP HEADER */}
+            <div className="w-full px-4 pt-4 pb-2 flex items-center justify-between z-20">
+              <button
+                onClick={() => setShowRankingModal(false)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer active:scale-95"
+              >
+                <i className="fas fa-chevron-left text-lg"></i>
               </button>
+
+              <h2 className="text-xl font-bold text-white tracking-wide">Leaderboard</h2>
+
+              <div className="w-10 h-10 flex items-center justify-center text-white/80">
+                <i className="fas fa-trophy text-lg text-yellow-300"></i>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-              {[
-                { rank: 1, name: currentUser.name, pts: '2,450 AX', badge: '🥇 1st Place' },
-                { rank: 2, name: 'ApexPredator', pts: '1,980 AX', badge: '🥈 2nd Place' },
-                { rank: 3, name: 'ViperKing', pts: '1,620 AX', badge: '🥉 3rd Place' },
-                { rank: 4, name: 'ShadowNinja', pts: '1,200 AX', badge: 'Top 10' },
-                { rank: 5, name: 'GhostRider', pts: '950 AX', badge: 'Top 10' }
-              ].map((r, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-[#171b2e] border border-[#252a45] rounded-xl text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-[#f0c040] w-4">{r.rank}</span>
-                    <span className="font-bold text-white">{r.name}</span>
+            {/* TAB SELECTOR */}
+            <div className="flex justify-center my-2 z-20 px-4">
+              <div className="flex bg-black/20 p-1 rounded-full border border-white/15 backdrop-blur-md">
+                <button
+                  onClick={() => setRankingCategory('AX Coins')}
+                  className={`px-6 py-1.5 rounded-full text-xs font-bold transition ${
+                    rankingCategory === 'AX Coins'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  AX Coins
+                </button>
+                <button
+                  onClick={() => setRankingCategory('Weekly')}
+                  className={`px-6 py-1.5 rounded-full text-xs font-bold transition ${
+                    rankingCategory === 'Weekly'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  Weekly
+                </button>
+              </div>
+            </div>
+
+            {/* TOP 3 PODIUM */}
+            <div className="relative pt-8 pb-3 px-4 flex items-end justify-center gap-2 sm:gap-6 min-h-[320px]">
+              {/* Background circular glowing rings */}
+              <div className="absolute top-4 left-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none"></div>
+              <div className="absolute top-12 right-8 w-20 h-20 rounded-full border border-white/10 pointer-events-none"></div>
+
+              {/* RANK 2 (Left) */}
+              <div className="flex flex-col items-center z-10 w-1/3 max-w-[110px]">
+                <div className="relative mb-2 flex flex-col items-center">
+                  <div className="relative flex items-center justify-center">
+                    <img
+                      src={rank2Player.av}
+                      alt={rank2Player.name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-slate-200 shadow-xl"
+                    />
+                    {(rank2Player.frameEquipped || (rank2Player.uid === currentUser?.uid && currentUser?.frameEquipped)) && (
+                      <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-3 w-[calc(100%+24px)] h-[calc(100%+24px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                    )}
+                    <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-slate-300 to-slate-500 text-white font-black text-[11px] rounded-full flex items-center justify-center border-2 border-white shadow z-30">
+                      2
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#8890b0] bg-[#111420] px-2 py-0.5 rounded border border-[#252a45]">{r.badge}</span>
-                    <span className="font-bold text-[#f0c040]">{r.pts}</span>
-                  </div>
+                  <h4 className="text-white font-bold text-xs sm:text-sm mt-2 text-center truncate max-w-[90px]">
+                    {rank2Player.name}
+                  </h4>
+                  <span className="bg-white/20 backdrop-blur-md text-yellow-300 font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full mt-1 border border-white/20 shadow-xs">
+                    {(rank2Player.balance || 0).toLocaleString()} AX
+                  </span>
                 </div>
-              ))}
+                {/* Podium Column 2 */}
+                <div className="w-full bg-gradient-to-t from-pink-500/80 to-purple-400/90 rounded-t-2xl h-28 sm:h-32 flex items-start justify-center pt-3 shadow-lg border-t border-white/30">
+                  <span className="text-white/90 font-black text-4xl sm:text-5xl drop-shadow">2</span>
+                </div>
+              </div>
+
+              {/* RANK 1 (Center - Taller Podium with Golden Crown) */}
+              <div className="flex flex-col items-center z-20 w-1/3 max-w-[130px] -mt-6">
+                <div className="relative mb-2 flex flex-col items-center">
+                  {/* Golden Crown Icon sitting on head */}
+                  <div className="absolute -top-7 text-yellow-300 text-2xl sm:text-3xl animate-bounce drop-shadow-[0_4px_12px_rgba(250,204,21,0.8)] z-30">
+                    👑
+                  </div>
+                  <div className="relative flex items-center justify-center">
+                    <img
+                      src={rank1Player.av}
+                      alt={rank1Player.name}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-yellow-300 shadow-[0_0_30px_rgba(250,204,21,0.6)]"
+                    />
+                    {(rank1Player.frameEquipped || (rank1Player.uid === currentUser?.uid && currentUser?.frameEquipped)) && (
+                      <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-3 w-[calc(100%+24px)] h-[calc(100%+24px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                    )}
+                    <span className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-yellow-300 to-amber-500 text-gray-950 font-black text-xs rounded-full flex items-center justify-center border-2 border-white shadow-md z-30">
+                      1
+                    </span>
+                  </div>
+                  <h3 className="text-white font-extrabold text-sm sm:text-base mt-2 text-center truncate max-w-[105px] drop-shadow">
+                    {rank1Player.name}
+                  </h3>
+                  <span className="bg-yellow-400 text-purple-950 font-black text-xs px-3 py-0.5 rounded-full mt-1 shadow-md border border-yellow-200">
+                    {(rank1Player.balance || 0).toLocaleString()} AX
+                  </span>
+                </div>
+                {/* Podium Column 1 */}
+                <div className="w-full bg-gradient-to-t from-pink-500 to-purple-300/90 rounded-t-2xl h-36 sm:h-40 flex items-start justify-center pt-3 shadow-2xl border-t-2 border-white/50">
+                  <span className="text-white font-black text-5xl sm:text-6xl drop-shadow-lg">1</span>
+                </div>
+              </div>
+
+              {/* RANK 3 (Right) */}
+              <div className="flex flex-col items-center z-10 w-1/3 max-w-[110px]">
+                <div className="relative mb-2 flex flex-col items-center">
+                  <div className="relative flex items-center justify-center">
+                    <img
+                      src={rank3Player.av}
+                      alt={rank3Player.name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-amber-600/90 shadow-xl"
+                    />
+                    {(rank3Player.frameEquipped || (rank3Player.uid === currentUser?.uid && currentUser?.frameEquipped)) && (
+                      <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-3 w-[calc(100%+24px)] h-[calc(100%+24px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                    )}
+                    <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-amber-600 to-amber-800 text-white font-black text-[11px] rounded-full flex items-center justify-center border-2 border-white shadow z-30">
+                      3
+                    </span>
+                  </div>
+                  <h4 className="text-white font-bold text-xs sm:text-sm mt-2 text-center truncate max-w-[90px]">
+                    {rank3Player.name}
+                  </h4>
+                  <span className="bg-white/20 backdrop-blur-md text-yellow-300 font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full mt-1 border border-white/20 shadow-xs">
+                    {(rank3Player.balance || 0).toLocaleString()} AX
+                  </span>
+                </div>
+                {/* Podium Column 3 */}
+                <div className="w-full bg-gradient-to-t from-pink-500/70 to-purple-400/80 rounded-t-2xl h-24 sm:h-28 flex items-start justify-center pt-3 shadow-lg border-t border-white/20">
+                  <span className="text-white/80 font-black text-4xl sm:text-5xl drop-shadow">3</span>
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={() => setShowRankingModal(false)}
-              className="w-full py-2.5 bg-[#f0c040] text-[#0a0c12] font-bold rounded-xl text-xs transition"
-            >
-              Close Leaderboard
-            </button>
+            {/* LOWER WHITE CARD LIST FOR RANKS 4 AND BEYOND */}
+            <div className="w-full bg-white rounded-t-[32px] pt-6 pb-36 px-4 shadow-[0_-10px_35px_rgba(0,0,0,0.18)] space-y-3 max-w-2xl mx-auto grow min-h-[calc(100vh-280px)]">
+              <div className="flex items-center justify-between px-2 pb-2 border-b border-gray-100 text-xs font-bold text-gray-400">
+                <span>RANK & PLAYER</span>
+                <span>AX COINS BALANCE</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {remainingPlayers.map((player, idx) => {
+                  const rankNum = idx + 4;
+                  const isCurrentUser = player.uid === currentUser?.uid;
+
+                  return (
+                    <div
+                      key={player.uid || idx}
+                      className={`flex items-center justify-between p-3 rounded-2xl transition ${
+                        isCurrentUser
+                          ? 'bg-purple-50 border-2 border-purple-300 shadow-sm'
+                          : 'bg-gray-50/90 hover:bg-gray-100 border border-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <span className="font-extrabold text-sm text-gray-400 w-5 text-center shrink-0">
+                          {rankNum}
+                        </span>
+                        <div className="relative shrink-0 flex items-center justify-center">
+                          <img
+                            src={player.av}
+                            alt={player.name}
+                            className="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-xs"
+                          />
+                          {(player.frameEquipped || (player.uid === currentUser?.uid && currentUser?.frameEquipped)) && (
+                            <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-2.5 w-[calc(100%+20px)] h-[calc(100%+20px)] pointer-events-none z-20 max-w-none scale-125 object-contain" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm text-gray-900 truncate flex items-center gap-1.5">
+                            <span>{player.name}</span>
+                            {isCurrentUser && (
+                              <span className="bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-md">
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
+                            Rank #{rankNum} • Player
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AX COINS BALANCE DISPLAY INSTEAD OF FOLLOW BUTTON */}
+                      <div className="bg-gradient-to-r from-amber-50 to-yellow-100/80 border border-amber-200/90 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shrink-0 shadow-xs">
+                        <i className="fas fa-coins text-amber-500 text-xs"></i>
+                        <span>{(player.balance || 0).toLocaleString()} AX</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TASKS MODAL */}
       {showTasksModal && (
@@ -4225,6 +4606,40 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             </div>
 
             <div className="space-y-2.5">
+              {/* FEATURED AVATAR FRAME REWARD TASK */}
+              <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-[#171b2e] to-purple-500/15 border border-[#f0c040]/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
+                    <img src={currentUser?.av} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                    <img src="/avatarframe1.png" alt="Frame" className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-10 scale-125 object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                      Login 1 Day
+                      <span className="text-[8px] px-1.5 py-0.2 rounded bg-[#f0c040] text-[#0a0c12] font-black uppercase tracking-wider">SPECIAL</span>
+                    </div>
+                    <div className="text-[10px] text-[#8890b0] truncate">
+                      Reward: <span className="text-[#f0c040] font-bold">VIP Avatar Frame (3 Days)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleClaimOrToggleFrame}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                    currentUser?.hasFrame
+                      ? currentUser?.frameEquipped
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                        : 'bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830]'
+                      : 'bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] shadow-[0_0_12px_rgba(240,192,64,0.4)]'
+                  }`}
+                >
+                  {currentUser?.hasFrame
+                    ? (currentUser?.frameEquipped ? 'Equipped ✓' : 'Equip Frame')
+                    : 'Claim Frame'}
+                </button>
+              </div>
+
               {[
                 { task: 'Join 1 Tournament Match', reward: '+50 AX', progress: '0/1', done: false },
                 { task: 'Add 1 Friend to List', reward: '+30 AX', progress: `${friends.length > 0 ? 1 : 0}/1`, done: friends.length > 0 },
