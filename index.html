@@ -2818,7 +2818,7 @@ if (typeof tailwind !== 'undefined') {
             <div class="flex items-center gap-3 min-w-0">
               <div id="custModalFramePreviewContainer" class="relative w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-[#0a0c12]">
                 <img id="custModalFrameAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-10 h-10 rounded-full object-cover" />
-                <img id="custModalFrameOverlay" src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[12%] w-[124%] h-[124%] pointer-events-none z-20 object-contain" />
+                <img id="custModalFrameOverlay" src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-20 object-contain" />
               </div>
               <div class="min-w-0">
                 <div class="text-xs font-bold text-white truncate flex items-center gap-1">
@@ -3545,7 +3545,7 @@ if (typeof tailwind !== 'undefined') {
         <div class="flex items-center gap-3 min-w-0">
           <div class="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
             <img id="taskModalUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
-            <img src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[12%] w-[124%] h-[124%] pointer-events-none z-10 object-contain" />
+            <img src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-10 object-contain" />
           </div>
           <div class="min-w-0">
             <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
@@ -4765,7 +4765,7 @@ window.applyAvatarFrame = function(imgElement, isEquipped) {
   if (isEquipped) {
     if (!existingFrame) {
       existingFrame = document.createElement('img');
-      existingFrame.className = 'avatar-frame-overlay absolute -inset-[12%] w-[124%] h-[124%] pointer-events-none z-20 max-w-none object-contain';
+      existingFrame.className = 'avatar-frame-overlay absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-20 max-w-none object-contain';
       existingFrame.src = '/arenaX/avatarframe1.svg';
       existingFrame.onerror = function() { if(this.src.includes('/arenaX/avatarframe1.svg')){this.src='/avatarframe1.svg';}else if(this.src.includes('/avatarframe1.svg')){this.src='/avatarframe1.png';} };
       existingFrame.alt = 'Avatar Frame';
