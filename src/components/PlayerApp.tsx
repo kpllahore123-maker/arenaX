@@ -301,6 +301,27 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsub();
   }, [isGuest]);
 
+  useEffect(() => {
+    if (currentUser) {
+      (window as any).currentUser = currentUser;
+      (window as any).userProfile = currentUser;
+      if (isGuest) (window as any).guestProfile = currentUser;
+    } else {
+      (window as any).currentUser = null;
+      (window as any).userProfile = null;
+      (window as any).guestProfile = null;
+    }
+    if ((window as any).updateAllAvatarFrames) {
+      (window as any).updateAllAvatarFrames();
+    }
+    if ((window as any).updateTasksFrameButtonState) {
+      (window as any).updateTasksFrameButtonState();
+    }
+    if ((window as any).updateCustomizeFrameButtonState) {
+      (window as any).updateCustomizeFrameButtonState();
+    }
+  }, [currentUser, isGuest]);
+
   const handleRequestFcmToken = async () => {
     if (!currentUser) return;
     setFcmError(null);
@@ -1046,9 +1067,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
     const gid = Math.floor(100000 + Math.random() * 900000);
+    localStorage.setItem('guest_id', String(gid));
     setGuestId(gid);
     setIsGuest(true);
-    setCurrentUser({
+
+    const isEquippedLocal = localStorage.getItem('user_frame_equipped') === 'true';
+    const localExpiry = localStorage.getItem('user_frame_expiry');
+    const isExpired = localExpiry ? Date.now() > Number(localExpiry) : false;
+    const hasFrame = localStorage.getItem('user_has_frame') === 'true';
+    const frameEquipped = !isExpired && isEquippedLocal;
+
+    const guestProf: UserProfile = {
       id: `guest_${gid}`,
       uid: `guest_${gid}`,
       name: 'Guest Player',
@@ -1057,10 +1086,29 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       email: '',
       premium: false,
       banned: false,
-      balance: 0
-    });
+      banType: 'none',
+      banReason: '',
+      banUntil: null,
+      balance: 100,
+      hasFrame: hasFrame,
+      frameEquipped: frameEquipped,
+      createdAt: new Date().toISOString(),
+      transactions: []
+    };
+
+    setCurrentUser(guestProf);
+    (window as any).currentUser = guestProf;
+    (window as any).userProfile = guestProf;
+    (window as any).guestProfile = guestProf;
+
     setShowGuestWarning(false);
     setActiveTab('Profile');
+
+    setTimeout(() => {
+      if ((window as any).updateAllAvatarFrames) (window as any).updateAllAvatarFrames();
+      if ((window as any).updateTasksFrameButtonState) (window as any).updateTasksFrameButtonState();
+      if ((window as any).updateCustomizeFrameButtonState) (window as any).updateCustomizeFrameButtonState();
+    }, 50);
   };
 
   // Sign out
@@ -5076,6 +5124,27 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsub();
   }, [isGuest]);
 
+  useEffect(() => {
+    if (currentUser) {
+      (window as any).currentUser = currentUser;
+      (window as any).userProfile = currentUser;
+      if (isGuest) (window as any).guestProfile = currentUser;
+    } else {
+      (window as any).currentUser = null;
+      (window as any).userProfile = null;
+      (window as any).guestProfile = null;
+    }
+    if ((window as any).updateAllAvatarFrames) {
+      (window as any).updateAllAvatarFrames();
+    }
+    if ((window as any).updateTasksFrameButtonState) {
+      (window as any).updateTasksFrameButtonState();
+    }
+    if ((window as any).updateCustomizeFrameButtonState) {
+      (window as any).updateCustomizeFrameButtonState();
+    }
+  }, [currentUser, isGuest]);
+
   const handleRequestFcmToken = async () => {
     if (!currentUser) return;
     setFcmError(null);
@@ -5821,9 +5890,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
     const gid = Math.floor(100000 + Math.random() * 900000);
+    localStorage.setItem('guest_id', String(gid));
     setGuestId(gid);
     setIsGuest(true);
-    setCurrentUser({
+
+    const isEquippedLocal = localStorage.getItem('user_frame_equipped') === 'true';
+    const localExpiry = localStorage.getItem('user_frame_expiry');
+    const isExpired = localExpiry ? Date.now() > Number(localExpiry) : false;
+    const hasFrame = localStorage.getItem('user_has_frame') === 'true';
+    const frameEquipped = !isExpired && isEquippedLocal;
+
+    const guestProf: UserProfile = {
       id: `guest_${gid}`,
       uid: `guest_${gid}`,
       name: 'Guest Player',
@@ -5832,10 +5909,29 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       email: '',
       premium: false,
       banned: false,
-      balance: 0
-    });
+      banType: 'none',
+      banReason: '',
+      banUntil: null,
+      balance: 100,
+      hasFrame: hasFrame,
+      frameEquipped: frameEquipped,
+      createdAt: new Date().toISOString(),
+      transactions: []
+    };
+
+    setCurrentUser(guestProf);
+    (window as any).currentUser = guestProf;
+    (window as any).userProfile = guestProf;
+    (window as any).guestProfile = guestProf;
+
     setShowGuestWarning(false);
     setActiveTab('Profile');
+
+    setTimeout(() => {
+      if ((window as any).updateAllAvatarFrames) (window as any).updateAllAvatarFrames();
+      if ((window as any).updateTasksFrameButtonState) (window as any).updateTasksFrameButtonState();
+      if ((window as any).updateCustomizeFrameButtonState) (window as any).updateCustomizeFrameButtonState();
+    }, 50);
   };
 
   // Sign out
@@ -9851,6 +9947,27 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsub();
   }, [isGuest]);
 
+  useEffect(() => {
+    if (currentUser) {
+      (window as any).currentUser = currentUser;
+      (window as any).userProfile = currentUser;
+      if (isGuest) (window as any).guestProfile = currentUser;
+    } else {
+      (window as any).currentUser = null;
+      (window as any).userProfile = null;
+      (window as any).guestProfile = null;
+    }
+    if ((window as any).updateAllAvatarFrames) {
+      (window as any).updateAllAvatarFrames();
+    }
+    if ((window as any).updateTasksFrameButtonState) {
+      (window as any).updateTasksFrameButtonState();
+    }
+    if ((window as any).updateCustomizeFrameButtonState) {
+      (window as any).updateCustomizeFrameButtonState();
+    }
+  }, [currentUser, isGuest]);
+
   const handleRequestFcmToken = async () => {
     if (!currentUser) return;
     setFcmError(null);
@@ -10596,9 +10713,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       return;
     }
     const gid = Math.floor(100000 + Math.random() * 900000);
+    localStorage.setItem('guest_id', String(gid));
     setGuestId(gid);
     setIsGuest(true);
-    setCurrentUser({
+
+    const isEquippedLocal = localStorage.getItem('user_frame_equipped') === 'true';
+    const localExpiry = localStorage.getItem('user_frame_expiry');
+    const isExpired = localExpiry ? Date.now() > Number(localExpiry) : false;
+    const hasFrame = localStorage.getItem('user_has_frame') === 'true';
+    const frameEquipped = !isExpired && isEquippedLocal;
+
+    const guestProf: UserProfile = {
       id: `guest_${gid}`,
       uid: `guest_${gid}`,
       name: 'Guest Player',
@@ -10607,10 +10732,29 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       email: '',
       premium: false,
       banned: false,
-      balance: 0
-    });
+      banType: 'none',
+      banReason: '',
+      banUntil: null,
+      balance: 100,
+      hasFrame: hasFrame,
+      frameEquipped: frameEquipped,
+      createdAt: new Date().toISOString(),
+      transactions: []
+    };
+
+    setCurrentUser(guestProf);
+    (window as any).currentUser = guestProf;
+    (window as any).userProfile = guestProf;
+    (window as any).guestProfile = guestProf;
+
     setShowGuestWarning(false);
     setActiveTab('Profile');
+
+    setTimeout(() => {
+      if ((window as any).updateAllAvatarFrames) (window as any).updateAllAvatarFrames();
+      if ((window as any).updateTasksFrameButtonState) (window as any).updateTasksFrameButtonState();
+      if ((window as any).updateCustomizeFrameButtonState) (window as any).updateCustomizeFrameButtonState();
+    }, 50);
   };
 
   // Sign out
