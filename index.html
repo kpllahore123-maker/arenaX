@@ -3489,6 +3489,88 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
+<!-- ==================== DAILY TASKS & QUESTS MODAL ==================== -->
+<div id="mTasksModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[990] flex items-center justify-center p-4 hidden">
+  <div class="bg-[#111420] border border-[#252a45] rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl animate-fade-in">
+    <div class="flex items-center justify-between border-b border-[#252a45] pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center text-red-400 text-lg">
+          <i class="fas fa-clipboard-check"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg text-white">Daily Tasks & Quests</h3>
+          <p class="text-[10px] text-[#8890b0]">Complete tasks to earn rewards & VIP items</p>
+        </div>
+      </div>
+      <button onclick="closeTasksModal()" type="button" class="text-[#8890b0] hover:text-white transition p-1 cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+      <!-- SPECIAL VIP AVATAR FRAME REWARD TASK -->
+      <div class="p-3.5 bg-gradient-to-r from-amber-500/15 via-[#171b2e] to-purple-500/15 border border-[#f0c040]/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
+            <img id="taskModalUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
+            <img src="/avatarframe1.png" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-10 scale-125 object-contain" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
+              Login 1 Day
+              <span class="text-[8px] px-1.5 py-0.2 rounded bg-[#f0c040] text-[#0a0c12] font-black uppercase tracking-wider">SPECIAL</span>
+            </div>
+            <div class="text-[10px] text-[#8890b0] truncate">
+              Reward: <span class="text-[#f0c040] font-bold">VIP Avatar Frame (3 Days)</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnTaskClaimFrame" onclick="handleClaimOrToggleFrameFromVanilla()" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)]">
+          Claim Frame
+        </button>
+      </div>
+
+      <!-- TASK 1 -->
+      <div class="p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-bold text-white">Join 1 Tournament Match</div>
+          <div class="text-[10px] text-[#8890b0]">Reward: <span class="text-[#f0c040] font-bold">+50 AX</span></div>
+        </div>
+        <button onclick="alert('Join a tournament match from the Tournaments tab to complete this task!')" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition cursor-pointer">
+          0/1
+        </button>
+      </div>
+
+      <!-- TASK 2 -->
+      <div class="p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-bold text-white">Add 1 Friend to List</div>
+          <div class="text-[10px] text-[#8890b0]">Reward: <span class="text-[#f0c040] font-bold">+30 AX</span></div>
+        </div>
+        <button onclick="alert('Go to Friends / Chat tab to search & add friends!')" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition cursor-pointer">
+          0/1
+        </button>
+      </div>
+
+      <!-- TASK 3 -->
+      <div class="p-3 bg-[#171b2e] border border-[#252a45] rounded-xl flex items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-bold text-white">Check Tournament Guidelines</div>
+          <div class="text-[10px] text-[#8890b0]">Reward: <span class="text-[#f0c040] font-bold">+20 AX</span></div>
+        </div>
+        <button disabled class="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold transition cursor-default">
+          Claimed ✓
+        </button>
+      </div>
+    </div>
+
+    <button onclick="closeTasksModal()" type="button" class="w-full py-2.5 bg-[#1e2340] border border-[#252a45] text-[#8890b0] hover:text-white font-bold rounded-xl text-xs transition cursor-pointer">
+      Close Tasks
+    </button>
+  </div>
+</div>
+
 <!-- ==================== PLAYER DM FULL SCREEN CHAT PAGE ==================== -->
 <div id="mDMChat" class="fixed inset-0 bg-[#f4f4f6] z-[900] flex flex-col w-full h-full h-screen overflow-hidden hidden">
   <div class="w-full h-full flex flex-col bg-[#f4f4f6]">
@@ -3528,6 +3610,91 @@ if (typeof tailwind !== 'undefined') {
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LEADERBOARD FULL PAGE OVERLAY ==================== -->
+<div id="mRankingModal" class="fixed inset-0 bg-gradient-to-b from-[#8b5cf6] via-[#7c3aed] to-[#6d28d9] z-[990] flex flex-col overflow-y-auto hidden font-sans">
+  <!-- TOP HEADER -->
+  <div class="w-full px-4 pt-4 pb-2 flex items-center justify-between z-20">
+    <button onclick="window.closeRankingModal()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer active:scale-95">
+      <i class="fas fa-chevron-left text-lg"></i>
+    </button>
+    <h2 class="text-xl font-bold text-white tracking-wide">Leaderboard</h2>
+    <div class="w-10 h-10 flex items-center justify-center text-white/80">
+      <i class="fas fa-trophy text-lg text-yellow-300"></i>
+    </div>
+  </div>
+
+  <!-- TAB SELECTOR -->
+  <div class="flex justify-center my-2 z-20 px-4">
+    <div class="flex bg-black/20 p-1 rounded-full border border-white/15 backdrop-blur-md">
+      <button id="rkTabCoins" onclick="window.setRkCategory('AX Coins')" class="px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg">AX Coins</button>
+      <button id="rkTabWeekly" onclick="window.setRkCategory('Weekly')" class="px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white">Weekly</button>
+    </div>
+  </div>
+
+  <!-- TOP 3 PODIUM -->
+  <div class="relative pt-8 pb-3 px-4 flex items-end justify-center gap-2 sm:gap-6 min-h-[320px]">
+    <div class="absolute top-4 left-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none"></div>
+    <div class="absolute top-12 right-8 w-20 h-20 rounded-full border border-white/10 pointer-events-none"></div>
+
+    <!-- RANK 2 (Left) -->
+    <div class="flex flex-col items-center z-10 w-1/3 max-w-[110px]">
+      <div class="relative mb-2 flex flex-col items-center">
+        <div class="relative">
+          <img id="rk2Av" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80" alt="Barine" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-slate-200 shadow-xl"/>
+          <span class="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-slate-300 to-slate-500 text-white font-black text-[11px] rounded-full flex items-center justify-center border-2 border-white shadow">2</span>
+        </div>
+        <h4 id="rk2Name" class="text-white font-bold text-xs sm:text-sm mt-2 text-center truncate max-w-[90px]">Barine</h4>
+        <span id="rk2Bal" class="bg-white/20 backdrop-blur-md text-yellow-300 font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full mt-1 border border-white/20 shadow-xs">19,800 AX</span>
+      </div>
+      <div class="w-full bg-gradient-to-t from-pink-500/80 to-purple-400/90 rounded-t-2xl h-28 sm:h-32 flex items-start justify-center pt-3 shadow-lg border-t border-white/30">
+        <span class="text-white/90 font-black text-4xl sm:text-5xl drop-shadow">2</span>
+      </div>
+    </div>
+
+    <!-- RANK 1 (Center - Golden Crown) -->
+    <div class="flex flex-col items-center z-20 w-1/3 max-w-[130px] -mt-6">
+      <div class="relative mb-2 flex flex-col items-center">
+        <div class="absolute -top-7 text-yellow-300 text-2xl sm:text-3xl animate-bounce drop-shadow-[0_4px_12px_rgba(250,204,21,0.8)]">👑</div>
+        <div class="relative">
+          <img id="rk1Av" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80" alt="Amanda" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-yellow-300 shadow-[0_0_30px_rgba(250,204,21,0.6)]"/>
+          <span class="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-yellow-300 to-amber-500 text-gray-950 font-black text-xs rounded-full flex items-center justify-center border-2 border-white shadow-md">1</span>
+        </div>
+        <h3 id="rk1Name" class="text-white font-extrabold text-sm sm:text-base mt-2 text-center truncate max-w-[105px] drop-shadow">Amanda</h3>
+        <span id="rk1Bal" class="bg-yellow-400 text-purple-950 font-black text-xs px-3 py-0.5 rounded-full mt-1 shadow-md border border-yellow-200">25,000 AX</span>
+      </div>
+      <div class="w-full bg-gradient-to-t from-pink-500 to-purple-300/90 rounded-t-2xl h-36 sm:h-40 flex items-start justify-center pt-3 shadow-2xl border-t-2 border-white/50">
+        <span class="text-white font-black text-5xl sm:text-6xl drop-shadow-lg">1</span>
+      </div>
+    </div>
+
+    <!-- RANK 3 (Right) -->
+    <div class="flex flex-col items-center z-10 w-1/3 max-w-[110px]">
+      <div class="relative mb-2 flex flex-col items-center">
+        <div class="relative">
+          <img id="rk3Av" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=250&q=80" alt="Sarah" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-amber-600/90 shadow-xl"/>
+          <span class="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-amber-600 to-amber-800 text-white font-black text-[11px] rounded-full flex items-center justify-center border-2 border-white shadow">3</span>
+        </div>
+        <h4 id="rk3Name" class="text-white font-bold text-xs sm:text-sm mt-2 text-center truncate max-w-[90px]">Sarah</h4>
+        <span id="rk3Bal" class="bg-white/20 backdrop-blur-md text-yellow-300 font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full mt-1 border border-white/20 shadow-xs">17,200 AX</span>
+      </div>
+      <div class="w-full bg-gradient-to-t from-pink-500/70 to-purple-400/80 rounded-t-2xl h-24 sm:h-28 flex items-start justify-center pt-3 shadow-lg border-t border-white/20">
+        <span class="text-white/80 font-black text-4xl sm:text-5xl drop-shadow">3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOWER WHITE CARD LIST -->
+  <div class="w-full bg-white rounded-t-[32px] pt-6 pb-36 px-4 shadow-[0_-10px_35px_rgba(0,0,0,0.18)] space-y-3 max-w-2xl mx-auto grow min-h-[calc(100vh-280px)]">
+    <div class="flex items-center justify-between px-2 pb-2 border-b border-gray-100 text-xs font-bold text-gray-400">
+      <span>RANK & PLAYER</span>
+      <span>AX COINS BALANCE</span>
+    </div>
+    <div id="rkListContainer" class="space-y-2.5">
+      <!-- Player items populated dynamically -->
     </div>
   </div>
 </div>
@@ -4545,6 +4712,42 @@ window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
   return '';
 };
 
+window.applyAvatarFrame = function(imgElement, isEquipped) {
+  if (!imgElement) return;
+  const parent = imgElement.parentElement;
+  if (!parent) return;
+  
+  const computedPos = window.getComputedStyle(parent).position;
+  if (computedPos === 'static') {
+    parent.style.position = 'relative';
+  }
+
+  let existingFrame = parent.querySelector('.avatar-frame-overlay');
+  if (isEquipped) {
+    if (!existingFrame) {
+      existingFrame = document.createElement('img');
+      existingFrame.className = 'avatar-frame-overlay absolute -inset-2.5 w-[calc(100%+20px)] h-[calc(100%+20px)] pointer-events-none z-20 max-w-none scale-125 object-contain';
+      existingFrame.src = '/avatarframe1.png';
+      existingFrame.alt = 'Avatar Frame';
+      parent.appendChild(existingFrame);
+    }
+  } else {
+    if (existingFrame) {
+      existingFrame.remove();
+    }
+  }
+};
+
+window.updateAllAvatarFrames = function() {
+  const profile = window.userProfile || window.guestProfile || (window.currentUser);
+  const isEquipped = !!(profile && (profile.frameEquipped || profile.hasFrame || localStorage.getItem('user_frame_equipped') === 'true'));
+  
+  ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) window.applyAvatarFrame(el, isEquipped);
+  });
+};
+
 // Lauch Dashboard
 function boot() {
   const profile = userProfile || guestProfile;
@@ -4561,6 +4764,8 @@ function boot() {
   if ($('setAv')) $('setAv').src = profile.av;
   $('wBal').textContent = (profile.balance || 0).toLocaleString();
   $('pPopularityVal').textContent = profile.popularity || 0;
+
+  if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
 
   // 1. Profile Banner Theme (Premium only)
   const card = $('profileCard');
@@ -8537,6 +8742,201 @@ $('btnOpenFriendsModal')?.addEventListener('click', () => {
 
 $('bCloseFriendsModal')?.addEventListener('click', () => $('mFriendsModal')?.classList.add('hidden'));
 $('bCloseFriendsModalDone')?.addEventListener('click', () => $('mFriendsModal')?.classList.add('hidden'));
+
+// Ranking Leaderboard Modal Controls
+// Tasks Modal Controls
+window.openTasksModal = function() {
+  const modal = $('mTasksModal');
+  if (modal) modal.classList.remove('hidden');
+  updateTasksFrameButtonState();
+  if (typeof window.reactOpenTasksModal === 'function') {
+    try { window.reactOpenTasksModal(); } catch(e) {}
+  }
+};
+window.closeTasksModal = function() {
+  const modal = $('mTasksModal');
+  if (modal) modal.classList.add('hidden');
+};
+function openTasksModal() {
+  window.openTasksModal();
+}
+function closeTasksModal() {
+  window.closeTasksModal();
+}
+
+function updateTasksFrameButtonState() {
+  if (typeof userProfile !== 'undefined' && userProfile) {
+    const btn = $('btnTaskClaimFrame');
+    const av = $('taskModalUserAv');
+    if (av && userProfile.av) av.src = userProfile.av;
+    if (btn) {
+      if (userProfile.hasFrame) {
+        if (userProfile.frameEquipped) {
+          btn.textContent = 'Equipped ✓';
+          btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0';
+        } else {
+          btn.textContent = 'Equip Frame';
+          btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0';
+        }
+      } else {
+        btn.textContent = 'Claim Frame';
+        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)]';
+      }
+    }
+  }
+}
+
+window.handleClaimOrToggleFrameFromVanilla = async function() {
+  if (typeof userProfile === 'undefined' || !userProfile || !userProfile.uid) {
+    alert("Please log in to claim or equip your frame!");
+    return;
+  }
+  const btn = $('btnTaskClaimFrame');
+  if (btn) btn.disabled = true;
+  try {
+    const userRef = doc(db, 'users', userProfile.uid);
+    if (!userProfile.hasFrame) {
+      await updateDoc(userRef, {
+        hasFrame: true,
+        frameEquipped: true
+      });
+      userProfile.hasFrame = true;
+      userProfile.frameEquipped = true;
+      if (typeof spawnConfetti === 'function') spawnConfetti(['#f0c040', '#a78bfa', '#38bdf8']);
+      if (typeof showToastNotification === 'function') showToastNotification("VIP Frame Unlocked! ✨", "You claimed the 3-Day VIP Avatar Frame!");
+    } else {
+      const nextEquipped = !userProfile.frameEquipped;
+      await updateDoc(userRef, {
+        frameEquipped: nextEquipped
+      });
+      userProfile.frameEquipped = nextEquipped;
+      if (typeof showToastNotification === 'function') {
+        showToastNotification(nextEquipped ? "Frame Equipped! ✨" : "Frame Unequipped", nextEquipped ? "VIP Frame is now active across profile!" : "Avatar frame unequipped.");
+      }
+    }
+    updateTasksFrameButtonState();
+    if (typeof renderVanillaUserProfile === 'function') renderVanillaUserProfile();
+  } catch (err) {
+    console.error("Frame action error:", err);
+    alert("Action failed: " + (err.message || err));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+window.openRankingModal = function() {
+  const modal = $('mRankingModal');
+  if (modal) modal.classList.remove('hidden');
+  renderVanillaRankingList();
+};
+
+window.closeRankingModal = function() {
+  const modal = $('mRankingModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.setRkCategory = function(cat) {
+  const btnCoins = $('rkTabCoins');
+  const btnWeekly = $('rkTabWeekly');
+  if (cat === 'AX Coins') {
+    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
+    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
+  } else {
+    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
+    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
+  }
+};
+
+async function renderVanillaRankingList() {
+  const listContainer = $('rkListContainer');
+  if (!listContainer) return;
+
+  try {
+    const qUsers = query(collection(db, 'users'), limit(100));
+    const snap = await getDocs(qUsers);
+    let players = [];
+    snap.forEach((doc) => {
+      const d = doc.data();
+      players.push({
+        uid: doc.id,
+        name: d.name || d.displayName || d.username || 'Player',
+        balance: Number(d.balance || d.coins || 0),
+        av: d.av || d.avatar || d.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${doc.id}`
+      });
+    });
+
+    if (window.userProfile) {
+      const uId = window.userProfile.uid || window.userProfile.id;
+      const exists = players.some((p) => p.uid === uId);
+      if (!exists) {
+        players.push({
+          uid: uId || 'me',
+          name: window.userProfile.name || 'You',
+          balance: Number(window.userProfile.balance || 0),
+          av: window.userProfile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=me`
+        });
+      } else {
+        players = players.map(p => p.uid === uId ? {
+          ...p,
+          name: window.userProfile.name || p.name,
+          balance: Number(window.userProfile.balance ?? p.balance),
+          av: window.userProfile.av || p.av
+        } : p);
+      }
+    }
+
+    players.sort((a, b) => b.balance - a.balance);
+
+    if (players.length > 0 && $('homeRankingAv')) {
+      $('homeRankingAv').src = players[0].av;
+    }
+
+    const p1 = players[0] || { name: 'No Player', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p1' };
+    const p2 = players[1] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p2' };
+    const p3 = players[2] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p3' };
+
+    if ($('rk1Name')) $('rk1Name').textContent = p1.name;
+    if ($('rk1Bal')) $('rk1Bal').textContent = p1.balance.toLocaleString() + ' AX';
+    if ($('rk1Av')) $('rk1Av').src = p1.av;
+
+    if ($('rk2Name')) $('rk2Name').textContent = p2.name;
+    if ($('rk2Bal')) $('rk2Bal').textContent = p2.balance.toLocaleString() + ' AX';
+    if ($('rk2Av')) $('rk2Av').src = p2.av;
+
+    if ($('rk3Name')) $('rk3Name').textContent = p3.name;
+    if ($('rk3Bal')) $('rk3Bal').textContent = p3.balance.toLocaleString() + ' AX';
+    if ($('rk3Av')) $('rk3Av').src = p3.av;
+
+    listContainer.innerHTML = '';
+    if (players.length <= 3) {
+      listContainer.innerHTML = `<div class="text-center text-gray-400 py-8 text-xs font-semibold">No additional ranked players yet</div>`;
+    } else {
+      for (let i = 3; i < players.length; i++) {
+        const p = players[i];
+        const rankNum = i + 1;
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3 rounded-2xl bg-gray-50/90 hover:bg-gray-100 border border-gray-100 transition";
+        item.innerHTML = `
+          <div class="flex items-center gap-3.5 min-w-0">
+            <span class="font-extrabold text-sm text-gray-400 w-5 text-center shrink-0">${rankNum}</span>
+            <img src="${p.av}" alt="${p.name}" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-xs"/>
+            <div class="min-w-0">
+              <div class="font-bold text-sm text-gray-900 truncate">${p.name}</div>
+              <div class="text-[11px] text-gray-400 font-medium truncate mt-0.5">Rank #${rankNum} • Player</div>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-amber-50 to-yellow-100/80 border border-amber-200/90 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shrink-0 shadow-xs">
+            <i class="fas fa-coins text-amber-500 text-xs"></i>
+            <span>${p.balance.toLocaleString()} AX</span>
+          </div>
+        `;
+        listContainer.appendChild(item);
+      }
+    }
+  } catch (err) {
+    console.warn("Error rendering vanilla ranking list:", err);
+  }
+}
 
 // Add friend modal trigger search (+ button)
 $('btnAddFriend')?.addEventListener('click', () => {
