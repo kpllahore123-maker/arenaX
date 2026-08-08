@@ -8811,8 +8811,41 @@ function closeTasksModal() {
   window.closeTasksModal();
 }
 
+window.getActiveUserProfile = function() {
+  let profile = window.userProfile || window.guestProfile || window.currentUser;
+  if (!profile) {
+    if (typeof auth !== 'undefined' && auth && auth.currentUser) {
+      profile = {
+        uid: auth.currentUser.uid,
+        id: auth.currentUser.uid,
+        name: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Player',
+        av: auth.currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${auth.currentUser.uid}`,
+        hasFrame: localStorage.getItem('user_has_frame') === 'true',
+        frameEquipped: localStorage.getItem('user_frame_equipped') === 'true'
+      };
+      window.currentUser = profile;
+      window.userProfile = profile;
+    } else {
+      const gid = localStorage.getItem('guest_id') || Math.floor(100000 + Math.random() * 900000);
+      localStorage.setItem('guest_id', String(gid));
+      profile = {
+        uid: `guest_${gid}`,
+        id: `guest_${gid}`,
+        name: 'Guest Player',
+        handle: `@guest#${gid}`,
+        av: `https://api.dicebear.com/7.x/bottts/svg?seed=g${gid}`,
+        hasFrame: localStorage.getItem('user_has_frame') === 'true',
+        frameEquipped: localStorage.getItem('user_frame_equipped') === 'true'
+      };
+      window.currentUser = profile;
+      window.guestProfile = profile;
+    }
+  }
+  return profile;
+};
+
 function updateTasksFrameButtonState() {
-  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  const profile = window.getActiveUserProfile();
   if (profile) {
     const btn = $('btnTaskClaimFrame');
     const av = $('taskModalUserAv');
@@ -8839,7 +8872,7 @@ function updateTasksFrameButtonState() {
 }
 
 window.updateCustomizeFrameButtonState = function() {
-  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  const profile = window.getActiveUserProfile();
   if (!profile) return;
 
   const btn = $('btnCustModalToggleFrame');
@@ -8873,11 +8906,7 @@ window.updateCustomizeFrameButtonState = function() {
 };
 
 window.handleClaimOrToggleFrameFromVanilla = async function() {
-  const profile = window.userProfile || window.guestProfile || window.currentUser;
-  if (!profile) {
-    alert("Please log in or play as guest first!");
-    return;
-  }
+  const profile = window.getActiveUserProfile();
 
   const btn1 = $('btnTaskClaimFrame');
   const btn2 = $('btnCustModalToggleFrame');
@@ -8896,7 +8925,7 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
       localStorage.setItem('user_frame_equipped', 'true');
       localStorage.setItem('user_frame_expiry', String(Date.now() + 3 * 24 * 60 * 60 * 1000));
 
-      if (profile.uid && !profile.uid.startsWith('guest_')) {
+      if (profile.uid && !profile.uid.startsWith('guest_') && typeof db !== 'undefined' && typeof doc !== 'undefined' && typeof updateDoc !== 'undefined') {
         await updateDoc(doc(db, 'users', profile.uid), {
           hasFrame: true,
           frameEquipped: true,
@@ -8912,7 +8941,7 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
       profile.frameEquipped = nextEquipped;
       localStorage.setItem('user_frame_equipped', String(nextEquipped));
 
-      if (profile.uid && !profile.uid.startsWith('guest_')) {
+      if (profile.uid && !profile.uid.startsWith('guest_') && typeof db !== 'undefined' && typeof doc !== 'undefined' && typeof updateDoc !== 'undefined') {
         await updateDoc(doc(db, 'users', profile.uid), {
           frameEquipped: nextEquipped
         }).catch(e => console.warn(e));
