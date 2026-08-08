@@ -2805,6 +2805,38 @@ if (typeof tailwind !== 'undefined') {
           </div>
         </div>
 
+        <!-- VIP Avatar Frame Item Collection -->
+        <div class="space-y-2 p-3.5 bg-gradient-to-r from-[#f0c040]/10 via-[#171b2e] to-[#a78bfa]/10 border border-[#f0c040]/30 rounded-xl">
+          <div class="flex items-center justify-between">
+            <label class="block text-[9px] uppercase tracking-wider text-[#f0c040] font-bold flex items-center gap-1.5">
+              <i class="fas fa-crown text-[#f0c040]"></i> Avatar Frame Collection
+            </label>
+            <span class="text-[8px] bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 px-1.5 py-0.5 rounded font-bold uppercase">1 Frame</span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div class="flex items-center gap-3 min-w-0">
+              <div id="custModalFramePreviewContainer" class="relative w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-[#0a0c12]">
+                <img id="custModalFrameAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-10 h-10 rounded-full object-cover" />
+                <img id="custModalFrameOverlay" src="/avatarframe1.png" alt="Frame" class="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] pointer-events-none z-20 scale-125 object-contain" />
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-white truncate flex items-center gap-1">
+                  VIP Golden Frame
+                  <span class="text-[8px] px-1 py-0.2 bg-[#f0c040]/20 text-[#f0c040] rounded font-bold">3-Day Pass</span>
+                </div>
+                <div id="custModalFrameStatusText" class="text-[10px] text-[#8890b0] truncate">
+                  Unlocked & Ready to Equip
+                </div>
+              </div>
+            </div>
+
+            <button id="btnCustModalToggleFrame" type="button" onclick="handleClaimOrToggleFrameFromVanilla()" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer">
+              Equip Frame
+            </button>
+          </div>
+        </div>
+
         <!-- Avatar Border/Glow selection -->
         <div class="space-y-1.5">
           <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Avatar Border Frame / Glow Effect</label>
@@ -4722,6 +4754,13 @@ window.applyAvatarFrame = function(imgElement, isEquipped) {
     parent.style.position = 'relative';
   }
 
+  if (isEquipped) {
+    if (parent.classList.contains('overflow-hidden')) {
+      parent.classList.remove('overflow-hidden');
+    }
+    imgElement.classList.add('rounded-full', 'object-cover');
+  }
+
   let existingFrame = parent.querySelector('.avatar-frame-overlay');
   if (isEquipped) {
     if (!existingFrame) {
@@ -4739,10 +4778,18 @@ window.applyAvatarFrame = function(imgElement, isEquipped) {
 };
 
 window.updateAllAvatarFrames = function() {
-  const profile = window.userProfile || window.guestProfile || (window.currentUser);
-  const isEquipped = !!(profile && (profile.frameEquipped || profile.hasFrame || localStorage.getItem('user_frame_equipped') === 'true'));
+  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  const isEquippedLocal = localStorage.getItem('user_frame_equipped') === 'true';
+  const isEquipped = !!(profile ? (profile.frameEquipped !== undefined ? profile.frameEquipped : isEquippedLocal) : isEquippedLocal);
   
-  ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar'].forEach(id => {
+  if (profile && profile.av) {
+    ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.src = profile.av;
+    });
+  }
+
+  ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
     const el = document.getElementById(id);
     if (el) window.applyAvatarFrame(el, isEquipped);
   });
@@ -8765,62 +8812,130 @@ function closeTasksModal() {
 }
 
 function updateTasksFrameButtonState() {
-  if (typeof userProfile !== 'undefined' && userProfile) {
+  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  if (profile) {
     const btn = $('btnTaskClaimFrame');
     const av = $('taskModalUserAv');
-    if (av && userProfile.av) av.src = userProfile.av;
+    if (av && profile.av) av.src = profile.av;
+
+    const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
+    const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
+
     if (btn) {
-      if (userProfile.hasFrame) {
-        if (userProfile.frameEquipped) {
+      if (isUnlocked) {
+        if (isEquipped) {
           btn.textContent = 'Equipped ✓';
-          btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0';
+          btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
         } else {
           btn.textContent = 'Equip Frame';
-          btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0';
+          btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
         }
       } else {
         btn.textContent = 'Claim Frame';
-        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)]';
+        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)] cursor-pointer';
       }
     }
   }
 }
 
+window.updateCustomizeFrameButtonState = function() {
+  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  if (!profile) return;
+
+  const btn = $('btnCustModalToggleFrame');
+  const statusTxt = $('custModalFrameStatusText');
+  const av = $('custModalFrameAvatar');
+  
+  if (av && profile.av) av.src = profile.av;
+
+  const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
+  const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
+
+  if (btn) {
+    if (isUnlocked) {
+      if (isEquipped) {
+        btn.textContent = 'Unequip Frame';
+        btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+        if (statusTxt) statusTxt.textContent = 'Currently Active across Profile ✓';
+      } else {
+        btn.textContent = 'Equip Frame';
+        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+        if (statusTxt) statusTxt.textContent = 'Unlocked & Ready to Equip';
+      }
+    } else {
+      btn.textContent = 'Get Frame (Tasks)';
+      btn.className = 'px-3 py-1.5 bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 hover:bg-[#f0c040]/30 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+      if (statusTxt) statusTxt.textContent = 'Locked - Complete 1 Day Login in Tasks';
+    }
+  }
+
+  if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+};
+
 window.handleClaimOrToggleFrameFromVanilla = async function() {
-  if (typeof userProfile === 'undefined' || !userProfile || !userProfile.uid) {
-    alert("Please log in to claim or equip your frame!");
+  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  if (!profile) {
+    alert("Please log in or play as guest first!");
     return;
   }
-  const btn = $('btnTaskClaimFrame');
-  if (btn) btn.disabled = true;
+
+  const btn1 = $('btnTaskClaimFrame');
+  const btn2 = $('btnCustModalToggleFrame');
+  if (btn1) btn1.disabled = true;
+  if (btn2) btn2.disabled = true;
+
   try {
-    const userRef = doc(db, 'users', userProfile.uid);
-    if (!userProfile.hasFrame) {
-      await updateDoc(userRef, {
-        hasFrame: true,
-        frameEquipped: true
-      });
-      userProfile.hasFrame = true;
-      userProfile.frameEquipped = true;
+    const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
+    const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
+
+    if (!isUnlocked) {
+      // Claim
+      profile.hasFrame = true;
+      profile.frameEquipped = true;
+      localStorage.setItem('user_has_frame', 'true');
+      localStorage.setItem('user_frame_equipped', 'true');
+      localStorage.setItem('user_frame_expiry', String(Date.now() + 3 * 24 * 60 * 60 * 1000));
+
+      if (profile.uid && !profile.uid.startsWith('guest_')) {
+        await updateDoc(doc(db, 'users', profile.uid), {
+          hasFrame: true,
+          frameEquipped: true,
+          frameExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        }).catch(e => console.warn(e));
+      }
+
       if (typeof spawnConfetti === 'function') spawnConfetti(['#f0c040', '#a78bfa', '#38bdf8']);
       if (typeof showToastNotification === 'function') showToastNotification("VIP Frame Unlocked! ✨", "You claimed the 3-Day VIP Avatar Frame!");
     } else {
-      const nextEquipped = !userProfile.frameEquipped;
-      await updateDoc(userRef, {
-        frameEquipped: nextEquipped
-      });
-      userProfile.frameEquipped = nextEquipped;
+      // Toggle
+      const nextEquipped = !isEquipped;
+      profile.frameEquipped = nextEquipped;
+      localStorage.setItem('user_frame_equipped', String(nextEquipped));
+
+      if (profile.uid && !profile.uid.startsWith('guest_')) {
+        await updateDoc(doc(db, 'users', profile.uid), {
+          frameEquipped: nextEquipped
+        }).catch(e => console.warn(e));
+      }
+
       if (typeof showToastNotification === 'function') {
-        showToastNotification(nextEquipped ? "Frame Equipped! ✨" : "Frame Unequipped", nextEquipped ? "VIP Frame is now active across profile!" : "Avatar frame unequipped.");
+        showToastNotification(
+          nextEquipped ? "Frame Equipped! ✨" : "Frame Unequipped",
+          nextEquipped ? "VIP Frame active across profile!" : "Avatar frame unequipped."
+        );
       }
     }
-    updateTasksFrameButtonState();
-    if (typeof renderVanillaUserProfile === 'function') renderVanillaUserProfile();
+
+    if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+    if (typeof updateTasksFrameButtonState === 'function') updateTasksFrameButtonState();
+    if (typeof window.updateCustomizeFrameButtonState === 'function') window.updateCustomizeFrameButtonState();
+    if (typeof boot === 'function') boot();
   } catch (err) {
     console.error("Frame action error:", err);
     alert("Action failed: " + (err.message || err));
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn1) btn1.disabled = false;
+    if (btn2) btn2.disabled = false;
   }
 };
 
@@ -10717,6 +10832,7 @@ $('btnCustomize').addEventListener('click', () => {
   loadAvatarPickerGrid();
   loadBannerThemeSelector();
   loadNameColorSelector();
+  if (window.updateCustomizeFrameButtonState) window.updateCustomizeFrameButtonState();
 
   $('mCustomize').classList.remove('hidden');
 });
