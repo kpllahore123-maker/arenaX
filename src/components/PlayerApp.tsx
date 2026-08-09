@@ -4560,7 +4560,14 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         const remainingPlayers = leaderboardList.length > 3 ? leaderboardList.slice(3) : [];
 
         return (
-          <div className="fixed inset-0 bg-gradient-to-b from-[#8b5cf6] via-[#7c3aed] to-[#6d28d9] z-[9999] flex flex-col overflow-y-auto animate-fade-in font-sans">
+          <div 
+            className="fixed inset-0 bg-[#7c3aed] bg-cover bg-center bg-no-repeat z-[9999] flex flex-col overflow-y-auto animate-fade-in font-sans"
+            style={{
+              backgroundImage: "url('/rankbg.png'), url('/arenaX/rankbg.png'), linear-gradient(to bottom, #8b5cf6, #7c3aed, #6d28d9)",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top'
+            }}
+          >
             {/* TOP HEADER */}
             <div className="w-full px-4 pt-4 pb-2 flex items-center justify-between z-20">
               <button
