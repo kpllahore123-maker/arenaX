@@ -501,6 +501,7 @@ if (typeof tailwind !== 'undefined') {
       <p id="loginTitle" class="text-center font-display text-2xl font-extrabold text-white tracking-wide">Welcome back</p>
       
       <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
+      <button id="btnResendVerifyLogin" type="button" class="hidden text-xs text-amber-400 font-bold hover:underline w-full text-center py-1 cursor-pointer bg-amber-400/10 border border-amber-400/20 rounded-lg transition">✉️ Resend Verification Email</button>
 
       <!-- Main Login/Register Form -->
       <div class="space-y-4">
@@ -3175,6 +3176,19 @@ if (typeof tailwind !== 'undefined') {
         </button>
       </div>
 
+      <!-- DELETE ACCOUNT BUTTON -->
+      <div class="pt-1">
+        <button id="bDeleteAccount" class="w-full bg-card hover:bg-red-950/30 border border-red-500/30 hover:border-red-500/60 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-md text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-sm">
+              <i class="fas fa-trash-alt"></i>
+            </div>
+            <span class="text-sm font-semibold text-red-500 group-hover:text-red-400">Delete Account</span>
+          </div>
+          <i class="fas fa-chevron-right text-xs text-red-500/60"></i>
+        </button>
+      </div>
+
       <!-- Footer Save Button -->
       <div class="pt-2">
         <button id="bSaveSettings" class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-2xl transition cursor-pointer shadow-lg shadow-amber-500/10">Save Settings</button>
@@ -4184,7 +4198,7 @@ if (typeof tailwind !== 'undefined') {
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail, sendEmailVerification, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -5144,6 +5158,7 @@ function mergeAndRenderTransactions() {
 }
 
 // Setup global listener unsubs
+let userProfileUnsub = null;
 let friendReqsUnsub = null;
 let friendsListUnsub = null;
 let notificationsUnsub = null;
@@ -5155,6 +5170,10 @@ let activeRoomDocUnsub = null;
 
 function cleanupAllUserListeners() {
   console.log("[Auth Engine] Cleaning up all active user-specific snapshot listeners...");
+  if (userProfileUnsub) {
+    try { userProfileUnsub(); } catch(e){}
+    userProfileUnsub = null;
+  }
   if (typeof depositUnsub !== 'undefined' && depositUnsub) {
     try { depositUnsub(); } catch(e){}
     depositUnsub = null;
@@ -5213,6 +5232,29 @@ function cleanupAllUserListeners() {
 onAuthStateChanged(auth, async (fireUser) => {
   cleanupAllUserListeners();
   if (fireUser && !guestProfile) {
+    // Check email verification for password auth users
+    const isPasswordUser = fireUser.providerData.some(p => p.providerId === 'password') || (fireUser.email && !fireUser.providerData.some(p => p.providerId === 'google.com'));
+    if (isPasswordUser) {
+      try {
+        await fireUser.reload();
+      } catch (e) {}
+      if (!fireUser.emailVerified) {
+        console.warn("[Auth Engine] Unverified email. Access blocked until verified.");
+        userProfile = null;
+        cleanupAllUserListeners();
+        await signOut(auth);
+        if ($('loginErr')) {
+          $('loginErr').textContent = '⚠️ Email Not Verified! A verification link was sent to ' + (fireUser.email || '') + '. Please verify your email in your inbox before entering ArenaX.';
+          $('loginErr').classList.remove('hidden');
+        }
+        if ($('btnResendVerifyLogin')) {
+          $('btnResendVerifyLogin').classList.remove('hidden');
+        }
+        goTo('sLogin');
+        return;
+      }
+    }
+
     // Start real-time submissions listener
     if (typeof window.startUserSubmissionsListener === 'function') {
       window.startUserSubmissionsListener(fireUser.uid);
@@ -5261,7 +5303,7 @@ onAuthStateChanged(auth, async (fireUser) => {
     });
 
     // Read and listen to Firestore User Profile in real time!
-    onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
+    userProfileUnsub = onSnapshot(doc(db, 'users', fireUser.uid), (snap) => {
       if (snap.exists()) {
         userProfile = { ...snap.data(), id: fireUser.uid, uid: fireUser.uid };
         userProfileTransactionsList = userProfile.transactions || [];
@@ -5576,16 +5618,83 @@ $('bGConfirm').addEventListener('click', () => {
   boot();
 });
 
+// Resend Verification Email Handler
+if ($('btnResendVerifyLogin')) {
+  $('btnResendVerifyLogin').addEventListener('click', async () => {
+    const em = $('iEmail').value.trim();
+    const pw = $('iPass').value.trim();
+    if (!em || !pw) {
+      alert('Please enter your registered Email and Password above to resend the verification email.');
+      return;
+    }
+    try {
+      const cred = await signInWithEmailAndPassword(auth, em, pw);
+      if (cred.user.emailVerified) {
+        alert('Your email is already verified! You can log in now.');
+        $('btnResendVerifyLogin').classList.add('hidden');
+      } else {
+        await sendEmailVerification(cred.user);
+        alert('✉️ Verification email sent! Please check your inbox and spam folder at: ' + em);
+      }
+      await signOut(auth);
+    } catch (err) {
+      alert('Error: ' + (err.message || err));
+    }
+  });
+}
+
 // Log out handler
 $('bLogout').addEventListener('click', async () => {
   if (!confirm('Are you sure you want to sign out?')) return;
-  if (guestProfile) {
-    guestProfile = null;
-    goTo('sLogin');
-  } else {
+  guestProfile = null;
+  userProfile = null;
+  cleanupAllUserListeners();
+  goTo('sLogin');
+  try {
     await signOut(auth);
+  } catch (err) {
+    console.warn('Sign out error:', err);
   }
 });
+
+// Delete account handler
+if ($('bDeleteAccount')) {
+  $('bDeleteAccount').addEventListener('click', async () => {
+    if (!confirm('⚠️ Are you sure you want to PERMANENTLY delete your ArenaX account?\n\nThis action cannot be undone. All your stats, wallet balance, and tournament records will be permanently erased.')) return;
+    
+    if (guestProfile) {
+      guestProfile = null;
+      userProfile = null;
+      cleanupAllUserListeners();
+      goTo('sLogin');
+      alert('Guest profile cleared.');
+      return;
+    }
+
+    const fireUser = auth.currentUser;
+    if (fireUser) {
+      try {
+        const uid = fireUser.uid;
+        try {
+          await deleteDoc(doc(db, 'users', uid));
+        } catch (e) {
+          console.warn("Error deleting Firestore user doc:", e);
+        }
+        await deleteUser(fireUser);
+        userProfile = null;
+        cleanupAllUserListeners();
+        goTo('sLogin');
+        alert('Your ArenaX account has been permanently deleted.');
+      } catch (err) {
+        if (err.code === 'auth/requires-recent-login') {
+          alert('For security reasons, please sign out and sign in again before deleting your account.');
+        } else {
+          alert('Delete account error: ' + (err.message || err));
+        }
+      }
+    }
+  });
+}
 
 // ── TOURNAMENTS LOGIC ──
 function loadTournamentsList() {
