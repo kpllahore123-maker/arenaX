@@ -718,7 +718,7 @@ if (typeof tailwind !== 'undefined') {
               <div class="absolute -top-1 -left-1 text-[#f0c040] text-xs drop-shadow">
                 <i class="fas fa-crown"></i>
               </div>
-              <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover"/>
+              <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover pointer-events-none"/>
             </div>
             <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
           </div>
@@ -1773,15 +1773,18 @@ if (typeof tailwind !== 'undefined') {
       <span id="inboxBadgeCount" class="absolute top-2 right-2 w-5 h-5 bg-red text-white text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
     </div>
 
-    <!-- Squads & Teams Card -->
-    <div id="btnHubGuilds" class="bg-card hover:bg-ele/60 border border-bdr hover:border-gold/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
-      <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold border border-gold/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
-        <i class="fas fa-shield-alt text-gold"></i>
+    <!-- Teams Card (Burger Menu) -->
+    <div id="btnHubTeams" onclick="window.openTeamsModal()" class="bg-card hover:bg-ele/60 border border-gold/40 hover:border-gold rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] bg-gradient-to-r from-gold/10 to-transparent">
+      <div class="w-10 h-10 rounded-xl bg-gold/20 text-gold border border-gold/40 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fas fa-users text-gold"></i>
       </div>
-      <div>
-        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">🛡️ Squad & Teams Hub</h4>
-        <p class="text-[9px] text-t3 mt-0.5">Form squads, level up & compete</p>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+          Teams <span class="text-[8px] bg-gold text-bg font-black px-1.5 py-0.5 rounded-full uppercase">NEW</span>
+        </h4>
+        <p class="text-[9px] text-t3 mt-0.5 truncate">Esports Teams, Treasury & Team Fights</p>
       </div>
+      <i class="fas fa-chevron-right text-t3 text-xs"></i>
     </div>
 
     <!-- Squad Store Card -->
@@ -1871,8 +1874,8 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <!-- ==================== ARENAX GUILDS & TEAMS SYSTEM MODAL ==================== -->
-<div id="mGuildSystemModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[240] flex items-center justify-center p-4 hidden animate-fade-in">
-  <div id="guildSystemModalContent" class="bg-[#0b0c14] border border-gold/30 rounded-2xl w-full max-w-[1100px] h-[90vh] flex flex-col shadow-[0_0_50px_rgba(192,160,48,0.15)] overflow-hidden text-t1 font-sans">
+<div id="mGuildSystemModal" class="fixed inset-0 bg-[#0b0c14] z-[240] flex flex-col hidden animate-fade-in w-full h-full p-0 m-0 overflow-hidden">
+  <div id="guildSystemModalContent" class="w-full h-full flex flex-col overflow-hidden text-t1 font-sans p-0 border-0 rounded-none shadow-none">
     <!-- Dynamic Guild Lobby / Dashboard Content populated by renderGuildSystemModalContent() -->
   </div>
 </div>
@@ -2065,6 +2068,127 @@ if (typeof tailwind !== 'undefined') {
       </button>
       <button id="btnSquadInviteYes" class="flex-1 py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition active:scale-[0.98] cursor-pointer">
         Yes, Invite All!
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DONATE TO TEAM TREASURY MODAL ==================== -->
+<div id="mDonateTreasuryModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[260] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0e101d] border border-gold/40 rounded-2xl p-6 max-w-[420px] w-full flex flex-col shadow-[0_0_50px_rgba(240,192,64,0.2)]">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/30 rounded-xl flex items-center justify-center text-gold text-lg">
+          <i class="fas fa-coins"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Donate to Treasury</h3>
+          <p class="text-[9px] text-t3 font-mono">Fund team upgrades & earn Team EXP</p>
+        </div>
+      </div>
+      <button onclick="$('mDonateTreasuryModal').classList.add('hidden')" class="text-t3 hover:text-white transition cursor-pointer text-sm w-7 h-7 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="space-y-4 mt-4">
+      <div class="bg-card/40 border border-bdr/30 rounded-xl p-3 flex items-center justify-between">
+        <span class="text-[10px] text-t3 uppercase font-bold">Your Balance</span>
+        <span class="text-xs font-black text-gold font-mono flex items-center gap-1"><i class="fas fa-coins"></i> <span id="dtUserBalance">0</span> AX</span>
+      </div>
+
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Donation Amount (AX Coins)</label>
+        <div class="relative">
+          <input id="dtAmountInput" type="number" min="10" placeholder="e.g. 100" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-sm text-white font-mono outline-none focus:border-gold transition" />
+          <span class="absolute right-3 top-2.5 text-xs text-gold font-bold">AX</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2">
+        <button onclick="$('dtAmountInput').value = 50" class="py-1.5 bg-white/5 hover:bg-gold/15 border border-bdr hover:border-gold/30 text-t2 hover:text-white text-[10px] font-bold rounded-lg transition font-mono">+50</button>
+        <button onclick="$('dtAmountInput').value = 100" class="py-1.5 bg-white/5 hover:bg-gold/15 border border-bdr hover:border-gold/30 text-t2 hover:text-white text-[10px] font-bold rounded-lg transition font-mono">+100</button>
+        <button onclick="$('dtAmountInput').value = 500" class="py-1.5 bg-white/5 hover:bg-gold/15 border border-bdr hover:border-gold/30 text-t2 hover:text-white text-[10px] font-bold rounded-lg transition font-mono">+500</button>
+        <button onclick="if(userProfile) $('dtAmountInput').value = userProfile.balance || 0" class="py-1.5 bg-gold/10 border border-gold/30 text-gold text-[10px] font-bold rounded-lg transition font-mono">MAX</button>
+      </div>
+
+      <div class="text-[10px] text-t3 font-mono bg-gold/5 border border-gold/20 p-2.5 rounded-xl flex items-center gap-2">
+        <i class="fas fa-info-circle text-gold"></i>
+        <span>Every 10 AX Coins donated grants <strong>+1 Team EXP</strong> to boost team level & rank!</span>
+      </div>
+
+      <button onclick="window.confirmTreasuryDonation()" class="w-full py-3 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-xs font-black uppercase rounded-xl transition shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+        <i class="fas fa-hand-holding-heart"></i> Confirm Donation
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TEAM GUIDE MODAL ==================== -->
+<div id="mTeamGuideModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[260] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0e101d] border border-gold/40 rounded-2xl p-6 max-w-[500px] w-full flex flex-col max-h-[85vh] shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/10 border border-gold/30 rounded-xl flex items-center justify-center text-gold text-lg">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-sm font-black text-white uppercase tracking-wider">Team System Guide</h3>
+          <p class="text-[9px] text-t3 font-mono">Roles, Treasury, EXP & Team Fights</p>
+        </div>
+      </div>
+      <button onclick="$('mTeamGuideModal').classList.add('hidden')" class="text-t3 hover:text-white transition cursor-pointer text-sm w-7 h-7 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="space-y-4 mt-4 overflow-y-auto pr-1 text-xs text-t2 scrollbar-thin flex-1">
+      <div class="bg-card/30 border border-bdr/20 p-3 rounded-xl space-y-1.5">
+        <h4 class="text-gold font-bold uppercase text-[11px] flex items-center gap-1.5"><i class="fas fa-crown"></i> Team Roles & Hierarchy</h4>
+        <p class="text-[11px] leading-relaxed">
+          • <strong>Leader (1 Max)</strong>: Team creator with full control — can promote Guards, kick members, approve join requests, edit announcements, or disband team.<br>
+          • <strong>Guard (2 Max)</strong>: Co-leaders — can kick regular members, approve join requests, edit announcements, and register the team for Team Fights.<br>
+          • <strong>Members (Up to 8 Max)</strong>: Core squad players who participate in fights and donate to treasury.
+        </p>
+      </div>
+
+      <div class="bg-card/30 border border-bdr/20 p-3 rounded-xl space-y-1.5">
+        <h4 class="text-gold font-bold uppercase text-[11px] flex items-center gap-1.5"><i class="fas fa-coins"></i> Team Treasury</h4>
+        <p class="text-[11px] leading-relaxed">
+          Members can donate AX Coins to the team treasury. Treasury funds contribute to unlocking milestone chests, custom avatar frames, and 2x EXP boosters for the entire team!
+        </p>
+      </div>
+
+      <div class="bg-card/30 border border-bdr/20 p-3 rounded-xl space-y-1.5">
+        <h4 class="text-gold font-bold uppercase text-[11px] flex items-center gap-1.5"><i class="fas fa-swords"></i> Team Fight & EXP</h4>
+        <p class="text-[11px] leading-relaxed">
+          Leaders and Guards can register the team for official Team Fight tournaments. Each registration grants a <strong>random 50–200 Team EXP</strong> bonus, ranking your team higher on weekly leaderboards!
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EDIT ANNOUNCEMENT MODAL ==================== -->
+<div id="mEditAnnouncementModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[260] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0e101d] border border-gold/40 rounded-2xl p-6 max-w-[440px] w-full flex flex-col shadow-2xl">
+    <div class="flex items-center justify-between border-b border-bdr/40 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gold/10 border border-gold/30 rounded-xl flex items-center justify-center text-gold text-sm">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-xs font-black text-white uppercase tracking-wider">Edit Team Announcement</h3>
+          <p class="text-[9px] text-t3 font-mono">Update slogan & announcements</p>
+        </div>
+      </div>
+      <button onclick="$('mEditAnnouncementModal').classList.add('hidden')" class="text-t3 hover:text-white transition cursor-pointer text-sm w-7 h-7 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="space-y-4 mt-4">
+      <div>
+        <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Announcement / Rules Text</label>
+        <textarea id="eaAnnouncementInput" rows="4" placeholder="Enter team rules or announcements..." class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold transition scrollbar-thin"></textarea>
+      </div>
+
+      <button onclick="window.saveTeamAnnouncement()" class="w-full py-2.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-black uppercase rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
+        <i class="fas fa-save"></i> Save Announcement
       </button>
     </div>
   </div>
@@ -3936,58 +4060,15 @@ if (typeof tailwind !== 'undefined') {
         </div>
       </div>
 
-      <!-- BFF -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between cursor-pointer">
-          <span class="font-bold text-gray-900 text-sm">BFF</span>
+      <!-- TEAM -->
+      <div id="vppTeamSection" class="space-y-2">
+        <div class="flex items-center justify-between cursor-pointer" onclick="window.onVppTeamClick()">
+          <span class="font-bold text-gray-900 text-sm">Team</span>
           <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
         </div>
 
-        <!-- 4 Cards Grid -->
-        <div class="grid grid-cols-4 gap-2">
-          <!-- Card 1 -->
-          <div class="bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200/60 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between h-28 shadow-xs">
-            <div class="w-6 h-6 rounded-full bg-amber-200/80 flex items-center justify-center text-amber-700 text-xs">
-              <i class="fas fa-seedling"></i>
-            </div>
-            <span class="text-[10px] font-bold text-amber-900 leading-tight">Bro and sis</span>
-            <button class="w-7 h-7 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-800 flex items-center justify-center text-xs font-bold transition shadow-xs">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-
-          <!-- Card 2 -->
-          <div class="bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200/60 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between h-28 shadow-xs">
-            <div class="w-6 h-6 rounded-full bg-amber-200/80 flex items-center justify-center text-amber-700 text-xs">
-              <i class="fas fa-ribbon"></i>
-            </div>
-            <span class="text-[10px] font-bold text-amber-900 leading-tight">Besties</span>
-            <button class="w-7 h-7 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-800 flex items-center justify-center text-xs font-bold transition shadow-xs">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200/60 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between h-28 shadow-xs">
-            <div class="w-6 h-6 rounded-full bg-amber-200/80 flex items-center justify-center text-amber-700 text-xs">
-              <i class="fas fa-fist-raised"></i>
-            </div>
-            <span class="text-[10px] font-bold text-amber-900 leading-tight">Bro</span>
-            <button class="w-7 h-7 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-800 flex items-center justify-center text-xs font-bold transition shadow-xs">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-
-          <!-- Card 4 -->
-          <div class="bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200/60 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between h-28 shadow-xs">
-            <div class="w-6 h-6 rounded-full bg-amber-200/80 flex items-center justify-center text-amber-700 text-xs">
-              <i class="fas fa-puzzle-piece"></i>
-            </div>
-            <span class="text-[10px] font-bold text-amber-900 leading-tight">Confidant</span>
-            <button class="w-7 h-7 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-800 flex items-center justify-center text-xs font-bold transition shadow-xs">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
+        <div id="vppTeamCardContainer">
+          <!-- Populated dynamically by window.renderVppTeamSection(targetUid) -->
         </div>
       </div>
 
@@ -4025,6 +4106,13 @@ if (typeof tailwind !== 'undefined') {
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- ==================== FULL-SCREEN TEAM DETAIL PAGE ==================== -->
+<div id="mTeamDetailPage" class="fixed inset-0 bg-[#0a0c12] z-[999999] flex flex-col hidden animate-fade-in font-sans w-full h-full p-0 m-0 overflow-hidden text-white">
+  <!-- Content Container populated dynamically by window.openTeamDetailPage(teamId) -->
+  <div id="teamDetailPageContent" class="w-full h-full flex flex-col overflow-hidden relative">
   </div>
 </div>
 
@@ -5044,13 +5132,13 @@ window.updateAllAvatarFrames = function() {
   const isEquipped = !!(profile ? (profile.frameEquipped !== undefined ? profile.frameEquipped : isEquippedLocal) : isEquippedLocal);
   
   if (profile && profile.av) {
-    ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
+    ['avImg', 'homeAvImg', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.src = profile.av;
     });
   }
 
-  ['avImg', 'homeAvImg', 'homeRankingAv', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
+  ['avImg', 'homeAvImg', 'pAv', 'setAv', 'voiceMyAvatar', 'custAvPreview', 'taskModalUserAv', 'custModalFrameAvatar'].forEach(id => {
     const el = document.getElementById(id);
     if (el) window.applyAvatarFrame(el, isEquipped);
   });
@@ -5065,7 +5153,6 @@ function boot() {
   $('pAv').src = profile.av;
   $('avImg').src = profile.av;
   if ($('homeAvImg')) $('homeAvImg').src = profile.av;
-  if ($('homeRankingAv')) $('homeRankingAv').src = profile.av;
   if ($('homeCoinsVal')) $('homeCoinsVal').textContent = (profile.balance || 0).toLocaleString();
   if ($('setName')) $('setName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
   if ($('setHandle')) $('setHandle').textContent = numId;
@@ -5074,6 +5161,7 @@ function boot() {
   $('pPopularityVal').textContent = profile.popularity || 0;
 
   if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+  if (typeof window.preloadRankingData === 'function') window.preloadRankingData();
 
   // 1. Profile Banner Theme (Premium only)
   const card = $('profileCard');
@@ -8853,7 +8941,6 @@ $('bSaveCustomize').addEventListener('click', async () => {
       if ($('pAv')) $('pAv').src = newAv;
       if ($('avImg')) $('avImg').src = newAv;
       if ($('homeAvImg')) $('homeAvImg').src = newAv;
-      if ($('homeRankingAv')) $('homeRankingAv').src = newAv;
       if ($('custAvPreview')) $('custAvPreview').src = newAv;
     }
     if ($('pName')) $('pName').textContent = updateData.name;
@@ -9352,33 +9439,19 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
   }
 };
 
-window.openRankingModal = function() {
-  const modal = $('mRankingModal');
-  if (modal) modal.classList.remove('hidden');
-  renderVanillaRankingList();
-};
+window.cachedRankingPlayers = null;
+window.isPreloadingRanking = false;
 
-window.closeRankingModal = function() {
-  const modal = $('mRankingModal');
-  if (modal) modal.classList.add('hidden');
-};
-
-window.setRkCategory = function(cat) {
-  const btnCoins = $('rkTabCoins');
-  const btnWeekly = $('rkTabWeekly');
-  if (cat === 'AX Coins') {
-    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
-    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
-  } else {
-    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
-    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
+window.preloadRankingData = async function(forceRefresh = false) {
+  if (window.isPreloadingRanking && !forceRefresh) return window.cachedRankingPlayers;
+  if (!forceRefresh && window.cachedRankingPlayers && window.cachedRankingPlayers.length > 0) {
+    if ($('homeRankingAv') && window.cachedRankingPlayers[0]) {
+      $('homeRankingAv').src = window.cachedRankingPlayers[0].av;
+    }
+    return window.cachedRankingPlayers;
   }
-};
 
-async function renderVanillaRankingList() {
-  const listContainer = $('rkListContainer');
-  if (!listContainer) return;
-
+  window.isPreloadingRanking = true;
   try {
     const qUsers = query(collection(db, 'users'), limit(100));
     const snap = await getDocs(qUsers);
@@ -9423,140 +9496,198 @@ async function renderVanillaRankingList() {
     }
 
     players.sort((a, b) => b.balance - a.balance);
+    window.cachedRankingPlayers = players;
 
     if (players.length > 0 && $('homeRankingAv')) {
       $('homeRankingAv').src = players[0].av;
-      if (players[0].uid) {
-        $('homeRankingAv').onclick = (e) => {
-          e.stopPropagation();
-          window.openPlayerProfileCard(players[0].uid);
-        };
-        $('homeRankingAv').style.cursor = 'pointer';
-      }
     }
 
-    const p1 = players[0] || { name: 'No Player', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p1' };
-    const p2 = players[1] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p2' };
-    const p3 = players[2] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p3' };
-
-    const applyRkNameStyle = (el, p) => {
-      if (!el) return;
-      if (p.premium && (p.goldenNameEnabled !== false)) {
-        el.classList.add('golden-name-shimmer');
-        el.style.background = '';
-        el.style.webkitBackgroundClip = '';
-        el.style.webkitTextFillColor = '';
-        el.style.fontWeight = '';
-        el.style.fontStyle = 'italic';
-      } else if (p.premium && p.nameColor) {
-        el.classList.remove('golden-name-shimmer');
-        el.style.background = 'none';
-        el.style.webkitBackgroundClip = 'initial';
-        el.style.webkitTextFillColor = 'initial';
-        el.style.color = p.nameColor;
-        el.style.fontWeight = '';
-        el.style.fontStyle = '';
-      } else {
-        el.classList.remove('golden-name-shimmer');
-        el.style.background = 'none';
-        el.style.webkitBackgroundClip = 'initial';
-        el.style.webkitTextFillColor = 'initial';
-        el.style.color = '';
-        el.style.fontWeight = '';
-        el.style.fontStyle = '';
-      }
-    };
-
-    if ($('rk1Name')) {
-      $('rk1Name').textContent = p1.name;
-      applyRkNameStyle($('rk1Name'), p1);
-      if (p1.uid) {
-        $('rk1Name').onclick = () => window.openPlayerProfileCard(p1.uid);
-        $('rk1Name').style.cursor = 'pointer';
-      }
-    }
-    if ($('rk1Bal')) $('rk1Bal').textContent = p1.balance.toLocaleString() + ' AX';
-    if ($('rk1Av')) {
-      $('rk1Av').src = p1.av;
-      if (p1.uid) {
-        $('rk1Av').onclick = () => window.openPlayerProfileCard(p1.uid);
-        $('rk1Av').style.cursor = 'pointer';
-      }
-    }
-
-    if ($('rk2Name')) {
-      $('rk2Name').textContent = p2.name;
-      applyRkNameStyle($('rk2Name'), p2);
-      if (p2.uid) {
-        $('rk2Name').onclick = () => window.openPlayerProfileCard(p2.uid);
-        $('rk2Name').style.cursor = 'pointer';
-      }
-    }
-    if ($('rk2Bal')) $('rk2Bal').textContent = p2.balance.toLocaleString() + ' AX';
-    if ($('rk2Av')) {
-      $('rk2Av').src = p2.av;
-      if (p2.uid) {
-        $('rk2Av').onclick = () => window.openPlayerProfileCard(p2.uid);
-        $('rk2Av').style.cursor = 'pointer';
-      }
-    }
-
-    if ($('rk3Name')) {
-      $('rk3Name').textContent = p3.name;
-      applyRkNameStyle($('rk3Name'), p3);
-      if (p3.uid) {
-        $('rk3Name').onclick = () => window.openPlayerProfileCard(p3.uid);
-        $('rk3Name').style.cursor = 'pointer';
-      }
-    }
-    if ($('rk3Bal')) $('rk3Bal').textContent = p3.balance.toLocaleString() + ' AX';
-    if ($('rk3Av')) {
-      $('rk3Av').src = p3.av;
-      if (p3.uid) {
-        $('rk3Av').onclick = () => window.openPlayerProfileCard(p3.uid);
-        $('rk3Av').style.cursor = 'pointer';
-      }
-    }
-
-    listContainer.innerHTML = '';
-    if (players.length <= 3) {
-      listContainer.innerHTML = `<div class="text-center text-gray-400 py-8 text-xs font-semibold">No additional ranked players yet</div>`;
-    } else {
-      for (let i = 3; i < players.length; i++) {
-        const p = players[i];
-        const rankNum = i + 1;
-        const item = document.createElement('div');
-        item.className = "flex items-center justify-between p-3 rounded-2xl bg-gray-50/90 hover:bg-gray-100 border border-gray-100 transition cursor-pointer";
-        if (p.uid) {
-          item.onclick = () => window.openPlayerProfileCard(p.uid);
-        }
-        const isGolden = (p.premium && (p.goldenNameEnabled !== false));
-        const nameClassAttr = isGolden ? 'golden-name-shimmer' : '';
-        const nameStyleAttr = isGolden
-          ? 'style="font-style: italic;"'
-          : (p.premium && p.nameColor)
-          ? `style="color: ${p.nameColor};"`
-          : '';
-
-        item.innerHTML = `
-          <div class="flex items-center gap-3.5 min-w-0">
-            <span class="font-extrabold text-sm text-gray-400 w-5 text-center shrink-0">${rankNum}</span>
-            <img src="${p.av}" alt="${p.name}" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-xs hover:scale-105 transition cursor-pointer"/>
-            <div class="min-w-0">
-              <div class="font-bold text-sm text-gray-900 truncate ${nameClassAttr}" ${nameStyleAttr}>${p.name}</div>
-              <div class="text-[11px] text-gray-400 font-medium truncate mt-0.5">Rank #${rankNum} • Player</div>
-            </div>
-          </div>
-          <div class="bg-gradient-to-r from-amber-50 to-yellow-100/80 border border-amber-200/90 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shrink-0 shadow-xs">
-            <i class="fas fa-coins text-amber-500 text-xs"></i>
-            <span>${p.balance.toLocaleString()} AX</span>
-          </div>
-        `;
-        listContainer.appendChild(item);
-      }
-    }
+    return players;
   } catch (err) {
-    console.warn("Error rendering vanilla ranking list:", err);
+    console.warn("Error preloading ranking data:", err);
+    return window.cachedRankingPlayers || [];
+  } finally {
+    window.isPreloadingRanking = false;
+  }
+};
+
+setTimeout(() => {
+  if (typeof window.preloadRankingData === 'function') {
+    window.preloadRankingData().catch(() => {});
+  }
+}, 300);
+
+window.openRankingModal = function() {
+  const modal = $('mRankingModal');
+  if (modal) modal.classList.remove('hidden');
+  renderVanillaRankingList();
+};
+
+window.closeRankingModal = function() {
+  const modal = $('mRankingModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+function openRankingModal() {
+  window.openRankingModal();
+}
+
+window.setRkCategory = function(cat) {
+  const btnCoins = $('rkTabCoins');
+  const btnWeekly = $('rkTabWeekly');
+  if (cat === 'AX Coins') {
+    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
+    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
+  } else {
+    if (btnWeekly) btnWeekly.className = "px-6 py-1.5 rounded-full text-xs font-bold transition bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg";
+    if (btnCoins) btnCoins.className = "px-6 py-1.5 rounded-full text-xs font-bold transition text-white/70 hover:text-white";
+  }
+};
+
+window.renderRankingUI = function(players) {
+  const listContainer = $('rkListContainer');
+  if (!listContainer || !players) return;
+
+  if (players.length > 0 && $('homeRankingAv')) {
+    $('homeRankingAv').src = players[0].av;
+  }
+
+  const p1 = players[0] || { name: 'No Player', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p1' };
+  const p2 = players[1] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p2' };
+  const p3 = players[2] || { name: '—', balance: 0, av: 'https://api.dicebear.com/7.x/bottts/svg?seed=p3' };
+
+  const applyRkNameStyle = (el, p) => {
+    if (!el) return;
+    if (p.premium && (p.goldenNameEnabled !== false)) {
+      el.classList.add('golden-name-shimmer');
+      el.style.background = '';
+      el.style.webkitBackgroundClip = '';
+      el.style.webkitTextFillColor = '';
+      el.style.fontWeight = '';
+      el.style.fontStyle = 'italic';
+    } else if (p.premium && p.nameColor) {
+      el.classList.remove('golden-name-shimmer');
+      el.style.background = 'none';
+      el.style.webkitBackgroundClip = 'initial';
+      el.style.webkitTextFillColor = 'initial';
+      el.style.color = p.nameColor;
+      el.style.fontWeight = '';
+      el.style.fontStyle = '';
+    } else {
+      el.classList.remove('golden-name-shimmer');
+      el.style.background = 'none';
+      el.style.webkitBackgroundClip = 'initial';
+      el.style.webkitTextFillColor = 'initial';
+      el.style.color = '';
+      el.style.fontWeight = '';
+      el.style.fontStyle = '';
+    }
+  };
+
+  if ($('rk1Name')) {
+    $('rk1Name').textContent = p1.name;
+    applyRkNameStyle($('rk1Name'), p1);
+    if (p1.uid) {
+      $('rk1Name').onclick = () => window.openPlayerProfileCard(p1.uid);
+      $('rk1Name').style.cursor = 'pointer';
+    }
+  }
+  if ($('rk1Bal')) $('rk1Bal').textContent = p1.balance.toLocaleString() + ' AX';
+  if ($('rk1Av')) {
+    $('rk1Av').src = p1.av;
+    if (p1.uid) {
+      $('rk1Av').onclick = () => window.openPlayerProfileCard(p1.uid);
+      $('rk1Av').style.cursor = 'pointer';
+    }
+  }
+
+  if ($('rk2Name')) {
+    $('rk2Name').textContent = p2.name;
+    applyRkNameStyle($('rk2Name'), p2);
+    if (p2.uid) {
+      $('rk2Name').onclick = () => window.openPlayerProfileCard(p2.uid);
+      $('rk2Name').style.cursor = 'pointer';
+    }
+  }
+  if ($('rk2Bal')) $('rk2Bal').textContent = p2.balance.toLocaleString() + ' AX';
+  if ($('rk2Av')) {
+    $('rk2Av').src = p2.av;
+    if (p2.uid) {
+      $('rk2Av').onclick = () => window.openPlayerProfileCard(p2.uid);
+      $('rk2Av').style.cursor = 'pointer';
+    }
+  }
+
+  if ($('rk3Name')) {
+    $('rk3Name').textContent = p3.name;
+    applyRkNameStyle($('rk3Name'), p3);
+    if (p3.uid) {
+      $('rk3Name').onclick = () => window.openPlayerProfileCard(p3.uid);
+      $('rk3Name').style.cursor = 'pointer';
+    }
+  }
+  if ($('rk3Bal')) $('rk3Bal').textContent = p3.balance.toLocaleString() + ' AX';
+  if ($('rk3Av')) {
+    $('rk3Av').src = p3.av;
+    if (p3.uid) {
+      $('rk3Av').onclick = () => window.openPlayerProfileCard(p3.uid);
+      $('rk3Av').style.cursor = 'pointer';
+    }
+  }
+
+  listContainer.innerHTML = '';
+  if (players.length <= 3) {
+    listContainer.innerHTML = `<div class="text-center text-gray-400 py-8 text-xs font-semibold">No additional ranked players yet</div>`;
+  } else {
+    for (let i = 3; i < players.length; i++) {
+      const p = players[i];
+      const rankNum = i + 1;
+      const item = document.createElement('div');
+      item.className = "flex items-center justify-between p-3 rounded-2xl bg-gray-50/90 hover:bg-gray-100 border border-gray-100 transition cursor-pointer";
+      if (p.uid) {
+        item.onclick = () => window.openPlayerProfileCard(p.uid);
+      }
+      const isGolden = (p.premium && (p.goldenNameEnabled !== false));
+      const nameClassAttr = isGolden ? 'golden-name-shimmer' : '';
+      const nameStyleAttr = isGolden
+        ? 'style="font-style: italic;"'
+        : (p.premium && p.nameColor)
+        ? `style="color: ${p.nameColor};"`
+        : '';
+
+      item.innerHTML = `
+        <div class="flex items-center gap-3.5 min-w-0">
+          <span class="font-extrabold text-sm text-gray-400 w-5 text-center shrink-0">${rankNum}</span>
+          <img src="${p.av}" alt="${p.name}" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-xs hover:scale-105 transition cursor-pointer"/>
+          <div class="min-w-0">
+            <div class="font-bold text-sm text-gray-900 truncate ${nameClassAttr}" ${nameStyleAttr}>${p.name}</div>
+            <div class="text-[11px] text-gray-400 font-medium truncate mt-0.5">Rank #${rankNum} • Player</div>
+          </div>
+        </div>
+        <div class="bg-gradient-to-r from-amber-50 to-yellow-100/80 border border-amber-200/90 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shrink-0 shadow-xs">
+          <i class="fas fa-coins text-amber-500 text-xs"></i>
+          <span>${p.balance.toLocaleString()} AX</span>
+        </div>
+      `;
+      listContainer.appendChild(item);
+    }
+  }
+};
+
+async function renderVanillaRankingList() {
+  if (window.cachedRankingPlayers && window.cachedRankingPlayers.length > 0) {
+    window.renderRankingUI(window.cachedRankingPlayers);
+    window.preloadRankingData(true).then(freshPlayers => {
+      if (freshPlayers && freshPlayers.length > 0) {
+        window.renderRankingUI(freshPlayers);
+      }
+    });
+    return;
+  }
+
+  const players = await window.preloadRankingData();
+  if (players && players.length > 0) {
+    window.renderRankingUI(players);
   }
 }
 
@@ -10317,6 +10448,9 @@ window.openPlayerProfileCard = async function(targetUid) {
     if ($('vppGiftCount')) $('vppGiftCount').textContent = Number(gCount).toLocaleString();
     if ($('vppStarCount')) $('vppStarCount').textContent = Number(sCount).toLocaleString();
 
+    // Render Team Section for View Profile
+    window.renderVppTeamSection(targetUid);
+
   } catch (err) {
     console.error("Error fetching target player details:", err);
     if ($('vppName')) $('vppName').textContent = "Player Profile";
@@ -10375,6 +10509,364 @@ if ($('btnVppSendDM')) {
     }
   });
 }
+
+// ── VIEW PROFILE TEAM SECTION & TEAM DETAIL PAGE CONTROLLER ──
+window.currentVppTeam = null;
+
+window.renderVppTeamSection = async function(targetUid) {
+  const container = $('vppTeamCardContainer');
+  if (!container) return;
+
+  container.innerHTML = `<div class="p-3 bg-gray-50 border border-gray-100 rounded-2xl text-center text-xs text-gray-400">Loading team info...</div>`;
+
+  try {
+    let foundTeam = (window.allGuilds || allGuilds || []).find(g => 
+      g.leaderId === targetUid || (g.members && g.members.includes(targetUid))
+    );
+
+    if (!foundTeam) {
+      try {
+        const q1 = query(collection(db, 'teams'), where('leaderId', '==', targetUid));
+        const s1 = await getDocs(q1);
+        if (!s1.empty) {
+          foundTeam = { id: s1.docs[0].id, ...s1.docs[0].data() };
+        } else {
+          const q2 = query(collection(db, 'teams'), where('members', 'array-contains', targetUid));
+          const s2 = await getDocs(q2);
+          if (!s2.empty) {
+            foundTeam = { id: s2.docs[0].id, ...s2.docs[0].data() };
+          }
+        }
+      } catch (e) {
+        console.warn("Direct team query failed:", e);
+      }
+    }
+
+    window.currentVppTeam = foundTeam;
+
+    if (!foundTeam) {
+      container.innerHTML = `
+        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-400 text-sm">
+              🛡️
+            </div>
+            <div>
+              <span class="text-xs font-bold text-gray-600 block leading-tight">Not in a team</span>
+              <span class="text-[10px] text-gray-400 font-medium">This player hasn't joined a squad</span>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    let roleText = 'Member';
+    let roleBadgeClass = 'bg-purple-600 text-white';
+    if (foundTeam.leaderId === targetUid) {
+      roleText = 'Leader';
+      roleBadgeClass = 'bg-emerald-500 text-white';
+    } else if (foundTeam.guards && foundTeam.guards.includes(targetUid)) {
+      roleText = 'Guard';
+      roleBadgeClass = 'bg-sky-500 text-white';
+    }
+
+    const logoHtml = foundTeam.logoUrl && foundTeam.logoUrl.startsWith('data:') 
+      ? `<img src="${foundTeam.logoUrl}" class="w-full h-full object-cover rounded-full" />` 
+      : (foundTeam.logoUrl || '🦁');
+
+    container.innerHTML = `
+      <div onclick="window.openTeamDetailPage('${foundTeam.id}')" class="bg-gradient-to-r from-gray-900 via-slate-900 to-gray-950 rounded-2xl p-3 flex items-center justify-between border border-amber-400/30 shadow-md cursor-pointer hover:border-amber-400 transition active:scale-[0.99] group">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative shrink-0">
+            <div class="w-12 h-12 rounded-full border-2 border-amber-400/80 bg-gray-950 p-0.5 overflow-hidden flex items-center justify-center text-2xl shadow-md">
+              ${logoHtml}
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="font-display font-black text-xs sm:text-sm text-white uppercase tracking-wide truncate">
+                ${foundTeam.name}
+              </h4>
+              <span class="px-2 py-0.5 ${roleBadgeClass} text-[9px] font-black uppercase rounded-md shadow-xs shrink-0">
+                ${roleText}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 mt-1 text-[10px] font-bold">
+              <span class="px-2 py-0.5 bg-sky-500/20 border border-sky-400/30 text-sky-300 rounded-md font-mono flex items-center gap-1">
+                🛡️ Lv. ${foundTeam.level || 1}
+              </span>
+              <span class="px-2 py-0.5 bg-amber-400/15 border border-amber-400/30 text-amber-300 rounded-md font-mono uppercase">
+                [${foundTeam.tag || 'SQUAD'}]
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 text-amber-400 font-bold text-xs group-hover:translate-x-1 transition">
+          <i class="fas fa-chevron-right text-xs"></i>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Error rendering VPP team section:", err);
+    container.innerHTML = `<div class="p-3 bg-gray-50 border border-gray-100 rounded-2xl text-center text-xs text-gray-400">Not in a team</div>`;
+  }
+};
+
+window.onVppTeamClick = function() {
+  if (window.currentVppTeam) {
+    window.openTeamDetailPage(window.currentVppTeam.id);
+  }
+};
+
+window.openTeamDetailPage = async function(teamId) {
+  if (!teamId) return;
+
+  const modal = $('mTeamDetailPage');
+  const container = $('teamDetailPageContent');
+  if (!modal || !container) return;
+
+  modal.classList.remove('hidden');
+  container.innerHTML = `
+    <div class="w-full h-full bg-[#0a0c12] flex flex-col items-center justify-center text-amber-400 space-y-3 p-6">
+      <div class="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+      <span class="text-xs font-mono font-bold uppercase tracking-widest text-gray-400">Loading Team Details...</span>
+    </div>
+  `;
+
+  try {
+    let team = (window.allGuilds || allGuilds || []).find(g => g.id === teamId);
+    if (!team) {
+      const snap = await getDoc(doc(db, 'teams', teamId));
+      if (snap.exists()) {
+        team = { id: snap.id, ...snap.data() };
+      }
+    }
+
+    if (!team) {
+      container.innerHTML = `
+        <div class="w-full h-full bg-[#0a0c12] flex flex-col items-center justify-center text-white p-6 space-y-4">
+          <p class="text-sm font-bold text-red-400">Team not found or removed.</p>
+          <button onclick="window.closeTeamDetailPage()" class="px-5 py-2 bg-white/10 text-white rounded-full text-xs font-bold cursor-pointer">Go Back</button>
+        </div>
+      `;
+      return;
+    }
+
+    const memberIds = team.members && team.members.length > 0 ? team.members : [team.leaderId];
+    const membersData = await window.fetchGuildMembers(memberIds);
+
+    let leaderProfile = membersData.find(m => m.uid === team.leaderId);
+    if (!leaderProfile && team.leaderId) {
+      try {
+        const lSnap = await getDoc(doc(db, 'users', team.leaderId));
+        if (lSnap.exists()) {
+          leaderProfile = lSnap.data();
+          membersData.unshift(leaderProfile);
+        }
+      } catch (e) {
+        console.warn("Could not fetch leader profile:", e);
+      }
+    }
+
+    const logoHtml = team.logoUrl && team.logoUrl.startsWith('data:')
+      ? `<img src="${team.logoUrl}" class="w-full h-full object-cover rounded-full" />`
+      : (team.logoUrl || '🦁');
+
+    const isUserInThisTeam = userProfile && (team.leaderId === userProfile.uid || (team.members && team.members.includes(userProfile.uid)));
+
+    container.innerHTML = `
+      <!-- Top Banner & Header -->
+      <div class="relative w-full h-52 bg-[#0a0c12] overflow-hidden shrink-0 border-b border-white/10">
+        <!-- Background Blur Image -->
+        <div class="absolute inset-0 z-0">
+          ${team.logoUrl && team.logoUrl.startsWith('data:')
+            ? `<img src="${team.logoUrl}" class="w-full h-full object-cover filter blur-2xl opacity-40 scale-125" />`
+            : `<div class="w-full h-full bg-gradient-to-b from-amber-950/60 via-gray-900 to-[#0a0c12]"></div>`}
+          <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#0a0c12]"></div>
+        </div>
+
+        <!-- Header Actions: Back Button & Weekly Rank -->
+        <div class="relative z-20 p-4 flex items-center justify-between">
+          <button onclick="window.closeTeamDetailPage()" class="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center transition active:scale-95 cursor-pointer shadow-lg" title="Back">
+            <i class="fas fa-chevron-left text-sm"></i>
+          </button>
+
+          <div class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-black text-xs rounded-full shadow-lg border border-amber-300/30 flex items-center gap-1.5">
+            <span>Weekly Rank:</span>
+            <span class="text-white font-mono font-extrabold text-xs">#${team.weeklyRank || team.rank || 2}</span>
+          </div>
+        </div>
+
+        <!-- Overlapping Team Info Row -->
+        <div class="absolute bottom-3 left-4 right-4 z-20 flex items-end gap-3.5">
+          <div class="relative shrink-0">
+            <div class="w-20 h-20 rounded-full border-2 border-amber-400 bg-[#121422] p-0.5 overflow-hidden flex items-center justify-center text-4xl shadow-2xl">
+              ${logoHtml}
+            </div>
+          </div>
+
+          <div class="flex-1 min-w-0 pb-0.5">
+            <h2 class="font-display font-black text-base sm:text-lg text-white uppercase tracking-wider truncate flex items-center gap-2">
+              ${team.name}
+            </h2>
+            <div class="flex items-center gap-2 mt-1 flex-wrap text-xs">
+              <span class="px-2 py-0.5 bg-sky-500/20 border border-sky-400/40 text-sky-300 font-extrabold rounded-md text-[10px] font-mono flex items-center gap-1">
+                🛡️ Lv. ${team.level || 1}
+              </span>
+              <span class="px-2.5 py-0.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 font-black rounded-md text-[10px] font-mono uppercase tracking-wider">
+                ${team.tag || 'SQUAD'}
+              </span>
+            </div>
+            <div class="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 font-mono">
+              <span>ID: <strong class="text-gray-200 select-all font-bold">${(team.id || 'N157').substring(0, 8).toUpperCase()}</strong></span>
+              <span class="text-amber-400 font-bold flex items-center gap-1">
+                🔥 Activeness: ${(team.xp || team.activeness || 4601346).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Detail Body -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-5 pb-24">
+        
+        <!-- MAJOR MEMBERS SECTION -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
+              <h3 class="text-xs font-black text-white uppercase tracking-wider">Major Members</h3>
+            </div>
+            <span class="text-xs text-gray-400 font-mono font-bold flex items-center gap-1">
+              ${memberIds.length}/${team.maxMembers || 120} <i class="fas fa-chevron-right text-[10px] text-gray-500"></i>
+            </span>
+          </div>
+
+          <!-- Horizontal Avatars Row -->
+          <div class="flex items-center gap-3.5 overflow-x-auto pb-2 pt-1 no-scrollbar">
+            ${memberIds.map(mUid => {
+              const m = membersData.find(u => u.uid === mUid) || { uid: mUid, name: 'Member' };
+              const isLeader = mUid === team.leaderId;
+              const isGuard = team.guards && team.guards.includes(mUid);
+
+              let roleText = 'Member';
+              let roleBg = 'bg-sky-500';
+              let frameBorder = 'border-sky-500/60';
+              if (isLeader) {
+                roleText = 'Leader';
+                roleBg = 'bg-gradient-to-r from-pink-500 to-rose-600';
+                frameBorder = 'border-pink-500';
+              } else if (isGuard) {
+                roleText = 'Deputy';
+                roleBg = 'bg-gradient-to-r from-cyan-500 to-blue-600';
+                frameBorder = 'border-cyan-400';
+              }
+
+              const mName = m.name || m.userName || 'Player';
+              const mAv = m.av || m.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${mUid}`;
+
+              return `
+                <div onclick="window.openPlayerProfileCard('${mUid}')" class="flex flex-col items-center shrink-0 w-16 cursor-pointer active:scale-95 transition">
+                  <div class="relative mb-1">
+                    <div class="w-14 h-14 rounded-full border-2 ${frameBorder} bg-gray-900 p-0.5 overflow-hidden shadow-lg">
+                      <img src="${mAv}" class="w-full h-full object-cover rounded-full" />
+                    </div>
+                    <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 ${roleBg} text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter whitespace-nowrap shadow-md border border-white/20">
+                      ${roleText}
+                    </span>
+                  </div>
+                  <span class="text-[10px] font-bold text-gray-200 truncate w-full text-center mt-1">
+                    ${mName}
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- INTRODUCTION SECTION -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
+            <h3 class="text-xs font-black text-white uppercase tracking-wider">Introduction</h3>
+          </div>
+          <div class="bg-[#121522] border border-white/10 rounded-2xl p-4 text-xs text-gray-300 font-medium leading-relaxed shadow-sm">
+            <p>${team.description || "Welcome to our family! This isn't just a group—it's a legacy. Built on loyalty, respect, and unity. Here, we stand together, grow together, and win together. Stay real, stay active, and represent the family with pride. 💜"}</p>
+          </div>
+        </div>
+
+        <!-- REQUIREMENTS SECTION -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
+            <h3 class="text-xs font-black text-white uppercase tracking-wider">Requirements</h3>
+          </div>
+          <div class="bg-[#121522] border border-white/10 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+            <span class="text-gray-400 font-semibold">Join Permission</span>
+            ${team.joinType === 'application'
+              ? `<span class="px-3 py-1 bg-amber-400/15 border border-amber-400/40 text-amber-300 font-bold rounded-full text-[11px] flex items-center gap-1.5">📝 Application Required</span>`
+              : `<span class="px-3 py-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-bold rounded-full text-[11px] flex items-center gap-1.5">⚡ Free to Join</span>`
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FIXED BOTTOM ACTION BUTTON -->
+      <div class="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0c12]/95 backdrop-blur-md border-t border-white/10 z-30 flex items-center">
+        ${isUserInThisTeam
+          ? `<button onclick="window.enterUserTeam('${team.id}')" class="w-full h-12 rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/25 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
+               <span>Enter my family</span> <i class="fas fa-arrow-right text-xs"></i>
+             </button>`
+          : (team.joinType === 'application'
+              ? `<button onclick="window.applyToTeamFromDetail('${team.id}')" class="w-full h-12 rounded-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-400/25 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
+                   <span>Apply to Join</span>
+                 </button>`
+              : `<button onclick="window.joinTeamFromDetail('${team.id}')" class="w-full h-12 rounded-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-400/25 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
+                   <span>Join Team</span>
+                 </button>`
+            )
+        }
+      </div>
+    `;
+  } catch (err) {
+    console.error("Error opening team detail page:", err);
+    container.innerHTML = `
+      <div class="w-full h-full bg-[#0a0c12] flex flex-col items-center justify-center text-white p-6 space-y-4">
+        <p class="text-sm font-bold text-red-400">Failed to load team details.</p>
+        <button onclick="window.closeTeamDetailPage()" class="px-5 py-2 bg-white/10 text-white rounded-full text-xs font-bold cursor-pointer">Close</button>
+      </div>
+    `;
+  }
+};
+
+window.closeTeamDetailPage = function() {
+  const modal = $('mTeamDetailPage');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.enterUserTeam = function(teamId) {
+  window.closeTeamDetailPage();
+  if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
+
+  const modal = $('mGuildSystemModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (typeof window.renderGuildSystemModalContent === 'function') {
+      window.renderGuildSystemModalContent();
+    }
+  }
+};
+
+window.joinTeamFromDetail = async function(teamId) {
+  await window.joinTeamDirect(teamId);
+  window.openTeamDetailPage(teamId);
+};
+
+window.applyToTeamFromDetail = function(teamId) {
+  window.applyToTeam(teamId);
+};
 
 // ── QUICK BROADCAST SHORTCUT HANDLERS FOR VOICE CHANNELS ──
 if ($('btnShareVoiceGlobal')) {
@@ -12468,14 +12960,122 @@ function updateInboxNotificationBadge(uncollectedCount) {
 // ==========================================
 // ── ARENAX GUILDS & TEAMS SYSTEM LOGIC ──
 // ==========================================
+// ==========================================
+// ── ARENAX GUILDS & TEAMS SYSTEM LOGIC ──
+// ==========================================
 let allGuilds = [];
 let selectedGuild = null;
 let userGuild = null;
 let unsubGuilds = null;
-let currentGuildTab = 'overview';
-let showGuildBrowser = false;
 let unsubGuildChat = null;
 let activeGuildIdForChat = null;
+let showGuildBrowser = false;
+let currentGuildTab = 'profile'; // 'profile', 'members', 'tasks', 'team_fight', 'manage', 'crates'
+let teamsView = 'list'; // 'list', 'create', 'profile', 'rankings'
+let teamsSearchQuery = '';
+let selectedTeamData = null;
+let customTeamLogoDataUrl = '';
+
+// Expose state variables on window for global inline handlers
+window.allGuilds = allGuilds;
+window.selectedGuild = selectedGuild;
+window.userGuild = userGuild;
+window.teamsView = teamsView;
+window.currentGuildTab = currentGuildTab;
+window.selectedTeamData = selectedTeamData;
+
+window.viewTeamById = function(teamId) {
+  const list = window.allGuilds || allGuilds || [];
+  const found = list.find(g => g.id === teamId);
+  if (found) {
+    selectedTeamData = found;
+    window.selectedTeamData = found;
+    teamsView = 'profile';
+    window.teamsView = 'profile';
+    window.renderGuildSystemModalContent();
+  }
+};
+
+window.viewMyTeamProfile = function() {
+  const ug = window.userGuild || userGuild;
+  if (ug) {
+    selectedTeamData = ug;
+    window.selectedTeamData = ug;
+    teamsView = 'profile';
+    window.teamsView = 'profile';
+    window.renderGuildSystemModalContent();
+  }
+};
+
+window.closeGuildsModal = function() {
+  const modal = $('mGuildSystemModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.setTeamsView = function(view) {
+  teamsView = view;
+  window.teamsView = view;
+  window.renderGuildSystemModalContent();
+};
+
+window.setTeamsTab = function(tab) {
+  currentGuildTab = tab;
+  window.currentGuildTab = tab;
+  window.renderGuildSystemModalContent();
+};
+
+window.toggleTeamsSearch = function() {
+  const el = $('teamsSearchInputContainer');
+  if (el) el.classList.toggle('hidden');
+};
+
+window.updateTeamsSearch = function(val) {
+  teamsSearchQuery = (val || '').toLowerCase().trim();
+  window.renderGuildSystemModalContent();
+};
+
+window.showTeamGuide = function() {
+  const modal = $('mTeamGuideModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.openTeamsModal = function() {
+  if (guestProfile) {
+    alert("Please log in or register a profile to access Teams!");
+    return;
+  }
+  const modal = $('mGuildSystemModal');
+  if (modal) modal.classList.remove('hidden');
+  
+  if (userGuild) {
+    selectedTeamData = userGuild;
+    teamsView = 'profile';
+  } else {
+    teamsView = 'list';
+  }
+  
+  if (typeof listenToGuilds === 'function') listenToGuilds();
+  window.renderGuildSystemModalContent();
+};
+
+window.openGuildsModal = window.openTeamsModal;
+
+window.handleTeamLogoUpload = function(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    customTeamLogoDataUrl = evt.target.result;
+    const imgEl = $('ctLogoPreviewImg');
+    const icoEl = $('ctLogoPreviewIco');
+    if (imgEl && icoEl) {
+      imgEl.src = customTeamLogoDataUrl;
+      imgEl.classList.remove('hidden');
+      icoEl.classList.add('hidden');
+    }
+  };
+  reader.readAsDataURL(file);
+};
 
 function listenToGuilds() {
   if (unsubGuilds) unsubGuilds();
@@ -12497,20 +13097,919 @@ function listenToGuilds() {
       }
     });
     
-    if (!selectedGuild && allGuilds.length > 0) {
-      selectedGuild = allGuilds[0];
+    if (!selectedTeamData && allGuilds.length > 0) {
+      selectedTeamData = userGuild || allGuilds[0];
+    } else if (selectedTeamData) {
+      const updated = allGuilds.find(g => g.id === selectedTeamData.id);
+      if (updated) selectedTeamData = updated;
     }
+    
+    // Sync state variables to window for global inline handlers
+    window.allGuilds = allGuilds;
+    window.userGuild = userGuild;
+    window.selectedTeamData = selectedTeamData;
+    window.selectedGuild = selectedGuild;
     
     window.renderGuildSystemModalContent();
-    
-    if (selectedGuild) {
-      const updated = allGuilds.find(g => g.id === selectedGuild.id);
-      selectedGuild = updated || null;
-    }
   }, (err) => {
-    console.error("Error listening to guilds:", err);
+    console.error("Error listening to teams:", err);
   });
 }
+
+window.openDonateModal = function() {
+  if (!userProfile) return;
+  const balSpan = $('dtUserBalance');
+  if (balSpan) balSpan.textContent = userProfile.balance || 0;
+  $('mDonateTreasuryModal').classList.remove('hidden');
+};
+
+window.confirmTreasuryDonation = async function() {
+  if (!userProfile) return;
+  const input = $('dtAmountInput');
+  const amount = parseInt(input ? input.value : 0, 10);
+  if (isNaN(amount) || amount <= 0) {
+    alert("Please enter a valid donation amount (minimum 10 AX).");
+    return;
+  }
+  
+  const currentBalance = userProfile.balance || 0;
+  if (currentBalance < amount) {
+    alert(`Insufficient AX Coins balance! You have ${currentBalance} AX, but tried to donate ${amount} AX.`);
+    return;
+  }
+  
+  const activeTeam = selectedTeamData || userGuild;
+  if (!activeTeam) {
+    alert("No active team selected.");
+    return;
+  }
+  
+  try {
+    await updateDoc(doc(db, 'users', userProfile.uid), {
+      balance: increment(-amount)
+    });
+    userProfile.balance = Math.max(0, currentBalance - amount);
+    
+    const expGain = Math.floor(amount / 10);
+    await updateDoc(doc(db, 'teams', activeTeam.id), {
+      treasury: increment(amount),
+      exp: increment(expGain)
+    });
+    
+    await addDoc(collection(db, 'deposit_requests'), {
+      userId: userProfile.uid,
+      userName: userProfile.name,
+      amountAX: amount,
+      method: 'Team Treasury Donation',
+      status: 'approved',
+      type: 'payment',
+      message: `Donated ${amount} AX Coins to Team Treasury (${activeTeam.name})`,
+      createdAt: serverTimestamp()
+    });
+    
+    alert(`🎉 Thank you! Successfully donated ${amount} AX Coins to ${activeTeam.name}'s Treasury!\n+${expGain} Team EXP gained!`);
+    $('mDonateTreasuryModal').classList.add('hidden');
+    if (input) input.value = '';
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to process donation: " + err.message);
+  }
+};
+
+window.openEditAnnouncementModal = function() {
+  const activeTeam = selectedTeamData || userGuild;
+  if (!activeTeam) return;
+  const input = $('eaAnnouncementInput');
+  if (input) input.value = activeTeam.announcement || activeTeam.description || '';
+  $('mEditAnnouncementModal').classList.remove('hidden');
+};
+
+window.saveTeamAnnouncement = async function() {
+  const activeTeam = selectedTeamData || userGuild;
+  if (!activeTeam) return;
+  const input = $('eaAnnouncementInput');
+  const txt = input ? input.value.trim() : '';
+  if (!txt) return;
+  
+  try {
+    await updateDoc(doc(db, 'teams', activeTeam.id), {
+      announcement: txt,
+      description: txt
+    });
+    activeTeam.announcement = txt;
+    activeTeam.description = txt;
+    alert("✅ Team Announcement updated successfully!");
+    $('mEditAnnouncementModal').classList.add('hidden');
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to update announcement: " + err.message);
+  }
+};
+
+window.promoteToGuard = async function(targetUid, name) {
+  const team = selectedTeamData || userGuild;
+  if (!team) return;
+  if (team.leaderId !== userProfile.uid) {
+    alert("Only the Leader can promote members to Guard!");
+    return;
+  }
+  const currentGuards = team.guards || [];
+  if (currentGuards.length >= 2) {
+    alert("Maximum 2 Guards allowed per team! Demote an existing Guard first.");
+    return;
+  }
+  try {
+    await updateDoc(doc(db, 'teams', team.id), {
+      guards: arrayUnion(targetUid)
+    });
+    alert(`🛡️ Successfully promoted ${name} to Guard!`);
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to promote Guard: " + err.message);
+  }
+};
+
+window.demoteGuard = async function(targetUid, name) {
+  const team = selectedTeamData || userGuild;
+  if (!team) return;
+  if (team.leaderId !== userProfile.uid) {
+    alert("Only the Leader can demote Guards!");
+    return;
+  }
+  try {
+    await updateDoc(doc(db, 'teams', team.id), {
+      guards: arrayRemove(targetUid)
+    });
+    alert(`Successfully demoted ${name} to regular Member.`);
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to demote Guard: " + err.message);
+  }
+};
+
+window.joinTeamDirect = async function(teamId) {
+  if (!userProfile) {
+    alert("Please log in to join a team!");
+    return;
+  }
+  if (userGuild) {
+    alert("You are already in a team! Leave your current team first to join another.");
+    return;
+  }
+  try {
+    const teamRef = doc(db, 'teams', teamId);
+    const snap = await getDoc(teamRef);
+    if (!snap.exists()) {
+      alert("Team no longer exists.");
+      return;
+    }
+    const tData = snap.data();
+    const members = tData.members || [];
+    if (members.length >= (tData.maxMembers || 8)) {
+      alert("This team is already full (maximum 8 members)!");
+      return;
+    }
+    await updateDoc(teamRef, {
+      members: arrayUnion(userProfile.uid),
+      memberCount: increment(1)
+    });
+    alert(`🎉 Successfully joined "${tData.name}"!`);
+    if (typeof listenToGuilds === 'function') listenToGuilds();
+  } catch (err) {
+    alert("Failed to join team: " + err.message);
+  }
+};
+
+window.applyToTeam = function(teamId) {
+  if (!userProfile) {
+    alert("Please log in to apply!");
+    return;
+  }
+  if (userGuild) {
+    alert("You are already in a team!");
+    return;
+  }
+  window.selectedTeamIdForApplication = teamId;
+  openJoinRequestMessageModal();
+};
+
+window.registerForTeamFight = async function(tourName, tourId) {
+  const team = selectedTeamData || userGuild;
+  if (!team) {
+    alert("You must be in a team to register for Team Fight tournaments!");
+    return;
+  }
+  const isLeader = team.leaderId === userProfile.uid;
+  const isGuard = team.guards && team.guards.includes(userProfile.uid);
+  if (!isLeader && !isGuard) {
+    alert("Only the Leader or Guards can register the team for Team Fights!");
+    return;
+  }
+  
+  const randomExp = Math.floor(Math.random() * 151) + 50;
+  
+  try {
+    await updateDoc(doc(db, 'teams', team.id), {
+      exp: increment(randomExp),
+      registeredFights: arrayUnion(tourId || tourName)
+    });
+    
+    await addDoc(collection(db, 'teamFights'), {
+      teamId: team.id,
+      teamName: team.name,
+      tournamentName: tourName,
+      registeredBy: userProfile.name,
+      expGained: randomExp,
+      createdAt: serverTimestamp()
+    });
+    
+    alert(`🏆 TOURNEY REGISTRATION SUCCESSFUL!\n\nYour team "${team.name}" is officially registered for "${tourName}"!\n\n✨ Team Bonus Earned: +${randomExp} Team EXP! 🔥`);
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to register for Team Fight: " + err.message);
+  }
+};
+
+window.createNewTeamSubmit = async function() {
+  if (!userProfile) {
+    alert("Please log in first!");
+    return;
+  }
+  if (userGuild) {
+    alert("You are already a member/leader of a team! Leave your current team first.");
+    return;
+  }
+  const nameInput = $('ctNameInput');
+  const tagSelect = $('ctTagSelect');
+  const descInput = $('ctDescInput');
+  const joinTypeRadio = document.querySelector('input[name="ctJoinType"]:checked');
+  
+  const name = nameInput ? nameInput.value.trim() : '';
+  const tag = tagSelect ? tagSelect.value : 'PRO';
+  const desc = descInput ? descInput.value.trim() : '';
+  const joinType = joinTypeRadio ? joinTypeRadio.value : 'free';
+  const logo = customTeamLogoDataUrl || '🦁';
+  
+  if (!name) {
+    alert("Please enter a Team Name!");
+    return;
+  }
+  
+  try {
+    const docRef = await addDoc(collection(db, 'teams'), {
+      name: name,
+      tag: tag,
+      description: desc || `Welcome to ${name}! Participate in Team Fights & donate to Treasury to rank up!`,
+      announcement: desc || `Welcome to ${name}! Participate in Team Fights & donate to Treasury to rank up!`,
+      logoUrl: logo,
+      joinType: joinType,
+      leaderId: userProfile.uid,
+      leaderName: userProfile.name || 'Leader',
+      members: [userProfile.uid],
+      guards: [],
+      memberCount: 1,
+      maxMembers: 8,
+      treasury: 0,
+      exp: 0,
+      level: 1,
+      rank: 1,
+      registeredFights: [],
+      createdAt: serverTimestamp()
+    });
+    
+    alert(`🎉 TEAM CREATED SUCCESSFULLY!\n\nYour team "${name}" [${tag}] is established!`);
+    customTeamLogoDataUrl = '';
+    selectedTeamData = {
+      id: docRef.id,
+      name, tag, description: desc, logoUrl: logo, joinType,
+      leaderId: userProfile.uid, leaderName: userProfile.name,
+      members: [userProfile.uid], guards: [], memberCount: 1, maxMembers: 8,
+      treasury: 0, exp: 0, level: 1, rank: 1
+    };
+    userGuild = selectedTeamData;
+    teamsView = 'profile';
+    currentGuildTab = 'profile';
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    alert("Failed to create team: " + err.message);
+  }
+};
+
+window.disbandTeamSubmit = async function() {
+  const team = selectedTeamData || userGuild;
+  if (!team) return;
+  if (team.leaderId !== userProfile.uid) {
+    alert("Only the Leader can disband the team!");
+    return;
+  }
+  if (confirm(`⚠️ Are you sure you want to DISBAND "${team.name}" permanently?\nThis action cannot be undone.`)) {
+    try {
+      await deleteDoc(doc(db, 'teams', team.id));
+      alert(`Team "${team.name}" disbanded.`);
+      userGuild = null;
+      selectedTeamData = null;
+      teamsView = 'list';
+      window.renderGuildSystemModalContent();
+    } catch (err) {
+      alert("Failed to disband team: " + err.message);
+    }
+  }
+};
+
+window.leaveTeamSubmit = async function() {
+  const team = selectedTeamData || userGuild;
+  if (!team) return;
+  if (team.leaderId === userProfile.uid) {
+    alert("Leader cannot leave. You must disband the team or promote someone else!");
+    return;
+  }
+  if (confirm(`Are you sure you want to leave "${team.name}"?`)) {
+    try {
+      await updateDoc(doc(db, 'teams', team.id), {
+        members: arrayRemove(userProfile.uid),
+        guards: arrayRemove(userProfile.uid),
+        memberCount: increment(-1)
+      });
+      alert(`You left "${team.name}".`);
+      userGuild = null;
+      selectedTeamData = null;
+      teamsView = 'list';
+      window.renderGuildSystemModalContent();
+    } catch (err) {
+      alert("Failed to leave team: " + err.message);
+    }
+  }
+};
+
+window.kickMemberSubmit = async function(targetUid, name) {
+  const team = selectedTeamData || userGuild;
+  if (!team) return;
+  const isLeader = team.leaderId === userProfile.uid;
+  const isGuard = team.guards && team.guards.includes(userProfile.uid);
+  if (!isLeader && !isGuard) {
+    alert("Only Leader or Guards can kick members!");
+    return;
+  }
+  if (confirm(`Kick "${name}" from the team?`)) {
+    try {
+      await updateDoc(doc(db, 'teams', team.id), {
+        members: arrayRemove(targetUid),
+        guards: arrayRemove(targetUid),
+        memberCount: increment(-1)
+      });
+      alert(`Kicked "${name}".`);
+      window.renderGuildSystemModalContent();
+    } catch (err) {
+      alert("Failed to kick member: " + err.message);
+    }
+  }
+};
+
+// ==================== MAIN TEAMS MODAL RENDERER ====================
+window.renderGuildSystemModalContent = async function() {
+  const container = $('mGuildSystemModal');
+  const innerContent = $('guildSystemModalContent');
+  if (!container || !innerContent) return;
+  if (container.classList.contains('hidden')) return;
+  
+  if (teamsView === 'list') {
+    // ----------------------------------------------------
+    // 1) TEAMS LIST PAGE
+    // ----------------------------------------------------
+    const filtered = allGuilds.filter(t => {
+      if (!teamsSearchQuery) return true;
+      return t.name.toLowerCase().includes(teamsSearchQuery) ||
+             (t.tag && t.tag.toLowerCase().includes(teamsSearchQuery)) ||
+             (t.leaderName && t.leaderName.toLowerCase().includes(teamsSearchQuery));
+    });
+    
+    let teamCardsHtml = '';
+    if (filtered.length === 0) {
+      teamCardsHtml = `
+        <div class="col-span-full text-center py-12 text-t3 bg-card/20 border border-bdr/20 rounded-2xl">
+          <i class="fas fa-shield-alt text-3xl mb-2 text-gold/30"></i>
+          <p class="text-xs font-bold uppercase">No Teams Found</p>
+          <p class="text-[10px] mt-1">Be the first to establish a team for your squad!</p>
+        </div>
+      `;
+    } else {
+      filtered.forEach((t, index) => {
+        const memberCount = (t.members || []).length;
+        const isUserMember = userGuild && userGuild.id === t.id;
+        const rankNum = index + 1;
+        
+        let actionBtnHtml = '';
+        if (isUserMember) {
+          actionBtnHtml = `<button onclick="window.viewTeamById('${t.id}')" class="px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase rounded-xl hover:bg-emerald-500/25 transition">My Team</button>`;
+        } else if (userGuild) {
+          actionBtnHtml = `<button onclick="window.viewTeamById('${t.id}')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-bdr text-white text-[10px] font-black uppercase rounded-xl transition">View</button>`;
+        } else if (t.joinType === 'application') {
+          actionBtnHtml = `<button onclick="window.applyToTeam('${t.id}')" class="px-3 py-1.5 bg-gold/15 hover:bg-gold/30 border border-gold/40 text-gold text-[10px] font-black uppercase rounded-xl transition">Apply</button>`;
+        } else {
+          actionBtnHtml = `<button onclick="window.joinTeamDirect('${t.id}')" class="px-3 py-1.5 bg-gradient-to-r from-gold to-yellow-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-md">Join</button>`;
+        }
+        
+        teamCardsHtml += `
+          <div class="bg-card/40 hover:bg-card/70 border border-bdr/30 hover:border-gold/40 rounded-2xl p-4 transition flex flex-col justify-between space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-12 h-12 rounded-full bg-[#0e101f] border-2 border-gold/40 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-lg">
+                  ${t.logoUrl && t.logoUrl.startsWith('data:') 
+                    ? `<img src="${t.logoUrl}" class="w-full h-full object-cover" />`
+                    : `<span class="text-2xl">${t.logoUrl || '🦁'}</span>`}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <h4 class="font-display text-sm font-black text-white uppercase tracking-wider truncate">${t.name}</h4>
+                    <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-gold/10 text-gold border border-gold/25">[${t.tag || 'PRO'}]</span>
+                  </div>
+                  <p class="text-[10px] text-t3 font-mono mt-0.5">Leader: <strong class="text-white">${t.leaderName || 'Admin'}</strong></p>
+                </div>
+              </div>
+              <span class="text-xs font-black font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-lg flex-shrink-0">#${t.rank || rankNum}</span>
+            </div>
+
+            <p class="text-[10px] text-t2 line-clamp-2 italic leading-relaxed">"${t.description || 'Ready for squad battles & tournaments!'}"</p>
+
+            <div class="flex items-center justify-between pt-2 border-t border-bdr/20">
+              <span class="text-[10px] font-mono text-t3 flex items-center gap-1">
+                <i class="fas fa-users text-gold"></i> <strong class="text-white">${memberCount}</strong> / 8 Members
+              </span>
+              ${actionBtnHtml}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    innerContent.innerHTML = `
+      <!-- TEAMS LIST HEADER -->
+      <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <button onclick="window.closeGuildsModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-arrow-left text-xs"></i>
+          </button>
+          <h3 class="font-display text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fas fa-users text-gold"></i> Teams
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="window.setTeamsView('rankings')" class="w-9 h-9 rounded-xl bg-gold/10 border border-gold/30 text-gold hover:bg-gold hover:text-bg transition flex items-center justify-center cursor-pointer" title="Team Rankings">
+            <i class="fas fa-trophy text-sm"></i>
+          </button>
+          <button onclick="window.toggleTeamsSearch()" class="w-9 h-9 rounded-xl bg-white/5 border border-bdr text-t2 hover:text-white transition flex items-center justify-center cursor-pointer" title="Search Teams">
+            <i class="fas fa-search text-sm"></i>
+          </button>
+          <button onclick="window.setTeamsView('create')" class="px-3 py-2 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-lg flex items-center gap-1.5 cursor-pointer">
+            <i class="fas fa-plus"></i> Create Team
+          </button>
+          <button onclick="window.showTeamGuide()" class="w-9 h-9 rounded-xl bg-white/5 border border-bdr text-t2 hover:text-white transition flex items-center justify-center cursor-pointer" title="Team Guide">
+            <i class="fas fa-book text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- INLINE SEARCH INPUT CONTAINER -->
+      <div id="teamsSearchInputContainer" class="px-4 pt-3 hidden">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
+          <input oninput="window.updateTeamsSearch(this.value)" type="text" placeholder="Search by team name, tag, or leader..." class="w-full bg-card border border-bdr rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-gold transition" />
+        </div>
+      </div>
+
+      <!-- USER TEAM BANNER IF MEMBER -->
+      ${userGuild ? `
+        <div class="mx-4 mt-3 p-3.5 bg-gradient-to-r from-gold/15 via-yellow-500/10 to-amber-500/15 border border-gold/40 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gold/20 border border-gold flex items-center justify-center text-xl">
+              ${userGuild.logoUrl && userGuild.logoUrl.startsWith('data:') ? `<img src="${userGuild.logoUrl}" class="w-full h-full object-cover rounded-full" />` : (userGuild.logoUrl || '🦁')}
+            </div>
+            <div>
+              <p class="text-[9px] text-gold uppercase font-mono font-bold">YOUR ACTIVE TEAM</p>
+              <h4 class="font-display text-xs font-black text-white uppercase">${userGuild.name} <span class="text-gold">[${userGuild.tag || 'PRO'}]</span></h4>
+            </div>
+          </div>
+          <button onclick="window.viewMyTeamProfile()" class="px-3.5 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-[10px] font-black uppercase rounded-xl transition shadow-md cursor-pointer">
+            My Team Profile 🚀
+          </button>
+        </div>
+      ` : ''}
+
+      <!-- TEAMS SCROLLABLE LIST -->
+      <div class="flex-1 p-4 overflow-y-auto min-h-0 scrollbar-thin">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${teamCardsHtml}
+        </div>
+      </div>
+
+      <!-- BOTTOM REFRESH BAR -->
+      <div class="p-3 bg-[#080911] border-t border-bdr/20 flex items-center justify-between flex-shrink-0">
+        <span class="text-[10px] text-t3 font-mono">Total Teams: <strong class="text-white">${allGuilds.length}</strong></span>
+        <button onclick="listenToGuilds()" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-bdr/30 text-t2 hover:text-white text-[10px] font-bold uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5">
+          <i class="fas fa-sync-alt"></i> Refresh List
+        </button>
+      </div>
+    `;
+
+  } else if (teamsView === 'create') {
+    // ----------------------------------------------------
+    // 2) CREATE TEAM PAGE
+    // ----------------------------------------------------
+    innerContent.innerHTML = `
+      <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <button onclick="window.setTeamsView('list')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-arrow-left text-xs"></i>
+          </button>
+          <h3 class="font-display text-base font-black text-white uppercase tracking-wider">Create Team</h3>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-5 scrollbar-thin">
+        <!-- Image Upload Section -->
+        <div class="flex flex-col items-center justify-center space-y-3">
+          <label class="block text-[10px] text-gold uppercase font-bold tracking-wider">Team Logo (Upload Image or Pick Crest)</label>
+          
+          <div class="relative group cursor-pointer" onclick="$('ctLogoFileInput').click()">
+            <div class="w-24 h-24 rounded-full bg-[#0e101f] border-2 border-gold flex items-center justify-center shadow-2xl overflow-hidden relative">
+              <span id="ctLogoPreviewIco" class="text-4xl text-gold">🦁</span>
+              <img id="ctLogoPreviewImg" class="w-full h-full object-cover hidden" />
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                <i class="fas fa-camera text-base mb-1"></i> Upload
+              </div>
+            </div>
+          </div>
+
+          <input id="ctLogoFileInput" type="file" accept="image/*" onchange="window.handleTeamLogoUpload(event)" class="hidden" />
+
+          <!-- Preset Crests -->
+          <div class="flex items-center gap-2 pt-1">
+            ${['🦁', '🐺', '🐯', '👑', '🐉', '⚔️', '💀', '⚡'].map(crest => `
+              <button onclick="customTeamLogoDataUrl = '${crest}'; $('ctLogoPreviewImg').classList.add('hidden'); $('ctLogoPreviewIco').classList.remove('hidden'); $('ctLogoPreviewIco').textContent = '${crest}';" class="w-8 h-8 rounded-lg bg-card border border-bdr hover:border-gold text-lg flex items-center justify-center transition cursor-pointer">${crest}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Name Input -->
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Team Name</label>
+          <input id="ctNameInput" type="text" placeholder="e.g. Apex Predators" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold transition" />
+        </div>
+
+        <!-- Tag Selector -->
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Team Tag / Category</label>
+          <select id="ctTagSelect" class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold transition">
+            <option value="PRO">PRO</option>
+            <option value="COMPETITIVE">COMPETITIVE</option>
+            <option value="CASUAL">CASUAL</option>
+            <option value="ESPORTS">ESPORTS</option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-1.5">Team Description / Slogan</label>
+          <textarea id="ctDescInput" rows="3" placeholder="Describe your squad goals and playstyle..." class="w-full bg-card border border-bdr rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-gold transition scrollbar-thin"></textarea>
+        </div>
+
+        <!-- Join Requirement Toggle -->
+        <div>
+          <label class="block text-[10px] text-t3 uppercase font-bold tracking-wider mb-2">Join Requirement</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="p-3 bg-card border border-bdr rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-gold transition">
+              <input type="radio" name="ctJoinType" value="free" checked class="accent-gold" />
+              <div>
+                <span class="text-xs font-bold text-white block">Free to Join</span>
+                <span class="text-[9px] text-t3">Anyone can join instantly</span>
+              </div>
+            </label>
+            <label class="p-3 bg-card border border-bdr rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-gold transition">
+              <input type="radio" name="ctJoinType" value="application" class="accent-gold" />
+              <div>
+                <span class="text-xs font-bold text-white block">Application Required</span>
+                <span class="text-[9px] text-t3">Leader / Guard must approve</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button onclick="window.createNewTeamSubmit()" class="w-full py-3.5 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-xs font-black uppercase tracking-wider rounded-xl transition shadow-xl active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+          <i class="fas fa-shield-alt"></i> Create Team
+        </button>
+      </div>
+    `;
+
+  } else if (teamsView === 'profile') {
+    // ----------------------------------------------------
+    // 3) TEAM PROFILE PAGE
+    // ----------------------------------------------------
+    const team = selectedTeamData || userGuild || allGuilds[0];
+    if (!team) {
+      teamsView = 'list';
+      window.renderGuildSystemModalContent();
+      return;
+    }
+    
+    const isLeader = team.leaderId === (userProfile && userProfile.uid);
+    const isGuard = team.guards && team.guards.includes(userProfile && userProfile.uid);
+    const members = team.members || [team.leaderId];
+    const guards = team.guards || [];
+
+    let mainTabHtml = '';
+
+    if (currentGuildTab === 'profile') {
+      mainTabHtml = `
+        <div class="space-y-4">
+          <!-- Activeness / EXP Progress Bar -->
+          <div class="bg-card/25 border border-bdr/20 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gold font-black uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-fire text-amber-500"></i> Activeness & EXP
+              </span>
+              <span class="font-mono text-white font-bold">${team.exp || 0} / 5,000 EXP</span>
+            </div>
+            <div class="w-full bg-bg border border-bdr/30 rounded-full h-3 overflow-hidden p-[2px]">
+              <div class="bg-gradient-to-r from-gold via-yellow-400 to-amber-500 h-full rounded-full shadow-[0_0_10px_rgba(240,192,64,0.4)]" style="width: ${Math.min(100, ((team.exp || 0) / 5000) * 100)}%"></div>
+            </div>
+
+            <!-- Milestone Rewards Chests -->
+            <div class="grid grid-cols-4 gap-2 pt-2">
+              <div class="bg-card/40 border border-bdr/20 p-2 rounded-xl text-center">
+                <i class="fas fa-box text-gold text-base"></i>
+                <span class="block text-[8px] font-bold text-t3 mt-1 font-mono">800 EXP</span>
+              </div>
+              <div class="bg-card/40 border border-bdr/20 p-2 rounded-xl text-center">
+                <i class="fas fa-gift text-amber-400 text-base"></i>
+                <span class="block text-[8px] font-bold text-t3 mt-1 font-mono">2,000 EXP</span>
+              </div>
+              <div class="bg-card/40 border border-bdr/20 p-2 rounded-xl text-center">
+                <i class="fas fa-gem text-yellow-300 text-base"></i>
+                <span class="block text-[8px] font-bold text-t3 mt-1 font-mono">5,000 EXP</span>
+              </div>
+              <div class="bg-card/40 border border-bdr/20 p-2 rounded-xl text-center">
+                <i class="fas fa-crown text-gold text-base"></i>
+                <span class="block text-[8px] font-bold text-t3 mt-1 font-mono">10,000 EXP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Treasury Section -->
+          <div class="bg-gradient-to-br from-[#121425] to-[#0a0b14] border border-gold/30 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[9px] text-gold uppercase font-mono font-bold">TEAM TREASURY</span>
+                <h4 class="text-sm font-black text-white uppercase flex items-center gap-2 mt-0.5">
+                  <i class="fas fa-vault text-gold"></i> Treasury Funds
+                </h4>
+              </div>
+              <button onclick="window.openDonateModal()" class="px-4 py-2 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-lg cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-plus-circle"></i> Donate AX Coins
+              </button>
+            </div>
+
+            <div class="bg-card/40 border border-bdr/20 p-4 rounded-xl flex items-center justify-between">
+              <span class="text-xs text-t3 uppercase font-bold">Total Treasury Balance</span>
+              <span class="text-lg font-black text-gold font-mono flex items-center gap-1.5">
+                <i class="fas fa-coins"></i> ${team.treasury || 0} AX
+              </span>
+            </div>
+          </div>
+
+          <!-- Announcement Section -->
+          <div class="bg-card/25 border border-bdr/20 rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-bullhorn text-gold"></i> Team Announcement
+              </h4>
+              ${isLeader || isGuard ? `
+                <button onclick="window.openEditAnnouncementModal()" class="text-gold text-[10px] font-bold hover:underline cursor-pointer">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+              ` : ''}
+            </div>
+            <p class="text-xs text-t2 italic leading-relaxed bg-black/30 p-3 rounded-xl border border-bdr/10">
+              "${team.announcement || team.description || 'Welcome to the team! Participate in Team Fights & donate to Treasury to rank up!'}"
+            </p>
+          </div>
+        </div>
+      `;
+
+    } else if (currentGuildTab === 'members') {
+      mainTabHtml = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between bg-card/25 border border-bdr/20 p-3.5 rounded-2xl">
+            <div>
+              <h4 class="text-xs font-black uppercase text-white">Roster Ranks</h4>
+              <p class="text-[9px] text-t3 font-mono">Members: ${members.length}/8 | Guards: ${guards.length}/2</p>
+            </div>
+          </div>
+
+          <div class="bg-card/20 border border-bdr/20 rounded-2xl p-4 overflow-x-auto scrollbar-thin">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-bdr/20 text-[9px] text-t3 font-bold uppercase tracking-wider">
+                  <th class="pb-2 pl-2">Member</th>
+                  <th class="pb-2 text-center">Role</th>
+                  <th class="pb-2 text-right pr-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="teamMembersListTbody" class="text-xs">
+                <tr><td colspan="3" class="py-6 text-center text-t3"><i class="fas fa-spinner animate-spin text-gold mr-1"></i> Loading member roster...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      setTimeout(async () => {
+        const membersData = await window.fetchGuildMembers(members);
+        const tbody = $('teamMembersListTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        membersData.forEach(m => {
+          const isMemberLeader = m.uid === team.leaderId;
+          const isMemberGuard = guards.includes(m.uid);
+          const isSelf = m.uid === (userProfile && userProfile.uid);
+
+          let roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-card border border-bdr text-t2">👤 Member</span>';
+          if (isMemberLeader) roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-gold/15 text-gold border border-gold/30">👑 Leader</span>';
+          else if (isMemberGuard) roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">🛡️ Guard</span>';
+
+          let actionsHtml = '-';
+          if (isLeader && !isSelf) {
+            actionsHtml = `
+              <div class="flex items-center justify-end gap-1">
+                ${!isMemberGuard ? `<button onclick="window.promoteToGuard('${m.uid}', '${m.name}')" class="px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-bg text-[9px] font-bold uppercase rounded-md transition cursor-pointer">Promote Guard</button>` : `<button onclick="window.demoteGuard('${m.uid}', '${m.name}')" class="px-2 py-1 bg-white/5 border border-bdr text-t2 text-[9px] font-bold uppercase rounded-md transition cursor-pointer">Demote</button>`}
+                <button onclick="window.kickMemberSubmit('${m.uid}', '${m.name}')" class="px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[9px] font-bold uppercase rounded-md transition cursor-pointer">Kick</button>
+              </div>
+            `;
+          } else if (isGuard && !isMemberLeader && !isMemberGuard && !isSelf) {
+            actionsHtml = `<button onclick="window.kickMemberSubmit('${m.uid}', '${m.name}')" class="px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[9px] font-bold uppercase rounded-md transition cursor-pointer">Kick</button>`;
+          } else if (isSelf && !isMemberLeader) {
+            actionsHtml = `<button onclick="window.leaveTeamSubmit()" class="px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[9px] font-bold uppercase rounded-md transition cursor-pointer">Leave Team</button>`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-bdr/10 hover:bg-white/[0.02] transition';
+          tr.innerHTML = `
+            <td class="py-3 pl-2 flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-gold/10 border border-gold/25 flex items-center justify-center text-xs font-bold text-gold uppercase">
+                ${m.name ? m.name.substring(0, 2) : 'PL'}
+              </div>
+              <div>
+                <p class="font-bold text-white flex items-center gap-1">${m.name || 'Player'} ${isSelf ? '<span class="text-[8px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1 py-0.2 rounded">Me</span>' : ''}</p>
+                <p class="text-[9px] text-t3 font-mono">@${m.handle || 'player'}</p>
+              </div>
+            </td>
+            <td class="py-3 text-center">${roleBadge}</td>
+            <td class="py-3 text-right pr-2">${actionsHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }, 50);
+
+    } else if (currentGuildTab === 'tasks') {
+      mainTabHtml = `
+        <div class="space-y-3">
+          <div class="p-3 bg-card/30 border border-bdr/20 rounded-xl flex items-center justify-between">
+            <div>
+              <h5 class="text-xs font-black text-white uppercase">Daily Treasury Contribution</h5>
+              <p class="text-[10px] text-t3">Donate 50 AX Coins to Treasury</p>
+            </div>
+            <span class="px-2.5 py-1 bg-gold/15 border border-gold/30 text-gold text-[9px] font-bold uppercase rounded-lg">+100 EXP</span>
+          </div>
+          <div class="p-3 bg-card/30 border border-bdr/20 rounded-xl flex items-center justify-between">
+            <div>
+              <h5 class="text-xs font-black text-white uppercase">Participate in 1 Team Fight</h5>
+              <p class="text-[10px] text-t3">Register for active squad tournaments</p>
+            </div>
+            <span class="px-2.5 py-1 bg-gold/15 border border-gold/30 text-gold text-[9px] font-bold uppercase rounded-lg">+150 EXP</span>
+          </div>
+        </div>
+      `;
+
+    } else if (currentGuildTab === 'team_fight') {
+      const registeredFights = team.registeredFights || [];
+
+      mainTabHtml = `
+        <div class="space-y-4">
+          <div class="bg-gradient-to-r from-red-500/15 via-gold/15 to-amber-500/15 border border-gold/30 rounded-2xl p-4">
+            <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fas fa-swords text-gold"></i> Team vs Team Tournaments
+            </h4>
+            <p class="text-[10px] text-t3 mt-1 leading-relaxed">
+              Register your team for 4v4 / 5v5 tournaments! Participating earns random <strong>50–200 Team EXP</strong> & AX prize pools.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <!-- Fight 1 -->
+            <div class="bg-card/30 border border-bdr/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div class="space-y-1 text-center md:text-left">
+                <span class="px-2 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 text-[8px] font-black uppercase rounded">🔥 5v5 SQUAD MATCH</span>
+                <h5 class="font-display text-sm font-black text-white uppercase">Cyber Clash Premier</h5>
+                <p class="text-[10px] text-gold font-mono font-bold"><i class="fas fa-coins"></i> Prize Pool: 10,000 AX Coins</p>
+              </div>
+              ${registeredFights.includes('cyber_clash') ? `
+                <span class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase rounded-xl">Registered ✅</span>
+              ` : `
+                <button onclick="window.registerForTeamFight('Cyber Clash Premier', 'cyber_clash')" class="px-5 py-2.5 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-lg cursor-pointer">
+                  Register Team (+50-200 EXP)
+                </button>
+              `}
+            </div>
+
+            <!-- Fight 2 -->
+            <div class="bg-card/30 border border-bdr/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div class="space-y-1 text-center md:text-left">
+                <span class="px-2 py-0.5 bg-gold/10 border border-gold/20 text-gold text-[8px] font-black uppercase rounded">🏆 ESPORTS SHOWDOWN</span>
+                <h5 class="font-display text-sm font-black text-white uppercase">Apex Squad Showdown</h5>
+                <p class="text-[10px] text-gold font-mono font-bold"><i class="fas fa-coins"></i> Prize Pool: 25,000 AX Coins</p>
+              </div>
+              ${registeredFights.includes('apex_showdown') ? `
+                <span class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase rounded-xl">Registered ✅</span>
+              ` : `
+                <button onclick="window.registerForTeamFight('Apex Squad Showdown', 'apex_showdown')" class="px-5 py-2.5 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-lg cursor-pointer">
+                  Register Team (+50-200 EXP)
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+
+    } else if (currentGuildTab === 'manage') {
+      mainTabHtml = `
+        <div class="space-y-4">
+          <div class="bg-card/25 border border-bdr/20 p-4 rounded-2xl space-y-3">
+            <h4 class="text-xs font-black uppercase text-white tracking-wider">Team Management</h4>
+            ${isLeader ? `
+              <button onclick="window.disbandTeamSubmit()" class="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[10px] font-black uppercase rounded-xl transition cursor-pointer">
+                Disband Team Permanently
+              </button>
+            ` : `
+              <button onclick="window.leaveTeamSubmit()" class="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[10px] font-black uppercase rounded-xl transition cursor-pointer">
+                Leave Team
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    innerContent.innerHTML = `
+      <!-- PROFILE HEADER CARD -->
+      <div class="p-5 border-b border-bdr/40 bg-[#0b0c16] flex flex-col md:flex-row items-center justify-between gap-4 flex-shrink-0">
+        <div class="flex items-center gap-3.5">
+          <button onclick="window.setTeamsView('list')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-arrow-left text-xs"></i>
+          </button>
+          
+          <div class="w-14 h-14 rounded-full bg-[#0e101f] border-2 border-gold flex items-center justify-center shadow-xl overflow-hidden flex-shrink-0">
+            ${team.logoUrl && team.logoUrl.startsWith('data:') 
+              ? `<img src="${team.logoUrl}" class="w-full h-full object-cover" />`
+              : `<span class="text-2xl">${team.logoUrl || '🦁'}</span>`}
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-display text-lg font-black text-white uppercase tracking-wider">${team.name}</h3>
+              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-gold/15 text-gold border border-gold/30">[${team.tag || 'PRO'}]</span>
+            </div>
+            <p class="text-[10px] text-t3 font-mono mt-0.5">ID: <span class="text-white">AX-${team.id.substring(0, 6).toUpperCase()}</span> | Weekly Rank: <strong class="text-gold">#${team.rank || 1}</strong></p>
+          </div>
+        </div>
+
+        <!-- TABS NAV -->
+        <div class="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-bdr/20">
+          ${[
+            { id: 'profile', label: 'Profile', icon: 'fa-id-card' },
+            { id: 'members', label: 'Members', icon: 'fa-users' },
+            { id: 'tasks', label: 'Tasks', icon: 'fa-tasks' },
+            { id: 'team_fight', label: 'Team Fight', icon: 'fa-swords' },
+            ...(isLeader || isGuard ? [{ id: 'manage', label: 'Manage', icon: 'fa-cog' }] : [])
+          ].map(tb => `
+            <button onclick="window.setTeamsTab('${tb.id}')" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1.5 cursor-pointer ${
+              currentGuildTab === tb.id ? 'bg-gold text-bg shadow-md' : 'text-t3 hover:text-white hover:bg-white/5'
+            }">
+              <i class="fas ${tb.icon}"></i> ${tb.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- MAIN TAB CONTENT -->
+      <div class="flex-1 p-5 overflow-y-auto min-h-0 scrollbar-thin">
+        ${mainTabHtml}
+      </div>
+    `;
+  }
+};
+
 
 // Global actions for switching tabs and screens
 window.switchGuildTab = function(tab) {
@@ -13041,8 +14540,8 @@ window.kickGuildMember = async function(targetUid, name) {
   }
 };
 
-// Dynamic Guild modal rendering engine
-window.renderGuildSystemModalContent = async function() {
+// Dynamic Guild modal rendering engine (Legacy function - disabled)
+window.legacyRenderGuildSystemModalContent = async function() {
   const container = $('mGuildSystemModal');
   const innerContent = $('guildSystemModalContent');
   if (!container || !innerContent) return;
