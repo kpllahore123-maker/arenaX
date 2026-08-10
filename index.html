@@ -4023,30 +4023,46 @@ if (typeof tailwind !== 'undefined') {
 
       <!-- Popularity -->
       <div class="space-y-2">
-        <div class="flex items-center justify-between cursor-pointer">
+        <div class="flex items-center justify-between cursor-pointer" onclick="window.openPopularityHistoryModal()">
           <span class="font-bold text-gray-900 text-sm">Popularity</span>
           <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
         </div>
 
-        <!-- Popularity Box -->
-        <div class="bg-gradient-to-r from-pink-50/90 via-rose-50/80 to-amber-50/90 rounded-2xl p-3.5 flex items-center justify-between border border-pink-100/90 shadow-xs">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-white border border-pink-200/80 flex items-center justify-center text-2xl shadow-xs shrink-0">
-              🌹
+        <!-- Popularity Stat Card with Swipe Carousel -->
+        <div onclick="window.openPopularityHistoryModal()" class="bg-gradient-to-r from-gray-50/90 via-slate-50 to-pink-50/40 rounded-2xl p-3 flex items-center justify-between border border-gray-200/80 shadow-xs cursor-pointer hover:border-rose-300 transition group">
+          <!-- Swiping Image Box -->
+          <div class="relative w-20 h-14 rounded-xl bg-gradient-to-br from-pink-100/80 to-rose-50 border border-pink-200/60 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+            <div id="vppCarouselTrack" class="w-full h-full relative flex items-center justify-center">
+              <img id="vppCarouselImg" src="rose.png" alt="Popularity Gift" class="w-10 h-10 object-contain transition-all duration-300 transform scale-100 opacity-100 animate-pulse" />
             </div>
-            <div>
-              <div class="text-sm font-black text-gray-900 flex items-center gap-1.5">
-                <span id="vppGiftCount">3</span> Popularity
-              </div>
-              <div class="text-[11px] text-gray-500 font-medium mt-0.5">
-                Send Rose 🌹 or Rocket 🚀
-              </div>
+            <!-- Subtle swipe indicator dots -->
+            <div id="vppCarouselDots" class="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1 opacity-80">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
             </div>
           </div>
 
-          <button id="btnVppSendPopularity" onclick="window.openGiftBottomSheet()" class="px-3.5 py-2 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:brightness-105 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-pink-500/20 active:scale-95 transition cursor-pointer shrink-0">
-            <span>🎁</span> Send Popularity
-          </button>
+          <!-- Stats Columns (Popularity | Rose | Rocket) -->
+          <div class="flex-1 grid grid-cols-3 gap-1 text-center pl-2">
+            <!-- Popularity -->
+            <div class="flex flex-col items-center">
+              <span id="vppPopularityVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Popularity</span>
+            </div>
+            <!-- Rose Count -->
+            <div class="flex flex-col items-center border-l border-gray-200/60">
+              <span id="vppRoseCountVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rose</span>
+            </div>
+            <!-- Rocket Count -->
+            <div class="flex flex-col items-center border-l border-gray-200/60">
+              <span id="vppRocketCountVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rocket</span>
+            </div>
+          </div>
+
+          <div class="pl-2 text-gray-300 group-hover:text-rose-500 group-hover:translate-x-0.5 transition">
+            <i class="fas fa-chevron-right text-xs"></i>
+          </div>
         </div>
       </div>
 
@@ -4345,8 +4361,37 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
+<!-- ==================== POPULARITY HISTORY MODAL ==================== -->
+<div id="mPopularityHistoryModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100010] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 hidden animate-fade-in font-sans text-white">
+  <div class="bg-[#0f111a] border border-white/10 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="p-4 border-b border-white/10 flex items-center justify-between bg-[#141724]">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 text-sm">
+          🌹
+        </div>
+        <div>
+          <h3 class="font-display font-black text-sm text-white uppercase tracking-wide">Popularity History</h3>
+          <p id="popHistorySubtitle" class="text-[10px] text-gray-400">Recent gifts received</p>
+        </div>
+      </div>
+      <button onclick="window.closePopularityHistoryModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable History List -->
+    <div id="popHistoryListContainer" class="flex-1 overflow-y-auto p-4 space-y-2.5">
+      <div class="p-8 text-center text-gray-400 text-xs">
+        <i class="fas fa-circle-notch animate-spin text-lg text-rose-400 mb-2"></i>
+        <p>Loading popularity history...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Send Popularity Gift Bottom Sheet -->
-<div id="mGiftBottomSheet" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99900] flex flex-col justify-end hidden font-sans" onclick="if(event.target===this) window.closeGiftBottomSheet();">
+<div id="mGiftBottomSheet" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100005] flex flex-col justify-end hidden font-sans" onclick="if(event.target===this) window.closeGiftBottomSheet();">
   <div class="bg-[#0d0d1a] border-t border-[#252a48] rounded-t-[28px] p-4 text-white shadow-2xl max-w-lg w-full mx-auto space-y-3.5 animate-slide-up relative" onclick="event.stopPropagation();">
     <!-- Top Drag Handle -->
     <div class="w-10 h-1 bg-[#2d3455] rounded-full mx-auto mb-1"></div>
@@ -7888,6 +7933,156 @@ window.openParticipantProfileCard = async function(pId, registrationData) {
 
 $('bCloseParticipantProfile').addEventListener('click', () => $('mViewParticipantProfile').classList.add('hidden'));
 
+// ── POPULARITY CAROUSEL & HISTORY LOG ──
+window.vppCarouselTimer = null;
+window.startVppCarousel = function(receivedTypes) {
+  if (window.vppCarouselTimer) {
+    clearInterval(window.vppCarouselTimer);
+    window.vppCarouselTimer = null;
+  }
+
+  const imgEl = $('vppCarouselImg');
+  const dotsEl = $('vppCarouselDots');
+  if (!imgEl) return;
+
+  const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+  
+  // Received types array, e.g. ['rose', 'rocket']. Default to ['rose'] if user has 0 total.
+  const types = (receivedTypes && receivedTypes.length > 0) ? receivedTypes : ['rose'];
+  let currentIndex = 0;
+
+  const updateImage = (index) => {
+    const t = types[index];
+    const src = basePath + (t === 'rocket' ? 'rocket.png' : 'rose.png');
+
+    imgEl.style.opacity = '0';
+    imgEl.style.transform = 'scale(0.8)';
+    setTimeout(() => {
+      imgEl.src = src;
+      imgEl.style.opacity = '1';
+      imgEl.style.transform = 'scale(1)';
+    }, 150);
+
+    if (dotsEl) {
+      if (types.length <= 1) {
+        dotsEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>`;
+      } else {
+        dotsEl.innerHTML = types.map((_, i) => 
+          `<span class="w-1.5 h-1.5 rounded-full ${i === index ? 'bg-rose-500 scale-125' : 'bg-gray-300'} transition-all"></span>`
+        ).join('');
+      }
+    }
+  };
+
+  updateImage(0);
+
+  if (types.length > 1) {
+    window.vppCarouselTimer = setInterval(() => {
+      currentIndex = (currentIndex + 1) % types.length;
+      updateImage(currentIndex);
+    }, 2800);
+  }
+};
+
+window.openPopularityHistoryModal = async function() {
+  const modal = $('mPopularityHistoryModal');
+  const container = $('popHistoryListContainer');
+  const subtitle = $('popHistorySubtitle');
+  if (!modal || !container) return;
+
+  const targetUid = window.currentViewingPlayerId || (window.currentViewedUser && window.currentViewedUser.uid);
+  const targetName = window.currentViewingPlayerName || 'Player';
+
+  if (subtitle) subtitle.textContent = `Recent gifts received by ${targetName}`;
+
+  modal.classList.remove('hidden');
+
+  container.innerHTML = `
+    <div class="p-8 text-center text-gray-400 text-xs">
+      <i class="fas fa-circle-notch animate-spin text-lg text-rose-400 mb-2"></i>
+      <p>Loading popularity history...</p>
+    </div>
+  `;
+
+  if (!targetUid) {
+    container.innerHTML = `<div class="p-8 text-center text-gray-400 text-xs">No history found</div>`;
+    return;
+  }
+
+  try {
+    const q = query(
+      collection(db, 'users', targetUid, 'popularityHistory'),
+      orderBy('timestamp', 'desc'),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-gray-400 space-y-2">
+          <div class="text-3xl">🌹</div>
+          <p class="text-xs font-bold text-gray-300">No popularity gifts received yet</p>
+          <p class="text-[10px] text-gray-500">Be the first to send a Rose or Rocket!</p>
+        </div>
+      `;
+      return;
+    }
+
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+
+    container.innerHTML = '';
+    snap.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      const isRose = data.type === 'rose';
+      const giftIcon = basePath + (isRose ? 'rose.png' : 'rocket.png');
+      const giftName = isRose ? 'Rose 🌹' : 'Rocket 🚀';
+      const popAmount = data.popGain || (isRose ? 1 : 10);
+
+      let dateStr = 'Recently';
+      let timeStr = '';
+      if (data.timestamp && data.timestamp.toDate) {
+        const dt = data.timestamp.toDate();
+        dateStr = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      }
+
+      const row = document.createElement('div');
+      row.className = "p-3 rounded-2xl bg-[#141726] border border-white/5 flex items-center justify-between gap-3 hover:border-white/10 transition";
+
+      row.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${data.senderAv || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax'}" onclick="window.openPlayerProfileCard('${data.senderUid}')" class="w-10 h-10 rounded-full object-cover border border-white/10 shrink-0 cursor-pointer shadow-xs hover:scale-105 transition" />
+          <div class="min-w-0">
+            <div onclick="window.openPlayerProfileCard('${data.senderUid}')" class="font-bold text-xs text-white truncate cursor-pointer hover:text-rose-400 transition">
+              ${data.senderName || 'Anonymous'}
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5 text-[11px] font-semibold text-rose-300">
+              <img src="${giftIcon}" class="w-4 h-4 object-contain inline-block" />
+              <span>Sent ${giftName} (+${popAmount})</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-right shrink-0">
+          <div class="text-[11px] font-bold text-gray-300 font-mono">${dateStr}</div>
+          <div class="text-[10px] text-gray-500 font-medium font-mono">${timeStr}</div>
+        </div>
+      `;
+
+      container.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error("Error loading popularity history:", err);
+    container.innerHTML = `<div class="p-8 text-center text-red-400 text-xs">Failed to load history</div>`;
+  }
+};
+
+window.closePopularityHistoryModal = function() {
+  const modal = $('mPopularityHistoryModal');
+  if (modal) modal.classList.add('hidden');
+};
+
 // ── GIFT BOTTOM SHEET FUNCTIONS ──
 window.selectedGiftItemType = 'rose';
 
@@ -8007,17 +8202,40 @@ window.sendPopularityGiftItem = async function(type) {
     if ($('wBal')) $('wBal').textContent = Number(newSenderBal).toLocaleString();
     if ($('userCoinBalance')) $('userCoinBalance').textContent = Number(newSenderBal).toLocaleString();
 
-    // 2. Add popularity & giftCount to RECIPIENT's Firestore document
+    // 2. Add popularity, giftCount, roseCount/rocketCount to RECIPIENT's Firestore document
     const recipientRef = doc(db, 'users', recipientId);
     await updateDoc(recipientRef, {
       popularity: increment(popGain),
-      giftCount: increment(popGain)
+      giftCount: increment(popGain),
+      roseCount: increment(isRose ? 1 : 0),
+      rocketCount: increment(isRose ? 0 : 1)
     });
+
+    // Save popularity history log entry
+    try {
+      const sName = currentSender.name || currentSender.userName || 'Player';
+      const sAv = currentSender.av || currentSender.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentSender.uid}`;
+      await addDoc(collection(db, 'users', recipientId, 'popularityHistory'), {
+        senderUid: currentSender.uid,
+        senderName: sName,
+        senderAv: sAv,
+        type: type,
+        popGain: popGain,
+        timestamp: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn("Could not log popularity history:", e);
+    }
 
     // Update RECIPIENT local state in memory & DOM immediately
     if (window.currentViewedUser && (window.currentViewedUser.uid === recipientId || window.currentViewedUser.id === recipientId)) {
       window.currentViewedUser.popularity = (window.currentViewedUser.popularity || 0) + popGain;
       window.currentViewedUser.giftCount = (window.currentViewedUser.giftCount || 0) + popGain;
+      if (isRose) {
+        window.currentViewedUser.roseCount = (window.currentViewedUser.roseCount || 0) + 1;
+      } else {
+        window.currentViewedUser.rocketCount = (window.currentViewedUser.rocketCount || 0) + 1;
+      }
     }
 
     if ($('vPartPopularityVal')) {
@@ -8031,6 +8249,26 @@ window.sendPopularityGiftItem = async function(type) {
     if ($('vppGiftCount')) {
       const cur = parseInt($('vppGiftCount').textContent) || 0;
       $('vppGiftCount').textContent = cur + popGain;
+    }
+    if (isRose && $('vppRoseCountVal')) {
+      const cur = parseInt($('vppRoseCountVal').textContent) || 0;
+      $('vppRoseCountVal').textContent = cur + 1;
+    }
+    if (!isRose && $('vppRocketCountVal')) {
+      const cur = parseInt($('vppRocketCountVal').textContent) || 0;
+      $('vppRocketCountVal').textContent = cur + 1;
+    }
+
+    // Refresh carousel
+    if (window.currentViewedUser) {
+      const rVal = window.currentViewedUser.roseCount || 0;
+      const rkVal = window.currentViewedUser.rocketCount || 0;
+      const types = [];
+      if (rVal > 0) types.push('rose');
+      if (rkVal > 0) types.push('rocket');
+      if (typeof window.startVppCarousel === 'function') {
+        window.startVppCarousel(types);
+      }
     }
 
     // 3. Log transaction in deposit_requests collection
@@ -10443,10 +10681,22 @@ window.openPlayerProfileCard = async function(targetUid) {
 
     // Fill Stats Section
     if ($('vppBio')) $('vppBio').textContent = u.bio || u.signature || "This person says nothing!";
-    const gCount = u.giftCount !== undefined ? u.giftCount : (u.gifts !== undefined ? u.gifts : (u.popularity || 3));
-    const sCount = u.starCount !== undefined ? u.starCount : (u.stars !== undefined ? u.stars : (u.level || 3));
-    if ($('vppGiftCount')) $('vppGiftCount').textContent = Number(gCount).toLocaleString();
-    if ($('vppStarCount')) $('vppStarCount').textContent = Number(sCount).toLocaleString();
+    const popVal = u.popularity !== undefined ? u.popularity : (u.giftCount !== undefined ? u.giftCount : 0);
+    const roseVal = u.roseCount !== undefined ? u.roseCount : 0;
+    const rocketVal = u.rocketCount !== undefined ? u.rocketCount : 0;
+
+    if ($('vppPopularityVal')) $('vppPopularityVal').textContent = Number(popVal).toLocaleString();
+    if ($('vppRoseCountVal')) $('vppRoseCountVal').textContent = Number(roseVal).toLocaleString();
+    if ($('vppRocketCountVal')) $('vppRocketCountVal').textContent = Number(rocketVal).toLocaleString();
+    if ($('vppGiftCount')) $('vppGiftCount').textContent = Number(popVal).toLocaleString();
+
+    // Start auto-swiping carousel based on actual received gifts
+    const receivedTypes = [];
+    if (roseVal > 0) receivedTypes.push('rose');
+    if (rocketVal > 0) receivedTypes.push('rocket');
+    if (typeof window.startVppCarousel === 'function') {
+      window.startVppCarousel(receivedTypes);
+    }
 
     // Render Team Section for View Profile
     window.renderVppTeamSection(targetUid);
