@@ -4041,22 +4041,27 @@ if (typeof tailwind !== 'undefined') {
             </div>
           </div>
 
-          <!-- Stats Columns (Popularity | Rose | Rocket) -->
-          <div class="flex-1 grid grid-cols-3 gap-1 text-center pl-2">
+          <!-- Stats Columns (Popularity | Rose | Rocket | Trophy) -->
+          <div class="flex-1 grid grid-cols-4 gap-0.5 sm:gap-1 text-center pl-1 sm:pl-2">
             <!-- Popularity -->
             <div class="flex flex-col items-center">
-              <span id="vppPopularityVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
-              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Popularity</span>
+              <span id="vppPopularityVal" class="text-xs sm:text-sm font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Popularity</span>
             </div>
             <!-- Rose Count -->
             <div class="flex flex-col items-center border-l border-gray-200/60">
-              <span id="vppRoseCountVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
-              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rose</span>
+              <span id="vppRoseCountVal" class="text-xs sm:text-sm font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Rose</span>
             </div>
             <!-- Rocket Count -->
             <div class="flex flex-col items-center border-l border-gray-200/60">
-              <span id="vppRocketCountVal" class="text-sm sm:text-base font-black text-gray-900 leading-tight">0</span>
-              <span class="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rocket</span>
+              <span id="vppRocketCountVal" class="text-xs sm:text-sm font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Rocket</span>
+            </div>
+            <!-- Trophy Count -->
+            <div class="flex flex-col items-center border-l border-gray-200/60">
+              <span id="vppTrophyCountVal" class="text-xs sm:text-sm font-black text-gray-900 leading-tight">0</span>
+              <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Trophy</span>
             </div>
           </div>
 
@@ -4425,14 +4430,14 @@ if (typeof tailwind !== 'undefined') {
       <button onclick="alert('Sending gifts boosts the recipient\'s popularity score and unlocks special leaderboard badges!')" class="w-4 h-4 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-[10px] font-bold shrink-0 cursor-pointer" title="Gift info">?</button>
     </div>
 
-    <!-- Grid of 2 item cards -->
-    <div class="grid grid-cols-2 gap-3.5 pt-1 pb-1">
+    <!-- Grid of 3 item cards -->
+    <div class="grid grid-cols-3 gap-2 sm:gap-3.5 pt-1 pb-1">
       <!-- CARD 1 — Rose -->
-      <div id="bsCardRose" onclick="window.selectGiftItem('rose')" class="relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]">
-        <div id="bsCheckRose" class="absolute top-2 right-2 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
+      <div id="bsCardRose" onclick="window.selectGiftItem('rose')" class="relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]">
+        <div id="bsCheckRose" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
           <i class="fas fa-check"></i>
         </div>
-        <img id="bsImgRose" src="rose.png" alt="Roses" class="w-14 h-14 object-contain animate-pulse my-1"/>
+        <img id="bsImgRose" src="rose.png" alt="Roses" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"/>
         <span class="font-bold text-xs text-white">Roses</span>
         <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
           <span class="text-xs">🪙</span>
@@ -4441,15 +4446,28 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <!-- CARD 2 — Rocket -->
-      <div id="bsCardRocket" onclick="window.selectGiftItem('rocket')" class="relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40">
-        <div id="bsCheckRocket" class="absolute top-2 right-2 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold hidden">
+      <div id="bsCardRocket" onclick="window.selectGiftItem('rocket')" class="relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40">
+        <div id="bsCheckRocket" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold hidden">
           <i class="fas fa-check"></i>
         </div>
-        <img id="bsImgRocket" src="rocket.png" alt="Rocket" class="w-14 h-14 object-contain animate-pulse my-1"/>
+        <img id="bsImgRocket" src="rocket.png" alt="Rocket" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"/>
         <span class="font-bold text-xs text-white">Rocket</span>
         <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
           <span class="text-xs">🪙</span>
           <span>100</span>
+        </div>
+      </div>
+
+      <!-- CARD 3 — Trophy -->
+      <div id="bsCardTrophy" onclick="window.selectGiftItem('trophy')" class="relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-amber-500/40">
+        <div id="bsCheckTrophy" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px] font-bold hidden">
+          <i class="fas fa-check"></i>
+        </div>
+        <img id="bsImgTrophy" src="poptrophy.png" alt="Trophy" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"/>
+        <span class="font-bold text-xs text-white">Trophy</span>
+        <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
+          <span class="text-xs">🪙</span>
+          <span>190</span>
         </div>
       </div>
     </div>
@@ -4480,28 +4498,41 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- Full screen Rose Popularity Splash Overlay -->
-<div id="rose-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
-  <div class="text-center space-y-4">
+<!-- Full screen Rose Popularity Splash Overlay (Fully Transparent Page Background) -->
+<div id="rose-popularity-splash" class="fixed inset-0 bg-transparent pointer-events-none z-[100010] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+  <div class="text-center space-y-3 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
     <div class="relative w-72 h-72 mx-auto">
       <lottie-player id="roseSplashLottie" src="./rose.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
     </div>
-    <div class="space-y-1">
-      <h2 class="font-display text-2xl font-black text-rose-500 tracking-wider uppercase animate-bounce">Rose Received! 🌹</h2>
-      <p class="text-xs text-t3 font-medium">Their popularity level has increased by +1!</p>
+    <div class="space-y-1 bg-black/65 backdrop-blur-md px-6 py-2.5 rounded-full border border-rose-500/40 inline-block pointer-events-auto shadow-2xl">
+      <h2 class="font-display text-xl font-black text-rose-400 tracking-wider uppercase animate-bounce">Rose Received! 🌹</h2>
+      <p class="text-[11px] text-gray-200 font-semibold">+1 Popularity Boost!</p>
     </div>
   </div>
 </div>
 
-<!-- Full screen Rocket Popularity Splash Overlay -->
-<div id="rocket-popularity-splash" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
-  <div class="text-center space-y-4">
+<!-- Full screen Rocket Popularity Splash Overlay (Fully Transparent Page Background) -->
+<div id="rocket-popularity-splash" class="fixed inset-0 bg-transparent pointer-events-none z-[100010] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+  <div class="text-center space-y-3 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
     <div class="relative w-72 h-72 mx-auto">
       <lottie-player id="rocketSplashLottie" src="./rocket.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
     </div>
-    <div class="space-y-1">
-      <h2 class="font-display text-2xl font-black text-orange-500 tracking-wider uppercase animate-bounce">Rocket Launched! 🚀</h2>
-      <p class="text-xs text-t3 font-medium">Their popularity level has increased by +10!</p>
+    <div class="space-y-1 bg-black/65 backdrop-blur-md px-6 py-2.5 rounded-full border border-amber-500/40 inline-block pointer-events-auto shadow-2xl">
+      <h2 class="font-display text-xl font-black text-amber-400 tracking-wider uppercase animate-bounce">Rocket Launched! 🚀</h2>
+      <p class="text-[11px] text-gray-200 font-semibold">+10 Popularity Boost!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Full screen Trophy Popularity Splash Overlay (Fully Transparent Page Background) -->
+<div id="trophy-popularity-splash" class="fixed inset-0 bg-transparent pointer-events-none z-[100010] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+  <div class="text-center space-y-3 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+    <div class="relative w-72 h-72 mx-auto">
+      <lottie-player id="trophySplashLottie" src="./poptrophy.json" background="transparent" speed="1.0" style="width: 100%; height: 100%;" autoplay></lottie-player>
+    </div>
+    <div class="space-y-1 bg-black/65 backdrop-blur-md px-6 py-2.5 rounded-full border border-yellow-500/40 inline-block pointer-events-auto shadow-2xl">
+      <h2 class="font-display text-xl font-black text-yellow-400 tracking-wider uppercase animate-bounce">Trophy Awarded! 🏆</h2>
+      <p class="text-[11px] text-gray-200 font-semibold">+20 Popularity Boost!</p>
     </div>
   </div>
 </div>
@@ -7947,13 +7978,19 @@ window.startVppCarousel = function(receivedTypes) {
 
   const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
   
-  // Received types array, e.g. ['rose', 'rocket']. Default to ['rose'] if user has 0 total.
+  // Received types array, e.g. ['rose', 'rocket', 'trophy']. Default to ['rose'] if user has 0 total.
   const types = (receivedTypes && receivedTypes.length > 0) ? receivedTypes : ['rose'];
   let currentIndex = 0;
 
+  const getImgSrc = (t) => {
+    if (t === 'rocket') return basePath + 'rocket.png';
+    if (t === 'trophy') return basePath + 'poptrophy.png';
+    return basePath + 'rose.png';
+  };
+
   const updateImage = (index) => {
     const t = types[index];
-    const src = basePath + (t === 'rocket' ? 'rocket.png' : 'rose.png');
+    const src = getImgSrc(t);
 
     imgEl.style.opacity = '0';
     imgEl.style.transform = 'scale(0.8)';
@@ -8022,7 +8059,7 @@ window.openPopularityHistoryModal = async function() {
         <div class="p-8 text-center text-gray-400 space-y-2">
           <div class="text-3xl">🌹</div>
           <p class="text-xs font-bold text-gray-300">No popularity gifts received yet</p>
-          <p class="text-[10px] text-gray-500">Be the first to send a Rose or Rocket!</p>
+          <p class="text-[10px] text-gray-500">Be the first to send a Rose, Rocket, or Trophy!</p>
         </div>
       `;
       return;
@@ -8034,9 +8071,24 @@ window.openPopularityHistoryModal = async function() {
     snap.docs.forEach(docSnap => {
       const data = docSnap.data();
       const isRose = data.type === 'rose';
-      const giftIcon = basePath + (isRose ? 'rose.png' : 'rocket.png');
-      const giftName = isRose ? 'Rose 🌹' : 'Rocket 🚀';
-      const popAmount = data.popGain || (isRose ? 1 : 10);
+      const isRocket = data.type === 'rocket';
+      const isTrophy = data.type === 'trophy';
+
+      let giftIcon = basePath + 'rose.png';
+      let giftName = 'Rose 🌹';
+      let defaultPopGain = 1;
+
+      if (isRocket) {
+        giftIcon = basePath + 'rocket.png';
+        giftName = 'Rocket 🚀';
+        defaultPopGain = 10;
+      } else if (isTrophy) {
+        giftIcon = basePath + 'poptrophy.png';
+        giftName = 'Trophy 🏆';
+        defaultPopGain = 20;
+      }
+
+      const popAmount = data.popGain || defaultPopGain;
 
       let dateStr = 'Recently';
       let timeStr = '';
@@ -8056,7 +8108,7 @@ window.openPopularityHistoryModal = async function() {
             <div onclick="window.openPlayerProfileCard('${data.senderUid}')" class="font-bold text-xs text-white truncate cursor-pointer hover:text-rose-400 transition">
               ${data.senderName || 'Anonymous'}
             </div>
-            <div class="flex items-center gap-1.5 mt-0.5 text-[11px] font-semibold text-rose-300">
+            <div class="flex items-center gap-1.5 mt-0.5 text-[11px] font-semibold ${isTrophy ? 'text-amber-300' : (isRocket ? 'text-amber-400' : 'text-rose-300')}">
               <img src="${giftIcon}" class="w-4 h-4 object-contain inline-block" />
               <span>Sent ${giftName} (+${popAmount})</span>
             </div>
@@ -8093,6 +8145,7 @@ window.openGiftBottomSheet = function() {
   const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
   if ($('bsImgRose')) $('bsImgRose').src = basePath + 'rose.png';
   if ($('bsImgRocket')) $('bsImgRocket').src = basePath + 'rocket.png';
+  if ($('bsImgTrophy')) $('bsImgTrophy').src = basePath + 'poptrophy.png';
 
   const recipientName = (window.currentViewedUser && (window.currentViewedUser.name || window.currentViewedUser.userName)) || window.currentViewingPlayerName || 'Player';
   const recipientAv = (window.currentViewedUser && (window.currentViewedUser.av || window.currentViewedUser.avatar)) || window.currentViewingPlayerAvatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax';
@@ -8117,30 +8170,27 @@ window.selectGiftItem = function(type) {
   window.selectedGiftItemType = type;
   const cardRose = $('bsCardRose');
   const cardRocket = $('bsCardRocket');
+  const cardTrophy = $('bsCardTrophy');
   const checkRose = $('bsCheckRose');
   const checkRocket = $('bsCheckRocket');
+  const checkTrophy = $('bsCheckTrophy');
   const helper = $('bsGiftHelperText');
 
-  if (type === 'rose') {
-    if (cardRose) {
-      cardRose.className = 'relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]';
-    }
-    if (cardRocket) {
-      cardRocket.className = 'relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40';
-    }
-    if (checkRose) checkRose.classList.remove('hidden');
-    if (checkRocket) checkRocket.classList.add('hidden');
-    if (helper) helper.textContent = "Receiver's Charm +1 • Gain popularity & status boost";
-  } else {
-    if (cardRose) {
-      cardRose.className = 'relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40';
-    }
-    if (cardRocket) {
-      cardRocket.className = 'relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]';
-    }
-    if (checkRose) checkRose.classList.add('hidden');
-    if (checkRocket) checkRocket.classList.remove('hidden');
-    if (helper) helper.textContent = "Receiver's Charm +10 • Supercharge popularity & status boost";
+  const activeStyle = 'relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]';
+  const inactiveStyle = 'relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40';
+
+  if (cardRose) cardRose.className = (type === 'rose') ? activeStyle : inactiveStyle;
+  if (cardRocket) cardRocket.className = (type === 'rocket') ? activeStyle : inactiveStyle;
+  if (cardTrophy) cardTrophy.className = (type === 'trophy') ? activeStyle : inactiveStyle;
+
+  if (checkRose) checkRose.classList.toggle('hidden', type !== 'rose');
+  if (checkRocket) checkRocket.classList.toggle('hidden', type !== 'rocket');
+  if (checkTrophy) checkTrophy.classList.toggle('hidden', type !== 'trophy');
+
+  if (helper) {
+    if (type === 'rose') helper.textContent = "Receiver's Charm +1 • Gain popularity & status boost";
+    else if (type === 'rocket') helper.textContent = "Receiver's Charm +10 • Supercharge popularity & status boost";
+    else if (type === 'trophy') helper.textContent = "Receiver's Charm +20 • Ultimate popularity & prestige boost";
   }
 };
 
@@ -8163,10 +8213,25 @@ window.sendPopularityGiftItem = async function(type) {
   }
 
   const isRose = (type === 'rose');
-  const price = isRose ? 10 : 100;
-  const popGain = isRose ? 1 : 10;
-  const itemName = isRose ? 'Rose' : 'Rocket';
-  const emoji = isRose ? '🌹' : '🚀';
+  const isRocket = (type === 'rocket');
+  const isTrophy = (type === 'trophy');
+
+  let price = 10;
+  let popGain = 1;
+  let itemName = 'Rose';
+  let emoji = '🌹';
+
+  if (isRocket) {
+    price = 100;
+    popGain = 10;
+    itemName = 'Rocket';
+    emoji = '🚀';
+  } else if (isTrophy) {
+    price = 190;
+    popGain = 20;
+    itemName = 'Trophy';
+    emoji = '🏆';
+  }
 
   const balance = Number(currentSender.balance || 0);
   if (balance < price) {
@@ -8202,13 +8267,14 @@ window.sendPopularityGiftItem = async function(type) {
     if ($('wBal')) $('wBal').textContent = Number(newSenderBal).toLocaleString();
     if ($('userCoinBalance')) $('userCoinBalance').textContent = Number(newSenderBal).toLocaleString();
 
-    // 2. Add popularity, giftCount, roseCount/rocketCount to RECIPIENT's Firestore document
+    // 2. Add popularity, giftCount, roseCount/rocketCount/trophyCount to RECIPIENT's Firestore document
     const recipientRef = doc(db, 'users', recipientId);
     await updateDoc(recipientRef, {
       popularity: increment(popGain),
       giftCount: increment(popGain),
       roseCount: increment(isRose ? 1 : 0),
-      rocketCount: increment(isRose ? 0 : 1)
+      rocketCount: increment(isRocket ? 1 : 0),
+      trophyCount: increment(isTrophy ? 1 : 0)
     });
 
     // Save popularity history log entry
@@ -8233,8 +8299,10 @@ window.sendPopularityGiftItem = async function(type) {
       window.currentViewedUser.giftCount = (window.currentViewedUser.giftCount || 0) + popGain;
       if (isRose) {
         window.currentViewedUser.roseCount = (window.currentViewedUser.roseCount || 0) + 1;
-      } else {
+      } else if (isRocket) {
         window.currentViewedUser.rocketCount = (window.currentViewedUser.rocketCount || 0) + 1;
+      } else if (isTrophy) {
+        window.currentViewedUser.trophyCount = (window.currentViewedUser.trophyCount || 0) + 1;
       }
     }
 
@@ -8254,18 +8322,24 @@ window.sendPopularityGiftItem = async function(type) {
       const cur = parseInt($('vppRoseCountVal').textContent) || 0;
       $('vppRoseCountVal').textContent = cur + 1;
     }
-    if (!isRose && $('vppRocketCountVal')) {
+    if (isRocket && $('vppRocketCountVal')) {
       const cur = parseInt($('vppRocketCountVal').textContent) || 0;
       $('vppRocketCountVal').textContent = cur + 1;
+    }
+    if (isTrophy && $('vppTrophyCountVal')) {
+      const cur = parseInt($('vppTrophyCountVal').textContent) || 0;
+      $('vppTrophyCountVal').textContent = cur + 1;
     }
 
     // Refresh carousel
     if (window.currentViewedUser) {
       const rVal = window.currentViewedUser.roseCount || 0;
       const rkVal = window.currentViewedUser.rocketCount || 0;
+      const trVal = window.currentViewedUser.trophyCount || 0;
       const types = [];
       if (rVal > 0) types.push('rose');
       if (rkVal > 0) types.push('rocket');
+      if (trVal > 0) types.push('trophy');
       if (typeof window.startVppCarousel === 'function') {
         window.startVppCarousel(types);
       }
@@ -8297,9 +8371,9 @@ window.sendPopularityGiftItem = async function(type) {
     // Close bottom sheet
     window.closeGiftBottomSheet();
 
-    // 4. Play Lottie splash overlay
-    const splashId = isRose ? 'rose-popularity-splash' : 'rocket-popularity-splash';
-    const lottieId = isRose ? 'roseSplashLottie' : 'rocketSplashLottie';
+    // 4. Play Lottie splash overlay (Fully transparent overlay)
+    const splashId = isRose ? 'rose-popularity-splash' : (isRocket ? 'rocket-popularity-splash' : 'trophy-popularity-splash');
+    const lottieId = isRose ? 'roseSplashLottie' : (isRocket ? 'rocketSplashLottie' : 'trophySplashLottie');
     const splash = $(splashId);
     const player = document.getElementById(lottieId);
     
@@ -8317,7 +8391,7 @@ window.sendPopularityGiftItem = async function(type) {
         setTimeout(() => {
           splash.classList.add('hidden');
         }, 300);
-      }, isRose ? 2000 : 3000);
+      }, isRose ? 2000 : (isRocket ? 3000 : 3500));
     }
 
     if (typeof showToastNotification === 'function') {
