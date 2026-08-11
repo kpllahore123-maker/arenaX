@@ -768,7 +768,8 @@ if (typeof tailwind !== 'undefined') {
             <i class="fas fa-compass text-gold"></i> Explore
           </h3>
         </div>
-        <div class="grid grid-cols-1 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- Message Card -->
           <div onclick="switchTab('Chat')" class="p-3.5 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md">
             <div class="flex items-center gap-3.5">
               <div class="w-11 h-11 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
@@ -777,6 +778,22 @@ if (typeof tailwind !== 'undefined') {
               <div>
                 <h4 class="font-bold text-white text-sm group-hover:text-gold transition">Message</h4>
                 <p class="text-xs text-t2">chat with your friend</p>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-ele border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-white transition text-xs">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+
+          <!-- Moments Card -->
+          <div onclick="openMomentsFeedModal()" class="p-3.5 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                <i class="fas fa-camera text-amber-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white text-sm group-hover:text-gold transition">Moments</h4>
+                <p class="text-xs text-t2">Watch highlights & posts</p>
               </div>
             </div>
             <div class="w-8 h-8 rounded-full bg-ele border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-white transition text-xs">
@@ -875,7 +892,7 @@ if (typeof tailwind !== 'undefined') {
       <!-- MOMENT BUTTON CONTAINER WITH IMAGE ON TOP -->
       <div id="pMomentContainer" class="relative rounded-2xl p-4 overflow-hidden border border-amber-500/30 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] shadow-xl space-y-3">
         <!-- Moment image on top of the button -->
-        <div class="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 shadow-md group">
+        <div id="btnOpenMomentsProfile" onclick="openMomentsProfileModal()" class="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 shadow-md group cursor-pointer">
           <img
             id="imgProfileMoment"
             src="moment.png"
@@ -883,21 +900,27 @@ if (typeof tailwind !== 'undefined') {
             alt="Moments"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-3">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end justify-between p-3">
             <span class="text-xs font-bold text-white flex items-center gap-1.5 drop-shadow">
               <i class="fas fa-camera text-amber-400"></i> Moments & Highlights
+            </span>
+            <span id="myMomentsBadge" class="text-[10px] font-bold text-amber-400 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/40 flex items-center gap-1">
+              <i class="fas fa-photo-video text-[9px]"></i> <span id="myMomentsCount">0</span>
             </span>
           </div>
         </div>
 
-        <!-- Share Your Moments Button -->
-        <button
-          id="btnShareMomentsProfile"
-          type="button"
-          class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
-        >
-          <i class="fas fa-camera text-sm"></i> Share your moments!
-        </button>
+        <!-- Share Your Moments Button / Thumbnail Grid container -->
+        <div id="profileMomentsActionArea">
+          <button
+            id="btnShareMomentsProfile"
+            type="button"
+            onclick="openUploadMomentModal()"
+            class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
+          >
+            <i class="fas fa-camera text-sm"></i> Share your moments!
+          </button>
+        </div>
       </div>
 
       <!-- Hidden compatibility placeholders for code expectations -->
@@ -4602,6 +4625,136 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
+<!-- ── FULL MOMENTS PAGE MODAL (USER PROFILE MOMENTS) ── -->
+<div id="mMomentsProfileModal" class="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto hidden">
+  <!-- TOP SECTION: Curved gold gradient header area -->
+  <div class="relative bg-gradient-to-b from-[#f0c040] via-[#d97706] to-[#0a0c12] px-5 pt-5 pb-10 rounded-b-[2.5rem] shadow-2xl text-slate-950 overflow-hidden shrink-0">
+    <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/20 rounded-full blur-xl pointer-events-none"></div>
+    <div class="relative flex items-center justify-between">
+      <button onclick="closeMomentsProfileModal()" class="w-10 h-10 rounded-full bg-slate-950/20 hover:bg-slate-950/40 text-slate-950 flex items-center justify-center transition cursor-pointer">
+        <i class="fas fa-arrow-left text-lg"></i>
+      </button>
+      <h2 class="font-display text-xl font-black text-slate-950 tracking-wider uppercase">
+        Moments & Highlights
+      </h2>
+      <button onclick="openUploadMomentModal()" class="w-10 h-10 rounded-full bg-slate-950 text-[#f0c040] flex items-center justify-center shadow-lg hover:scale-105 transition cursor-pointer" title="Post new moment">
+        <i class="fas fa-plus text-base"></i>
+      </button>
+    </div>
+    <p class="text-center text-xs font-bold text-slate-950/80 mt-3 drop-shadow-xs">
+      Showcase your heroic plays & gaming memories
+    </p>
+  </div>
+
+  <!-- MAIN CONTENT AREA -->
+  <div id="momentsProfilePageContent" class="flex-1 p-4 max-w-lg mx-auto w-full space-y-4">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ── MOMENTS FEED PAGE MODAL (EXPLORE) ── -->
+<div id="mMomentsFeedModal" class="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto hidden">
+  <!-- Sticky Header -->
+  <div class="sticky top-0 z-20 bg-[#121526]/90 backdrop-blur-md px-4 py-3 border-b border-[#252a45] flex items-center justify-between">
+    <button onclick="closeMomentsFeedModal()" class="w-9 h-9 rounded-full bg-[#1b1e32] hover:bg-[#252a45] text-white flex items-center justify-center transition cursor-pointer">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h2 class="font-display text-base font-extrabold text-white flex items-center gap-2">
+      <i class="fas fa-camera text-[#f0c040]"></i> Community Moments
+    </h2>
+    <button onclick="openUploadMomentModal()" class="px-3 py-1.5 bg-gradient-to-r from-[#f0c040] to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer">
+      <i class="fas fa-plus"></i> Post
+    </button>
+  </div>
+
+  <!-- Feed Content -->
+  <div id="momentsFeedPageContent" class="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ── UPLOAD MOMENT MODAL ── -->
+<div id="mUploadMomentModal" class="fixed inset-0 z-[100030] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+  <div class="bg-[#141726] border border-[#252a45] rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative text-white">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[#252a45] pb-3">
+      <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+        <i class="fas fa-camera text-[#f0c040]"></i> Post a Moment
+      </h3>
+      <button onclick="closeUploadMomentModal()" class="w-8 h-8 rounded-full bg-[#1e233d] text-gray-400 hover:text-white flex items-center justify-center transition">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Error banner -->
+    <div id="momentUploadErrorBanner" class="hidden p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-xs font-semibold leading-relaxed"></div>
+
+    <!-- Media Selector Box -->
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-gray-300">
+        Select Photo or Video (Max 30 seconds for videos):
+      </label>
+
+      <div id="momentFileSelectorArea">
+        <label class="border-2 border-dashed border-[#f0c040]/40 hover:border-[#f0c040] bg-[#1a1e32] rounded-xl p-6 text-center flex flex-col items-center justify-center gap-2 cursor-pointer transition group">
+          <div class="w-12 h-12 rounded-full bg-[#f0c040]/10 border border-[#f0c040]/30 text-[#f0c040] flex items-center justify-center text-xl group-hover:scale-110 transition">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </div>
+          <span class="text-xs font-bold text-gray-200">
+            Click to choose Video or Photo
+          </span>
+          <span class="text-[10px] text-gray-400">
+            Supports MP4, WEBM, PNG, JPG (Max 30s)
+          </span>
+          <input
+            id="fileInputMoment"
+            type="file"
+            accept="image/*,video/*"
+            onchange="handleMomentFileSelected(event)"
+            class="hidden"
+          />
+        </label>
+      </div>
+
+      <!-- Preview Area -->
+      <div id="momentFilePreviewArea" class="hidden relative rounded-xl overflow-hidden bg-black border border-[#f0c040]/40 max-h-52 flex items-center justify-center">
+        <div id="momentPreviewContent" class="w-full h-full flex items-center justify-center"></div>
+        <button onclick="resetMomentFileSelection()" class="absolute top-2 right-2 px-2.5 py-1 bg-red-600/90 hover:bg-red-600 text-white font-bold text-[10px] rounded-lg shadow">
+          Change File
+        </button>
+      </div>
+    </div>
+
+    <!-- Caption Input -->
+    <div class="space-y-1">
+      <label class="block text-xs font-bold text-gray-300">Caption / Title:</label>
+      <textarea
+        id="txtMomentCaption"
+        placeholder="Write a title or description for your moment..."
+        rows="3"
+        class="w-full bg-[#1c2035] border border-[#2c3254] rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#f0c040] transition resize-none"
+      ></textarea>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-3 pt-2">
+      <button onclick="closeUploadMomentModal()" class="flex-1 py-2.5 bg-[#1b1e32] hover:bg-[#252a45] text-gray-300 font-bold rounded-xl text-xs transition">
+        Cancel
+      </button>
+      <button id="btnPublishMomentSubmit" onclick="publishMoment()" class="flex-1 py-2.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer uppercase">
+        <i class="fas fa-paper-plane"></i> Publish Moment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SINGLE MOMENT VIEWER MODAL ── -->
+<div id="mViewMomentModal" class="fixed inset-0 z-[100030] bg-black/95 flex items-center justify-center p-4 hidden">
+  <div id="viewMomentModalContainer" class="max-w-md w-full bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4 relative text-white">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
 <!-- Firebase Modular SDK Scripts via CDN -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -5474,6 +5627,9 @@ function boot() {
   }
   if (typeof initVoiceRoomsSystem === 'function') {
     initVoiceRoomsSystem();
+  }
+  if (typeof renderProfileMomentsSection === 'function') {
+    renderProfileMomentsSection();
   }
   syncPremiumModalState();
 }
@@ -19207,6 +19363,564 @@ function initPromoCodeFeature() {
 initPromoCodeFeature();
 
 window.playSubmissionSplash = playSubmissionSplash;
+
+// ── MOMENTS SYSTEM MODULE ──
+let allMomentsList = [];
+let selectedMomentFile = null;
+let selectedMomentFileType = 'image';
+let momentsSubscribed = false;
+
+function safeMomentTxt(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function initMomentsListener() {
+  if (momentsSubscribed) return;
+  momentsSubscribed = true;
+  try {
+    const qMoments = query(collection(db, 'moments'), orderBy('createdAt', 'desc'));
+    onSnapshot(qMoments, (snap) => {
+      allMomentsList = [];
+      snap.forEach((docSnap) => {
+        allMomentsList.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderProfileMomentsSection();
+      if ($('mMomentsProfileModal') && !$('mMomentsProfileModal').classList.contains('hidden')) {
+        renderFullMomentsProfilePage();
+      }
+      if ($('mMomentsFeedModal') && !$('mMomentsFeedModal').classList.contains('hidden')) {
+        renderMomentsFeedPage();
+      }
+    }, (err) => {
+      console.warn("Error listening to moments:", err);
+    });
+  } catch(e) {
+    console.warn("Failed to subscribe to moments:", e);
+  }
+}
+
+// 1. Render Moments section inside Profile Tab
+function renderProfileMomentsSection() {
+  const profile = userProfile || guestProfile || window.currentUser;
+  const myMoments = allMomentsList.filter(m => profile && m.userId === profile.uid);
+  
+  if ($('myMomentsCount')) $('myMomentsCount').textContent = myMoments.length;
+  
+  const actionArea = $('profileMomentsActionArea');
+  if (!actionArea) return;
+
+  if (myMoments.length === 0) {
+    actionArea.innerHTML = `
+      <button
+        id="btnShareMomentsProfile"
+        type="button"
+        onclick="openUploadMomentModal()"
+        class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
+      >
+        <i class="fas fa-camera text-sm"></i> Share your moments!
+      </button>
+    `;
+  } else {
+    actionArea.innerHTML = `
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+        <button
+          type="button"
+          onclick="openUploadMomentModal()"
+          class="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-500 hover:brightness-110 text-slate-950 flex flex-col items-center justify-center shrink-0 font-black shadow-md hover:scale-105 transition cursor-pointer"
+          title="Share new moment"
+        >
+          <i class="fas fa-plus text-base"></i>
+          <span class="text-[9px] uppercase font-extrabold mt-0.5">Add</span>
+        </button>
+        ${myMoments.map(m => `
+          <div onclick="openViewMomentModal('${m.id}')" class="relative w-16 h-16 rounded-xl overflow-hidden border border-amber-500/30 shrink-0 cursor-pointer group shadow-sm bg-black">
+            ${m.mediaType === 'video' ? `
+              <div class="w-full h-full relative">
+                <video src="${m.mediaUrl}" class="w-full h-full object-cover"></video>
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <i class="fas fa-play text-white text-xs drop-shadow"></i>
+                </div>
+              </div>
+            ` : `
+              <img src="${m.mediaUrl}" alt="Moment" class="w-full h-full object-cover group-hover:scale-105 transition" />
+            `}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+}
+
+// 2. Render Full User Moments Page Modal
+function renderFullMomentsProfilePage() {
+  const profile = userProfile || guestProfile || window.currentUser;
+  const myMoments = allMomentsList.filter(m => profile && m.userId === profile.uid);
+  const container = $('momentsProfilePageContent');
+  if (!container) return;
+
+  if (myMoments.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 px-4 text-center space-y-6">
+        <div class="w-24 h-24 mx-auto rounded-full bg-[#1b1e2e] border-2 border-[#f0c040]/30 flex items-center justify-center shadow-2xl text-[#f0c040] text-4xl">
+          <i class="fas fa-camera"></i>
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-lg font-extrabold text-white">Share Your Moments!</h3>
+          <p class="text-xs text-gray-400 max-w-xs mx-auto">
+            No moments uploaded yet. Post your videos (up to 30s) or photos to display them on your profile!
+          </p>
+        </div>
+        <button onclick="openUploadMomentModal()" class="w-full max-w-xs mx-auto py-3.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wider uppercase">
+          <i class="fas fa-camera text-base"></i> Share Your Moments!
+        </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs font-bold text-gray-400">Your Highlights (${myMoments.length})</span>
+          <button onclick="openUploadMomentModal()" class="px-3 py-1.5 bg-gradient-to-r from-[#f0c040] to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer">
+            <i class="fas fa-plus"></i> Add New
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          ${myMoments.map(m => `
+            <div onclick="openViewMomentModal('${m.id}')" class="relative rounded-xl overflow-hidden border border-[#252a45] bg-[#141724] group cursor-pointer shadow-md hover:border-[#f0c040]/60 transition">
+              <div class="w-full h-36 relative bg-black">
+                ${m.mediaType === 'video' ? `
+                  <video src="${m.mediaUrl}" class="w-full h-full object-cover"></video>
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
+                    <i class="fas fa-play text-white text-lg drop-shadow"></i>
+                  </div>
+                  <span class="absolute bottom-2 right-2 bg-black/70 text-[9px] text-amber-400 px-1.5 py-0.5 rounded font-bold border border-amber-400/30">
+                    <i class="fas fa-video mr-1"></i>30s
+                  </span>
+                ` : `
+                  <img src="${m.mediaUrl}" alt="Moment" class="w-full h-full object-cover group-hover:scale-105 transition" />
+                `}
+                <button
+                  onclick="event.stopPropagation(); deleteMoment('${m.id}')"
+                  class="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center text-xs transition z-10"
+                  title="Delete moment"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+              ${m.caption ? `<div class="p-2 text-[11px] font-medium text-gray-200 truncate">${safeMomentTxt(m.caption)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+
+// 3. Render Community Moments Feed Modal (Explore section)
+function renderMomentsFeedPage() {
+  const container = $('momentsFeedPageContent');
+  if (!container) return;
+  const profile = userProfile || guestProfile || window.currentUser;
+
+  if (allMomentsList.length === 0) {
+    container.innerHTML = `
+      <div class="py-16 text-center space-y-3">
+        <i class="fas fa-photo-video text-4xl text-[#f0c040]/40"></i>
+        <p class="text-sm font-semibold text-gray-400">No community moments yet.</p>
+        <button onclick="openUploadMomentModal()" class="px-4 py-2 bg-[#f0c040] text-slate-950 font-bold text-xs rounded-xl cursor-pointer">
+          Post First Moment
+        </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = allMomentsList.map(m => {
+      const isLiked = profile && m.likes && m.likes.includes(profile.uid);
+      const isMine = profile && m.userId === profile.uid;
+      const dateStr = m.createdAt && m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Just now';
+      return `
+        <div class="bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-xl space-y-3 p-3.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <img src="${m.userAv || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + m.userId}" class="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30 bg-[#111420]" />
+              <div>
+                <h4 class="text-xs font-bold text-white">${safeMomentTxt(m.userName || 'Player')}</h4>
+                <span class="text-[10px] text-gray-400">${dateStr}</span>
+              </div>
+            </div>
+            ${isMine ? `
+              <button onclick="deleteMoment('${m.id}')" class="text-gray-400 hover:text-red-400 text-xs p-1.5 transition cursor-pointer" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            ` : ''}
+          </div>
+
+          <div class="rounded-xl overflow-hidden bg-black border border-white/5 relative">
+            ${m.mediaType === 'video' ? `
+              <video src="${m.mediaUrl}" controls playsinline class="w-full max-h-[450px] object-contain mx-auto bg-black"></video>
+            ` : `
+              <img src="${m.mediaUrl}" class="w-full max-h-[450px] object-cover mx-auto" />
+            `}
+          </div>
+
+          ${m.caption ? `<p class="text-xs text-gray-200 font-medium px-1 leading-relaxed">${safeMomentTxt(m.caption)}</p>` : ''}
+
+          <div class="flex items-center justify-between pt-1 border-t border-[#22273f]">
+            <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${isLiked ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-[#1b1e32] border-[#293050] text-gray-300 hover:text-white'}">
+              <i class="${isLiked ? 'fas' : 'far'} fa-heart text-sm"></i>
+              <span>${m.likeCount || (m.likes ? m.likes.length : 0)}</span>
+            </button>
+            <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">ArenaX Moments</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// 4. Modal Visibility Toggles
+function openMomentsProfileModal() {
+  initMomentsListener();
+  renderFullMomentsProfilePage();
+  if ($('mMomentsProfileModal')) $('mMomentsProfileModal').classList.remove('hidden');
+}
+function closeMomentsProfileModal() {
+  if ($('mMomentsProfileModal')) $('mMomentsProfileModal').classList.add('hidden');
+}
+
+function openMomentsFeedModal() {
+  initMomentsListener();
+  renderMomentsFeedPage();
+  if ($('mMomentsFeedModal')) $('mMomentsFeedModal').classList.remove('hidden');
+}
+function closeMomentsFeedModal() {
+  if ($('mMomentsFeedModal')) $('mMomentsFeedModal').classList.add('hidden');
+}
+
+function openUploadMomentModal() {
+  initMomentsListener();
+  resetMomentFileSelection();
+  if ($('txtMomentCaption')) $('txtMomentCaption').value = '';
+  if ($('momentUploadErrorBanner')) $('momentUploadErrorBanner').classList.add('hidden');
+  if ($('mUploadMomentModal')) $('mUploadMomentModal').classList.remove('hidden');
+}
+function closeUploadMomentModal() {
+  if ($('mUploadMomentModal')) $('mUploadMomentModal').classList.add('hidden');
+}
+
+function openViewMomentModal(momentId) {
+  const m = allMomentsList.find(x => x.id === momentId);
+  if (!m) return;
+  const container = $('viewMomentModalContainer');
+  if (!container) return;
+  const profile = userProfile || guestProfile || window.currentUser;
+  const isLiked = profile && m.likes && m.likes.includes(profile.uid);
+  const isMine = profile && m.userId === profile.uid;
+  const dateStr = m.createdAt && m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Just now';
+
+  container.innerHTML = `
+    <button onclick="closeViewMomentModal()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 text-white hover:bg-black flex items-center justify-center text-xs transition cursor-pointer">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="flex items-center gap-2.5">
+      <img src="${m.userAv || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + m.userId}" class="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30" />
+      <div>
+        <h4 class="text-xs font-bold text-white">${safeMomentTxt(m.userName || 'Player')}</h4>
+        <span class="text-[10px] text-gray-400">${dateStr}</span>
+      </div>
+    </div>
+    <div class="rounded-xl overflow-hidden bg-black max-h-[480px] flex items-center justify-center">
+      ${m.mediaType === 'video' ? `
+        <video src="${m.mediaUrl}" controls autoplay class="w-full max-h-[480px] object-contain"></video>
+      ` : `
+        <img src="${m.mediaUrl}" class="w-full max-h-[480px] object-contain" />
+      `}
+    </div>
+    ${m.caption ? `<p class="text-xs text-gray-200 font-medium px-1">${safeMomentTxt(m.caption)}</p>` : ''}
+    <div class="flex items-center justify-between pt-2 border-t border-[#22273f]">
+      <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${isLiked ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-[#1b1e32] border-[#293050] text-gray-300'}">
+        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+        <span>${m.likeCount || (m.likes ? m.likes.length : 0)}</span>
+      </button>
+      ${isMine ? `
+        <button onclick="deleteMoment('${m.id}')" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl flex items-center gap-1 transition cursor-pointer">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      ` : ''}
+    </div>
+  `;
+  if ($('mViewMomentModal')) $('mViewMomentModal').classList.remove('hidden');
+}
+
+function closeViewMomentModal() {
+  if ($('mViewMomentModal')) $('mViewMomentModal').classList.add('hidden');
+}
+
+// 5. File Selection and 30-sec Video Duration Check
+function handleMomentFileSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  const errBanner = $('momentUploadErrorBanner');
+  if (errBanner) errBanner.classList.add('hidden');
+  if (!file) return;
+
+  const isVideo = file.type.startsWith('video/');
+  const isImage = file.type.startsWith('image/');
+
+  if (!isVideo && !isImage) {
+    if (errBanner) {
+      errBanner.textContent = 'Please select a valid image or video file.';
+      errBanner.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (isVideo) {
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    const objUrl = URL.createObjectURL(file);
+    v.src = objUrl;
+    v.onloadedmetadata = () => {
+      URL.revokeObjectURL(objUrl);
+      if (v.duration > 30.5) {
+        if (errBanner) {
+          errBanner.textContent = '⚠️ Video length exceeds 30 seconds limit! Please pick a video under 30 seconds.';
+          errBanner.classList.remove('hidden');
+        }
+        resetMomentFileSelection();
+      } else {
+        selectedMomentFile = file;
+        selectedMomentFileType = 'video';
+        showMomentPreview(URL.createObjectURL(file), 'video');
+      }
+    };
+    v.onerror = () => {
+      if (errBanner) {
+        errBanner.textContent = 'Failed to load video file preview.';
+        errBanner.classList.remove('hidden');
+      }
+    };
+  } else {
+    selectedMomentFile = file;
+    selectedMomentFileType = 'image';
+    showMomentPreview(URL.createObjectURL(file), 'image');
+  }
+}
+
+function showMomentPreview(url, type) {
+  const previewArea = $('momentFilePreviewArea');
+  const selectorArea = $('momentFileSelectorArea');
+  const previewContent = $('momentPreviewContent');
+  if (!previewArea || !selectorArea || !previewContent) return;
+
+  if (type === 'video') {
+    previewContent.innerHTML = `<video src="${url}" controls class="max-h-52 w-full object-contain"></video>`;
+  } else {
+    previewContent.innerHTML = `<img src="${url}" class="max-h-52 w-full object-contain" />`;
+  }
+  selectorArea.classList.add('hidden');
+  previewArea.classList.remove('hidden');
+}
+
+function resetMomentFileSelection() {
+  selectedMomentFile = null;
+  selectedMomentFileType = 'image';
+  if ($('fileInputMoment')) $('fileInputMoment').value = '';
+  if ($('momentFilePreviewArea')) $('momentFilePreviewArea').classList.add('hidden');
+  if ($('momentFileSelectorArea')) $('momentFileSelectorArea').classList.remove('hidden');
+}
+
+// 6. Publish Moment
+function compressImageToDataUrl(file, maxWidth = 1080, quality = 0.75) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth || height > maxWidth) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxWidth) / height);
+              height = maxWidth;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl || e.target.result);
+        } catch (err) {
+          resolve(e.target.result);
+        }
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
+async function publishMoment() {
+  const errBanner = $('momentUploadErrorBanner');
+  if (errBanner) errBanner.classList.add('hidden');
+
+  if (!selectedMomentFile) {
+    if (errBanner) {
+      errBanner.textContent = 'Please select a photo or video to post.';
+      errBanner.classList.remove('hidden');
+    } else {
+      alert('Please select a photo or video to post.');
+    }
+    return;
+  }
+
+  const profile = userProfile || guestProfile || window.currentUser;
+  if (!profile || !profile.uid) {
+    alert('Please log in to post a moment.');
+    return;
+  }
+
+  const btnSubmit = $('btnPublishMomentSubmit');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Publishing...`;
+  }
+
+  try {
+    let mediaUrl = '';
+
+    // Attempt storage upload with 3.5s timeout so it doesn't hang indefinitely if Firebase Storage is unreachable
+    const tryStorageUpload = async () => {
+      if (!storage) throw new Error("Storage not initialized");
+      const storageRef = ref(storage, `moments/${profile.uid}_${Date.now()}_${selectedMomentFile.name}`);
+      const uploadTask = uploadBytes(storageRef, selectedMomentFile);
+      const timeoutTask = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Storage upload timeout")), 3500)
+      );
+      await Promise.race([uploadTask, timeoutTask]);
+      return await getDownloadURL(storageRef);
+    };
+
+    try {
+      mediaUrl = await tryStorageUpload();
+    } catch (stErr) {
+      console.warn("Storage upload bypassed/timed out, using fast fallback:", stErr);
+      if (selectedMomentFileType === 'image' || (selectedMomentFile.type && selectedMomentFile.type.startsWith('image/'))) {
+        mediaUrl = await compressImageToDataUrl(selectedMomentFile);
+      } else {
+        if (selectedMomentFile.size < 900000) {
+          mediaUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(selectedMomentFile);
+          });
+        } else {
+          throw new Error("Storage upload timed out. Please choose a smaller video (<1MB) or an image.");
+        }
+      }
+    }
+
+    if (!mediaUrl) {
+      throw new Error("Failed to process media file. Please try another file.");
+    }
+
+    const captionText = ($('txtMomentCaption') ? $('txtMomentCaption').value : '').trim();
+
+    await addDoc(collection(db, 'moments'), {
+      userId: profile.uid,
+      userName: profile.name || profile.userName || 'Player',
+      userAv: profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid}`,
+      mediaUrl: mediaUrl,
+      mediaType: selectedMomentFileType,
+      caption: captionText,
+      createdAt: serverTimestamp(),
+      likes: [],
+      likeCount: 0
+    });
+
+    closeUploadMomentModal();
+    alert('🎉 Moment posted successfully!');
+  } catch(err) {
+    console.error("Error publishing moment:", err);
+    if (errBanner) {
+      errBanner.textContent = err.message || 'Failed to publish moment.';
+      errBanner.classList.remove('hidden');
+    } else {
+      alert(err.message || 'Failed to publish moment.');
+    }
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> Publish Moment`;
+    }
+  }
+}
+
+// 7. Delete Moment
+async function deleteMoment(momentId) {
+  if (!momentId) return;
+  if (!confirm('Are you sure you want to delete this moment?')) return;
+  try {
+    await deleteDoc(doc(db, 'moments', momentId));
+    closeViewMomentModal();
+  } catch(err) {
+    console.error("Failed to delete moment:", err);
+    alert('Failed to delete moment.');
+  }
+}
+
+// 8. Toggle Like
+async function toggleLikeMoment(momentId) {
+  const profile = userProfile || guestProfile || window.currentUser;
+  if (!profile || !profile.uid) {
+    alert("Please log in to like moments.");
+    return;
+  }
+  const m = allMomentsList.find(x => x.id === momentId);
+  if (!m) return;
+  const isLiked = m.likes && m.likes.includes(profile.uid);
+  const mRef = doc(db, 'moments', momentId);
+  try {
+    if (isLiked) {
+      await updateDoc(mRef, {
+        likes: arrayRemove(profile.uid),
+        likeCount: increment(-1)
+      });
+    } else {
+      await updateDoc(mRef, {
+        likes: arrayUnion(profile.uid),
+        likeCount: increment(1)
+      });
+    }
+  } catch(err) {
+    console.error("Error toggling like:", err);
+  }
+}
+
+// Expose to window for inline onclicks
+window.openMomentsProfileModal = openMomentsProfileModal;
+window.closeMomentsProfileModal = closeMomentsProfileModal;
+window.openMomentsFeedModal = openMomentsFeedModal;
+window.closeMomentsFeedModal = closeMomentsFeedModal;
+window.openUploadMomentModal = openUploadMomentModal;
+window.closeUploadMomentModal = closeUploadMomentModal;
+window.openViewMomentModal = openViewMomentModal;
+window.closeViewMomentModal = closeViewMomentModal;
+window.handleMomentFileSelected = handleMomentFileSelected;
+window.resetMomentFileSelection = resetMomentFileSelection;
+window.publishMoment = publishMoment;
+window.deleteMoment = deleteMoment;
+window.toggleLikeMoment = toggleLikeMoment;
+
+// Auto initialize moments listener
+initMomentsListener();
 
 </script>
 
