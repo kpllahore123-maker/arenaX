@@ -7974,7 +7974,7 @@ window.startVppCarousel = function(receivedTypes) {
     window.vppCarouselTimer = null;
   }
 
-  const imgEl = $('vppCarouselImg');
+  const imgEl = $('vppCarouselImg') || $('vppCarouselImgReact');
   const dotsEl = $('vppCarouselDots');
   if (!imgEl) return;
 
@@ -10760,16 +10760,19 @@ window.openPlayerProfileCard = async function(targetUid) {
     const popVal = u.popularity !== undefined ? u.popularity : (u.giftCount !== undefined ? u.giftCount : 0);
     const roseVal = u.roseCount !== undefined ? u.roseCount : 0;
     const rocketVal = u.rocketCount !== undefined ? u.rocketCount : 0;
+    const trophyVal = u.trophyCount !== undefined ? u.trophyCount : 0;
 
     if ($('vppPopularityVal')) $('vppPopularityVal').textContent = Number(popVal).toLocaleString();
     if ($('vppRoseCountVal')) $('vppRoseCountVal').textContent = Number(roseVal).toLocaleString();
     if ($('vppRocketCountVal')) $('vppRocketCountVal').textContent = Number(rocketVal).toLocaleString();
+    if ($('vppTrophyCountVal')) $('vppTrophyCountVal').textContent = Number(trophyVal).toLocaleString();
     if ($('vppGiftCount')) $('vppGiftCount').textContent = Number(popVal).toLocaleString();
 
     // Start auto-swiping carousel based on actual received gifts
     const receivedTypes = [];
     if (roseVal > 0) receivedTypes.push('rose');
     if (rocketVal > 0) receivedTypes.push('rocket');
+    if (trophyVal > 0) receivedTypes.push('trophy');
     if (typeof window.startVppCarousel === 'function') {
       window.startVppCarousel(receivedTypes);
     }
