@@ -1,6 +1,7 @@
 import { VIP_FRAME_DATA_URL } from '../constants/frame';
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, googleProvider } from '../firebase';
+import { auth, db, googleProvider, storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -37,7 +38,8 @@ import {
   FriendRequest,
   DirectMessage,
   SupportMessage,
-  Transaction
+  Transaction,
+  MomentItem
 } from '../types';
 import { ReportModal } from './ReportModal';
 import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener, autoRequestPermission } from '../fcm';
@@ -105,6 +107,172 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [selectedAvatarSeed, setSelectedAvatarSeed] = useState(AVATAR_SEEDS[0]);
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
   const [uploadStatusMsg, setUploadStatusMsg] = useState<string>('');
+
+  // Moments System State
+  const [moments, setMoments] = useState<MomentItem[]>([]);
+  const [showMomentsModal, setShowMomentsModal] = useState(false);
+  const [showMomentsFeed, setShowMomentsFeed] = useState(false);
+  const [showUploadMomentModal, setShowUploadMomentModal] = useState(false);
+  const [selectedMomentForView, setSelectedMomentForView] = useState<MomentItem | null>(null);
+
+  // Moment Upload Form State
+  const [momentCaption, setMomentCaption] = useState('');
+  const [momentFile, setMomentFile] = useState<File | null>(null);
+  const [momentFilePreview, setMomentFilePreview] = useState<string | null>(null);
+  const [momentMediaType, setMomentMediaType] = useState<'image' | 'video'>('image');
+  const [momentUploading, setMomentUploading] = useState(false);
+  const [momentUploadError, setMomentUploadError] = useState('');
+
+  // Real-time listener for Moments collection
+  useEffect(() => {
+    const qMoments = query(collection(db, 'moments'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(qMoments, (snap) => {
+      const list: MomentItem[] = [];
+      snap.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() } as MomentItem);
+      });
+      setMoments(list);
+    }, (err) => {
+      console.warn("Error subscribing to moments:", err);
+    });
+    return () => unsub();
+  }, []);
+
+  const myMoments = moments.filter(m => currentUser && m.userId === currentUser.uid);
+
+  // File Change Handler with 30-sec Video Duration Enforcement
+  const handleMomentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMomentUploadError('');
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    const isVideo = selected.type.startsWith('video/');
+    const isImage = selected.type.startsWith('image/');
+
+    if (!isVideo && !isImage) {
+      setMomentUploadError('Please select a valid image or video file.');
+      return;
+    }
+
+    if (isVideo) {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      const objUrl = URL.createObjectURL(selected);
+      v.src = objUrl;
+      v.onloadedmetadata = () => {
+        URL.revokeObjectURL(objUrl);
+        if (v.duration > 30.5) {
+          setMomentUploadError('⚠️ Video length exceeds 30 seconds limit! Please pick a video under 30 seconds.');
+          setMomentFile(null);
+          setMomentFilePreview(null);
+        } else {
+          setMomentFile(selected);
+          setMomentMediaType('video');
+          setMomentFilePreview(URL.createObjectURL(selected));
+        }
+      };
+      v.onerror = () => {
+        setMomentUploadError('Failed to load video preview.');
+      };
+    } else {
+      setMomentFile(selected);
+      setMomentMediaType('image');
+      setMomentFilePreview(URL.createObjectURL(selected));
+    }
+  };
+
+  // Publish Moment Handler
+  const handlePublishMoment = async () => {
+    if (!momentFile) {
+      alert('Please select an image or video to post.');
+      return;
+    }
+    if (!currentUser) {
+      alert('Please log in to post a moment.');
+      return;
+    }
+    setMomentUploading(true);
+    setMomentUploadError('');
+
+    try {
+      let mediaUrl = '';
+      
+      try {
+        const storageRef = ref(storage, `moments/${currentUser.uid}_${Date.now()}_${momentFile.name}`);
+        await uploadBytes(storageRef, momentFile);
+        mediaUrl = await getDownloadURL(storageRef);
+      } catch (stErr) {
+        console.warn("Storage upload fallback to data URL:", stErr);
+        mediaUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(momentFile);
+        });
+      }
+
+      await addDoc(collection(db, 'moments'), {
+        userId: currentUser.uid,
+        userName: currentUser.name || 'Player',
+        userAv: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+        mediaUrl,
+        mediaType: momentMediaType,
+        caption: momentCaption.trim(),
+        createdAt: serverTimestamp(),
+        likes: [],
+        likeCount: 0
+      });
+
+      setMomentCaption('');
+      setMomentFile(null);
+      setMomentFilePreview(null);
+      setShowUploadMomentModal(false);
+      alert('🎉 Moment posted successfully!');
+    } catch (err: any) {
+      console.error("Error publishing moment:", err);
+      setMomentUploadError(err.message || 'Failed to publish moment.');
+    } finally {
+      setMomentUploading(false);
+    }
+  };
+
+  // Delete Moment Handler
+  const handleDeleteMoment = async (momentId?: string) => {
+    if (!momentId) return;
+    if (!confirm('Are you sure you want to delete this moment?')) return;
+    try {
+      await deleteDoc(doc(db, 'moments', momentId));
+      if (selectedMomentForView?.id === momentId) {
+        setSelectedMomentForView(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete moment:", err);
+      alert('Failed to delete moment.');
+    }
+  };
+
+  // Like Toggle Handler
+  const handleToggleLikeMoment = async (m: MomentItem) => {
+    if (!m.id || !currentUser) return;
+    const isLiked = m.likes?.includes(currentUser.uid);
+    const momentRef = doc(db, 'moments', m.id);
+    
+    try {
+      if (isLiked) {
+        await updateDoc(momentRef, {
+          likes: (m.likes || []).filter(u => u !== currentUser.uid),
+          likeCount: Math.max(0, (m.likeCount || 1) - 1)
+        });
+      } else {
+        await updateDoc(momentRef, {
+          likes: arrayUnion(currentUser.uid),
+          likeCount: increment(1)
+        });
+      }
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    }
+  };
 
   // Wallet
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -209,6 +377,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [selectedGiftType, setSelectedGiftType] = useState<'rose' | 'rocket'>('rose');
   const [sendingGift, setSendingGift] = useState(false);
   const [giftSuccessMsg, setGiftSuccessMsg] = useState('');
+
+  // Sync carousel for viewingUserProfile when profile modal opens
+  useEffect(() => {
+    if (viewingUserProfile) {
+      const receivedTypes: string[] = [];
+      if ((viewingUserProfile.roseCount || 0) > 0) receivedTypes.push('rose');
+      if ((viewingUserProfile.rocketCount || 0) > 0) receivedTypes.push('rocket');
+      if ((viewingUserProfile.trophyCount || 0) > 0) receivedTypes.push('trophy');
+      if (typeof (window as any).startVppCarousel === 'function') {
+        (window as any).startVppCarousel(receivedTypes);
+      }
+    }
+  }, [viewingUserProfile?.uid, viewingUserProfile?.roseCount, viewingUserProfile?.rocketCount, viewingUserProfile?.trophyCount]);
 
   const openUserProfileModal = async (target: any) => {
     if (!target) return;
@@ -2680,7 +2861,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   <i className="fas fa-compass text-[#f0c040]"></i> Explore
                 </h3>
               </div>
-              <div className="grid grid-cols-1 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Message Card */}
                 <div
                   onClick={() => setActiveTab('Chat')}
                   className="p-3.5 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md"
@@ -2692,6 +2874,25 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     <div>
                       <h4 className="font-bold text-white text-sm group-hover:text-[#f0c040] transition">Message</h4>
                       <p className="text-xs text-[#8890b0]">chat with your friend</p>
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-[#111420] border border-[#252a45] group-hover:border-[#f0c040]/40 flex items-center justify-center text-[#8890b0] group-hover:text-white transition text-xs">
+                    <i className="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+
+                {/* Moments Card */}
+                <div
+                  onClick={() => setShowMomentsFeed(true)}
+                  className="p-3.5 bg-[#171b2e] hover:bg-[#1e2340] border border-[#252a45] hover:border-[#f0c040]/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 bg-[#f0c040]/10 border border-[#f0c040]/30 text-[#f0c040] rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                      <i className="fas fa-camera text-[#f0c040]"></i>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm group-hover:text-[#f0c040] transition">Moments</h4>
+                      <p className="text-xs text-[#8890b0]">Watch highlights & posts</p>
                     </div>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-[#111420] border border-[#252a45] group-hover:border-[#f0c040]/40 flex items-center justify-center text-[#8890b0] group-hover:text-white transition text-xs">
@@ -2816,10 +3017,13 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               </div>
             </div>
 
-            {/* MOMENT BUTTON CONTAINER WITH IMAGE ON TOP */}
+            {/* MOMENTS & HIGHLIGHTS CARD */}
             <div className="relative rounded-2xl p-4 overflow-hidden border border-[#f0c040]/30 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] shadow-xl space-y-3">
-              {/* Moment image on top of button */}
-              <div className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 shadow-md group">
+              {/* Moment banner image on top - opens full moments page */}
+              <div 
+                onClick={() => setShowMomentsModal(true)}
+                className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 shadow-md group cursor-pointer"
+              >
                 <img
                   src="/moment.png"
                   onError={(e) => {
@@ -2829,20 +3033,60 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   alt="Moments"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-3">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5 drop-shadow">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end justify-between p-3">
+                  <span className="text-xs font-extrabold text-white flex items-center gap-1.5 drop-shadow">
                     <i className="fas fa-camera text-[#f0c040]"></i> Moments & Highlights
+                  </span>
+                  <span className="text-[10px] font-bold text-[#f0c040] bg-[#f0c040]/20 px-2.5 py-0.5 rounded-full border border-[#f0c040]/40 flex items-center gap-1">
+                    <i className="fas fa-photo-video text-[9px]"></i>
+                    {myMoments.length}
                   </span>
                 </div>
               </div>
 
-              {/* Share Your Moments Button */}
-              <button
-                onClick={() => alert("Share your moment feature opened! Upload photos, videos, or status updates.")}
-                className="w-full py-3 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
-              >
-                <i className="fas fa-camera text-sm"></i> Share your moments!
-              </button>
+              {/* Empty state vs Posted state */}
+              {myMoments.length === 0 ? (
+                /* Empty state: full-width "SHARE YOUR MOMENTS!" button */
+                <button
+                  onClick={() => setShowUploadMomentModal(true)}
+                  className="w-full py-3 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
+                >
+                  <i className="fas fa-camera text-sm"></i> Share your moments!
+                </button>
+              ) : (
+                /* Posted state: small '+' add button + thumbnail previews */
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+                  {/* Small '+' Add Button */}
+                  <button
+                    onClick={() => setShowUploadMomentModal(true)}
+                    className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#f0c040] via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 flex flex-col items-center justify-center shrink-0 font-black shadow-md hover:scale-105 transition cursor-pointer"
+                    title="Share new moment"
+                  >
+                    <i className="fas fa-plus text-base"></i>
+                    <span className="text-[9px] uppercase font-extrabold mt-0.5">Add</span>
+                  </button>
+
+                  {/* Thumbnails of user's moments */}
+                  {myMoments.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => setSelectedMomentForView(m)}
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#f0c040]/30 shrink-0 cursor-pointer group shadow-sm bg-black"
+                    >
+                      {m.mediaType === 'video' ? (
+                        <div className="w-full h-full relative">
+                          <video src={m.mediaUrl} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <i className="fas fa-play text-white text-xs drop-shadow"></i>
+                          </div>
+                        </div>
+                      ) : (
+                        <img src={m.mediaUrl} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* AVATAR FRAME MANAGEMENT CARD */}
@@ -5743,6 +5987,430 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   {sendingGift ? 'Sending...' : 'Send'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── FULL MOMENTS PAGE MODAL ── */}
+      {showMomentsModal && (
+        <div className="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto animate-fadeIn">
+          {/* TOP SECTION: Curved gold gradient header area */}
+          <div className="relative bg-gradient-to-b from-[#f0c040] via-[#d97706] to-[#0a0c12] px-5 pt-5 pb-10 rounded-b-[2.5rem] shadow-2xl text-slate-950 overflow-hidden shrink-0">
+            {/* Background shimmer */}
+            <div className="absolute -right-8 -top-8 w-36 h-36 bg-white/20 rounded-full blur-xl pointer-events-none"></div>
+            
+            <div className="relative flex items-center justify-between">
+              <button
+                onClick={() => setShowMomentsModal(false)}
+                className="w-10 h-10 rounded-full bg-slate-950/20 hover:bg-slate-950/40 text-slate-950 flex items-center justify-center transition cursor-pointer"
+              >
+                <i className="fas fa-arrow-left text-lg"></i>
+              </button>
+              <h2 className="ff-title text-xl font-black text-slate-950 tracking-wider uppercase">
+                Moments & Highlights
+              </h2>
+              <button
+                onClick={() => setShowUploadMomentModal(true)}
+                className="w-10 h-10 rounded-full bg-slate-950 text-[#f0c040] flex items-center justify-center shadow-lg hover:scale-105 transition cursor-pointer"
+                title="Post new moment"
+              >
+                <i className="fas fa-plus text-base"></i>
+              </button>
+            </div>
+
+            <p className="text-center text-xs font-bold text-slate-950/80 mt-3 drop-shadow-xs">
+              Showcase your heroic plays & gaming memories
+            </p>
+          </div>
+
+          {/* MAIN CONTENT AREA */}
+          <div className="flex-1 p-4 max-w-lg mx-auto w-full space-y-4">
+            {/* EMPTY STATE */}
+            {myMoments.length === 0 ? (
+              <div className="py-12 px-4 text-center space-y-6">
+                <div className="w-24 h-24 mx-auto rounded-full bg-[#1b1e2e] border-2 border-[#f0c040]/30 flex items-center justify-center shadow-2xl text-[#f0c040] text-4xl">
+                  <i className="fas fa-camera"></i>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-extrabold text-white">Share Your Moments!</h3>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                    No moments uploaded yet. Post your videos (up to 30s) or photos to display them on your profile!
+                  </p>
+                </div>
+
+                {/* Big Share Your Moments Button */}
+                <button
+                  onClick={() => setShowUploadMomentModal(true)}
+                  className="w-full max-w-xs mx-auto py-3.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wider uppercase"
+                >
+                  <i className="fas fa-camera text-base"></i> Share Your Moments!
+                </button>
+              </div>
+            ) : (
+              /* GRID OF POSTED MOMENTS */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold text-gray-400">Your Highlights ({myMoments.length})</span>
+                  <button
+                    onClick={() => setShowUploadMomentModal(true)}
+                    className="px-3 py-1.5 bg-gradient-to-r from-[#f0c040] to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+                  >
+                    <i className="fas fa-plus"></i> Add New
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {myMoments.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => setSelectedMomentForView(m)}
+                      className="relative rounded-xl overflow-hidden border border-[#252a45] bg-[#141724] group cursor-pointer shadow-md hover:border-[#f0c040]/60 transition"
+                    >
+                      <div className="w-full h-36 relative bg-black">
+                        {m.mediaType === 'video' ? (
+                          <>
+                            <video src={m.mediaUrl} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
+                              <i className="fas fa-play text-white text-lg drop-shadow"></i>
+                            </div>
+                            <span className="absolute bottom-2 right-2 bg-black/70 text-[9px] text-amber-400 px-1.5 py-0.5 rounded font-bold border border-amber-400/30">
+                              <i className="fas fa-video mr-1"></i>30s
+                            </span>
+                          </>
+                        ) : (
+                          <img src={m.mediaUrl} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                        )}
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMoment(m.id);
+                          }}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center text-xs transition"
+                          title="Delete moment"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+
+                      {m.caption && (
+                        <div className="p-2 text-[11px] font-medium text-gray-200 truncate">
+                          {m.caption}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── MOMENTS FEED PAGE MODAL ── */}
+      {showMomentsFeed && (
+        <div className="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto animate-fadeIn">
+          {/* Header */}
+          <div className="sticky top-0 z-20 bg-[#121526]/90 backdrop-blur-md px-4 py-3 border-b border-[#252a45] flex items-center justify-between">
+            <button
+              onClick={() => setShowMomentsFeed(false)}
+              className="w-9 h-9 rounded-full bg-[#1b1e32] hover:bg-[#252a45] text-white flex items-center justify-center transition cursor-pointer"
+            >
+              <i className="fas fa-arrow-left"></i>
+            </button>
+            <h2 className="ff-title text-base font-extrabold text-white flex items-center gap-2">
+              <i className="fas fa-camera text-[#f0c040]"></i> Community Moments
+            </h2>
+            <button
+              onClick={() => setShowUploadMomentModal(true)}
+              className="px-3 py-1.5 bg-gradient-to-r from-[#f0c040] to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer"
+            >
+              <i className="fas fa-plus"></i> Post
+            </button>
+          </div>
+
+          {/* Feed Content */}
+          <div className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
+            {moments.length === 0 ? (
+              <div className="py-16 text-center space-y-3">
+                <i className="fas fa-photo-video text-4xl text-[#f0c040]/40"></i>
+                <p className="text-sm font-semibold text-gray-400">No community moments yet.</p>
+                <button
+                  onClick={() => setShowUploadMomentModal(true)}
+                  className="px-4 py-2 bg-[#f0c040] text-slate-950 font-bold text-xs rounded-xl"
+                >
+                  Post First Moment
+                </button>
+              </div>
+            ) : (
+              moments.map((m) => {
+                const isLiked = currentUser && m.likes?.includes(currentUser.uid);
+                return (
+                  <div
+                    key={m.id}
+                    className="bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-xl space-y-3 p-3.5"
+                  >
+                    {/* User Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={m.userAv || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.userId}`}
+                          alt={m.userName}
+                          className="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30 bg-[#111420]"
+                        />
+                        <div>
+                          <h4 className="text-xs font-bold text-white flex items-center gap-1">
+                            {m.userName}
+                          </h4>
+                          <span className="text-[10px] text-gray-400">
+                            {m.createdAt ? (m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Recently') : 'Just now'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {currentUser && m.userId === currentUser.uid && (
+                        <button
+                          onClick={() => handleDeleteMoment(m.id)}
+                          className="text-gray-400 hover:text-red-400 text-xs p-1.5 transition"
+                          title="Delete moment"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Media Display */}
+                    <div className="rounded-xl overflow-hidden bg-black border border-white/5 relative">
+                      {m.mediaType === 'video' ? (
+                        <video
+                          src={m.mediaUrl}
+                          controls
+                          playsInline
+                          className="w-full max-h-[450px] object-contain mx-auto bg-black"
+                        />
+                      ) : (
+                        <img
+                          src={m.mediaUrl}
+                          alt="Moment"
+                          className="w-full max-h-[450px] object-cover mx-auto"
+                        />
+                      )}
+                    </div>
+
+                    {/* Caption */}
+                    {m.caption && (
+                      <p className="text-xs text-gray-200 font-medium px-1 leading-relaxed">
+                        {m.caption}
+                      </p>
+                    )}
+
+                    {/* Actions / Like Bar */}
+                    <div className="flex items-center justify-between pt-1 border-t border-[#22273f]">
+                      <button
+                        onClick={() => handleToggleLikeMoment(m)}
+                        className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${
+                          isLiked
+                            ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                            : 'bg-[#1b1e32] border-[#293050] text-gray-300 hover:text-white'
+                        }`}
+                      >
+                        <i className={`${isLiked ? 'fas' : 'far'} fa-heart text-sm`}></i>
+                        <span>{m.likeCount || m.likes?.length || 0}</span>
+                      </button>
+
+                      <span className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                        ArenaX Moments
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── UPLOAD MOMENT MODAL ── */}
+      {showUploadMomentModal && (
+        <div className="fixed inset-0 z-[100030] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#141726] border border-[#252a45] rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <i className="fas fa-camera text-[#f0c040]"></i> Post a Moment
+              </h3>
+              <button
+                onClick={() => {
+                  setShowUploadMomentModal(false);
+                  setMomentFile(null);
+                  setMomentFilePreview(null);
+                  setMomentUploadError('');
+                }}
+                className="w-8 h-8 rounded-full bg-[#1e233d] text-gray-400 hover:text-white flex items-center justify-center transition"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* Error banner */}
+            {momentUploadError && (
+              <div className="p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-xs font-semibold leading-relaxed">
+                {momentUploadError}
+              </div>
+            )}
+
+            {/* Media Selector Box */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-300">
+                Select Photo or Video (Max 30 seconds for videos):
+              </label>
+
+              {!momentFilePreview ? (
+                <label className="border-2 border-dashed border-[#f0c040]/40 hover:border-[#f0c040] bg-[#1a1e32] rounded-xl p-6 text-center flex flex-col items-center justify-center gap-2 cursor-pointer transition group">
+                  <div className="w-12 h-12 rounded-full bg-[#f0c040]/10 border border-[#f0c040]/30 text-[#f0c040] flex items-center justify-center text-xl group-hover:scale-110 transition">
+                    <i className="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <span className="text-xs font-bold text-gray-200">
+                    Click to choose Video or Photo
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    Supports MP4, WEBM, PNG, JPG (Max 30s)
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleMomentFileChange}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden bg-black border border-[#f0c040]/40 max-h-52 flex items-center justify-center">
+                  {momentMediaType === 'video' ? (
+                    <video src={momentFilePreview} controls className="max-h-52 w-full object-contain" />
+                  ) : (
+                    <img src={momentFilePreview} alt="Preview" className="max-h-52 w-full object-contain" />
+                  )}
+                  <button
+                    onClick={() => {
+                      setMomentFile(null);
+                      setMomentFilePreview(null);
+                    }}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-red-600/90 hover:bg-red-600 text-white font-bold text-[10px] rounded-lg shadow"
+                  >
+                    Change File
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Caption Input */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-gray-300">Caption / Title:</label>
+              <textarea
+                value={momentCaption}
+                onChange={(e) => setMomentCaption(e.target.value)}
+                placeholder="Write a title or description for your moment..."
+                rows={3}
+                className="w-full bg-[#1c2035] border border-[#2c3254] rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#f0c040] transition resize-none"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowUploadMomentModal(false);
+                  setMomentFile(null);
+                  setMomentFilePreview(null);
+                }}
+                className="flex-1 py-2.5 bg-[#1b1e32] hover:bg-[#252a45] text-gray-300 font-bold rounded-xl text-xs transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={momentUploading || !momentFile}
+                onClick={handlePublishMoment}
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition disabled:opacity-50 cursor-pointer uppercase"
+              >
+                {momentUploading ? (
+                  <>
+                    <i className="fas fa-spinner animate-spin"></i> Posting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane"></i> Publish Moment
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── FULL SCREEN MOMENT VIEWER MODAL ── */}
+      {selectedMomentForView && (
+        <div className="fixed inset-0 z-[100030] bg-black/95 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="max-w-md w-full bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4 relative">
+            <button
+              onClick={() => setSelectedMomentForView(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 text-white hover:bg-black flex items-center justify-center text-xs transition cursor-pointer"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-2.5">
+              <img
+                src={selectedMomentForView.userAv || `https://api.dicebear.com/7.x/bottts/svg?seed=${selectedMomentForView.userId}`}
+                alt={selectedMomentForView.userName}
+                className="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30"
+              />
+              <div>
+                <h4 className="text-xs font-bold text-white">{selectedMomentForView.userName}</h4>
+                <span className="text-[10px] text-gray-400">
+                  {selectedMomentForView.createdAt ? (selectedMomentForView.createdAt.seconds ? new Date(selectedMomentForView.createdAt.seconds * 1000).toLocaleDateString() : 'Recently') : 'Just now'}
+                </span>
+              </div>
+            </div>
+
+            {/* Media */}
+            <div className="rounded-xl overflow-hidden bg-black max-h-[480px] flex items-center justify-center">
+              {selectedMomentForView.mediaType === 'video' ? (
+                <video src={selectedMomentForView.mediaUrl} controls autoPlay className="w-full max-h-[480px] object-contain" />
+              ) : (
+                <img src={selectedMomentForView.mediaUrl} alt="Moment" className="w-full max-h-[480px] object-contain" />
+              )}
+            </div>
+
+            {/* Caption */}
+            {selectedMomentForView.caption && (
+              <p className="text-xs text-gray-200 font-medium px-1">{selectedMomentForView.caption}</p>
+            )}
+
+            {/* Like and Delete actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-[#22273f]">
+              <button
+                onClick={() => handleToggleLikeMoment(selectedMomentForView)}
+                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${
+                  currentUser && selectedMomentForView.likes?.includes(currentUser.uid)
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                    : 'bg-[#1b1e32] border-[#293050] text-gray-300'
+                }`}
+              >
+                <i className={`${currentUser && selectedMomentForView.likes?.includes(currentUser.uid) ? 'fas' : 'far'} fa-heart`}></i>
+                <span>{selectedMomentForView.likeCount || selectedMomentForView.likes?.length || 0}</span>
+              </button>
+
+              {currentUser && selectedMomentForView.userId === currentUser.uid && (
+                <button
+                  onClick={() => handleDeleteMoment(selectedMomentForView.id)}
+                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl flex items-center gap-1 transition"
+                >
+                  <i className="fas fa-trash"></i> Delete
+                </button>
+              )}
             </div>
           </div>
         </div>
