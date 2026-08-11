@@ -19988,59 +19988,36 @@ async function publishMoment() {
   const btnSubmit = $('btnPublishMomentSubmit');
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Uploading... 0%`;
+    btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Uploading...`;
   }
 
   try {
-    let mediaUrl = '';
-    const fileExt = selectedMomentFile.name ? selectedMomentFile.name.split('.').pop() : (selectedMomentFileType === 'video' ? 'mp4' : 'jpg');
-    const storageRef = ref(storage, `moments/${profile.uid}_${Date.now()}.${fileExt}`);
+    const cloudName = (import.meta && import.meta.env && import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) || (typeof window !== 'undefined' && window.VITE_CLOUDINARY_CLOUD_NAME);
+    const uploadPreset = (import.meta && import.meta.env && import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET) || (typeof window !== 'undefined' && window.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-    try {
-      const uploadTask = uploadBytesResumable(storageRef, selectedMomentFile);
-      mediaUrl = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          try { uploadTask.cancel(); } catch (e) {}
-          reject(new Error("Storage upload timed out after 90 seconds. Please check your internet connection."));
-        }, 90000);
-
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            if (snapshot.totalBytes > 0) {
-              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              if (btnSubmit) {
-                btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Uploading... ${pct}%`;
-              }
-            }
-          },
-          (err) => {
-            clearTimeout(timer);
-            reject(err);
-          },
-          async () => {
-            clearTimeout(timer);
-            try {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(url);
-            } catch (e) {
-              reject(e);
-            }
-          }
-        );
-      });
-    } catch (stErr) {
-      console.warn("Storage upload failed, trying image fallback:", stErr);
-      if (selectedMomentFileType === 'image' || (selectedMomentFile.type && selectedMomentFile.type.startsWith('image/'))) {
-        if (btnSubmit) btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Compressing image...`;
-        mediaUrl = await compressImageToDataUrl(selectedMomentFile);
-      } else {
-        throw stErr;
-      }
+    if (!cloudName || !uploadPreset) {
+      throw new Error('Cloudinary configuration missing. Please ensure VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET are set.');
     }
 
+    const formData = new FormData();
+    formData.append('file', selectedMomentFile);
+    formData.append('upload_preset', uploadPreset);
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `Cloudinary upload failed with status ${response.status}`);
+    }
+
+    const cloudData = await response.json();
+    const mediaUrl = cloudData.secure_url;
+
     if (!mediaUrl) {
-      throw new Error("Failed to process media file. Please try another file.");
+      throw new Error('Cloudinary upload succeeded but no secure_url was returned.');
     }
 
     const captionText = ($('txtMomentCaption') ? $('txtMomentCaption').value : '').trim();
@@ -20508,3 +20485,4 @@ initMomentsListener();
 </script>
 </body>
 </html>
+v
