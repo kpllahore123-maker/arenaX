@@ -256,12 +256,29 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     }
     if (!viewingUserProfile) return;
 
-    const price = selectedGiftType === 'rose' ? 10 : 100;
-    const popGain = selectedGiftType === 'rose' ? 1 : 10;
-    const giftName = selectedGiftType === 'rose' ? 'Rose' : 'Rocket';
+    const isRose = selectedGiftType === 'rose';
+    const isRocket = selectedGiftType === 'rocket';
+    const isTrophy = selectedGiftType === 'trophy';
+
+    let price = 10;
+    let popGain = 1;
+    let giftName = 'Rose';
+    let giftEmoji = '🌹';
+
+    if (isRocket) {
+      price = 100;
+      popGain = 10;
+      giftName = 'Rocket';
+      giftEmoji = '🚀';
+    } else if (isTrophy) {
+      price = 190;
+      popGain = 20;
+      giftName = 'Trophy';
+      giftEmoji = '🏆';
+    }
 
     if ((currentUser.balance || 0) < price) {
-      alert(`Insufficient balance! Sending a ${giftName} requires ${price} AX Coins. Please deposit coins first.`);
+      alert(`Insufficient balance! Sending a ${giftName} ${giftEmoji} requires ${price} AX Coins. Please deposit coins first.`);
       return;
     }
 
@@ -291,8 +308,25 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         const targetRef = doc(db, 'users', targetUid);
         await updateDoc(targetRef, {
           giftCount: increment(popGain),
-          popularity: increment(popGain)
+          popularity: increment(popGain),
+          roseCount: increment(isRose ? 1 : 0),
+          rocketCount: increment(isRocket ? 1 : 0),
+          trophyCount: increment(isTrophy ? 1 : 0)
         });
+
+        // Add to popularity history subcollection
+        try {
+          await addDoc(collection(db, 'users', targetUid, 'popularityHistory'), {
+            senderUid: currentUser.uid,
+            senderName: currentUser.name || 'Player',
+            senderAv: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+            type: selectedGiftType,
+            popGain: popGain,
+            timestamp: serverTimestamp()
+          });
+        } catch (e) {
+          console.warn("Could not log popularity history in React app:", e);
+        }
       }
 
       // 3. Log transaction in deposit_requests
@@ -316,14 +350,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         ...prev,
         popularity: (prev.popularity || prev.giftCount || 0) + popGain,
         giftCount: (prev.giftCount || 0) + popGain,
+        roseCount: (prev.roseCount || 0) + (isRose ? 1 : 0),
+        rocketCount: (prev.rocketCount || 0) + (isRocket ? 1 : 0),
+        trophyCount: (prev.trophyCount || 0) + (isTrophy ? 1 : 0),
         starCount: (prev.starCount || 0) + Math.max(1, Math.floor(price / 10))
       } : null);
 
       setShowGiftModal(false);
 
-      // Trigger full screen splash overlay
-      const splashId = selectedGiftType === 'rose' ? 'rose-popularity-splash' : 'rocket-popularity-splash';
-      const lottieId = selectedGiftType === 'rose' ? 'roseSplashLottie' : 'rocketSplashLottie';
+      // Trigger full screen splash overlay (Transparent overlay over existing page)
+      const splashId = isRose ? 'rose-popularity-splash' : (isRocket ? 'rocket-popularity-splash' : 'trophy-popularity-splash');
+      const lottieId = isRose ? 'roseSplashLottie' : (isRocket ? 'rocketSplashLottie' : 'trophySplashLottie');
       const splashEl = document.getElementById(splashId);
       const player = document.getElementById(lottieId) as any;
 
@@ -341,10 +378,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           setTimeout(() => {
             splashEl.classList.add('hidden');
           }, 300);
-        }, selectedGiftType === 'rose' ? 2000 : 3000);
+        }, isRose ? 2000 : (isRocket ? 3000 : 3500));
       }
 
-      setGiftSuccessMsg(`🎉 Sent ${selectedGiftType === 'rose' ? '🌹 Rose' : '🚀 Rocket'} to ${viewingUserProfile.name || 'player'}!`);
+      setGiftSuccessMsg(`🎉 Sent ${giftName} ${giftEmoji} to ${viewingUserProfile.name || 'player'}!`);
       setTimeout(() => {
         setGiftSuccessMsg('');
       }, 2500);
@@ -5346,7 +5383,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     <div className="w-full h-full relative flex items-center justify-center">
                       <img 
                         id="vppCarouselImgReact" 
-                        src={(viewingUserProfile.rocketCount && viewingUserProfile.rocketCount > 0 && (!viewingUserProfile.roseCount || viewingUserProfile.roseCount === 0)) ? "rocket.png" : "rose.png"} 
+                        src={
+                          viewingUserProfile.trophyCount && viewingUserProfile.trophyCount > 0
+                            ? "poptrophy.png"
+                            : (viewingUserProfile.rocketCount && viewingUserProfile.rocketCount > 0 ? "rocket.png" : "rose.png")
+                        } 
                         alt="Popularity Gift" 
                         className="w-10 h-10 object-contain transition-all duration-300 transform scale-100 opacity-100 animate-pulse" 
                       />
@@ -5356,25 +5397,31 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                     </div>
                   </div>
 
-                  {/* Stats Columns (Popularity | Rose | Rocket) */}
-                  <div className="flex-1 grid grid-cols-3 gap-1 text-center pl-2">
+                  {/* Stats Columns (Popularity | Rose | Rocket | Trophy) */}
+                  <div className="flex-1 grid grid-cols-4 gap-0.5 sm:gap-1 text-center pl-1 sm:pl-2">
                     <div className="flex flex-col items-center">
-                      <span className="text-sm sm:text-base font-black text-gray-900 leading-tight">
+                      <span className="text-xs sm:text-sm font-black text-gray-900 leading-tight">
                         {viewingUserProfile.popularity ?? viewingUserProfile.giftCount ?? 0}
                       </span>
-                      <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Popularity</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Popularity</span>
                     </div>
                     <div className="flex flex-col items-center border-l border-gray-200/60">
-                      <span className="text-sm sm:text-base font-black text-gray-900 leading-tight">
+                      <span className="text-xs sm:text-sm font-black text-gray-900 leading-tight">
                         {viewingUserProfile.roseCount ?? 0}
                       </span>
-                      <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rose</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Rose</span>
                     </div>
                     <div className="flex flex-col items-center border-l border-gray-200/60">
-                      <span className="text-sm sm:text-base font-black text-gray-900 leading-tight">
+                      <span className="text-xs sm:text-sm font-black text-gray-900 leading-tight">
                         {viewingUserProfile.rocketCount ?? 0}
                       </span>
-                      <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 mt-0.5">Rocket</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Rocket</span>
+                    </div>
+                    <div className="flex flex-col items-center border-l border-gray-200/60">
+                      <span className="text-xs sm:text-sm font-black text-gray-900 leading-tight">
+                        {viewingUserProfile.trophyCount ?? 0}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-0.5 truncate">Trophy</span>
                     </div>
                   </div>
 
@@ -5557,7 +5604,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               <span>
                 {selectedGiftType === 'rose'
                   ? "Receiver's Charm +1 • Gain popularity & status boost"
-                  : "Receiver's Charm +10 • Supercharge popularity & status boost"}
+                  : (selectedGiftType === 'rocket'
+                      ? "Receiver's Charm +10 • Supercharge popularity & status boost"
+                      : "Receiver's Charm +20 • Ultimate popularity & prestige boost")}
               </span>
               <button
                 onClick={() => alert("Sending gifts boosts the recipient's popularity score and unlocks special leaderboard badges!")}
@@ -5568,26 +5617,26 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               </button>
             </div>
 
-            {/* Grid of 2 item cards */}
-            <div className="grid grid-cols-2 gap-3.5 pt-1 pb-1">
+            {/* Grid of 3 item cards */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3.5 pt-1 pb-1">
               {/* CARD 1 — Rose */}
               <div
                 onClick={() => setSelectedGiftType('rose')}
-                className={`relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                className={`relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all ${
                   selectedGiftType === 'rose'
                     ? 'bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]'
                     : 'bg-[#141727] border-[#252b47] hover:border-pink-500/40'
                 }`}
               >
                 {selectedGiftType === 'rose' && (
-                  <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
+                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
                     <i className="fas fa-check"></i>
                   </div>
                 )}
                 <img
                   src={`${(typeof window !== 'undefined' && typeof (window as any).getAppBasePath === 'function') ? (window as any).getAppBasePath() : './'}rose.png`}
                   alt="Rose"
-                  className="w-14 h-14 object-contain animate-pulse my-1"
+                  className="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"
                 />
                 <span className="font-bold text-xs text-white">Roses</span>
                 <div className="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
@@ -5599,26 +5648,52 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               {/* CARD 2 — Rocket */}
               <div
                 onClick={() => setSelectedGiftType('rocket')}
-                className={`relative p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                className={`relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all ${
                   selectedGiftType === 'rocket'
                     ? 'bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]'
                     : 'bg-[#141727] border-[#252b47] hover:border-pink-500/40'
                 }`}
               >
                 {selectedGiftType === 'rocket' && (
-                  <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
+                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
                     <i className="fas fa-check"></i>
                   </div>
                 )}
                 <img
                   src={`${(typeof window !== 'undefined' && typeof (window as any).getAppBasePath === 'function') ? (window as any).getAppBasePath() : './'}rocket.png`}
                   alt="Rocket"
-                  className="w-14 h-14 object-contain animate-pulse my-1"
+                  className="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"
                 />
                 <span className="font-bold text-xs text-white">Rocket</span>
                 <div className="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
                   <span className="text-xs">🪙</span>
                   <span>100</span>
+                </div>
+              </div>
+
+              {/* CARD 3 — Trophy */}
+              <div
+                onClick={() => setSelectedGiftType('trophy')}
+                className={`relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all ${
+                  selectedGiftType === 'trophy'
+                    ? 'bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/50 scale-[1.02]'
+                    : 'bg-[#141727] border-[#252b47] hover:border-amber-500/40'
+                }`}
+              >
+                {selectedGiftType === 'trophy' && (
+                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px] font-bold">
+                    <i className="fas fa-check"></i>
+                  </div>
+                )}
+                <img
+                  src={`${(typeof window !== 'undefined' && typeof (window as any).getAppBasePath === 'function') ? (window as any).getAppBasePath() : './'}poptrophy.png`}
+                  alt="Trophy"
+                  className="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5"
+                />
+                <span className="font-bold text-xs text-white">Trophy</span>
+                <div className="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
+                  <span className="text-xs">🪙</span>
+                  <span>190</span>
                 </div>
               </div>
             </div>
