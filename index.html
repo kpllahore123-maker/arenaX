@@ -178,6 +178,73 @@ if (typeof tailwind !== 'undefined') {
 ::-webkit-scrollbar-thumb { background: #252a45; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #f0c040; }
 
+/* Moments Heart Like Button Styles */
+.heart-container {
+  --heart-color: rgb(255, 91, 137);
+  position: relative;
+  width: 32px;
+  height: 32px;
+  transition: .3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.heart-container .checkbox {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 20;
+  cursor: pointer;
+}
+.heart-container .svg-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.heart-container .svg-outline,
+.heart-container .svg-filled {
+  fill: var(--heart-color);
+  position: absolute;
+  width: 22px;
+  height: 22px;
+}
+.heart-container .svg-filled {
+  animation: keyframes-svg-filled .6s;
+  display: none;
+}
+.heart-container .svg-celebrate {
+  position: absolute;
+  animation: keyframes-svg-celebrate .5s;
+  animation-fill-mode: forwards;
+  display: none;
+  stroke: var(--heart-color);
+  fill: var(--heart-color);
+  stroke-width: 2px;
+}
+.heart-container .checkbox:checked~.svg-container .svg-outline {
+  display: none;
+}
+.heart-container .checkbox:checked~.svg-container .svg-filled {
+  display: block;
+}
+.heart-container .checkbox:checked~.svg-container .svg-celebrate {
+  display: block;
+}
+@keyframes keyframes-svg-filled {
+  0% { transform: scale(0); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1); filter: brightness(1.5); }
+}
+@keyframes keyframes-svg-celebrate {
+  0% { transform: scale(0); }
+  50% { opacity: 1; filter: brightness(1.5); }
+  100% { transform: scale(1.4); opacity: 0; display: none; }
+}
+
 /* Glowing neon active states */
 .glow-active {
   box-shadow: 0 0 15px rgba(240, 192, 64, 0.2);
@@ -4041,9 +4108,22 @@ if (typeof tailwind !== 'undefined') {
     <div class="flex-1 bg-white text-gray-800 px-5 pb-28 overflow-y-auto relative z-0 flex flex-col space-y-4 pt-1">
       
       <!-- Moments -->
-      <div class="flex items-center justify-between border-b border-gray-100 pb-3 cursor-pointer">
-        <span class="font-bold text-gray-900 text-sm">Moments <span class="font-semibold text-gray-400 text-xs ml-1">0</span></span>
-        <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+      <div id="vppMomentsSection" class="border-b border-gray-100 pb-3 space-y-2">
+        <div 
+          class="flex items-center justify-between cursor-pointer"
+          onclick="if (window.currentViewingPlayerId) openMomentsFeedModalFiltered(window.currentViewingPlayerId, window.currentViewingPlayerName || 'Player')"
+        >
+          <span class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+            <i class="fas fa-camera text-amber-500"></i> Moments 
+            <span id="vppMomentsCount" class="bg-amber-100 text-amber-800 text-[11px] px-2 py-0.5 rounded-full font-bold ml-1">0</span>
+          </span>
+          <span class="text-xs text-amber-600 font-bold hover:underline flex items-center gap-1">
+            See All <i class="fas fa-chevron-right text-[10px]"></i>
+          </span>
+        </div>
+        <div id="vppMomentsContainer">
+          <p class="text-xs text-gray-400 italic py-1">No moments yet</p>
+        </div>
       </div>
 
       <!-- Popularity -->
@@ -4760,7 +4840,7 @@ if (typeof tailwind !== 'undefined') {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail, sendEmailVerification, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc, increment, where, limit, arrayUnion, arrayRemove, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // Module-scoped localStorage shadow to prevent SecurityError in restricted iframes/browsers
 let localMemoryStorage = {};
@@ -5317,10 +5397,27 @@ window.goTo = goTo;
 // Helper to render Verified Blue Tick badge
 window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
   if (!userObj) return '';
-  if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick) {
-    return `<img src="bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge"/><i class="fas fa-check-circle text-blue-400 align-middle ml-1 text-xs hidden" title="Verified Badge"></i>`;
+  if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick || userObj.verified) {
+    return `<img src="bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge"/><i class="fas fa-check-circle text-sky-400 align-middle ml-1 text-xs" title="Verified Badge"></i>`;
   }
   return '';
+};
+
+// Helper to render Player Name with Premium Gold styling and Verified Tick Badge
+window.formatPlayerNameHtml = function(userObj, extraClasses = '') {
+  if (!userObj) return '';
+  const name = userObj.name || userObj.userName || userObj.playerName || 'Player';
+  const isPrem = !!(userObj.premium || userObj.isPremium || userObj.isVIP || userObj.vip);
+  const isVer = !!(userObj.isVerified || userObj.hasBlueTick || userObj.blueTick || userObj.verified);
+
+  let html = `<span class="${isPrem ? 'golden-name-shimmer text-amber-400 font-extrabold ' : ''}${extraClasses}">${name}</span>`;
+  if (isPrem) {
+    html += `<i class="fas fa-crown text-amber-400 text-xs ml-1 shrink-0" title="Premium"></i>`;
+  }
+  if (isVer) {
+    html += `<i class="fas fa-check-circle text-sky-400 text-xs ml-1 shrink-0" title="Verified"></i>`;
+  }
+  return html;
 };
 
 window.applyAvatarFrame = function(imgElement, isEquipped) {
@@ -10856,32 +10953,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
     // Fill Top Section
     if ($('vppName')) {
-      const uName = u.name || u.userName || 'ArenaX Player';
-      $('vppName').textContent = uName;
-      if (u.premium && (u.goldenNameEnabled !== false)) {
-        $('vppName').classList.add('golden-name-shimmer');
-        $('vppName').style.background = '';
-        $('vppName').style.webkitBackgroundClip = '';
-        $('vppName').style.webkitTextFillColor = '';
-        $('vppName').style.fontWeight = '';
-        $('vppName').style.fontStyle = 'italic';
-      } else if (u.premium && u.nameColor) {
-        $('vppName').classList.remove('golden-name-shimmer');
-        $('vppName').style.background = 'none';
-        $('vppName').style.webkitBackgroundClip = 'initial';
-        $('vppName').style.webkitTextFillColor = 'initial';
-        $('vppName').style.color = u.nameColor;
-        $('vppName').style.fontWeight = '';
-        $('vppName').style.fontStyle = '';
-      } else {
-        $('vppName').classList.remove('golden-name-shimmer');
-        $('vppName').style.background = 'none';
-        $('vppName').style.webkitBackgroundClip = 'initial';
-        $('vppName').style.webkitTextFillColor = 'initial';
-        $('vppName').style.color = '';
-        $('vppName').style.fontWeight = '';
-        $('vppName').style.fontStyle = '';
-      }
+      $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
     }
     if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
     
@@ -10935,6 +11007,35 @@ window.openPlayerProfileCard = async function(targetUid) {
 
     // Render Team Section for View Profile
     window.renderVppTeamSection(targetUid);
+
+    // Render Moments for viewed user
+    const targetMoments = (typeof allMomentsList !== 'undefined' ? allMomentsList : []).filter(m => m.userId === targetUid);
+    if ($('vppMomentsCount')) $('vppMomentsCount').textContent = targetMoments.length;
+    const momentsContainer = $('vppMomentsContainer');
+    if (momentsContainer) {
+      if (targetMoments.length === 0) {
+        momentsContainer.innerHTML = `<p class="text-xs text-gray-400 italic py-1">No moments yet</p>`;
+      } else {
+        momentsContainer.innerHTML = `
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+            ${targetMoments.map(m => `
+              <div onclick="openMomentsFeedModalFiltered('${targetUid}', '${safeMomentTxt(u.name || u.userName || 'Player')}')" class="relative w-16 h-16 rounded-xl overflow-hidden border border-amber-500/30 shrink-0 cursor-pointer group shadow-sm bg-black hover:scale-105 transition">
+                ${m.mediaType === 'video' ? `
+                  <div class="w-full h-full relative">
+                    <video src="${m.mediaUrl}" class="w-full h-full object-cover"></video>
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <i class="fas fa-play text-white text-xs drop-shadow"></i>
+                    </div>
+                  </div>
+                ` : `
+                  <img src="${m.mediaUrl}" alt="Moment" class="w-full h-full object-cover group-hover:scale-105 transition" />
+                `}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
 
   } catch (err) {
     console.error("Error fetching target player details:", err);
@@ -19517,33 +19618,59 @@ function renderFullMomentsProfilePage() {
 }
 
 // 3. Render Community Moments Feed Modal (Explore section)
+window.momentsFeedFilterUserId = null;
+window.momentsFeedFilterUserName = null;
+
+function openMomentsFeedModalFiltered(userId, userName) {
+  window.momentsFeedFilterUserId = userId;
+  window.momentsFeedFilterUserName = userName;
+  openMomentsFeedModal();
+}
+
 function renderMomentsFeedPage() {
   const container = $('momentsFeedPageContent');
   if (!container) return;
   const profile = userProfile || guestProfile || window.currentUser;
 
-  if (allMomentsList.length === 0) {
+  // Header Title Update if element exists
+  if ($('momentsFeedTitle')) {
+    $('momentsFeedTitle').innerHTML = `<i class="fas fa-camera text-[#f0c040] mr-2"></i>${window.momentsFeedFilterUserName ? safeMomentTxt(window.momentsFeedFilterUserName) + "'s Moments" : 'Community Moments'}`;
+  }
+
+  const listToRender = window.momentsFeedFilterUserId 
+    ? allMomentsList.filter(m => m.userId === window.momentsFeedFilterUserId)
+    : allMomentsList;
+
+  if (listToRender.length === 0) {
     container.innerHTML = `
       <div class="py-16 text-center space-y-3">
         <i class="fas fa-photo-video text-4xl text-[#f0c040]/40"></i>
-        <p class="text-sm font-semibold text-gray-400">No community moments yet.</p>
-        <button onclick="openUploadMomentModal()" class="px-4 py-2 bg-[#f0c040] text-slate-950 font-bold text-xs rounded-xl cursor-pointer">
-          Post First Moment
-        </button>
+        <p class="text-sm font-semibold text-gray-400">No moments found.</p>
+        ${window.momentsFeedFilterUserId ? `
+          <button onclick="window.momentsFeedFilterUserId = null; window.momentsFeedFilterUserName = null; renderMomentsFeedPage();" class="px-4 py-2 bg-[#f0c040] text-slate-950 font-bold text-xs rounded-xl cursor-pointer">
+            View All Community Moments
+          </button>
+        ` : `
+          <button onclick="openUploadMomentModal()" class="px-4 py-2 bg-[#f0c040] text-slate-950 font-bold text-xs rounded-xl cursor-pointer">
+            Post First Moment
+          </button>
+        `}
       </div>
     `;
   } else {
-    container.innerHTML = allMomentsList.map(m => {
+    container.innerHTML = listToRender.map(m => {
       const isLiked = profile && m.likes && m.likes.includes(profile.uid);
       const isMine = profile && m.userId === profile.uid;
       const dateStr = m.createdAt && m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Just now';
+      const userHtml = window.formatPlayerNameHtml(m, 'text-xs font-bold');
+
       return `
         <div class="bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-xl space-y-3 p-3.5">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
               <img src="${m.userAv || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + m.userId}" class="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30 bg-[#111420]" />
               <div>
-                <h4 class="text-xs font-bold text-white">${safeMomentTxt(m.userName || 'Player')}</h4>
+                <div class="flex items-center gap-1">${userHtml}</div>
                 <span class="text-[10px] text-gray-400">${dateStr}</span>
               </div>
             </div>
@@ -19565,10 +19692,38 @@ function renderMomentsFeedPage() {
           ${m.caption ? `<p class="text-xs text-gray-200 font-medium px-1 leading-relaxed">${safeMomentTxt(m.caption)}</p>` : ''}
 
           <div class="flex items-center justify-between pt-1 border-t border-[#22273f]">
-            <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${isLiked ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-[#1b1e32] border-[#293050] text-gray-300 hover:text-white'}">
-              <i class="${isLiked ? 'fas' : 'far'} fa-heart text-sm"></i>
-              <span>${m.likeCount || (m.likes ? m.likes.length : 0)}</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <div class="heart-container" title="Like">
+                <input 
+                  type="checkbox" 
+                  class="checkbox" 
+                  id="like-html-${m.id}" 
+                  ${isLiked ? 'checked' : ''} 
+                  onchange="toggleLikeMoment('${m.id}')"
+                />
+                <div class="svg-container">
+                  <svg viewBox="0 0 24 24" class="svg-outline" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Zm-3.585,18.4a2.973,2.973,0,0,1-3.83,0C4.947,16.006,2,11.87,2,8.967a4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,11,8.967a1,1,0,0,0,2,0,4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,22,8.967C22,11.87,19.053,16.006,13.915,20.313Z">
+                    </path>
+                  </svg>
+                  <svg viewBox="0 0 24 24" class="svg-filled" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Z">
+                    </path>
+                  </svg>
+                  <svg class="svg-celebrate" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="10,10 20,20"></polygon>
+                    <polygon points="10,50 20,50"></polygon>
+                    <polygon points="20,80 30,70"></polygon>
+                    <polygon points="90,10 80,20"></polygon>
+                    <polygon points="90,50 80,50"></polygon>
+                    <polygon points="80,80 70,70"></polygon>
+                  </svg>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-gray-300">
+                ${m.likeCount || (m.likes ? m.likes.length : 0)}
+              </span>
+            </div>
             <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">ArenaX Moments</span>
           </div>
         </div>
@@ -19593,6 +19748,8 @@ function openMomentsFeedModal() {
   if ($('mMomentsFeedModal')) $('mMomentsFeedModal').classList.remove('hidden');
 }
 function closeMomentsFeedModal() {
+  window.momentsFeedFilterUserId = null;
+  window.momentsFeedFilterUserName = null;
   if ($('mMomentsFeedModal')) $('mMomentsFeedModal').classList.add('hidden');
 }
 
@@ -19616,6 +19773,7 @@ function openViewMomentModal(momentId) {
   const isLiked = profile && m.likes && m.likes.includes(profile.uid);
   const isMine = profile && m.userId === profile.uid;
   const dateStr = m.createdAt && m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Just now';
+  const userHtml = window.formatPlayerNameHtml(m, 'text-xs font-bold');
 
   container.innerHTML = `
     <button onclick="closeViewMomentModal()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 text-white hover:bg-black flex items-center justify-center text-xs transition cursor-pointer">
@@ -19624,7 +19782,7 @@ function openViewMomentModal(momentId) {
     <div class="flex items-center gap-2.5">
       <img src="${m.userAv || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + m.userId}" class="w-10 h-10 rounded-full object-cover border border-[#f0c040]/30" />
       <div>
-        <h4 class="text-xs font-bold text-white">${safeMomentTxt(m.userName || 'Player')}</h4>
+        <div class="flex items-center gap-1">${userHtml}</div>
         <span class="text-[10px] text-gray-400">${dateStr}</span>
       </div>
     </div>
@@ -19637,10 +19795,38 @@ function openViewMomentModal(momentId) {
     </div>
     ${m.caption ? `<p class="text-xs text-gray-200 font-medium px-1">${safeMomentTxt(m.caption)}</p>` : ''}
     <div class="flex items-center justify-between pt-2 border-t border-[#22273f]">
-      <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition cursor-pointer ${isLiked ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-[#1b1e32] border-[#293050] text-gray-300'}">
-        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-        <span>${m.likeCount || (m.likes ? m.likes.length : 0)}</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <div class="heart-container" title="Like">
+          <input 
+            type="checkbox" 
+            class="checkbox" 
+            id="like-modal-${m.id}" 
+            ${isLiked ? 'checked' : ''} 
+            onchange="toggleLikeMoment('${m.id}')"
+          />
+          <div class="svg-container">
+            <svg viewBox="0 0 24 24" class="svg-outline" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Zm-3.585,18.4a2.973,2.973,0,0,1-3.83,0C4.947,16.006,2,11.87,2,8.967a4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,11,8.967a1,1,0,0,0,2,0,4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,22,8.967C22,11.87,19.053,16.006,13.915,20.313Z">
+              </path>
+            </svg>
+            <svg viewBox="0 0 24 24" class="svg-filled" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Z">
+              </path>
+            </svg>
+            <svg class="svg-celebrate" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="10,10 20,20"></polygon>
+              <polygon points="10,50 20,50"></polygon>
+              <polygon points="20,80 30,70"></polygon>
+              <polygon points="90,10 80,20"></polygon>
+              <polygon points="90,50 80,50"></polygon>
+              <polygon points="80,80 70,70"></polygon>
+            </svg>
+          </div>
+        </div>
+        <span class="text-xs font-bold text-gray-300">
+          ${m.likeCount || (m.likes ? m.likes.length : 0)}
+        </span>
+      </div>
       ${isMine ? `
         <button onclick="deleteMoment('${m.id}')" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl flex items-center gap-1 transition cursor-pointer">
           <i class="fas fa-trash"></i> Delete
@@ -19786,44 +19972,70 @@ async function publishMoment() {
     return;
   }
 
+  // Max size check: 20MB
+  const MAX_SIZE = 20 * 1024 * 1024;
+  if (selectedMomentFile.size > MAX_SIZE) {
+    const msg = 'File size exceeds 20MB limit. Please pick a smaller file.';
+    if (errBanner) {
+      errBanner.textContent = msg;
+      errBanner.classList.remove('hidden');
+    } else {
+      alert(msg);
+    }
+    return;
+  }
+
   const btnSubmit = $('btnPublishMomentSubmit');
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Publishing...`;
+    btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Uploading... 0%`;
   }
 
   try {
     let mediaUrl = '';
-
-    // Attempt storage upload with 3.5s timeout so it doesn't hang indefinitely if Firebase Storage is unreachable
-    const tryStorageUpload = async () => {
-      if (!storage) throw new Error("Storage not initialized");
-      const storageRef = ref(storage, `moments/${profile.uid}_${Date.now()}_${selectedMomentFile.name}`);
-      const uploadTask = uploadBytes(storageRef, selectedMomentFile);
-      const timeoutTask = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Storage upload timeout")), 3500)
-      );
-      await Promise.race([uploadTask, timeoutTask]);
-      return await getDownloadURL(storageRef);
-    };
+    const fileExt = selectedMomentFile.name ? selectedMomentFile.name.split('.').pop() : (selectedMomentFileType === 'video' ? 'mp4' : 'jpg');
+    const storageRef = ref(storage, `moments/${profile.uid}_${Date.now()}.${fileExt}`);
 
     try {
-      mediaUrl = await tryStorageUpload();
+      const uploadTask = uploadBytesResumable(storageRef, selectedMomentFile);
+      mediaUrl = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          try { uploadTask.cancel(); } catch (e) {}
+          reject(new Error("Storage upload timed out after 90 seconds. Please check your internet connection."));
+        }, 90000);
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            if (snapshot.totalBytes > 0) {
+              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              if (btnSubmit) {
+                btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Uploading... ${pct}%`;
+              }
+            }
+          },
+          (err) => {
+            clearTimeout(timer);
+            reject(err);
+          },
+          async () => {
+            clearTimeout(timer);
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            } catch (e) {
+              reject(e);
+            }
+          }
+        );
+      });
     } catch (stErr) {
-      console.warn("Storage upload bypassed/timed out, using fast fallback:", stErr);
+      console.warn("Storage upload failed, trying image fallback:", stErr);
       if (selectedMomentFileType === 'image' || (selectedMomentFile.type && selectedMomentFile.type.startsWith('image/'))) {
+        if (btnSubmit) btnSubmit.innerHTML = `<i class="fas fa-spinner animate-spin mr-1"></i> Compressing image...`;
         mediaUrl = await compressImageToDataUrl(selectedMomentFile);
       } else {
-        if (selectedMomentFile.size < 900000) {
-          mediaUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
-            reader.onerror = () => resolve('');
-            reader.readAsDataURL(selectedMomentFile);
-          });
-        } else {
-          throw new Error("Storage upload timed out. Please choose a smaller video (<1MB) or an image.");
-        }
+        throw stErr;
       }
     }
 
@@ -19836,7 +20048,9 @@ async function publishMoment() {
     await addDoc(collection(db, 'moments'), {
       userId: profile.uid,
       userName: profile.name || profile.userName || 'Player',
-      userAv: profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid}`,
+      userAv: profile.av || profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid}`,
+      isPremium: !!(profile.premium || profile.isPremium || profile.isVIP),
+      isVerified: !!(profile.isVerified || profile.hasBlueTick || profile.blueTick || profile.verified),
       mediaUrl: mediaUrl,
       mediaType: selectedMomentFileType,
       caption: captionText,
@@ -19846,7 +20060,11 @@ async function publishMoment() {
     });
 
     closeUploadMomentModal();
-    alert('🎉 Moment posted successfully!');
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("🎉 Moment Posted!", "Your moment is live!");
+    } else {
+      alert('🎉 Moment posted successfully!');
+    }
   } catch(err) {
     console.error("Error publishing moment:", err);
     if (errBanner) {
@@ -19858,7 +20076,7 @@ async function publishMoment() {
   } finally {
     if (btnSubmit) {
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> Publish Moment`;
+      btnSubmit.innerHTML = `<i class="fas fa-paper-plane mr-1"></i> Publish Moment`;
     }
   }
 }
@@ -19887,6 +20105,18 @@ async function toggleLikeMoment(momentId) {
   if (!m) return;
   const isLiked = m.likes && m.likes.includes(profile.uid);
   const mRef = doc(db, 'moments', momentId);
+
+  // Optimistic UI update
+  if (!m.likes) m.likes = [];
+  if (isLiked) {
+    m.likes = m.likes.filter(id => id !== profile.uid);
+    m.likeCount = Math.max(0, (m.likeCount || 1) - 1);
+  } else {
+    m.likes.push(profile.uid);
+    m.likeCount = (m.likeCount || 0) + 1;
+  }
+  renderMomentsFeedPage();
+
   try {
     if (isLiked) {
       await updateDoc(mRef, {
@@ -19908,6 +20138,7 @@ async function toggleLikeMoment(momentId) {
 window.openMomentsProfileModal = openMomentsProfileModal;
 window.closeMomentsProfileModal = closeMomentsProfileModal;
 window.openMomentsFeedModal = openMomentsFeedModal;
+window.openMomentsFeedModalFiltered = openMomentsFeedModalFiltered;
 window.closeMomentsFeedModal = closeMomentsFeedModal;
 window.openUploadMomentModal = openUploadMomentModal;
 window.closeUploadMomentModal = closeUploadMomentModal;
