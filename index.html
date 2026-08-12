@@ -4672,9 +4672,10 @@ if (typeof tailwind !== 'undefined') {
       
       <!-- 1st Place -->
       <div class="flex flex-col items-center w-[120px] text-center -translate-y-1">
-        <div class="relative mb-1">
-          <img id="podium1Av" class="w-14 h-14 rounded-full border-2 border-gold object-cover shadow-[0_0_12px_rgba(240,192,64,0.3)]" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1"/>
-          <div class="absolute -top-2.5 -right-1.5 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center"><i class="fas fa-crown text-[7px]"></i></div>
+        <div class="relative mb-1 flex items-center justify-center pt-1">
+          <img id="podium1Av" class="w-14 h-14 rounded-full object-cover shadow-[0_0_12px_rgba(240,192,64,0.4)]" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1"/>
+          <img src="avframe-1.png" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='avframe-1.svg';}" alt="Rank 1 Frame" class="absolute -inset-[23%] w-[146%] h-[146%] pointer-events-none z-20 max-w-none object-contain drop-shadow-[0_2px_8px_rgba(240,192,64,0.5)]" />
+          <div class="absolute -bottom-1 -right-1 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center z-30">1</div>
         </div>
         <div id="podium1Name" class="text-xs font-bold text-white truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
         <div id="podium1Score" class="text-[10px] text-gold font-mono font-black mt-0.5">Stats</div>
@@ -5398,13 +5399,13 @@ window.goTo = goTo;
 window.getBlueTickBadgeHtml = function(userObj, sizeClass = 'w-4 h-4') {
   if (!userObj) return '';
   if (userObj.hasBlueTick || userObj.isVerified || userObj.blueTick || userObj.verified) {
-    return `<img src="bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge"/><i class="fas fa-check-circle text-sky-400 align-middle ml-1 text-xs" title="Verified Badge"></i>`;
+    return `<img src="bluetick.png" class="${sizeClass} inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge"/>`;
   }
   return '';
 };
 
 // Helper to render Player Name with Premium Gold styling and Verified Tick Badge
-window.formatPlayerNameHtml = function(userObj, extraClasses = '') {
+window.formatPlayerNameHtml = function(userObj, extraClasses = '', badgeSizeClass = 'w-4 h-4') {
   if (!userObj) return '';
   const name = userObj.name || userObj.userName || userObj.playerName || 'Player';
   const isPrem = !!(userObj.premium || userObj.isPremium || userObj.isVIP || userObj.vip);
@@ -5415,7 +5416,7 @@ window.formatPlayerNameHtml = function(userObj, extraClasses = '') {
     html += `<i class="fas fa-crown text-amber-400 text-xs ml-1 shrink-0" title="Premium"></i>`;
   }
   if (isVer) {
-    html += `<i class="fas fa-check-circle text-sky-400 text-xs ml-1 shrink-0" title="Verified"></i>`;
+    html += window.getBlueTickBadgeHtml(userObj, badgeSizeClass);
   }
   return html;
 };
@@ -10766,7 +10767,9 @@ function openFriendDM(friend) {
         const uData = docSnap.data();
         if (uData.av) friend.av = uData.av;
         if (uData.name) friend.name = uData.name;
-        if ($('dmChatName')) $('dmChatName').textContent = friend.name || 'Player Chat';
+        if (uData.isVerified !== undefined) friend.isVerified = uData.isVerified;
+        if (uData.hasBlueTick !== undefined) friend.hasBlueTick = uData.hasBlueTick;
+        if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
         if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
         document.querySelectorAll(`.dm-msg-av-${friend.uid}`).forEach(img => {
           img.src = friend.av;
@@ -10775,7 +10778,7 @@ function openFriendDM(friend) {
     });
   }
 
-  if ($('dmChatName')) $('dmChatName').textContent = friend.name || 'Player Chat';
+  if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
   if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
   if ($('dmChatNum')) $('dmChatNum').textContent = friend.badgeNum || '6';
 
@@ -20485,4 +20488,3 @@ initMomentsListener();
 </script>
 </body>
 </html>
-v
