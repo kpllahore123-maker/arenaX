@@ -5254,25 +5254,30 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   </div>
                 </div>
 
-                {/* RANK 1 (Center - Taller Podium with Golden Crown) */}
+                {/* RANK 1 (Center - Taller Podium with Golden Crown Frame) */}
                 <div 
                   onClick={() => openUserProfileModal(rank1Player)}
                   className="flex flex-col items-center z-20 w-1/3 max-w-[130px] -mt-6 cursor-pointer hover:scale-105 transition"
                 >
                   <div className="relative mb-2 flex flex-col items-center">
-                    {/* Golden Crown Icon sitting on head */}
-                    <div className="absolute -top-7 text-yellow-300 text-2xl sm:text-3xl animate-bounce drop-shadow-[0_4px_12px_rgba(250,204,21,0.8)] z-30">
-                      👑
-                    </div>
-                    <div className="relative flex items-center justify-center">
+                    <div className="relative flex items-center justify-center pt-2">
                       <img
                         src={rank1Player.av}
                         alt={rank1Player.name}
-                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-yellow-300 shadow-[0_0_30px_rgba(250,204,21,0.6)]"
+                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-[0_0_20px_rgba(250,204,21,0.5)] z-10"
                       />
-                      {(rank1Player.frameEquipped || (rank1Player.uid === currentUser?.uid && currentUser?.frameEquipped)) && (
-                        <img src="/arenaX/avatarframe1.svg" onError={(e)=>{if(e.currentTarget.src.includes("/arenaX/avatarframe1.svg")){e.currentTarget.src="/avatarframe1.svg";}}} alt="Frame" className="absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-20 max-w-none object-contain" />
-                      )}
+                      <img 
+                        src="avframe-1.png" 
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.tried) {
+                            target.dataset.tried = 'true';
+                            target.src = 'avframe-1.svg';
+                          }
+                        }} 
+                        alt="Rank 1 Frame" 
+                        className="absolute -inset-[23%] w-[146%] h-[146%] pointer-events-none z-20 max-w-none object-contain drop-shadow-[0_4px_12px_rgba(250,204,21,0.6)]" 
+                      />
                       <span className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-yellow-300 to-amber-500 text-gray-950 font-black text-xs rounded-full flex items-center justify-center border-2 border-white shadow-md z-30">
                         1
                       </span>
