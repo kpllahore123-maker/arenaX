@@ -89,6 +89,10 @@ if ('serviceWorker' in navigator) {
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<!-- Three.js & Loaders for 3D Player Show -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <!-- Lottie Player CDN -->
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 <!-- Tailwind CSS CDN -->
@@ -990,6 +994,30 @@ if (typeof tailwind !== 'undefined') {
         </div>
       </div>
 
+      <!-- 3D PLAYER SHOW FEATURE CARD -->
+      <div id="pPlayerShowCard" class="relative rounded-2xl p-4 overflow-hidden border border-amber-500/30 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] shadow-xl flex items-center justify-between gap-3 my-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl shrink-0 shadow-inner">
+            <i class="fas fa-cube"></i>
+          </div>
+          <div class="min-w-0">
+            <h4 class="font-bold text-white text-xs sm:text-sm truncate flex items-center gap-1.5">
+              Player Show
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">3D Avatar</span>
+            </h4>
+            <p id="pPlayerShowDesc" class="text-[10px] text-gray-400 truncate">Interactive 3D character avatar viewer</p>
+          </div>
+        </div>
+        <button
+          id="btnPlayerShowAction"
+          type="button"
+          onclick="if(window.openPlayerShowViewer) { window.openPlayerShowViewer(); } else { window.dispatchEvent(new CustomEvent('open-player-show-viewer')); }"
+          class="px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-black transition shrink-0 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
+        >
+          <i class="fas fa-play text-[10px]"></i> <span id="pPlayerShowBtnText">Enter</span>
+        </button>
+      </div>
+
       <!-- Hidden compatibility placeholders for code expectations -->
       <div id="prmPromo" class="hidden"></div>
       <div id="pDetailsCard" class="hidden"></div>
@@ -1269,7 +1297,7 @@ if (typeof tailwind !== 'undefined') {
           Voice Arena
         </div>
         <div class="flex items-center gap-2">
-          <button id="btnCreateVoiceRoom" class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] transition duration-200 flex items-center gap-1.5 cursor-pointer">
+          <button id="btnCreateVoiceRoom" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition duration-200 flex items-center gap-1.5 cursor-pointer">
             <i class="fas fa-plus"></i> Create Room
           </button>
         </div>
@@ -1281,30 +1309,29 @@ if (typeof tailwind !== 'undefined') {
         <div class="flex gap-2 shrink-0">
           <div class="relative flex-1">
             <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
-            <input id="voiceSearchInput" type="text" placeholder="Search by room name or host..." class="w-full bg-card/60 border border-bdr/80 rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-emerald-500/50 focus:bg-card transition text-white">
+            <input id="voiceSearchInput" type="text" placeholder="Search voice rooms by title, tag or host..." class="w-full bg-card/60 border border-bdr/80 rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-emerald-500/50 focus:bg-card transition text-white">
           </div>
           <button id="btnRefreshVoiceLobby" class="w-8 h-8 bg-card/60 border border-bdr/80 hover:bg-card text-t2 hover:text-emerald-400 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
             <i class="fas fa-sync-alt"></i>
           </button>
         </div>
 
-        <!-- Horizontal Game Filter Pills -->
+        <!-- Category Tag Filter Pills matching Reference Image 1 -->
         <div class="flex gap-1.5 overflow-x-auto pb-1.5 shrink-0 no-scrollbar">
-          <button class="game-filter-pill px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:text-white rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="All">All Games</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="PUBG Mobile">PUBG Mobile</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Free Fire">Free Fire</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="FIFA">FIFA</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Valorant">Valorant</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="COD Mobile">COD Mobile</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer shrink-0" data-game="Ludo">Ludo Star</button>
+          <button class="game-filter-pill px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:text-white rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="All">🌟 All Rooms</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Talk">💬 Talk</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-purple-300 hover:border-purple-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Game">🎮 Game</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-cyan-300 hover:border-cyan-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Music">🎵 Music</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-rose-300 hover:border-rose-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Friends">👥 Friends</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-amber-300 hover:border-amber-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Family">🏠 Family</button>
         </div>
 
         <!-- Welcome Voice Banner -->
         <div id="welcomeVoiceBanner" class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6 shrink-0">
           <div class="flex-1 flex flex-col items-center md:items-start justify-center">
             <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
-            <p class="text-sm text-white font-semibold">Ready to Speak?</p>
-            <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a room or join an active squad below. Experience high-fidelity, zero-latency gaming audio with your team!</p>
+            <p class="text-sm text-white font-semibold">Ready to Hang Out?</p>
+            <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a voice room with custom background, chat, seats, and send gifts to friends in real time!</p>
           </div>
           <div class="w-full md:w-64 h-36 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10 relative overflow-hidden">
             <lottie-player src="./animation.json" background="transparent" speed="1.0" style="width: 240px; height: 160px;" loop autoplay></lottie-player>
@@ -1317,128 +1344,168 @@ if (typeof tailwind !== 'undefined') {
         </div>
       </div>
 
-      <!-- In-Room View (Discord Style Panel) -->
-      <div id="voiceActiveRoomView" class="flex-1 flex flex-col min-h-0 space-y-3 hidden">
-        <!-- Room Banner Info -->
-        <div class="p-3 bg-gradient-to-r from-[#111827] via-[#064e3b]/30 to-[#111827] border border-emerald-500/20 rounded-xl flex items-center justify-between shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
-          <div class="flex items-center gap-2.5">
-            <div class="relative">
-              <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <i class="fas fa-headset text-lg animate-pulse"></i>
+      <!-- In-Room View (Reference Image 2 Style) -->
+      <div id="voiceActiveRoomView" class="fixed inset-0 z-[100] bg-[#0a0c12] flex flex-col hidden overflow-hidden">
+        <!-- Custom Room Cover Image Overlay Background -->
+        <div id="activeRoomBgOverlay" class="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none transition-all duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0a0c12]/75 via-[#0a0c12]/90 to-[#0a0c12] pointer-events-none"></div>
+
+        <!-- Top Header Bar -->
+        <div class="p-3 bg-[#111420]/90 backdrop-blur-md border-b border-[#252a45] flex items-center justify-between shrink-0 relative z-10 shadow-lg">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="relative shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-900/60 to-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-md">
+                <i class="fas fa-microphone-alt text-base animate-pulse"></i>
               </div>
               <span class="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 flex items-center justify-center text-[7px] text-white font-black">Live</span>
               </span>
             </div>
-            <div>
-              <div class="flex items-center gap-1.5">
-                <h4 id="activeRoomName" class="text-xs font-black uppercase text-white tracking-wide">Squad Voice Alpha</h4>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 truncate">
+                <h4 id="activeRoomName" class="text-xs font-black uppercase text-white tracking-wide truncate">HOT VIBEs 🔥</h4>
                 <i id="activeRoomLockIcon" class="fas fa-lock text-[10px] text-gold hidden"></i>
               </div>
               <div class="flex items-center gap-2 mt-0.5">
-                <span id="activeRoomGame" class="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-[8px] font-extrabold uppercase text-emerald-300 rounded-md">PUBG Mobile</span>
-                <span class="text-[9px] text-t3 flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> <span id="activeRoomRegion">South Asia</span></span>
-                <span class="text-[9px] text-t3 flex items-center gap-1"><i class="fas fa-wifi text-[8px] text-emerald-500"></i> <span id="activeRoomPing">18ms</span></span>
+                <span id="activeRoomTagPill" class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-[8px] font-extrabold uppercase text-emerald-300 rounded-full">Music</span>
+                <span class="text-[9px] text-gray-300 flex items-center gap-1"><i class="fas fa-users text-[9px] text-emerald-400"></i> <span id="activeRoomCount">1</span>/<span id="activeRoomMax">10</span></span>
               </div>
             </div>
           </div>
           
-          <div class="flex gap-1.5">
-            <button id="btnInviteFriendToVoice" class="p-2 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/25 text-emerald-300 rounded-lg transition text-xs flex items-center justify-center gap-1" title="Invite Friends">
-              <i class="fas fa-user-plus"></i> <span class="text-[9px] font-bold hidden sm:inline">Invite</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Top Seated Avatars Preview Row -->
+            <div id="activeRoomTopAvatars" class="hidden xs:flex items-center -space-x-1.5 mr-1"></div>
+
+            <!-- Room Atmosphere Themes Button -->
+            <button id="btnOpenVoiceTheme" class="p-2 bg-[#171b2e] hover:bg-[#252a45] border border-[#252a45] text-[#f0c040] rounded-xl text-xs flex items-center justify-center transition cursor-pointer" title="Room Atmosphere Themes">
+              🎨
             </button>
-            <button id="btnLeaveVoiceRoom" class="p-2 bg-red-500/10 border border-red-500/25 hover:bg-red-500/25 text-red rounded-lg transition text-xs flex items-center justify-center gap-1" title="Leave Room">
-              <i class="fas fa-sign-out-alt"></i> <span class="text-[9px] font-bold hidden sm:inline">Leave</span>
+
+            <!-- Host Tools Button (Shows for host) -->
+            <button id="btnHostTools" class="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-300 rounded-xl transition text-[10px] font-bold flex items-center gap-1 cursor-pointer hidden">
+              <span>🧰</span> <span class="hidden sm:inline">Tools</span>
+            </button>
+
+            <!-- Invite Button -->
+            <button id="btnInviteFriendToVoice" class="p-2 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-300 rounded-xl transition text-xs flex items-center justify-center gap-1 cursor-pointer" title="Invite Friends">
+              <i class="fas fa-user-plus"></i>
+            </button>
+
+            <!-- Leave Button -->
+            <button id="btnLeaveVoiceRoom" class="p-2 bg-red-500/15 border border-red-500/30 hover:bg-red-500/30 text-red-400 rounded-xl transition text-xs flex items-center justify-center gap-1 cursor-pointer" title="Leave Room">
+              <i class="fas fa-sign-out-alt"></i>
             </button>
           </div>
         </div>
 
-        <!-- Inactivity Warning Banner -->
-        <div id="aloneWarningBanner" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center justify-between shrink-0 hidden animate-pulse">
-          <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
-              <i class="fas fa-exclamation-triangle text-xs animate-bounce"></i>
-            </div>
+        <!-- Optional PK Battle Mode Banner (Interactive feature) -->
+        <div id="activeRoomPkBanner" class="mx-3 p-2.5 bg-gradient-to-r from-purple-950/80 via-pink-950/80 to-purple-950/80 border border-purple-500/40 rounded-xl relative z-10 flex items-center justify-between shadow-xl hidden">
+          <div class="flex items-center gap-2">
+            <img id="pkPlayer1Av" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1" class="w-8 h-8 rounded-full border-2 border-purple-400 object-cover">
             <div>
-              <div class="text-[10px] font-black text-white uppercase tracking-wider">⚠️ You are alone in this channel!</div>
-              <div class="text-[9px] text-t3 mt-0.5 leading-normal">Invite teammates or wait. This room will close in <span id="aloneCountdown" class="text-red-400 font-extrabold text-[11px]">30</span> seconds to keep the lobby clean.</div>
+              <div id="pkPlayer1Name" class="text-[9px] font-black text-white truncate max-w-[80px]">Host Alpha</div>
+              <div class="text-[8px] font-extrabold text-purple-300">💎 <span id="pkPlayer1Score">1.2k</span></div>
             </div>
           </div>
-          <button id="aloneWarningBtnInvite" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-white rounded text-[8px] font-black uppercase tracking-wider transition">Invite</button>
+          <div class="text-center">
+            <span class="text-xs font-black text-pink-400 animate-pulse tracking-widest">VS PK</span>
+            <div class="text-[7px] font-bold text-gray-400">Battle Mode</div>
+          </div>
+          <div class="flex items-center gap-2 text-right">
+            <div>
+              <div id="pkPlayer2Name" class="text-[9px] font-black text-white truncate max-w-[80px]">Challenger</div>
+              <div class="text-[8px] font-extrabold text-pink-300">💎 <span id="pkPlayer2Score">850</span></div>
+            </div>
+            <img id="pkPlayer2Av" src="https://api.dicebear.com/7.x/bottts/svg?seed=p2" class="w-8 h-8 rounded-full border-2 border-pink-400 object-cover">
+          </div>
         </div>
 
-        <!-- Main Room Grid: Left Participants, Right Chat (on md: flex-row, default flex-col) -->
-        <div class="flex-1 flex flex-col min-h-0 gap-3">
-          <!-- Participants Grid Wrapper -->
-          <div class="flex-1 flex flex-col min-h-0 bg-card/40 border border-bdr/60 rounded-xl p-3">
-            <div class="flex items-center justify-between mb-2 pb-1 border-b border-bdr/30 shrink-0">
-              <div class="text-[10px] font-black uppercase tracking-wider text-t2 flex items-center gap-1.5">
-                <i class="fas fa-users text-emerald-400"></i> Squad Members (<span id="activeRoomCount">1</span>/<span id="activeRoomMax">10</span>)
-              </div>
-              <div id="hostLobbyControls" class="flex gap-1.5 hidden">
-                <button id="btnToggleLockRoom" class="text-[9px] font-bold px-2 py-0.5 bg-gold/10 border border-gold/25 hover:bg-gold/25 text-gold rounded-md transition flex items-center gap-1">
-                  <i class="fas fa-lock"></i> Lock Room
-                </button>
-                <button id="btnDeleteRoom" class="text-[9px] font-bold px-2 py-0.5 bg-red-500/15 border border-red-500/25 hover:bg-red-500/25 text-red rounded-md transition flex items-center gap-1">
-                  <i class="fas fa-trash-alt"></i> Delete Room
-                </button>
-              </div>
+        <!-- Main Active Room Section: Seats Grid + Chat Feed -->
+        <div class="flex-1 flex flex-col min-h-0 space-y-3 p-3 relative z-10 overflow-y-auto">
+          <!-- Room Seats Grid (Matching Reference Image 2 circular seat slots) -->
+          <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-3 shadow-xl">
+            <div class="flex items-center justify-between mb-2 pb-1 border-b border-white/10">
+              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <i class="fas fa-couch"></i> Room Seats (<span id="activeSeatsOccupiedCount">1</span>/<span id="activeSeatsTotalCount">8</span>)
+              </span>
+              <span class="text-[9px] text-gray-400 font-semibold">Tap an empty seat to join seat</span>
             </div>
 
-            <!-- Grid of active avatars -->
-            <div id="roomParticipantsGrid" class="flex-1 overflow-y-auto grid grid-cols-2 xs:grid-cols-3 gap-2.5 content-start pr-1">
-              <!-- Dynamically rendered participant avatars with speakers and indicators -->
+            <div id="roomSeatsGrid" class="grid grid-cols-3 xs:grid-cols-4 gap-3 py-1 text-center">
+              <!-- Dynamically rendered seats 1..N -->
             </div>
           </div>
 
-          <!-- Room Live Text Chat Panel -->
-          <div class="h-[180px] xs:h-[220px] shrink-0 flex flex-col bg-card/60 border border-bdr/60 rounded-xl overflow-hidden">
-            <div class="p-2 bg-card/80 border-b border-bdr/40 flex items-center gap-1.5 shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span class="text-[9px] font-black uppercase tracking-wider text-white">Tactical Room Chat</span>
+          <!-- Room Live Chat Container -->
+          <div class="flex-1 min-h-[160px] flex flex-col bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-2 bg-white/5 border-b border-white/10 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="text-[9px] font-black uppercase tracking-wider text-white">Live Room Chat</span>
+              </div>
+              <span class="text-[8px] text-gray-400">Gifts & messages appear here</span>
             </div>
             
-            <!-- Message List -->
-            <div id="roomChatMsgs" class="flex-1 overflow-y-auto p-2.5 space-y-2 text-[11px]">
-              <!-- Chat logs specific to this room -->
+            <!-- Message Feed -->
+            <div id="roomChatMsgs" class="flex-1 overflow-y-auto p-3 space-y-2 text-[11px] font-sans">
+              <!-- Chat logs and gift announcements -->
             </div>
-
-            <!-- Form -->
-            <form id="roomChatForm" class="p-1.5 bg-card/90 border-t border-bdr/40 flex gap-1.5 shrink-0">
-              <input id="roomChatInput" type="text" placeholder="Send squad msg..." class="flex-1 bg-panel border border-bdr/60 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-emerald-500/50 transition text-white">
-              <button type="submit" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center text-xs transition cursor-pointer">
-                <i class="fas fa-paper-plane text-[10px]"></i>
-              </button>
-            </form>
           </div>
         </div>
 
-        <!-- Discord Style Audio Control Bar at bottom of active room view -->
-        <div class="p-3 bg-panel border border-bdr rounded-xl flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-2">
-            <img id="voiceMyAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=me" class="w-8 h-8 rounded-full border border-emerald-500/30 bg-emerald-950"/>
-            <div>
-              <div class="text-[10px] font-black text-white leading-none">Voice Connected</div>
-              <div id="voiceMyStatus" class="text-[8px] text-emerald-400 mt-0.5 flex items-center gap-1">
-                <span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> RTC Ready
-              </div>
-            </div>
+        <!-- Bottom Action Bar & Gift Bar -->
+        <div class="p-2.5 bg-black/80 backdrop-blur-md border-t border-white/10 space-y-2 shrink-0 relative z-10">
+          <!-- Horizontal Scrollable Gift Bar -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider shrink-0 mr-1">Gifts:</span>
+            <!-- Rose -->
+            <button class="vr-quick-gift-btn px-2.5 py-1 bg-pink-500/15 border border-pink-500/30 hover:border-pink-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 transition cursor-pointer" data-type="rose">
+              <span>🌹 Rose</span>
+              <span class="text-amber-400 text-[9px]">10</span>
+            </button>
+            <!-- Star -->
+            <button class="vr-quick-gift-btn px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 hover:border-amber-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 transition cursor-pointer" data-type="star">
+              <span>⭐️ Star</span>
+              <span class="text-amber-400 text-[9px]">50</span>
+            </button>
+            <!-- Rocket -->
+            <button class="vr-quick-gift-btn px-2.5 py-1 bg-purple-500/15 border border-purple-500/30 hover:border-purple-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 transition cursor-pointer" data-type="rocket">
+              <span>🚀 Rocket</span>
+              <span class="text-amber-400 text-[9px]">100</span>
+            </button>
+            <!-- Trophy -->
+            <button class="vr-quick-gift-btn px-2.5 py-1 bg-yellow-500/15 border border-yellow-500/30 hover:border-yellow-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 transition cursor-pointer" data-type="trophy">
+              <span>🏆 Trophy</span>
+              <span class="text-amber-400 text-[9px]">190</span>
+            </button>
           </div>
-          
+
+          <!-- Input Bar & Action Controls -->
           <div class="flex items-center gap-2">
-            <!-- Mute mic -->
-            <button id="btnVoiceToggleMute" class="w-8 h-8 rounded-lg bg-card border border-bdr hover:border-emerald-500/30 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer" title="Mute Microphone">
-              <i class="fas fa-microphone"></i>
+            <!-- Gift Modal Button -->
+            <button id="btnOpenVoiceGiftModal" class="p-2.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-xl shadow-lg shadow-pink-500/20 active:scale-95 transition cursor-pointer shrink-0" title="Send Gift to Seated Player">
+              <span class="text-sm">🎁</span>
             </button>
-            <!-- Deafen/Speaker -->
-            <button id="btnVoiceToggleDeafen" class="w-8 h-8 rounded-lg bg-card border border-bdr hover:border-emerald-500/30 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer" title="Toggle Speakers">
-              <i class="fas fa-volume-up"></i>
+
+            <!-- Mic Toggle -->
+            <button id="btnVoiceToggleMute" class="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition cursor-pointer shrink-0" title="Toggle Microphone">
+              <i class="fas fa-microphone text-xs"></i>
             </button>
-            <!-- Push to Talk button -->
-            <button id="btnVoicePTT" class="h-8 px-3 rounded-lg bg-emerald-600/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white flex items-center gap-1 transition text-[10px] font-black uppercase tracking-wider select-none cursor-pointer" title="Hold to Speak">
-              <i class="fas fa-keyboard text-[9px]"></i> PTT Mode
+
+            <!-- Speaker Toggle -->
+            <button id="btnVoiceToggleDeafen" class="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition cursor-pointer shrink-0" title="Toggle Speaker">
+              <i class="fas fa-volume-up text-xs"></i>
             </button>
+
+            <!-- Text Chat Form -->
+            <form id="roomChatForm" class="flex-1 flex gap-1.5 min-w-0">
+              <input id="roomChatInput" type="text" placeholder="Type a message..." class="flex-1 bg-white/10 border border-white/15 rounded-xl px-3 py-2 text-xs outline-none focus:border-emerald-500 transition text-white placeholder:text-gray-400">
+              <button type="submit" class="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center text-xs transition cursor-pointer shrink-0">
+                <i class="fas fa-paper-plane text-xs"></i>
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -1446,81 +1513,301 @@ if (typeof tailwind !== 'undefined') {
 
     <!-- Create Room Dialog Backdrop -->
     <div id="mCreateVoiceRoom" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-      <div class="bg-panel border border-emerald-500/30 rounded-2xl p-5 max-w-[420px] w-full space-y-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] relative overflow-hidden">
+      <div class="bg-panel border border-emerald-500/30 rounded-2xl p-5 max-w-[420px] w-full space-y-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] relative overflow-hidden max-h-[90vh] overflow-y-auto">
         <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-xl"></div>
         
         <div class="flex justify-between items-center pb-2 border-b border-bdr/50">
           <h3 class="font-display text-lg font-black uppercase text-white tracking-wide flex items-center gap-2">
-            <i class="fas fa-microphone-alt text-emerald-400"></i> Setup Voice Channel
+            <i class="fas fa-microphone-alt text-emerald-400"></i> Create Voice Room
           </h3>
           <button id="bCloseCreateVoiceRoom" class="text-t3 hover:text-white transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
         </div>
 
         <form id="createVoiceRoomForm" class="space-y-3.5 text-xs">
+          <!-- Room Cover Background Upload -->
           <div>
-            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Name</label>
-            <input id="cvName" type="text" required placeholder="Squad Alpha Voice" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Game Selection</label>
-              <select id="cvGame" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
-                <option value="PUBG Mobile">PUBG Mobile</option>
-                <option value="Free Fire">Free Fire</option>
-                <option value="FIFA">FIFA</option>
-                <option value="Valorant">Valorant</option>
-                <option value="COD Mobile">COD Mobile</option>
-                <option value="Ludo">Ludo Star</option>
-                <option value="Other">Other Game</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Max Players (2-20)</label>
-              <input id="cvMaxPlayers" type="number" min="2" max="20" value="10" required class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Cover Background</label>
+            <input id="cvCoverInput" type="file" accept="image/*" class="hidden">
+            <div id="cvCoverBox" class="w-full h-28 rounded-xl border-2 border-dashed border-bdr hover:border-emerald-500/50 bg-card/50 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden group">
+              <img id="cvCoverPreview" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+              <div id="cvCoverPlaceholder" class="flex flex-col items-center gap-1.5 text-center p-2 z-10">
+                <div class="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-sm group-hover:scale-110 transition">
+                  <i class="fas fa-camera"></i>
+                </div>
+                <span class="text-[10px] font-bold text-gray-300">Upload Custom Room Background</span>
+                <span class="text-[8px] text-gray-500">JPG or PNG (Tap to choose)</span>
+              </div>
             </div>
           </div>
 
+          <!-- Room Title -->
+          <div>
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Title</label>
+            <input id="cvName" type="text" required placeholder="e.g. HOT VIBEs 🔥" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+          </div>
+
+          <!-- Category Tag Badges -->
+          <div>
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Category Tag</label>
+            <div class="flex flex-wrap gap-2" id="cvTagContainer">
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-emerald-500/20 text-emerald-300 border-emerald-500/50" data-tag="Talk">💬 Talk</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-purple-500/50" data-tag="Game">🎮 Game</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-cyan-500/50" data-tag="Music">🎵 Music</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-rose-500/50" data-tag="Friends">👥 Friends</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-amber-500/50" data-tag="Family">🏠 Family</button>
+            </div>
+          </div>
+
+          <!-- Seats Selection -->
+          <div>
+            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Available Seats</label>
+            <div class="grid grid-cols-4 gap-2" id="cvSeatsContainer">
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="6">6 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-emerald-500/20 border-emerald-500/50 text-emerald-300" data-seats="8">8 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="10">10 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="12">12 Seats</button>
+            </div>
+          </div>
+
+          <!-- Privacy Option -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Privacy</label>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Privacy Mode</label>
               <select id="cvType" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
-                <option value="public">Public</option>
-                <option value="private">Private (Password)</option>
-                <option value="friends">Friends Only</option>
+                <option value="public">🌐 Public (Open)</option>
+                <option value="private">🔒 Private (Password)</option>
               </select>
             </div>
             <div>
-              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Region</label>
+              <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Region</label>
               <select id="cvRegion" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
                 <option value="South Asia">South Asia</option>
                 <option value="Middle East">Middle East</option>
-                <option value="Europe">Europe</option>
-                <option value="North America">North America</option>
-                <option value="Southeast Asia">Southeast Asia</option>
+                <option value="Global">Global</option>
               </select>
             </div>
           </div>
 
           <div id="cvPasswordWrap" class="hidden">
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Password</label>
-            <input id="cvPassword" type="text" placeholder="Enter password..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
-          </div>
-
-          <div>
-            <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Language</label>
-            <select id="cvLanguage" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
-              <option value="Urdu/Hindi">Urdu / Hindi</option>
-              <option value="English">English</option>
-              <option value="Arabic">Arabic</option>
-              <option value="Spanish">Spanish</option>
-            </select>
+            <input id="cvPassword" type="password" placeholder="Enter password..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
           </div>
 
           <button type="submit" class="w-full py-2.5 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 transition shadow-lg cursor-pointer">
-            Deploy Channel
+            Create Room Now 🚀
           </button>
         </form>
+      </div>
+    </div>
+
+    <!-- Host Tools Modal -->
+    <div id="mHostToolsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[220] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden animate-fade-in">
+      <div class="bg-[#111420] border-t sm:border border-[#252a45] rounded-t-[28px] sm:rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl relative">
+        <div class="flex justify-between items-center pb-2 border-b border-[#252a45]">
+          <h3 class="font-sans text-sm font-bold text-[#f0c040] flex items-center gap-2">
+            <i class="fas fa-tools"></i> Host Controls & Room Tools
+          </h3>
+          <button id="bCloseHostTools" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5 pt-1">
+          <!-- Wipe Screen -->
+          <button id="btnToolWipeScreen" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🧹</span>
+            <span class="text-[10px] font-bold text-white">Wipe Screen</span>
+          </button>
+
+          <!-- Change Background -->
+          <button id="btnToolChangeBg" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🖼️</span>
+            <span class="text-[10px] font-bold text-white">Change Cover</span>
+            <input id="cvCoverInputChange" type="file" accept="image/*" class="hidden">
+          </button>
+
+          <!-- Music Controls -->
+          <button id="btnToolMusic" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🎵</span>
+            <span class="text-[10px] font-bold text-white">Music Player</span>
+          </button>
+
+          <!-- Delete Chat -->
+          <button id="btnToolDeleteChat" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-red-500/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🗑️</span>
+            <span class="text-[10px] font-bold text-red-400">Clear Chat</span>
+          </button>
+
+          <!-- Share Room -->
+          <button id="btnToolShare" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">📢</span>
+            <span class="text-[10px] font-bold text-white">Share Room</span>
+          </button>
+
+          <!-- Room Themes -->
+          <button id="btnToolOpenThemes" class="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🎨</span>
+            <span class="text-[10px] font-bold text-white">Room Themes</span>
+          </button>
+
+          <!-- PK Battle Mode -->
+          <button id="btnToolPKMode" class="col-span-3 p-3 bg-gradient-to-r from-purple-900/40 to-pink-900/40 hover:from-purple-900/60 hover:to-pink-900/60 border border-purple-500/30 rounded-xl flex items-center justify-center gap-3 transition cursor-pointer group">
+            <span class="text-2xl animate-pulse">⚔️</span>
+            <div class="text-left">
+              <div class="text-xs font-black text-white uppercase tracking-wider">Interactive PK Battle Mode</div>
+              <div class="text-[9px] text-purple-300">Toggle 1v1 Battle Banner & Popularity Meter</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Atmosphere Theme Selector Modal -->
+    <div id="mVoiceThemeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[230] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden animate-fade-in">
+      <div class="bg-[#111420] border-t sm:border border-amber-500/30 rounded-t-[28px] sm:rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl relative animate-slide-up">
+        <div class="flex items-center justify-between pb-2 border-b border-[#252a45]">
+          <h3 class="font-sans text-sm font-bold text-[#f0c040] flex items-center gap-2">
+            <span>🎨</span> Room Atmosphere Themes
+          </h3>
+          <button id="bCloseVoiceTheme" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <button data-theme="default" class="vr-theme-btn p-3 bg-[#1e2338] border border-amber-400 text-amber-300 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group shadow-md ring-1 ring-amber-400/50">
+            <span class="text-xl group-hover:scale-110 transition">🌌</span>
+            <span class="text-[10px] font-bold">Default Dark</span>
+          </button>
+          <button data-theme="cyber" class="vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">👾</span>
+            <span class="text-[10px] font-bold">Cyber Neon</span>
+          </button>
+          <button data-theme="purple" class="vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">💜</span>
+            <span class="text-[10px] font-bold">Royal Purple</span>
+          </button>
+          <button data-theme="emerald" class="vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">💚</span>
+            <span class="text-[10px] font-bold">Emerald Arena</span>
+          </button>
+          <button data-theme="sunset" class="vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">🌅</span>
+            <span class="text-[10px] font-bold">Sunset Fire</span>
+          </button>
+          <button data-theme="gold" class="vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group">
+            <span class="text-xl group-hover:scale-110 transition">👑</span>
+            <span class="text-[10px] font-bold">VIP Gold</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice Room Gift Participant Selector Modal -->
+    <div id="mVoiceRoomGiftModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100000] flex flex-col justify-end animate-fade-in hidden font-sans">
+      <div class="bg-[#0d0d1a] border-t border-[#252a48] rounded-t-[28px] p-4 text-white shadow-2xl max-w-lg w-full mx-auto space-y-3.5 animate-slide-up">
+        <!-- Top Drag Handle -->
+        <div class="w-10 h-1 bg-[#2d3455] rounded-full mx-auto mb-1"></div>
+
+        <!-- Header Row: Send to + Recipient Participant Selector + Close -->
+        <div class="flex items-center justify-between pb-1 gap-2">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="text-xs text-gray-400 font-medium shrink-0">Send to</span>
+            <div id="vrGiftRecipientsRow" class="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar max-w-[280px]">
+              <!-- Dynamically populated participant pill buttons -->
+            </div>
+          </div>
+          <button id="bCloseVoiceGiftModal" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer shrink-0 ml-1">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Tab Row -->
+        <div class="flex items-center gap-6 border-b border-[#1c2138] pb-1 text-xs">
+          <span class="text-gray-500 font-medium cursor-pointer hover:text-gray-300 transition">Package</span>
+          <div class="relative font-bold text-white cursor-pointer py-1">
+            <span>Gift</span>
+            <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full"></span>
+          </div>
+          <span class="text-gray-500 font-medium cursor-pointer hover:text-gray-300 transition">Special</span>
+          <span class="text-gray-500 font-medium cursor-pointer hover:text-gray-300 transition">VIP</span>
+        </div>
+
+        <!-- Helper text row -->
+        <div class="flex items-center justify-between text-[11px] text-gray-400">
+          <span id="vrGiftHelpText">Receiver's Charm +1 • Gain popularity & status boost</span>
+          <button onclick="alert('Sending gifts boosts the recipient\'s popularity score and triggers a live room broadcast animation!')" class="w-4 h-4 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-[10px] font-bold shrink-0 cursor-pointer" title="Gift info">
+            ?
+          </button>
+        </div>
+
+        <!-- Gift Options Grid (Roses 10 coins, Rocket 100 coins, Trophy 190 coins) -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3.5 pt-1 pb-1">
+          <!-- CARD 1 — Roses -->
+          <div id="vrGiftItemRose" class="vr-gift-card relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]" data-type="rose" data-price="10" data-pop="1">
+            <div id="vrGiftCheckRose" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white flex items-center justify-center text-[9px] font-bold">
+              <i class="fas fa-check"></i>
+            </div>
+            <img src="./rose.png" alt="Rose" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5" />
+            <span class="font-bold text-xs text-white">Roses</span>
+            <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
+              <span class="text-xs">🪙</span>
+              <span>10</span>
+            </div>
+          </div>
+
+          <!-- CARD 2 — Rocket -->
+          <div id="vrGiftItemRocket" class="vr-gift-card relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40" data-type="rocket" data-price="100" data-pop="10">
+            <div id="vrGiftCheckRocket" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white items-center justify-center text-[9px] font-bold hidden">
+              <i class="fas fa-check"></i>
+            </div>
+            <img src="./rocket.png" alt="Rocket" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5" />
+            <span class="font-bold text-xs text-white">Rocket</span>
+            <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
+              <span class="text-xs">🪙</span>
+              <span>100</span>
+            </div>
+          </div>
+
+          <!-- CARD 3 — Trophy -->
+          <div id="vrGiftItemTrophy" class="vr-gift-card relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-amber-500/40" data-type="trophy" data-price="190" data-pop="20">
+            <div id="vrGiftCheckTrophy" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white items-center justify-center text-[9px] font-bold hidden">
+              <i class="fas fa-check"></i>
+            </div>
+            <img src="./poptrophy.png" alt="Trophy" class="w-11 h-11 sm:w-14 sm:h-14 object-contain animate-pulse my-0.5" />
+            <span class="font-bold text-xs text-white">Trophy</span>
+            <div class="flex items-center gap-1 text-[11px] font-extrabold text-amber-400">
+              <span class="text-xs">🪙</span>
+              <span>190</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="pt-2 flex items-center justify-between border-t border-[#1e233d] gap-3">
+          <!-- Left: AX Coins balance + Deposit + -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-[#171a2e] border border-[#293050] px-3 py-1.5 rounded-full text-xs font-bold text-amber-400">
+              <span class="text-sm">🪙</span>
+              <span id="vrGiftUserCoinBal">0</span>
+            </div>
+            <button id="btnVrGiftDeposit" class="w-6 h-6 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center shadow-md active:scale-95 transition cursor-pointer" title="Deposit AX Coins">
+              +
+            </button>
+          </div>
+
+          <!-- Right: Quantity selector + Send button -->
+          <div class="flex items-center gap-2">
+            <div class="px-3 py-1.5 bg-[#171a2e] border border-[#293050] rounded-full text-xs font-bold text-gray-300 flex items-center gap-1.5 cursor-pointer">
+              <span>1</span>
+              <i class="fas fa-chevron-down text-[10px] opacity-60"></i>
+            </div>
+
+            <button id="btnVrSendGiftSubmit" class="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:brightness-110 text-white font-bold text-sm px-6 py-2 rounded-full shadow-lg shadow-pink-500/30 active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5">
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4674,7 +4961,7 @@ if (typeof tailwind !== 'undefined') {
       <div class="flex flex-col items-center w-[120px] text-center -translate-y-1">
         <div class="relative mb-1 flex items-center justify-center pt-1">
           <img id="podium1Av" class="w-14 h-14 rounded-full object-cover shadow-[0_0_12px_rgba(240,192,64,0.4)]" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1"/>
-          <img src=".png" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='avframe-1.png';}" alt="Rank 1 Frame" class="absolute -inset-[23%] w-[146%] h-[146%] pointer-events-none z-20 max-w-none object-contain drop-shadow-[0_2px_8px_rgba(240,192,64,0.5)]" />
+          <img src="avframe-1.png" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='avframe-1.svg';}" alt="Rank 1 Frame" class="absolute -inset-[23%] w-[146%] h-[146%] pointer-events-none z-20 max-w-none object-contain drop-shadow-[0_2px_8px_rgba(240,192,64,0.5)]" />
           <div class="absolute -bottom-1 -right-1 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center z-30">1</div>
         </div>
         <div id="podium1Name" class="text-xs font-bold text-white truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
@@ -17565,12 +17852,82 @@ function initVoiceRoomsSystem() {
   const selectGameFilter = document.querySelectorAll('.game-filter-pill');
   const voiceSearch = $('voiceSearchInput');
   const btnRefresh = $('btnRefreshVoiceLobby');
+
+  // Custom Cover Picker logic in Create Modal
+  let selectedCoverFile = null;
+  const coverInput = $('cvCoverInput');
+  const coverBox = $('cvCoverBox');
+  const coverPreview = $('cvCoverPreview');
+  const coverPlaceholder = $('cvCoverPlaceholder');
+
+  if (coverBox && coverInput) {
+    coverBox.addEventListener('click', () => coverInput.click());
+    coverInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        selectedCoverFile = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          coverPreview.src = ev.target.result;
+          coverPreview.classList.remove('hidden');
+          coverPlaceholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(selectedCoverFile);
+      }
+    });
+  }
+
+  // Tag Selection Pills
+  let selectedTag = "Talk";
+  const tagPills = document.querySelectorAll('.cv-tag-pill');
+  tagPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      tagPills.forEach(p => {
+        p.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/50');
+        p.classList.add('bg-card', 'text-t2', 'border-bdr');
+      });
+      pill.classList.remove('bg-card', 'text-t2', 'border-bdr');
+      pill.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/50');
+      selectedTag = pill.dataset.tag || "Talk";
+    });
+  });
+
+  // Seat Selection Pills
+  let selectedSeatsCount = 8;
+  const seatPills = document.querySelectorAll('.cv-seat-pill');
+  seatPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      seatPills.forEach(p => {
+        p.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/50');
+        p.classList.add('bg-card', 'text-t2', 'border-bdr');
+      });
+      pill.classList.remove('bg-card', 'text-t2', 'border-bdr');
+      pill.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/50');
+      selectedSeatsCount = parseInt(pill.dataset.seats) || 8;
+    });
+  });
+
+  // Helper function to upload cover to Cloudinary
+  async function uploadCoverToCloudinary(file) {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'drxzyeghf';
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'unsigned_preset';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Cloudinary upload failed');
+    const data = await res.json();
+    return data.secure_url;
+  }
   
   // Navigation hook
   const voiceNavBtn = document.querySelector('.ni[data-t="Voice"]');
   if (voiceNavBtn) {
     voiceNavBtn.addEventListener('click', () => {
-      // Load Voice Rooms Lobby
       listenToVoiceRooms();
     });
   }
@@ -17609,39 +17966,57 @@ function initVoiceRoomsSystem() {
       e.preventDefault();
       try {
         const name = $('cvName').value.trim();
-        const game = $('cvGame').value;
-        const maxPlayers = parseInt($('cvMaxPlayers').value) || 10;
         const type = $('cvType').value;
         const password = type === 'private' ? $('cvPassword').value.trim() : "";
         const region = $('cvRegion').value;
-        const language = $('cvLanguage').value;
 
         if (!name) return;
 
-        // Deploy room to Firestore
-        const roomRef = await addDoc(collection(db, 'voice_rooms'), {
+        let coverUrl = "";
+        if (selectedCoverFile) {
+          showToastNotification("Uploading Cover... 📸", "Preparing your room background...");
+          try {
+            coverUrl = await uploadCoverToCloudinary(selectedCoverFile);
+          } catch (err) {
+            console.warn("Cover upload fallback:", err);
+          }
+        }
+
+        // Generate guaranteed unique document reference for new room
+        const newRoomRef = doc(collection(db, 'voice_rooms'));
+        await setDoc(newRoomRef, {
           name,
-          game,
-          maxPlayers,
+          roomTitle: name,
+          tag: selectedTag,
+          game: selectedTag,
+          roomTag: selectedTag,
+          maxPlayers: selectedSeatsCount,
+          seats: selectedSeatsCount,
+          maxSeats: selectedSeatsCount,
+          coverUrl: coverUrl,
+          coverImageUrl: coverUrl,
           type,
+          isPrivate: type === 'private',
           password,
           region,
-          language,
           hostId: userProfile.uid,
           hostName: userProfile.name,
           hostAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid,
           memberCount: 0,
           locked: false,
           createdAt: serverTimestamp()
-        });
+        }, { merge: true });
 
         modalCreate.classList.add('hidden');
         formCreate.reset();
         $('cvPasswordWrap').classList.add('hidden');
+        if (coverPreview) coverPreview.classList.add('hidden');
+        if (coverPlaceholder) coverPlaceholder.classList.remove('hidden');
+        selectedCoverFile = null;
 
         // Join the newly created room
-        await joinVoiceRoom(roomRef.id);
-        showToastNotification("Voice Room Deployed 🚀", `"${name}" is now live! Friends can join now.`);
+        await joinVoiceRoom(newRoomRef.id);
+        showToastNotification("Voice Room Live 🚀", `"${name}" is now ready!`);
       } catch (err) {
         console.error("Error creating room:", err);
         showToastNotification("Creation Failed ❌", "Could not deploy voice room. Try again.");
@@ -17664,9 +18039,9 @@ function initVoiceRoomsSystem() {
     });
   }
 
-  // Game filter pills
+  // Category filter pills
   selectGameFilter.forEach(pill => {
-    pill.addEventListener('click', (e) => {
+    pill.addEventListener('click', () => {
       selectGameFilter.forEach(p => {
         p.classList.remove('bg-emerald-500/20', 'border-emerald-500/50', 'text-emerald-300');
         p.classList.add('bg-card', 'border-bdr', 'text-t2');
@@ -17702,53 +18077,340 @@ function initVoiceRoomsSystem() {
     });
   }
 
-  // Push to Talk toggling / hold to speak
-  const btnPTT = $('btnVoicePTT');
-  if (btnPTT) {
-    btnPTT.addEventListener('mousedown', () => {
-      if (pttEnabled) {
-        startPTTSpeaking();
+  // Host Tools Modal Trigger & Events
+  const btnHostTools = $('btnHostTools');
+  const modalHostTools = $('mHostToolsModal');
+  const btnCloseHostTools = $('bCloseHostTools');
+
+  if (btnHostTools && modalHostTools) {
+    btnHostTools.addEventListener('click', () => {
+      modalHostTools.classList.remove('hidden');
+    });
+  }
+  if (btnCloseHostTools && modalHostTools) {
+    btnCloseHostTools.addEventListener('click', () => {
+      modalHostTools.classList.add('hidden');
+    });
+  }
+
+  // Host Tools Buttons
+  $('btnToolWipeScreen')?.addEventListener('click', async () => {
+    if (!currentVoiceRoomId) return;
+    try {
+      const chatSnap = await getDocs(collection(db, 'voice_rooms', currentVoiceRoomId, 'chats'));
+      chatSnap.forEach(d => deleteDoc(d.ref));
+      showToastNotification("Screen Wiped 🧹", "Cleared all messages in current room.");
+      modalHostTools.classList.add('hidden');
+    } catch (e) { console.error(e); }
+  });
+
+  const toolChangeBgBtn = $('btnToolChangeBg');
+  const toolBgInput = $('cvCoverInputChange');
+  if (toolChangeBgBtn && toolBgInput) {
+    toolChangeBgBtn.addEventListener('click', () => toolBgInput.click());
+    toolBgInput.addEventListener('change', async (e) => {
+      if (e.target.files && e.target.files[0] && currentVoiceRoomId) {
+        showToastNotification("Updating Cover... 🖼️", "Uploading new cover background...");
+        try {
+          const newUrl = await uploadCoverToCloudinary(e.target.files[0]);
+          await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId), { coverUrl: newUrl });
+          showToastNotification("Cover Updated 🖼️", "Room background updated successfully.");
+          modalHostTools.classList.add('hidden');
+        } catch (err) {
+          showToastNotification("Upload Error", "Could not update cover.");
+        }
       }
     });
-    btnPTT.addEventListener('mouseup', () => {
-      if (pttEnabled) {
-        stopPTTSpeaking();
-      }
+  }
+
+  $('btnToolDeleteChat')?.addEventListener('click', async () => {
+    if (!currentVoiceRoomId) return;
+    try {
+      const chatSnap = await getDocs(collection(db, 'voice_rooms', currentVoiceRoomId, 'chats'));
+      chatSnap.forEach(d => deleteDoc(d.ref));
+      showToastNotification("Chat Cleared 🗑️", "Deleted all messages.");
+      modalHostTools.classList.add('hidden');
+    } catch (e) {}
+  });
+
+  $('btnToolShare')?.addEventListener('click', () => {
+    if (!currentVoiceRoomId) return;
+    const roomUrl = window.location.origin + window.location.pathname + '?vroom=' + currentVoiceRoomId;
+    navigator.clipboard?.writeText(roomUrl);
+    showToastNotification("Link Copied 🔗", "Share link copied to clipboard!");
+    modalHostTools.classList.add('hidden');
+  });
+
+  $('btnToolLockSeats')?.addEventListener('click', () => {
+    toggleRoomLockState();
+    modalHostTools.classList.add('hidden');
+  });
+
+  $('btnToolPKMode')?.addEventListener('click', () => {
+    const pkBanner = $('activeRoomPkBanner');
+    if (pkBanner) {
+      pkBanner.classList.toggle('hidden');
+      showToastNotification("PK Battle Mode ⚔️", pkBanner.classList.contains('hidden') ? "PK Battle hidden." : "PK Battle Mode Active!");
+      modalHostTools.classList.add('hidden');
+    }
+  });
+
+  // Room Atmosphere Theme Switcher
+  const btnOpenVoiceTheme = $('btnOpenVoiceTheme');
+  const modalVoiceTheme = $('mVoiceThemeModal');
+  const btnCloseVoiceTheme = $('bCloseVoiceTheme');
+
+  if (btnOpenVoiceTheme && modalVoiceTheme) {
+    btnOpenVoiceTheme.addEventListener('click', () => {
+      modalVoiceTheme.classList.remove('hidden');
     });
-    btnPTT.addEventListener('mouseleave', () => {
-      if (pttEnabled && pttActive) {
-        stopPTTSpeaking();
-      }
+  }
+  if (btnCloseVoiceTheme && modalVoiceTheme) {
+    btnCloseVoiceTheme.addEventListener('click', () => {
+      modalVoiceTheme.classList.add('hidden');
     });
-    btnPTT.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (pttEnabled) {
-        startPTTSpeaking();
+  }
+
+  $('btnToolOpenThemes')?.addEventListener('click', () => {
+    if (modalHostTools) modalHostTools.classList.add('hidden');
+    if (modalVoiceTheme) modalVoiceTheme.classList.remove('hidden');
+  });
+
+  function getVoiceThemeBgClass(theme) {
+    switch (theme) {
+      case 'cyber': return 'bg-gradient-to-b from-[#0e0b1f] via-[#160d2e] to-[#0a0c12]';
+      case 'purple': return 'bg-gradient-to-b from-[#1a0b2e] via-[#120720] to-[#0a0c12]';
+      case 'emerald': return 'bg-gradient-to-b from-[#061a14] via-[#04120e] to-[#0a0c12]';
+      case 'sunset': return 'bg-gradient-to-b from-[#1f0a0e] via-[#140609] to-[#0a0c12]';
+      case 'gold': return 'bg-gradient-to-b from-[#1f1a08] via-[#141004] to-[#0a0c12]';
+      default: return 'bg-[#0a0c12]';
+    }
+  }
+
+  document.querySelectorAll('.vr-theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.getAttribute('data-theme');
+      const roomView = $('voiceActiveRoomView');
+      if (roomView) {
+        roomView.className = 'fixed inset-0 z-[100] flex flex-col overflow-hidden transition-all duration-500 ' + getVoiceThemeBgClass(theme);
       }
+      document.querySelectorAll('.vr-theme-btn').forEach(b => {
+        b.className = 'vr-theme-btn p-3 bg-[#171b2e] border border-[#252a45] hover:border-amber-500/40 text-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group';
+      });
+      btn.className = 'vr-theme-btn p-3 bg-[#1e2338] border border-amber-400 text-amber-300 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group shadow-md ring-1 ring-amber-400/50';
+      if (modalVoiceTheme) modalVoiceTheme.classList.add('hidden');
+      showToastNotification("Theme Applied 🎨", "Switched room atmosphere theme!");
     });
-    btnPTT.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (pttEnabled) {
-        stopPTTSpeaking();
-      }
-    });
-    
-    // Toggle PTT mode itself on click
-    btnPTT.addEventListener('click', () => {
-      pttEnabled = !pttEnabled;
-      if (pttEnabled) {
-        btnPTT.classList.remove('bg-emerald-600/10', 'text-emerald-300');
-        btnPTT.classList.add('bg-emerald-600', 'text-white');
-        // Mute by default until pressed
-        muteLocalAudio(true);
-        showToastNotification("Push-To-Talk Enabled 🎤", "Hold the PTT button to speak to the team.");
+  });
+
+  // Gift Modal Open / Selection
+  const btnOpenGiftModal = $('btnOpenVoiceGiftModal');
+  const giftModal = $('mVoiceRoomGiftModal');
+  const btnCloseGiftModal = $('bCloseVoiceGiftModal');
+  const btnGiftDeposit = $('btnVrGiftDeposit');
+  let selectedVrRecipientUid = null;
+  let selectedVrGiftType = 'rose';
+
+  if (btnGiftDeposit) {
+    btnGiftDeposit.addEventListener('click', () => {
+      if (giftModal) giftModal.classList.add('hidden');
+      if (typeof window.openDepositModal === 'function') {
+        window.openDepositModal();
       } else {
-        btnPTT.classList.remove('bg-emerald-600', 'text-white');
-        btnPTT.classList.add('bg-emerald-600/10', 'text-emerald-300');
-        muteLocalAudio(isMicMuted); // revert to general mute state
+        alert("Opening wallet deposit...");
       }
-      updateMemberDocumentVoiceState();
     });
+  }
+
+  if (btnOpenGiftModal && giftModal) {
+    btnOpenGiftModal.addEventListener('click', () => {
+      openVoiceRoomGiftModal();
+    });
+  }
+  if (btnCloseGiftModal && giftModal) {
+    btnCloseGiftModal.addEventListener('click', () => {
+      giftModal.classList.add('hidden');
+    });
+  }
+
+  // Quick Gift Buttons on Bottom Bar
+  document.querySelectorAll('.vr-quick-gift-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedVrGiftType = btn.dataset.type || 'rose';
+      openVoiceRoomGiftModal();
+    });
+  });
+
+  // Gift Item Selection inside Modal
+  document.querySelectorAll('.vr-gift-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.vr-gift-card').forEach(c => {
+        c.className = 'vr-gift-card relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-[#141727] border-[#252b47] hover:border-pink-500/40';
+        const chk = c.querySelector('[id^="vrGiftCheck"]');
+        if (chk) {
+          chk.classList.add('hidden');
+          chk.classList.remove('flex');
+        }
+      });
+      card.className = 'vr-gift-card relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]';
+      const chk = card.querySelector('[id^="vrGiftCheck"]');
+      if (chk) {
+        chk.classList.remove('hidden');
+        chk.classList.add('flex');
+      }
+
+      selectedVrGiftType = card.dataset.type || 'rose';
+      const helpEl = $('vrGiftHelpText');
+      if (helpEl) {
+        if (selectedVrGiftType === 'rose') {
+          helpEl.textContent = "Receiver's Charm +1 • Gain popularity & status boost";
+        } else if (selectedVrGiftType === 'rocket') {
+          helpEl.textContent = "Receiver's Charm +10 • Supercharge popularity & status boost";
+        } else {
+          helpEl.textContent = "Receiver's Charm +20 • Ultimate popularity & prestige boost";
+        }
+      }
+    });
+  });
+
+  // Submit Gift in Voice Room
+  $('btnVrSendGiftSubmit')?.addEventListener('click', async () => {
+    if (!currentVoiceRoomId || !userProfile) return;
+    if (!selectedVrRecipientUid) {
+      showToastNotification("Select Player", "Please select a participant to receive the gift!");
+      return;
+    }
+
+    const giftConfig = {
+      rose: { name: "Rose", cost: 10, pop: 1, anim: "rose" },
+      rocket: { name: "Rocket", cost: 100, pop: 10, anim: "rocket" },
+      trophy: { name: "Trophy", cost: 190, pop: 20, anim: "poptrophy" }
+    }[selectedVrGiftType] || { name: "Rose", cost: 10, pop: 1, anim: "rose" };
+
+    // Check user AX balance
+    const currentAX = userProfile.balance !== undefined ? userProfile.balance : (userProfile.axCoins || 0);
+    if (currentAX < giftConfig.cost) {
+      showToastNotification("Insufficient AX Coins 🪙", `You need ${giftConfig.cost} AX Coins to send a ${giftConfig.name}!`);
+      return;
+    }
+
+    try {
+      // 1. Deduct sender AX coins
+      const senderRef = doc(db, 'users', userProfile.uid);
+      await updateDoc(senderRef, {
+        balance: increment(-giftConfig.cost),
+        axCoins: increment(-giftConfig.cost)
+      });
+      userProfile.balance = (userProfile.balance || userProfile.axCoins || 0) - giftConfig.cost;
+      userProfile.axCoins = (userProfile.axCoins || 0) - giftConfig.cost;
+      if ($('vrGiftUserCoinBal')) $('vrGiftUserCoinBal').textContent = (userProfile.balance || 0).toLocaleString();
+
+      // 2. Add popularity to recipient
+      const recipientRef = doc(db, 'users', selectedVrRecipientUid);
+      await updateDoc(recipientRef, {
+        popularity: increment(giftConfig.pop)
+      });
+
+      // 3. Add to recipient popularity history
+      await addDoc(collection(db, 'users', selectedVrRecipientUid, 'popularityHistory'), {
+        senderUid: userProfile.uid,
+        senderName: userProfile.name,
+        giftType: giftConfig.name,
+        amount: giftConfig.pop,
+        timestamp: serverTimestamp()
+      });
+
+      // 4. Send chat message announcement in Voice Room
+      await addDoc(collection(db, 'voice_rooms', currentVoiceRoomId, 'chats'), {
+        userId: userProfile.uid,
+        userName: userProfile.name,
+        userAvatar: userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid,
+        message: `🎁 Sent ${giftConfig.name} (+${giftConfig.pop} Pop) to participant!`,
+        createdAt: serverTimestamp()
+      });
+
+      // 5. Play gift Lottie animation
+      playVoiceRoomGiftAnimation(giftConfig.anim);
+
+      giftModal.classList.add('hidden');
+      showToastNotification("Gift Sent! 🎁", `Sent ${giftConfig.name}! Recipient gained +${giftConfig.pop} Popularity.`);
+    } catch (err) {
+      console.error("Error sending voice gift:", err);
+      showToastNotification("Gift Failed ❌", "Could not send gift. Try again.");
+    }
+  });
+
+  function openVoiceRoomGiftModal() {
+    if (!currentVoiceRoomId) return;
+    const recipientsContainer = $('vrGiftRecipientsRow');
+    if (!recipientsContainer) return;
+
+    // Update Coin Balance
+    if ($('vrGiftUserCoinBal') && userProfile) {
+      const bal = userProfile.balance !== undefined ? userProfile.balance : (userProfile.axCoins || 0);
+      $('vrGiftUserCoinBal').textContent = bal.toLocaleString();
+    }
+
+    recipientsContainer.innerHTML = '';
+    
+    // Fetch members currently seated
+    getDocs(collection(db, 'voice_rooms', currentVoiceRoomId, 'members')).then(snap => {
+      if (snap.empty) {
+        recipientsContainer.innerHTML = `<span class="text-xs text-gray-400 italic">No participants in room.</span>`;
+        return;
+      }
+
+      let count = 0;
+      const seenUids = new Set();
+      snap.forEach(d => {
+        const m = d.data();
+        const memberUid = m.uid || d.id;
+        if (!memberUid || memberUid === userProfile.uid || seenUids.has(memberUid)) return; // don't gift self or duplicate
+        seenUids.add(memberUid);
+        count++;
+
+        const pBox = document.createElement('button');
+        pBox.type = 'button';
+        pBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition shrink-0 cursor-pointer border-[#293050] bg-[#141727] text-gray-400 hover:text-white';
+        pBox.innerHTML = `
+          <img src="${m.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + memberUid}" class="w-5 h-5 rounded-full object-cover shrink-0 border border-purple-500/30">
+          ${window.formatPlayerNameHtml(m, 'truncate max-w-[80px] text-xs font-bold', 'w-3 h-3')}
+        `;
+        pBox.addEventListener('click', () => {
+          recipientsContainer.querySelectorAll('button').forEach(b => {
+            b.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition shrink-0 cursor-pointer border-[#293050] bg-[#141727] text-gray-400 hover:text-white';
+          });
+          pBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition shrink-0 cursor-pointer bg-gradient-to-r from-pink-500/20 to-rose-500/20 border-pink-500 text-white ring-1 ring-pink-500/50';
+          selectedVrRecipientUid = memberUid;
+        });
+
+        recipientsContainer.appendChild(pBox);
+      });
+
+      if (count === 0) {
+        recipientsContainer.innerHTML = `<span class="text-xs text-gray-400 italic">No other players seated.</span>`;
+      } else {
+        // Select first participant by default
+        const first = recipientsContainer.querySelector('button');
+        if (first) first.click();
+      }
+
+      giftModal.classList.remove('hidden');
+    });
+  }
+
+  function playVoiceRoomGiftAnimation(animType) {
+    let animEl = null;
+    if (animType === 'rose') animEl = document.getElementById('rose-popularity-splash');
+    else if (animType === 'rocket') animEl = document.getElementById('rocket-popularity-splash');
+    else if (animType === 'poptrophy') animEl = document.getElementById('trophy-popularity-splash');
+
+    if (animEl) {
+      animEl.classList.remove('hidden');
+      setTimeout(() => {
+        animEl.classList.add('hidden');
+      }, 3500);
+    }
   }
 
   // Chat Form Inside Room
@@ -17872,9 +18534,10 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
   }
 
   const filtered = list.filter(room => {
-    const matchesGame = gameFilter === "All" || room.game === gameFilter;
+    const matchesGame = gameFilter === "All" || (room.tag && room.tag === gameFilter) || room.game === gameFilter;
     const matchesSearch = !searchVal || 
       room.name.toLowerCase().includes(searchVal) || 
+      (room.tag && room.tag.toLowerCase().includes(searchVal)) ||
       room.hostName.toLowerCase().includes(searchVal);
     return matchesGame && matchesSearch;
   });
@@ -17883,8 +18546,8 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
     container.innerHTML = `
       <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-8 bg-card/20 border border-bdr/50 rounded-2xl">
         <i class="fas fa-search text-2xl text-emerald-500/25 mb-1.5 animate-pulse"></i>
-        <p class="text-xs text-white font-semibold">No Rooms Found</p>
-        <p class="text-[10px] text-t3 max-w-[180px] mt-0.5">Try changing filters or search query. Or create your own room!</p>
+        <p class="text-xs text-white font-semibold">No Voice Rooms Found</p>
+        <p class="text-[10px] text-t3 max-w-[180px] mt-0.5">Try changing category or search terms. Or create your own room!</p>
       </div>
     `;
     return;
@@ -17893,39 +18556,44 @@ function filterAndRenderVoiceRooms(gameFilter = "All") {
   container.innerHTML = '';
   filtered.forEach(room => {
     const card = document.createElement('div');
-    card.className = 'p-3.5 bg-card/65 backdrop-blur-md border border-emerald-500/10 hover:border-gold/30 rounded-2xl relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-between group shadow-[0_0_15px_rgba(0,0,0,0.2)]';
+    card.className = 'p-3 bg-card/85 backdrop-blur-md border border-emerald-500/15 hover:border-emerald-500/40 rounded-2xl relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] flex items-center justify-between gap-3 group shadow-xl';
     
-    // Add pulsing border if voice room active
     if (room.memberCount > 0) {
-      card.classList.add('border-emerald-500/20');
+      card.classList.add('border-emerald-500/30');
     }
 
-    const isPrivate = room.type === 'private';
+    const isPrivate = room.type === 'private' || room.isPrivate;
+    const tagDisplay = room.tag || room.game || 'Talk';
+    const coverUrl = room.coverUrl || room.coverImageUrl || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300';
 
     card.innerHTML = `
-      <div class="space-y-1.5 flex-1 pr-3">
+      <!-- Left: Thumbnail Cover Image -->
+      <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[#1a1e34] shrink-0 border border-white/10 relative shadow-inner">
+        <img src="${coverUrl}" alt="Room Cover" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+        <span class="absolute top-1 left-1 px-1.5 py-0.5 bg-black/75 backdrop-blur-md border border-emerald-500/40 text-[7px] font-extrabold uppercase text-emerald-300 rounded-md">${tagDisplay}</span>
+      </div>
+
+      <!-- Middle: Room Info -->
+      <div class="space-y-1 flex-1 min-w-0 pr-1">
         <div class="flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
-          <span class="text-xs font-black uppercase text-white tracking-wide group-hover:text-gold transition">${room.name}</span>
-          ${isPrivate ? '<i class="fas fa-lock text-[9px] text-gold/80" title="Password Protected"></i>' : ''}
+          <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse shrink-0"></span>
+          <span class="text-xs font-black uppercase text-white tracking-wide truncate group-hover:text-emerald-300 transition">${room.name || room.roomTitle || 'Voice Room'}</span>
+          ${isPrivate ? '<i class="fas fa-lock text-[9px] text-amber-400 shrink-0" title="Password Protected"></i>' : ''}
         </div>
         
-        <div class="flex flex-wrap items-center gap-2 text-[9px] text-t3">
-          <span class="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-[8px] font-extrabold uppercase text-emerald-300 rounded-md">${room.game}</span>
-          <span class="text-t2"><i class="fas fa-user text-[8px] mr-1"></i>Host: <span class="text-white">${room.hostName}</span></span>
-          <span class="text-t3">|</span>
-          <span><i class="fas fa-globe text-[8px] mr-1"></i>${room.region}</span>
-          <span class="text-t3">|</span>
-          <span><i class="fas fa-comments text-[8px] mr-1"></i>${room.language}</span>
+        <div class="flex flex-wrap items-center gap-2 text-[9px] text-gray-300">
+          <span class="text-t2 flex items-center gap-1"><i class="fas fa-user text-[8px] text-emerald-400"></i>Host: <span class="text-white font-bold truncate max-w-[90px]">${room.hostName || 'Host'}</span></span>
+          <span class="text-t3">•</span>
+          <span class="text-t3"><i class="fas fa-globe text-[8px] mr-0.5"></i>${room.region || 'Global'}</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-3 shrink-0">
+      <!-- Right: Seats & Join -->
+      <div class="flex flex-col items-end gap-1.5 shrink-0">
         <div class="text-right">
-          <div class="text-[11px] font-black text-white leading-none">${room.memberCount}<span class="text-t3">/${room.maxPlayers}</span></div>
-          <div class="text-[8px] text-emerald-400 mt-1 uppercase tracking-wider font-semibold">In Channel</div>
+          <span class="text-xs font-black text-white">${room.memberCount || 0}</span><span class="text-[10px] text-t3 font-bold">/${room.seats || room.maxPlayers || room.maxSeats || 8}</span>
         </div>
-        <button class="btn-join-voice px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-lg border border-emerald-500/30 hover:border-transparent text-[10px] font-black uppercase tracking-wider transition duration-150 cursor-pointer" data-id="${room.id}">
+        <button class="btn-join-voice px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider transition duration-150 cursor-pointer shadow-md" data-id="${room.id}">
           Join
         </button>
       </div>
@@ -17952,17 +18620,31 @@ function listenToActiveRoomDoc(roomId) {
 
   activeRoomDocUnsub = onSnapshot(doc(db, 'voice_rooms', roomId), (snap) => {
     if (!snap.exists()) {
-      // Room was deleted by host or system countdown!
       if (currentVoiceRoomId === roomId) {
         showToastNotification("Room Closed ⏱️", "This voice channel has been closed or ended.");
         leaveVoiceRoom(true);
       }
     } else {
       const rData = snap.data();
-      $('activeRoomName').textContent = rData.name;
-      $('activeRoomGame').textContent = rData.game;
-      $('activeRoomRegion').textContent = rData.region;
-      $('activeRoomMax').textContent = rData.maxPlayers;
+      $('activeRoomName').textContent = rData.name || rData.roomTitle || 'Voice Room';
+      if ($('activeRoomTagPill')) $('activeRoomTagPill').textContent = rData.tag || rData.roomTag || rData.game || 'Talk';
+      $('activeRoomMax').textContent = rData.seats || rData.maxPlayers || rData.maxSeats || 8;
+      if ($('activeSeatsTotalCount')) $('activeSeatsTotalCount').textContent = rData.seats || rData.maxPlayers || rData.maxSeats || 8;
+      
+      // Keep default dark theme background inside active room
+      const bgOverlay = $('activeRoomBgOverlay');
+      if (bgOverlay) {
+        bgOverlay.style.backgroundImage = 'none';
+      }
+
+      // Show/Hide Host Tools
+      const isHost = userProfile && rData.hostId === userProfile.uid;
+      const hostToolsBtn = $('btnHostTools');
+      if (hostToolsBtn) {
+        if (isHost) hostToolsBtn.classList.remove('hidden');
+        else hostToolsBtn.classList.add('hidden');
+      }
+
       if (rData.locked) {
         $('activeRoomLockIcon').classList.remove('hidden');
       } else {
@@ -17981,44 +18663,34 @@ async function joinVoiceRoom(roomId) {
     return;
   }
 
-  // Force refresh ID token before setting up connection listeners to prevent session invalidation
   if (auth.currentUser) {
     try {
       await auth.currentUser.getIdToken(true);
-      console.log("[Auth Engine] Forced ID token refresh on voice room join to ensure session validity.");
-    } catch (e) {
-      console.warn("[Auth Engine] Failed token refresh during voice room join:", e);
-    }
+    } catch (e) {}
   }
 
-  // If already in a room, leave it
   if (currentVoiceRoomId) {
     await leaveVoiceRoom(false);
   }
 
-  // 1. Request Local Microphone Stream FIRST to eliminate WebRTC race conditions!
+  // Request Local Microphone Stream FIRST
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    // Apply initial mute states
     localStream.getAudioTracks().forEach(track => {
       track.enabled = !isMicMuted;
     });
-    $('voiceMyStatus').innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span> Live & Speaking`;
     
-    // Trigger feedback-safe loopback and initial walkie squelch
     toggleLocalMicLoopback(!isMicMuted);
     playRadioSquelchClick(false);
   } catch (micErr) {
     console.warn("Microphone access denied or unavailable:", micErr);
-    $('voiceMyStatus').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Listen Only (No Mic)`;
-    showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode. Allow mic permissions to speak!");
+    showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode.");
   }
 
   try {
     wasIInRoomPreviously = false;
     currentVoiceRoomId = roomId;
 
-    // Fetch room document to verify
     const roomSnap = await getDoc(doc(db, 'voice_rooms', roomId));
     if (!roomSnap.exists()) {
       showToastNotification("Error", "Room no longer exists.");
@@ -18031,76 +18703,63 @@ async function joinVoiceRoom(roomId) {
     }
     const roomData = roomSnap.data();
 
-    // 2. Show UI Transition
+    // Show UI Transition
     $('voiceLobbyView').classList.add('hidden');
     $('voiceActiveRoomView').classList.remove('hidden');
 
     // Populate active room details
     $('activeRoomName').textContent = roomData.name;
-    $('activeRoomGame').textContent = roomData.game;
-    $('activeRoomRegion').textContent = roomData.region;
-    $('activeRoomMax').textContent = roomData.maxPlayers;
+    if ($('activeRoomTagPill')) $('activeRoomTagPill').textContent = roomData.tag || roomData.game || 'Talk';
+    $('activeRoomMax').textContent = roomData.seats || roomData.maxPlayers || 8;
     
+    const bgOverlay = $('activeRoomBgOverlay');
+    if (bgOverlay) {
+      if (roomData.coverUrl) {
+        bgOverlay.style.backgroundImage = `url(${roomData.coverUrl})`;
+        bgOverlay.style.opacity = '0.35';
+      } else {
+        bgOverlay.style.backgroundImage = 'none';
+      }
+    }
+
     if (roomData.locked) {
       $('activeRoomLockIcon').classList.remove('hidden');
     } else {
       $('activeRoomLockIcon').classList.add('hidden');
     }
 
-    // Show host controls if current user is host
-    if (roomData.hostId === userProfile.uid) {
-      $('hostLobbyControls').classList.remove('hidden');
-      $('btnToggleLockRoom').innerHTML = roomData.locked ? `<i class="fas fa-unlock"></i> Unlock Room` : `<i class="fas fa-lock"></i> Lock Room`;
-    } else {
-      $('hostLobbyControls').classList.add('hidden');
-    }
-
-    // Set up local user details
     const myAvatar = userProfile.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + userProfile.uid;
-    $('voiceMyAvatar').src = myAvatar;
 
-    // Synthesize simple join tone
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-      osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
-      osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
-      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.35);
-    } catch(e){}
-
-    // 3. Add local participant to Room Members
+    // Add local participant to Room Members
     const myMemberId = userProfile.uid;
     await setDoc(doc(db, 'voice_rooms', roomId, 'members', myMemberId), {
       uid: userProfile.uid,
       name: userProfile.name,
       handle: userProfile.handle || '@player',
       avatar: myAvatar,
+      seatIndex: 1, // Default seat
+      isPremium: !!(userProfile.premium || userProfile.isPremium || userProfile.isVIP || userProfile.vip),
+      isVerified: !!(userProfile.isVerified || userProfile.hasBlueTick || userProfile.blueTick || userProfile.verified),
       muted: isMicMuted,
       deafened: isSpeakerMuted,
       speaking: false,
       handRaised: false,
       micStatus: !isMicMuted,
       joinedAt: serverTimestamp()
-    });
+    }, { merge: true });
 
-    // Increment memberCount atomically
     await updateDoc(doc(db, 'voice_rooms', roomId), {
       memberCount: increment(1)
-    });
+    }).catch(() => {});
 
-    // 4. Start Real-time Listeners
+    // Dispatch event to sync React state
+    window.dispatchEvent(new CustomEvent('voice-room-joined', { detail: { roomId } }));
+
+    // Start Real-time Listeners
     listenToRoomMembers(roomId);
     listenToRoomChats(roomId);
     listenToRoomSignaling(roomId);
-    listenToActiveRoomDoc(roomId); // Listen to room document metadata & deletion in real-time
+    listenToActiveRoomDoc(roomId);
 
   } catch (err) {
     console.error("Error joining voice room:", err);
@@ -18149,7 +18808,7 @@ function setupVolumeAnalysis() {
         sum += dataArray[i];
       }
       const averageVolume = sum / bufferLength;
-      const isSpeakingNow = averageVolume > 20; // voice threshold
+      const isSpeakingNow = averageVolume > 20;
 
       if (isSpeakingNow !== wasSpeaking) {
         wasSpeaking = isSpeakingNow;
@@ -18170,84 +18829,124 @@ async function setSpeakingStateInFirestore(speaking) {
   } catch(e){}
 }
 
-// Listen to room members inside a voice room
+// Listen to room members inside a voice room and render circular seat grid
 function listenToRoomMembers(roomId) {
   if (activeRoomMembersUnsub) activeRoomMembersUnsub();
 
   const membersRef = collection(db, 'voice_rooms', roomId, 'members');
-  activeRoomMembersUnsub = onSnapshot(membersRef, (snap) => {
-    const grid = $('roomParticipantsGrid');
-    if (!grid) return;
+  activeRoomMembersUnsub = onSnapshot(membersRef, async (snap) => {
+    const seatsGrid = $('roomSeatsGrid');
+    const topAvatarsRow = $('activeRoomTopAvatars');
+    if (!seatsGrid) return;
 
-    grid.innerHTML = '';
-    let membersCount = 0;
     let membersList = [];
-
     snap.forEach(d => {
-      const m = d.data();
-      membersCount++;
-      membersList.push(m);
+      membersList.push(d.data());
+    });
 
-      const card = document.createElement('div');
-      card.className = 'p-3 bg-panel border border-bdr/60 hover:border-emerald-500/30 rounded-xl relative overflow-hidden flex flex-col items-center justify-center text-center transition duration-200 group';
-      
-      // Halo Speaking ripple rings
-      if (m.speaking) {
-        card.className = 'p-3 bg-panel border border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.25)] rounded-xl relative overflow-hidden flex flex-col items-center justify-center text-center transition duration-200 group';
+    const membersCount = membersList.length;
+    $('activeRoomCount').textContent = membersCount;
+    if ($('activeSeatsOccupiedCount')) $('activeSeatsOccupiedCount').textContent = membersCount;
+
+    // Fetch total seats configured for room
+    let maxSeats = 8;
+    try {
+      const roomSnap = await getDoc(doc(db, 'voice_rooms', roomId));
+      if (roomSnap.exists()) {
+        maxSeats = roomSnap.data().seats || roomSnap.data().maxPlayers || 8;
       }
+    } catch (e) {}
 
-      card.innerHTML = `
-        <div class="relative mb-2 flex items-center justify-center">
-          <!-- Animated speaking ripples -->
-          ${m.speaking ? `
-            <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-500/20 animate-ping"></span>
-            <span class="absolute inline-flex h-[110%] w-[110%] rounded-full bg-emerald-500/10 animate-pulse"></span>
-          ` : ''}
-          <img src="${m.avatar}" class="w-12 h-12 rounded-xl object-cover border border-bdr relative z-10 bg-card/40"/>
-          
-          <!-- Mic status overlay -->
-          <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${m.muted ? 'bg-red-500' : 'bg-emerald-500'} border-2 border-panel flex items-center justify-center z-20 text-[9px] text-white">
-            <i class="fas ${m.muted ? 'fa-microphone-slash' : 'fa-microphone'}"></i>
-          </span>
-        </div>
+    // Update top header seated avatars preview
+    if (topAvatarsRow) {
+      topAvatarsRow.innerHTML = '';
+      membersList.slice(0, 4).forEach(m => {
+        const img = document.createElement('img');
+        img.src = m.avatar;
+        img.className = 'w-6 h-6 rounded-full border border-emerald-500 object-cover shadow-sm bg-card';
+        topAvatarsRow.appendChild(img);
+      });
+    }
 
-        <div class="text-[10px] font-black text-white truncate w-full px-1">${m.name}</div>
-        <div class="text-[8px] text-t3 truncate">${m.handle}</div>
+    // Render Seats Grid matching Reference Image 2 circular seat slots
+    seatsGrid.innerHTML = '';
 
-        <!-- Host badge -->
-        ${m.uid === userProfile.uid ? '<span class="absolute top-1.5 left-1.5 text-[8px] bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-extrabold uppercase px-1 rounded-md">Me</span>' : ''}
-      `;
+    for (let i = 1; i <= maxSeats; i++) {
+      // Find occupant for seat i (by seatIndex or array order)
+      const occupant = membersList.find(m => m.seatIndex === i) || (membersList[i - 1] && !membersList[i - 1].seatIndex ? membersList[i - 1] : null);
 
-      // Host controls popup inside grid if host is looking at someone else
-      if (userProfile && userProfile.uid !== m.uid) {
-        // Find if local user is host
-        getDoc(doc(db, 'voice_rooms', roomId)).then(snapRoom => {
-          if (snapRoom.exists() && snapRoom.data().hostId === userProfile.uid) {
-            const hostActions = document.createElement('div');
-            hostActions.className = 'absolute inset-0 bg-panel/95 flex flex-col items-center justify-center gap-1.5 opacity-0 hover:opacity-100 transition duration-150 rounded-xl p-1 z-30';
-            hostActions.innerHTML = `
-              <div class="text-[8px] font-bold text-emerald-400 mb-0.5">MANAGE PLAYER</div>
-              <button class="btn-kick-peer w-full py-1 bg-red-500/20 hover:bg-red-500/40 text-red text-[8px] font-black uppercase tracking-wider rounded border border-red-500/30 transition" data-uid="${m.uid}">Kick</button>
-              <button class="btn-mute-peer w-full py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow text-[8px] font-black uppercase tracking-wider rounded border border-yellow-500/20 transition" data-uid="${m.uid}">${m.muted ? 'Unmute' : 'Mute'}</button>
-            `;
+      const seatSlot = document.createElement('div');
+      seatSlot.className = occupant
+        ? 'p-2.5 rounded-2xl border flex flex-col items-center justify-center text-center transition cursor-pointer relative group bg-[#14182b]/80 border-[#282f50] hover:border-emerald-500/50 shadow-md backdrop-blur-sm'
+        : 'p-2.5 rounded-2xl border flex flex-col items-center justify-center text-center transition cursor-pointer relative group bg-[#0f1222]/40 border-dashed border-[#222742] hover:border-emerald-500/30 backdrop-blur-sm';
+
+      if (occupant) {
+        // Occupied Seat Slot
+        const isSpeaking = occupant.speaking;
+        const isHost = occupant.uid === userProfile?.uid;
+
+        seatSlot.innerHTML = `
+          <div class="relative my-1 flex items-center justify-center">
+            ${isSpeaking ? `
+              <span class="absolute inline-flex h-12 w-12 rounded-full bg-emerald-500/30 animate-ping"></span>
+              <span class="absolute inline-flex h-14 w-14 rounded-full bg-emerald-500/15 animate-pulse"></span>
+            ` : ''}
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 relative z-10 ${isSpeaking ? 'border-emerald-400 shadow-[0_0_12px_#10b981]' : 'border-[#282f50]'}">
+              <img src="${occupant.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${occupant.uid}`}" class="w-full h-full object-cover">
+            </div>
             
-            hostActions.querySelector('.btn-kick-peer')?.addEventListener('click', () => {
-              kickParticipant(m.uid);
+            <!-- Mic Mute Icon Badge -->
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${occupant.muted ? 'bg-red-500' : 'bg-emerald-500'} border border-black flex items-center justify-center z-20 text-[8px] text-white">
+              <i class="fas ${occupant.muted ? 'fa-microphone-slash' : 'fa-microphone'}"></i>
+            </span>
+
+            <!-- Seat Index Badge -->
+            <span class="absolute -top-1 -left-1 px-1 bg-black/80 border border-white/20 text-[7px] font-black text-amber-400 rounded-full z-20">#${i}</span>
+          </div>
+
+          <span class="text-[10px] font-bold text-white truncate max-w-full mt-0.5 flex items-center justify-center gap-0.5">
+            ${window.formatPlayerNameHtml(occupant, 'text-[10px] font-bold truncate', 'w-3 h-3')}
+          </span>
+          ${isHost ? '<span class="text-[8px] text-emerald-400 font-extrabold uppercase mt-0.5">Host / Me</span>' : '<span class="text-[8px] text-gray-400 uppercase mt-0.5">Seated</span>'}
+        `;
+
+        // Manage player if host
+        if (userProfile && userProfile.uid !== occupant.uid) {
+          seatSlot.addEventListener('click', () => {
+            getDoc(doc(db, 'voice_rooms', roomId)).then(snapRoom => {
+              if (snapRoom.exists() && snapRoom.data().hostId === userProfile.uid) {
+                const act = confirm(`Manage ${occupant.name}:\nClick OK to kick player from seat/room.`);
+                if (act) kickParticipant(occupant.uid);
+              }
             });
-            hostActions.querySelector('.btn-mute-peer')?.addEventListener('click', () => {
-              toggleParticipantMute(m.uid, !m.muted);
+          });
+        }
+      } else {
+        // Empty Seat Slot
+        seatSlot.innerHTML = `
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-[#282f50] flex items-center justify-center text-[#8890b0] group-hover:text-emerald-400 group-hover:border-emerald-500/40 my-1 relative transition">
+            <i class="fas fa-plus text-xs"></i>
+            <span class="absolute -top-1 -left-1 px-1 bg-black/80 border border-white/20 text-[7px] font-black text-gray-400 rounded-full z-20">#${i}</span>
+          </div>
+          <span class="text-[9px] font-semibold text-[#8890b0]">Seat ${i}</span>
+        `;
+
+        // Join/Move to this seat
+        seatSlot.addEventListener('click', async () => {
+          if (!userProfile || !currentVoiceRoomId) return;
+          try {
+            await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', userProfile.uid), {
+              seatIndex: i
             });
-            card.appendChild(hostActions);
-          }
+            showToastNotification("Moved Seat 🛋️", `You moved to Seat ${i}`);
+          } catch(e) {}
         });
       }
 
-      grid.appendChild(card);
-    });
+      seatsGrid.appendChild(seatSlot);
+    }
 
-    $('activeRoomCount').textContent = membersCount;
-
-    // Check if the local user is the host/admin and is alone in the room
+    // Check if host alone in room
     if (currentVoiceRoomId && userProfile) {
       getDoc(doc(db, 'voice_rooms', currentVoiceRoomId)).then(roomSnap => {
         if (roomSnap.exists()) {
@@ -18256,26 +18955,24 @@ function listenToRoomMembers(roomId) {
           const banner = $('aloneWarningBanner');
           
           if (isMeHost && membersCount === 1 && membersList[0] && membersList[0].uid === userProfile.uid) {
-            // Host is alone in the room!
             if (banner && banner.classList.contains('hidden')) {
               banner.classList.remove('hidden');
               startAloneCountdownTimer();
             }
           } else {
-            // Host is not alone, or local user is not host
             if (banner && !banner.classList.contains('hidden')) {
               banner.classList.add('hidden');
               stopAloneCountdownTimer();
             }
           }
         }
-      }).catch(err => console.error("Error checking room host alone status:", err));
+      }).catch(err => console.error("Error checking host status:", err));
     }
 
-    // Check if local player was kicked!
+    // Check if local player was kicked
     const amIInMembers = membersList.some(m => m.uid === userProfile.uid);
     if (wasIInRoomPreviously && !amIInMembers && currentVoiceRoomId) {
-      showToastNotification("Kicked from Room 🚫", "The host has removed you from the squad voice channel.");
+      showToastNotification("Kicked from Room 🚫", "The host has removed you from the voice channel.");
       leaveVoiceRoom(false);
     }
     if (amIInMembers) {
@@ -18670,13 +19367,26 @@ function stopAloneCountdownTimer() {
 
 // Cleanly leave voice room
 async function leaveVoiceRoom(goToLobby = true) {
-  if (!currentVoiceRoomId || !userProfile) return;
+  if (!currentVoiceRoomId && !userProfile) return;
   const roomId = currentVoiceRoomId;
   currentVoiceRoomId = null;
   wasIInRoomPreviously = false;
 
+  // Always notify listeners (including React PlayerApp) that room was exited
+  window.dispatchEvent(new CustomEvent('voice-room-left', { detail: { roomId } }));
+
   // Stop alone host countdown timers
   stopAloneCountdownTimer();
+
+  const doUINavigation = () => {
+    if (goToLobby) {
+      const activeRoomView = $('voiceActiveRoomView');
+      if (activeRoomView) activeRoomView.classList.add('hidden');
+      const lobbyView = $('voiceLobbyView');
+      if (lobbyView) lobbyView.classList.remove('hidden');
+      showToastNotification("Squad Voice Disconnected 👋", "You safely disconnected from voice communication.");
+    }
+  };
 
   try {
     // 1. Synthesize exit tone
@@ -18722,43 +19432,43 @@ async function leaveVoiceRoom(goToLobby = true) {
       activeRoomDocUnsub = null;
     }
 
-    // 4. Remove player doc from members
-    await deleteDoc(doc(db, 'voice_rooms', roomId, 'members', userProfile.uid));
+    if (roomId && userProfile) {
+      // 4. Remove player doc from members
+      await deleteDoc(doc(db, 'voice_rooms', roomId, 'members', userProfile.uid)).catch((e) => console.warn("Error deleting member on leave:", e));
 
-    // Dynamic and robust check of remaining members to prevent stale rooms
-    const membersRef = collection(db, 'voice_rooms', roomId, 'members');
-    const remainingMembersSnap = await getDocs(membersRef);
-    
-    const roomRef = doc(db, 'voice_rooms', roomId);
-    if (remainingMembersSnap.empty) {
-      // If no members left in the room, delete the room document
-      try {
-        await deleteDoc(roomRef);
-        console.log("Empty room deleted completely:", roomId);
-      } catch (delErr) {
-        console.warn("Could not delete empty room:", delErr);
+      // Dynamic and robust check of remaining members to prevent stale rooms
+      const membersRef = collection(db, 'voice_rooms', roomId, 'members');
+      const remainingMembersSnap = await getDocs(membersRef).catch(() => ({ empty: true, size: 0 }));
+      
+      const roomRef = doc(db, 'voice_rooms', roomId);
+      if (remainingMembersSnap.empty || remainingMembersSnap.size === 0) {
+        // If no members left in the room, delete the room document
+        try {
+          await deleteDoc(roomRef);
+          console.log("Empty room deleted completely:", roomId);
+        } catch (delErr) {
+          console.warn("Could not delete empty room:", delErr);
+        }
+      } else {
+        // Otherwise update the memberCount to match the exact size
+        try {
+          await updateDoc(roomRef, {
+            memberCount: remainingMembersSnap.size
+          });
+        } catch (updErr) {
+          console.warn("Could not update room member count:", updErr);
+        }
       }
-    } else {
-      // Otherwise update the memberCount to match the exact size
-      try {
-        await updateDoc(roomRef, {
-          memberCount: remainingMembersSnap.size
-        });
-      } catch (updErr) {
-        console.warn("Could not update room member count:", updErr);
-      }
-    }
-
-    if (goToLobby) {
-      $('voiceActiveRoomView').classList.add('hidden');
-      $('voiceLobbyView').classList.remove('hidden');
-      showToastNotification("Squad Voice Disconnected 👋", "You safely disconnected from voice communication.");
     }
 
   } catch (err) {
     console.error("Error leaving voice room cleanly:", err);
+  } finally {
+    // ALWAYS perform UI navigation to ensure user is never stuck on voice room screen
+    doUINavigation();
   }
 }
+window.leaveVoiceRoom = leaveVoiceRoom;
 
 // Toggle room lock state (host-only)
 async function toggleRoomLockState() {
@@ -18922,7 +19632,7 @@ function listenToRoomChats(roomId) {
       row.innerHTML = `
         <img src="${chat.userAvatar}" class="w-6 h-6 rounded-full border border-bdr shrink-0 mt-0.5 bg-card/40"/>
         <div>
-          <span class="font-black text-white mr-1">${chat.userName}</span>
+          ${window.formatPlayerNameHtml({ name: chat.userName, isPremium: chat.isPremium || chat.premium, isVerified: chat.isVerified || chat.hasBlueTick || chat.verified }, 'font-black mr-1 text-white', 'w-3 h-3')}
           <span class="text-t2 break-all font-medium">${chat.message}</span>
         </div>
       `;
