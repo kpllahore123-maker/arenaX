@@ -68,14 +68,14 @@ function Profile3DCharacterView() {
       return;
     }
 
-    const width = containerRef.current.clientWidth || 320;
-    const height = containerRef.current.clientHeight || 220;
+    const width = containerRef.current.clientWidth || 360;
+    const height = containerRef.current.clientHeight || 340;
 
     scene = new THREE.Scene();
     scene.background = null;
 
     camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0.95, 3.5);
+    camera.position.set(0, 0.7, 3.4);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -104,7 +104,7 @@ function Profile3DCharacterView() {
     pointLight.position.set(0, 1, 2);
     scene.add(pointLight);
 
-    // CRITICAL: NO OrbitControls added or enabled! Non-interactive profile display.
+    // Non-interactive display: No OrbitControls, no dragging, no manual rotation
 
     const createProceduralCharacter = () => {
       const group = new THREE.Group();
@@ -165,7 +165,8 @@ function Profile3DCharacterView() {
       ring.position.y = -0.93;
       group.add(ring);
 
-      group.position.y = -0.1;
+      group.position.y = 0.25;
+      group.rotation.set(0, 0, 0);
       return group;
     };
 
@@ -205,9 +206,11 @@ function Profile3DCharacterView() {
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
 
+          // Position model slightly higher (+0.30) so full body is visible above the bottom avatar/card
           model.position.x += (model.position.x - center.x);
-          model.position.y += (model.position.y - center.y) - 0.15;
+          model.position.y += (model.position.y - center.y) + 0.30;
           model.position.z += (model.position.z - center.z);
+          model.rotation.set(0, 0, 0);
 
           const maxDim = Math.max(size.x, size.y, size.z);
           if (maxDim > 0) {
@@ -231,11 +234,9 @@ function Profile3DCharacterView() {
       setLoading(false);
     }
 
+    // Animation loop: Completely still, front-facing (NO automatic rotation)
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      if (model) {
-        model.rotation.y += 0.005;
-      }
       if (renderer && scene && camera) {
         renderer.render(scene, camera);
       }
@@ -244,8 +245,8 @@ function Profile3DCharacterView() {
 
     const handleResize = () => {
       if (!containerRef.current || !renderer || !camera) return;
-      const newW = containerRef.current.clientWidth || 320;
-      const newH = containerRef.current.clientHeight || 220;
+      const newW = containerRef.current.clientWidth || 360;
+      const newH = containerRef.current.clientHeight || 340;
       camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
@@ -1540,34 +1541,46 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
   const openUserProfileModal = async (target: any) => {
     if (!target) return;
+    const targetUid = typeof target === 'string' ? target : (target.uid || target.id);
+    
+    // Set initial preview while fetching
     if (typeof target === 'object' && target.name) {
-      setViewingUserProfile(target);
-      return;
+      setViewingUserProfile({
+        ...target,
+        playerShowUnlocked: target.playerShowUnlocked === true || target.character3dUnlocked === true
+      });
     }
-    const targetUid = typeof target === 'string' ? target : target.uid;
-    if (!targetUid) return;
 
-    try {
-      const userDocRef = doc(db, 'users', targetUid);
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        setViewingUserProfile({ uid: targetUid, ...snap.data() });
-      } else {
-        setViewingUserProfile({
-          uid: targetUid,
-          name: 'ArenaX Player',
-          av: `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`,
-          country: 'Pakistan',
-          countryFlag: '🇵🇰',
-          level: 10,
-          score: 33,
-          giftCount: 3,
-          starCount: 3,
-          bio: 'This person says nothing!'
-        });
+    if (targetUid) {
+      try {
+        const userDocRef = doc(db, 'users', targetUid);
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const udata = snap.data();
+          setViewingUserProfile((prev: any) => ({
+            ...(prev || {}),
+            uid: targetUid,
+            ...udata,
+            playerShowUnlocked: udata.playerShowUnlocked === true || udata.character3dUnlocked === true
+          }));
+        } else if (!target || typeof target !== 'object' || !target.name) {
+          setViewingUserProfile({
+            uid: targetUid,
+            name: 'ArenaX Player',
+            av: `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`,
+            country: 'Pakistan',
+            countryFlag: '🇵🇰',
+            level: 10,
+            score: 33,
+            giftCount: 3,
+            starCount: 3,
+            bio: 'This person says nothing!',
+            playerShowUnlocked: false
+          });
+        }
+      } catch (e) {
+        console.error("Error opening profile:", e);
       }
-    } catch (e) {
-      console.error("Error opening profile:", e);
     }
   };
 
@@ -7749,8 +7762,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           {/* Full Screen Page Container */}
           <div className="w-full max-w-md h-full max-h-full sm:max-h-[92vh] sm:rounded-[32px] bg-[#12101b] shadow-2xl overflow-hidden flex flex-col relative text-gray-900 animate-slide-up">
             
-            {/* Top Hero 3D Stage / Header Section */}
-            {(viewingUserProfile.playerShowUnlocked || viewingUserProfile.character3dUnlocked || true) ? (
+            {/* Top Hero 3D Stage / Header Section (ONLY when the viewed user has unlocked Player Show) */}
+            {Boolean(viewingUserProfile.playerShowUnlocked || viewingUserProfile.character3dUnlocked) ? (
               <div className="relative w-full h-[330px] sm:h-[350px] bg-gradient-to-b from-[#120e24] via-[#1c1635] to-[#2a2046] overflow-hidden shrink-0 z-0">
                 {/* Soft ambient background glow & particle atmosphere */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(168,85,247,0.25),transparent_70%)] pointer-events-none" />
@@ -7786,8 +7799,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                   </div>
                 </div>
 
-                {/* 3D Character Full Stage (Centered & Full-Body Visible) */}
-                <div className="w-full h-full absolute inset-0 z-0">
+                {/* 3D Character Full Stage (Centered & Full-Body Visible, Non-interactive) */}
+                <div className="w-full h-full absolute inset-0 z-0 pointer-events-none">
                   <Profile3DCharacterView />
                 </div>
 
@@ -7810,7 +7823,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 </div>
               </div>
             ) : (
-              /* Fallback Top Dark Header Bar */
+              /* Fallback Normal / Old Top Dark Header Bar (when user has not purchased/unlocked 3D model) */
               <div className="h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 relative z-0">
                 <button
                   onClick={() => setViewingUserProfile(null)}
@@ -7839,7 +7852,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             )}
 
             {/* Main White Header Section (Non-overflow to display full avatar) */}
-            <div className="bg-white rounded-t-[32px] -mt-8 pt-0 px-5 relative z-10 shrink-0 shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
+            <div className={`bg-white rounded-t-[32px] ${Boolean(viewingUserProfile.playerShowUnlocked || viewingUserProfile.character3dUnlocked) ? '-mt-8 shadow-[0_-8px_30px_rgba(0,0,0,0.3)]' : '-mt-6'} pt-0 px-5 relative z-10 shrink-0`}>
               {/* Avatar & Top Info Row */}
               <div className="flex items-start justify-between gap-3">
                 {/* Large Avatar */}
