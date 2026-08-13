@@ -16,6 +16,8 @@ export interface UserProfile {
   banReason?: string;
   banUntil?: string | null; // ISO string
   balance: number;
+  axCoins?: number;
+  playerShowUnlocked?: boolean;
   hasFrame?: boolean;
   frameEquipped?: boolean;
   frameExpiresAt?: string | null;
