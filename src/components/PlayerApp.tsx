@@ -27,7 +27,8 @@ import {
   where,
   limit,
   arrayUnion,
-  increment
+  increment,
+  runTransaction
 } from 'firebase/firestore';
 import {
   UserProfile,
@@ -46,6 +47,286 @@ import { requestNotificationPermissionAndGetToken, setupForegroundNotificationLi
 interface PlayerAppProps {
   onSwitchToAdmin: () => void;
   isAdminUID: boolean;
+}
+
+function PlayerShow3DViewer({ onClose }: { onClose: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let renderer: any = null;
+    let scene: any = null;
+    let camera: any = null;
+    let controls: any = null;
+    let model: any = null;
+    let isDragging = false;
+    let autoRotateTimer: any = null;
+
+    if (!containerRef.current) return;
+
+    const width = containerRef.current.clientWidth || window.innerWidth;
+    const height = containerRef.current.clientHeight || window.innerHeight - 120;
+
+    const THREE = (window as any).THREE;
+    if (!THREE) {
+      setLoadError("Three.js library is loading or missing.");
+      setLoading(false);
+      return;
+    }
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0c12);
+
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 1.2, 3.5);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+      containerRef.current.appendChild(renderer.domElement);
+    }
+
+    // Lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xfffaed, 1.8);
+    dirLight1.position.set(3, 5, 4);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0x4f9eff, 1.0);
+    dirLight2.position.set(-3, 2, -3);
+    scene.add(dirLight2);
+
+    const pointLight = new THREE.PointLight(0xf0c040, 1.2, 10);
+    pointLight.position.set(0, 1, 2);
+    scene.add(pointLight);
+
+    // OrbitControls or manual drag
+    const OrbitControls = THREE.OrbitControls || (window as any).OrbitControls;
+    if (OrbitControls) {
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.enableZoom = true;
+      controls.minDistance = 1.2;
+      controls.maxDistance = 6.0;
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 2.0;
+
+      controls.addEventListener('start', () => {
+        isDragging = true;
+        controls.autoRotate = false;
+        if (autoRotateTimer) clearTimeout(autoRotateTimer);
+      });
+
+      controls.addEventListener('end', () => {
+        isDragging = false;
+        autoRotateTimer = setTimeout(() => {
+          if (controls) controls.autoRotate = true;
+        }, 2000);
+      });
+    }
+
+    // Load .glb file
+    const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
+    if (GLTFLoader) {
+      const loader = new GLTFLoader();
+      const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
+      const modelUrl = basePath + 'character_boy_1_fbx.glb';
+
+      loader.load(
+        modelUrl,
+        (gltf: any) => {
+          model = gltf.scene;
+
+          // Compute box to center and scale character
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+
+          model.position.x += (model.position.x - center.x);
+          model.position.y += (model.position.y - center.y) - 0.2;
+          model.position.z += (model.position.z - center.z);
+
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) {
+            const targetScale = 2.2 / maxDim;
+            model.scale.set(targetScale, targetScale, targetScale);
+          }
+
+          scene.add(model);
+          setLoading(false);
+        },
+        undefined,
+        (err: any) => {
+          console.error("Failed loading .glb 3D avatar:", err);
+          setLoadError("Failed to load 3D avatar model file.");
+          setLoading(false);
+        }
+      );
+    } else {
+      setLoadError("3D Loader (GLTFLoader) not initialized.");
+      setLoading(false);
+    }
+
+    // Animation loop
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (controls) {
+        controls.update();
+      } else if (model && !isDragging) {
+        model.rotation.y += 0.008;
+      }
+
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    };
+    animate();
+
+    const handleResize = () => {
+      if (!containerRef.current || !renderer || !camera) return;
+      const newW = containerRef.current.clientWidth || window.innerWidth;
+      const newH = containerRef.current.clientHeight || window.innerHeight - 120;
+      camera.aspect = newW / newH;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newW, newH);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+      if (autoRotateTimer) clearTimeout(autoRotateTimer);
+
+      if (controls) {
+        try { controls.dispose(); } catch(e) {}
+      }
+
+      if (scene) {
+        scene.traverse((child: any) => {
+          if (child.isMesh) {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((m: any) => m.dispose());
+              } else {
+                child.material.dispose();
+              }
+            }
+          }
+        });
+      }
+
+      if (renderer) {
+        try {
+          renderer.dispose();
+          if (renderer.domElement && renderer.domElement.parentNode) {
+            renderer.domElement.parentNode.removeChild(renderer.domElement);
+          }
+        } catch(e) {}
+      }
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-[#0a0c12] z-[100050] flex flex-col h-full w-full text-white animate-fade-in select-none">
+      {/* Top Header */}
+      <div className="px-4 py-3 bg-[#111420]/90 border-b border-[#252a45] flex items-center justify-between shrink-0 shadow-lg backdrop-blur-md">
+        <button
+          onClick={onClose}
+          className="px-3 py-1.5 bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] rounded-xl text-xs font-bold text-white flex items-center gap-2 transition cursor-pointer active:scale-95"
+        >
+          <i className="fas fa-arrow-left text-amber-400"></i>
+          <span>Back</span>
+        </button>
+
+        <div className="text-center">
+          <h2 className="font-sans text-base font-extrabold text-white leading-tight flex items-center justify-center gap-1.5">
+            Player Show
+          </h2>
+          <span className="text-[9px] text-[#f0c040] font-bold tracking-wider uppercase bg-[#f0c040]/10 border border-[#f0c040]/30 px-2 py-0.2 rounded-full inline-block">
+            3D Avatar Viewer
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-full bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] text-[#8890b0] hover:text-white flex items-center justify-center transition cursor-pointer"
+        >
+          <i className="fas fa-times"></i>
+        </button>
+      </div>
+
+      {/* 3D Canvas Area */}
+      <div className="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center">
+        <div ref={containerRef} className="w-full h-full absolute inset-0 touch-none" />
+
+        {/* Loading Spinner */}
+        {loading && !loadError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm z-10 pointer-events-none">
+            <div className="w-12 h-12 border-4 border-[#f0c040]/20 border-t-[#f0c040] rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-bold text-amber-300 animate-pulse">Loading 3D Character Model...</p>
+            <p className="text-[10px] text-[#8890b0] mt-1">character_boy_1_fbx.glb</p>
+          </div>
+        )}
+
+        {/* Error Fallback */}
+        {loadError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0a0c12]">
+            <i className="fas fa-exclamation-circle text-rose-400 text-3xl mb-2"></i>
+            <p className="text-sm font-bold text-white mb-1">Could not load 3D Model</p>
+            <p className="text-xs text-[#8890b0] max-w-xs mb-4">{loadError}</p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-[#1e2340] border border-[#252a45] rounded-xl text-xs font-bold text-white hover:bg-[#252a45]"
+            >
+              Return to Profile
+            </button>
+          </div>
+        )}
+
+        {/* Floating Interaction Hint */}
+        {!loading && !loadError && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 border border-white/10 rounded-full text-[10px] text-gray-300 font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md">
+            <i className="fas fa-hand-pointer text-amber-400"></i> Drag to rotate view
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Information Footer (7000 AX Coins Label as required) */}
+      <div className="p-4 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#f0c040]/15 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-lg shrink-0">
+            <i className="fas fa-cube"></i>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white flex items-center gap-2">
+              Character Avatar Item
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30">
+                7000 AX Coins
+              </span>
+            </div>
+            <p className="text-[10px] text-[#8890b0] mt-0.5">3D Character Display Value</p>
+          </div>
+        </div>
+
+        <div className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 shrink-0">
+          <i className="fas fa-check-circle"></i> Free Viewer
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const AVATAR_SEEDS = ['ax1', 'ax2', 'ax3', 'ax4', 'bot1', 'bot2', 'bot3', 'bot4'];
@@ -71,7 +352,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [guestId, setGuestId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'Home' | 'Profile' | 'Rules' | 'Wallet' | 'Chat' | 'Tour' | 'Support'>('Home');
+  const [activeTab, setActiveTab] = useState<'Home' | 'Profile' | 'Rules' | 'Wallet' | 'Chat' | 'Tour' | 'Support' | 'Voice'>('Home');
   const [showHamburger, setShowHamburger] = useState(false);
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [rankingCategory, setRankingCategory] = useState<'AX Coins' | 'Weekly'>('AX Coins');
@@ -121,6 +402,483 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [momentMediaType, setMomentMediaType] = useState<'image' | 'video'>('image');
   const [momentUploading, setMomentUploading] = useState(false);
   const [momentUploadError, setMomentUploadError] = useState('');
+
+  // ── VOICE ROOM SYSTEM STATES ──
+  const [voiceRooms, setVoiceRooms] = useState<any[]>([]);
+  const [activeVoiceRoom, setActiveVoiceRoom] = useState<any | null>(null);
+  const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
+  const [voiceMembers, setVoiceMembers] = useState<any[]>([]);
+  const [voiceChats, setVoiceChats] = useState<any[]>([]);
+  const [voiceChatText, setVoiceChatText] = useState('');
+
+  // Modals & Controls
+  const [showCreateVoiceModal, setShowCreateVoiceModal] = useState(false);
+  const [showVoiceHostTools, setShowVoiceHostTools] = useState(false);
+  const [showVoiceGiftModal, setShowVoiceGiftModal] = useState(false);
+  const [voiceGiftRecipient, setVoiceGiftRecipient] = useState<any | null>(null);
+  const [voiceSelectedGift, setVoiceSelectedGift] = useState<'rose' | 'heart' | 'star' | 'rocket' | 'trophy'>('rose');
+
+  // Real-time Gift Overlay Animation
+  const [voiceActiveGiftAnimation, setVoiceActiveGiftAnimation] = useState<{
+    type: string;
+    senderName: string;
+    recipientName: string;
+    giftName: string;
+    giftEmoji: string;
+    id: number;
+  } | null>(null);
+
+  // Audio / Mic / Speaker Controls
+  const [isVoiceMicMuted, setIsVoiceMicMuted] = useState(false);
+  const [isVoiceSpeakerMuted, setIsVoiceSpeakerMuted] = useState(false);
+  const [showVoiceThemeSelector, setShowVoiceThemeSelector] = useState(false);
+  const [selectedVoiceTheme, setSelectedVoiceTheme] = useState<string>('default');
+
+  const getThemeBackgroundClass = (theme: string) => {
+    switch (theme) {
+      case 'cyber': return 'bg-gradient-to-b from-[#0e0b1f] via-[#160d2e] to-[#0a0c12]';
+      case 'purple': return 'bg-gradient-to-b from-[#1a0b2e] via-[#120720] to-[#0a0c12]';
+      case 'emerald': return 'bg-gradient-to-b from-[#061a14] via-[#04120e] to-[#0a0c12]';
+      case 'sunset': return 'bg-gradient-to-b from-[#1f0a0e] via-[#140609] to-[#0a0c12]';
+      case 'gold': return 'bg-gradient-to-b from-[#1f1a08] via-[#141004] to-[#0a0c12]';
+      default: return 'bg-[#0a0c12]';
+    }
+  };
+
+  // Create Form State
+  const [cvTitle, setCvTitle] = useState('');
+  const [cvTag, setCvTag] = useState<'Talk' | 'Game' | 'Music' | 'Friends' | 'Family'>('Talk');
+  const [cvCoverImage, setCvCoverImage] = useState<string>('');
+  const [cvIsPrivate, setCvIsPrivate] = useState(false);
+  const [cvPassword, setCvPassword] = useState('');
+  const [cvSeats, setCvSeats] = useState<number>(8);
+
+  // Lobby Filters & Search
+  const [voiceTagFilter, setVoiceTagFilter] = useState<string>('All');
+  const [voiceSearchQuery, setVoiceSearchQuery] = useState('');
+
+  // PK & BGM States
+  const [pkModeActive, setPkModeActive] = useState(false);
+  const [bgmPlaying, setBgmPlaying] = useState(false);
+
+  // Category Badge Style Helper
+  const getCategoryBadgeClass = (tag: string) => {
+    switch (tag) {
+      case 'Game':
+        return 'bg-purple-500/20 border-purple-500/40 text-purple-300';
+      case 'Music':
+        return 'bg-pink-500/20 border-pink-500/40 text-pink-300';
+      case 'Friends':
+        return 'bg-blue-500/20 border-blue-500/40 text-blue-300';
+      case 'Family':
+        return 'bg-amber-500/20 border-amber-500/40 text-amber-300';
+      case 'Talk':
+      default:
+        return 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300';
+    }
+  };
+
+  // Real-time Voice Rooms Lobby Listener
+  useEffect(() => {
+    const q = query(collection(db, 'voice_rooms'), orderBy('createdAt', 'desc'), limit(50));
+    const unsub = onSnapshot(q, (snap) => {
+      const list: any[] = [];
+      snap.forEach(d => {
+        list.push({ id: d.id, ...d.data() });
+      });
+      setVoiceRooms(list);
+    }, (err) => {
+      console.warn("Firestore voice_rooms snapshot error:", err);
+    });
+    return () => unsub();
+  }, []);
+
+  // Real-time Active Room, Members & Chat Listener
+  useEffect(() => {
+    if (!voiceRoomId) {
+      setActiveVoiceRoom(null);
+      setVoiceMembers([]);
+      setVoiceChats([]);
+      return;
+    }
+
+    // 1. Room doc listener
+    const roomDocUnsub = onSnapshot(doc(db, 'voice_rooms', voiceRoomId), (snap) => {
+      if (!snap.exists()) {
+        alert("Voice room was closed or ended.");
+        setVoiceRoomId(null);
+        setActiveVoiceRoom(null);
+        return;
+      }
+      const data = snap.data();
+      setActiveVoiceRoom({ id: snap.id, ...data });
+
+      // Check activeGift broadcast for real-time gift animation
+      if (data.activeGift && data.activeGift.timestamp) {
+        const gift = data.activeGift;
+        const now = Date.now();
+        if (now - gift.timestamp < 7000) {
+          setVoiceActiveGiftAnimation({
+            type: gift.type || 'rose',
+            senderName: gift.senderName || 'Player',
+            recipientName: gift.recipientName || 'Player',
+            giftName: gift.giftName || 'Rose',
+            giftEmoji: gift.giftEmoji || '🌹',
+            id: gift.timestamp
+          });
+          setTimeout(() => {
+            setVoiceActiveGiftAnimation(null);
+          }, 4500);
+        }
+      }
+    });
+
+    // 2. Members listener
+    const membersUnsub = onSnapshot(collection(db, 'voice_rooms', voiceRoomId, 'members'), (snap) => {
+      const mList: any[] = [];
+      const seenUids = new Set<string>();
+      snap.forEach(d => {
+        const data: any = d.data();
+        const uid = data.uid || d.id;
+        if (uid && !seenUids.has(uid)) {
+          seenUids.add(uid);
+          mList.push({ id: d.id, uid, ...data });
+        }
+      });
+      setVoiceMembers(mList);
+    });
+
+    // 3. Chats listener
+    const chatsQuery = query(collection(db, 'voice_rooms', voiceRoomId, 'chats'), orderBy('createdAt', 'asc'), limit(50));
+    const chatsUnsub = onSnapshot(chatsQuery, (snap) => {
+      const cList: any[] = [];
+      snap.forEach(d => {
+        cList.push({ id: d.id, ...d.data() });
+      });
+      setVoiceChats(cList);
+    });
+
+    return () => {
+      roomDocUnsub();
+      membersUnsub();
+      chatsUnsub();
+    };
+  }, [voiceRoomId]);
+
+  useEffect(() => {
+    const handleVoiceLeft = () => {
+      setVoiceRoomId(null);
+      setActiveVoiceRoom(null);
+    };
+    const handleVoiceJoined = (e: any) => {
+      if (e?.detail?.roomId) {
+        setVoiceRoomId(e.detail.roomId);
+      }
+    };
+    window.addEventListener('voice-room-left', handleVoiceLeft);
+    window.addEventListener('voice-room-joined', handleVoiceJoined);
+    return () => {
+      window.removeEventListener('voice-room-left', handleVoiceLeft);
+      window.removeEventListener('voice-room-joined', handleVoiceJoined);
+    };
+  }, []);
+
+  // Voice Room Handlers
+  const handleCreateVoiceRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      alert("Please log in to create a voice room!");
+      return;
+    }
+    const title = cvTitle.trim() || `${currentUser.name || 'Player'}'s Voice Room`;
+    try {
+      const newRoomRef = doc(collection(db, 'voice_rooms'));
+      await setDoc(newRoomRef, {
+        roomTitle: title,
+        name: title,
+        roomTag: cvTag,
+        game: cvTag,
+        tag: cvTag,
+        coverImageUrl: cvCoverImage || '',
+        coverUrl: cvCoverImage || '',
+        maxSeats: cvSeats,
+        maxPlayers: cvSeats,
+        seats: cvSeats,
+        isPrivate: cvIsPrivate,
+        type: cvIsPrivate ? 'private' : 'public',
+        password: cvIsPrivate ? cvPassword.trim() : '',
+        hostId: currentUser.uid,
+        hostName: currentUser.name || 'Host',
+        hostAvatar: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+        memberCount: 1,
+        locked: false,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+
+      // Add self as host in seat 1
+      await setDoc(doc(db, 'voice_rooms', newRoomRef.id, 'members', currentUser.uid), {
+        uid: currentUser.uid,
+        name: currentUser.name || 'Host',
+        handle: currentUser.handle || '@host',
+        avatar: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+        seatNumber: 1,
+        seatIndex: 1,
+        isPremium: !!currentUser.premium,
+        isVerified: !!(currentUser.isVerified || currentUser.hasBlueTick),
+        muted: isVoiceMicMuted,
+        speaking: false,
+        joinedAt: serverTimestamp()
+      }, { merge: true });
+
+      setVoiceRoomId(newRoomRef.id);
+      setShowCreateVoiceModal(false);
+      setCvTitle('');
+      setCvCoverImage('');
+      setCvPassword('');
+
+      if (typeof (window as any).joinVoiceRoom === 'function') {
+        (window as any).joinVoiceRoom(newRoomRef.id).catch(() => {});
+      }
+    } catch (err: any) {
+      console.error("Error creating voice room:", err);
+      alert("Failed to create room: " + (err.message || err));
+    }
+  };
+
+  const handleJoinVoiceRoom = async (room: any) => {
+    if (!currentUser) {
+      alert("Please sign in to join voice room!");
+      return;
+    }
+    if (room.isPrivate || room.type === 'private') {
+      const pass = prompt("Enter room password:");
+      if (pass !== room.password) {
+        alert("Incorrect password!");
+        return;
+      }
+    }
+
+    const occupiedSeats = voiceMembers.map(m => m.seatNumber);
+    let targetSeat = 1;
+    for (let i = 1; i <= (room.maxSeats || 8); i++) {
+      if (!occupiedSeats.includes(i)) {
+        targetSeat = i;
+        break;
+      }
+    }
+
+    try {
+      setVoiceRoomId(room.id);
+      await setDoc(doc(db, 'voice_rooms', room.id, 'members', currentUser.uid), {
+        uid: currentUser.uid,
+        name: currentUser.name || 'Player',
+        handle: currentUser.handle || '@player',
+        avatar: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+        seatNumber: targetSeat,
+        isPremium: !!currentUser.premium,
+        isVerified: !!(currentUser.isVerified || currentUser.hasBlueTick),
+        muted: isVoiceMicMuted,
+        speaking: false,
+        joinedAt: serverTimestamp()
+      }, { merge: true });
+
+      await updateDoc(doc(db, 'voice_rooms', room.id), {
+        memberCount: increment(1)
+      }).catch(() => {});
+
+      if (typeof (window as any).joinVoiceRoom === 'function') {
+        (window as any).joinVoiceRoom(room.id).catch(() => {});
+      }
+    } catch (err: any) {
+      console.error("Error joining voice room:", err);
+    }
+  };
+
+  const handleLeaveVoiceRoom = async () => {
+    const roomIdToLeave = voiceRoomId;
+    setVoiceRoomId(null);
+    setActiveVoiceRoom(null);
+
+    if (typeof (window as any).leaveVoiceRoom === 'function') {
+      try {
+        await (window as any).leaveVoiceRoom(true);
+      } catch (e) {
+        console.error("Error in window.leaveVoiceRoom:", e);
+      }
+    }
+
+    if (!roomIdToLeave || !currentUser) return;
+
+    try {
+      await deleteDoc(doc(db, 'voice_rooms', roomIdToLeave, 'members', currentUser.uid)).catch(() => {});
+      
+      const membersRef = collection(db, 'voice_rooms', roomIdToLeave, 'members');
+      const remainingMembersSnap = await getDocs(membersRef).catch(() => ({ empty: true, size: 0 }));
+      const roomRef = doc(db, 'voice_rooms', roomIdToLeave);
+      
+      if (remainingMembersSnap.empty || (remainingMembersSnap as any).size === 0) {
+        await deleteDoc(roomRef).catch((e) => console.warn("Could not delete empty room in PlayerApp:", e));
+        console.log("Empty room deleted completely:", roomIdToLeave);
+      } else {
+        await updateDoc(roomRef, {
+          memberCount: (remainingMembersSnap as any).size
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.error("Error leaving voice room in PlayerApp:", err);
+    }
+  };
+
+  const handleSendVoiceChat = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!voiceChatText.trim() || !voiceRoomId || !currentUser) return;
+    const msgText = voiceChatText.trim();
+    setVoiceChatText('');
+    try {
+      await addDoc(collection(db, 'voice_rooms', voiceRoomId, 'chats'), {
+        userName: currentUser.name || 'Player',
+        userAvatar: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+        userId: currentUser.uid,
+        isPremium: !!currentUser.premium,
+        isVerified: !!(currentUser.isVerified || currentUser.hasBlueTick),
+        message: msgText,
+        isSystem: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Error sending chat:", err);
+    }
+  };
+
+  const handleSendVoiceGift = async (recipient: any, giftType: 'rose' | 'heart' | 'star' | 'rocket' | 'trophy') => {
+    if (!currentUser) {
+      alert("Please log in to send gifts!");
+      return;
+    }
+    if (!recipient || !voiceRoomId) return;
+
+    let price = 10;
+    let popGain = 1;
+    let giftName = 'Roses';
+    let giftEmoji = '🌹';
+
+    if (giftType === 'rocket') {
+      price = 100;
+      popGain = 10;
+      giftName = 'Rocket';
+      giftEmoji = '🚀';
+    } else if (giftType === 'trophy') {
+      price = 190;
+      popGain = 20;
+      giftName = 'Trophy';
+      giftEmoji = '🏆';
+    }
+
+    if ((currentUser.balance || 0) < price) {
+      alert(`Insufficient balance! Sending a ${giftName} ${giftEmoji} requires ${price} AX Coins.`);
+      return;
+    }
+
+    try {
+      const newBal = Math.max(0, (currentUser.balance || 0) - price);
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        balance: increment(-price)
+      });
+      setCurrentUser(prev => prev ? { ...prev, balance: newBal } : null);
+
+      const recipientUid = recipient.uid;
+      if (recipientUid) {
+        await updateDoc(doc(db, 'users', recipientUid), {
+          popularity: increment(popGain),
+          giftCount: increment(popGain)
+        }).catch(() => {});
+
+        try {
+          await addDoc(collection(db, 'users', recipientUid, 'popularityHistory'), {
+            senderUid: currentUser.uid,
+            senderName: currentUser.name || 'Player',
+            senderAv: currentUser.av || '',
+            type: giftType,
+            popGain: popGain,
+            timestamp: serverTimestamp()
+          });
+        } catch(e){}
+      }
+
+      await updateDoc(doc(db, 'voice_rooms', voiceRoomId), {
+        activeGift: {
+          type: giftType,
+          giftName,
+          giftEmoji,
+          senderUid: currentUser.uid,
+          senderName: currentUser.name || 'Player',
+          recipientUid: recipientUid,
+          recipientName: recipient.name || 'Player',
+          timestamp: Date.now()
+        }
+      });
+
+      await addDoc(collection(db, 'voice_rooms', voiceRoomId, 'chats'), {
+        userName: 'System',
+        userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=System',
+        message: `${currentUser.name || 'Player'} gifted ${recipient.name || 'Player'} a ${giftName} ${giftEmoji}`,
+        isSystem: true,
+        createdAt: serverTimestamp()
+      });
+
+      setShowVoiceGiftModal(false);
+    } catch (err: any) {
+      console.error("Error sending voice gift:", err);
+      alert("Failed to send gift: " + err.message);
+    }
+  };
+
+  const handleHostChangeCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !voiceRoomId) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      await updateDoc(doc(db, 'voice_rooms', voiceRoomId), {
+        coverImageUrl: base64
+      });
+      alert("Room cover image updated! 🎨");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleHostDeleteChat = async () => {
+    if (!voiceRoomId) return;
+    if (!confirm("Delete all chat messages in this room?")) return;
+    try {
+      const chatsSnap = await getDocs(collection(db, 'voice_rooms', voiceRoomId, 'chats'));
+      chatsSnap.forEach(async (cDoc) => {
+        await deleteDoc(doc(db, 'voice_rooms', voiceRoomId, 'chats', cDoc.id));
+      });
+      alert("Room chat cleared! 🧹");
+    } catch (err) {
+      console.error("Error deleting chat:", err);
+    }
+  };
+
+  const handleHostWipeScreen = async () => {
+    alert("Screen wiped! 🧹 Visual canvas cleared.");
+  };
+
+  const handleHostShareRoom = async () => {
+    if (!voiceRoomId || !activeVoiceRoom) return;
+    const title = activeVoiceRoom.roomTitle || activeVoiceRoom.name || 'Voice Room';
+    try {
+      await addDoc(collection(db, 'voice_rooms', voiceRoomId, 'chats'), {
+        userName: 'System',
+        userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=System',
+        message: `📢 Room invite shared! Invite friends to join "${title}"`,
+        isSystem: true,
+        createdAt: serverTimestamp()
+      });
+      alert(`Room link copied! Room ID: ${voiceRoomId}`);
+    } catch(e){}
+  };
 
   // Real-time listener for Moments collection
   useEffect(() => {
@@ -614,6 +1372,21 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   );
   const [fcmError, setFcmError] = useState<string | null>(null);
 
+  // ── PLAYER SHOW (3D AVATAR VIEWER) ──
+  const [showPlayerShowViewer, setShowPlayerShowViewer] = useState(false);
+
+  useEffect(() => {
+    const handleOpenViewer = () => setShowPlayerShowViewer(true);
+    window.addEventListener('open-player-show-viewer', handleOpenViewer);
+    window.addEventListener('open-player-show-modal', handleOpenViewer);
+    (window as any).openPlayerShowViewer = handleOpenViewer;
+    (window as any).openPlayerShowModal = handleOpenViewer;
+    return () => {
+      window.removeEventListener('open-player-show-viewer', handleOpenViewer);
+      window.removeEventListener('open-player-show-modal', handleOpenViewer);
+    };
+  }, []);
+
   // Listen to Auth & Firestore profile
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (fireUser) => {
@@ -650,7 +1423,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               banType: data.banType || 'none',
               banReason: data.banReason || '',
               banUntil: data.banUntil || null,
-              balance: data.balance || 0,
+              balance: data.balance !== undefined ? data.balance : (data.axCoins !== undefined ? data.axCoins : 0),
+              axCoins: data.axCoins !== undefined ? data.axCoins : (data.balance !== undefined ? data.balance : 0),
+              playerShowUnlocked: !!data.playerShowUnlocked,
               hasFrame: hasFrame,
               frameEquipped: frameEquipped,
               frameExpiresAt: data.frameExpiresAt || null,
@@ -2640,6 +3415,23 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               <div className="space-y-2">
                 <div className="text-[10px] uppercase font-bold text-[#4a5070] tracking-wider px-1">Menu Options</div>
 
+                {/* Voice Arena button */}
+                <button
+                  onClick={() => {
+                    setActiveTab('Voice');
+                    setShowHamburger(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                    activeTab === 'Voice'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-[#171b2e] text-white hover:bg-[#1e2340] border border-[#252a45]'
+                  }`}
+                >
+                  <i className="fas fa-microphone text-base text-emerald-400"></i>
+                  <span>Voice Arena Rooms</span>
+                  <span className="ml-auto text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold uppercase">Live</span>
+                </button>
+
                 {/* Chat button placed in hamburger section */}
                 <button
                   onClick={() => {
@@ -2752,6 +3544,845 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
       {/* MAIN BODY SCROLL */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* ── VOICE ROOM TAB ── */}
+        {activeTab === 'Voice' && (
+          <div className="space-y-4 animate-fade-in pb-12">
+            {/* Real-time Gift Transparent Overlay Animation */}
+            {voiceActiveGiftAnimation && (
+              <div className="fixed inset-0 pointer-events-none z-[100010] bg-transparent flex flex-col items-center justify-center animate-fade-in">
+                <div className="bg-[#111420]/90 border-2 border-[#f0c040] shadow-[0_0_30px_rgba(240,192,64,0.4)] rounded-2xl p-4 flex items-center gap-3 backdrop-blur-md mb-6 animate-bounce">
+                  <span className="text-3xl">{voiceActiveGiftAnimation.giftEmoji}</span>
+                  <div>
+                    <div className="text-xs font-black text-[#f0c040] uppercase tracking-wider">GIFT BROADCAST 🎁</div>
+                    <div className="text-sm font-bold text-white">
+                      <span className="text-[#f0c040]">{voiceActiveGiftAnimation.senderName}</span> gifted{' '}
+                      <span className="text-emerald-400">{voiceActiveGiftAnimation.recipientName}</span> a{' '}
+                      <span className="text-[#f0c040]">{voiceActiveGiftAnimation.giftName}</span>!
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-64 h-64 pointer-events-none">
+                  {voiceActiveGiftAnimation.type === 'rocket' ? (
+                    <lottie-player src="./rocket.json" background="transparent" speed="1.0" style={{ width: '100%', height: '100%' }} autoplay></lottie-player>
+                  ) : voiceActiveGiftAnimation.type === 'trophy' ? (
+                    <lottie-player src="./poptrophy.json" background="transparent" speed="1.0" style={{ width: '100%', height: '100%' }} autoplay></lottie-player>
+                  ) : (
+                    <lottie-player src="./rose.json" background="transparent" speed="1.0" style={{ width: '100%', height: '100%' }} autoplay></lottie-player>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* LOBBY VIEW (when not in a room) */}
+            {!voiceRoomId && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-[#252a45]">
+                  <div className="font-sans text-xl font-bold flex items-center gap-2 text-white">
+                    <i className="fas fa-microphone text-emerald-400"></i> Voice Arena
+                  </div>
+                  <button
+                    onClick={() => setShowCreateVoiceModal(true)}
+                    className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <i className="fas fa-plus"></i> Create Room
+                  </button>
+                </div>
+
+                {/* Search & Category Pills */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <i className="fas fa-search absolute left-3 top-3 text-[#4a5070] text-xs"></i>
+                    <input
+                      type="text"
+                      placeholder="Search room title or host name..."
+                      value={voiceSearchQuery}
+                      onChange={(e) => setVoiceSearchQuery(e.target.value)}
+                      className="w-full bg-[#171b2e] border border-[#252a45] rounded-xl pl-9 pr-3 py-2.5 text-xs outline-none focus:border-emerald-500 text-white transition"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Talk', 'Game', 'Music', 'Friends', 'Family'].map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => setVoiceTagFilter(tag)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 cursor-pointer border ${
+                          voiceTagFilter === tag
+                            ? 'bg-emerald-500/30 border-emerald-500 text-emerald-300 shadow-sm'
+                            : 'bg-[#171b2e] border-[#252a45] text-[#8890b0] hover:text-white'
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Room Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {voiceRooms
+                    .filter((r) => {
+                      const tagMatch = voiceTagFilter === 'All' || r.roomTag === voiceTagFilter || r.game === voiceTagFilter;
+                      const searchMatch = !voiceSearchQuery ||
+                        (r.roomTitle || r.name || '').toLowerCase().includes(voiceSearchQuery.toLowerCase()) ||
+                        (r.hostName || '').toLowerCase().includes(voiceSearchQuery.toLowerCase());
+                      return tagMatch && searchMatch;
+                    })
+                    .map((room) => {
+                      const coverUrl = room.coverImageUrl || room.coverUrl || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300';
+                      const tagDisplay = room.roomTag || room.game || 'Talk';
+
+                      return (
+                        <div
+                          key={room.id}
+                          className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-emerald-500/40 rounded-2xl overflow-hidden relative transition hover:-translate-y-0.5 shadow-md flex items-center justify-between gap-3 group"
+                        >
+                          {/* Thumbnail Box */}
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[#121526] shrink-0 border border-white/10 relative shadow-inner">
+                            <img src={coverUrl} alt="Room Cover" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                            <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/75 backdrop-blur-md border border-emerald-500/40 text-[7px] font-extrabold uppercase text-emerald-300 rounded-md">
+                              {tagDisplay}
+                            </span>
+                          </div>
+
+                          {/* Info Box */}
+                          <div className="space-y-1 flex-1 min-w-0 pr-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0"></span>
+                              <h4 className="text-xs font-black uppercase text-white tracking-wide truncate group-hover:text-emerald-300 transition">
+                                {room.roomTitle || room.name || 'Voice Room'}
+                              </h4>
+                              {room.isPrivate || room.type === 'private' ? (
+                                <i className="fas fa-lock text-[10px] text-[#f0c040] shrink-0" title="Private"></i>
+                              ) : null}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#8890b0] pt-0.5">
+                              <div className="flex items-center gap-1">
+                                <img
+                                  src={room.hostAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${room.hostId}`}
+                                  alt="Host"
+                                  className="w-4 h-4 rounded-full border border-[#252a45]"
+                                />
+                                <span className="truncate max-w-[90px]">Host: <strong className="text-white">{room.hostName || 'Player'}</strong></span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action & Seats */}
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <span className="font-bold text-emerald-400 text-xs">
+                              👥 {room.memberCount || 1}/{room.maxSeats || room.maxPlayers || 8}
+                            </span>
+                            <button
+                              onClick={() => handleJoinVoiceRoom(room)}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer shadow-md"
+                            >
+                              Join
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* IN-ROOM INTERFACE */}
+            {voiceRoomId && activeVoiceRoom && (
+              <div
+                className={`fixed inset-0 z-[999] flex flex-col overflow-hidden transition-all duration-500 ${getThemeBackgroundClass(selectedVoiceTheme)}`}
+              >
+                {activeVoiceRoom.coverImage && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none transition-all duration-500"
+                    style={{ backgroundImage: `url(${activeVoiceRoom.coverImage})` }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none"></div>
+
+                {/* TOP BAR */}
+                <div className="relative z-10 p-3 bg-[#111420]/90 border-b border-[#252a45] flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <button
+                      onClick={handleLeaveVoiceRoom}
+                      className="w-8 h-8 rounded-xl bg-[#171b2e] hover:bg-red-500/20 text-gray-300 hover:text-red-400 border border-[#252a45] flex items-center justify-center transition cursor-pointer shrink-0"
+                      title="Leave Room"
+                    >
+                      <i className="fas fa-arrow-left text-xs"></i>
+                    </button>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <h3 className="text-xs font-black uppercase text-white tracking-wide truncate">
+                          {activeVoiceRoom.roomTitle || activeVoiceRoom.name || 'Voice Room'}
+                        </h3>
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border shrink-0 ${getCategoryBadgeClass(activeVoiceRoom.roomTag || 'Talk')}`}>
+                          {activeVoiceRoom.roomTag || 'Talk'}
+                        </span>
+                      </div>
+                      <div className="text-[9px] text-[#8890b0] flex items-center gap-2 mt-0.5">
+                        <span>👥 {voiceMembers.length}/{activeVoiceRoom.maxSeats || 8} Seats</span>
+                        <div className="flex -space-x-1 shrink-0">
+                          {voiceMembers.slice(0, 4).map((m, idx) => (
+                            <img key={idx} src={m.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.uid}`} className="w-4 h-4 rounded-full border border-black object-cover" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setShowVoiceThemeSelector(true)}
+                      className="p-2 bg-[#171b2e] hover:bg-[#252a45] border border-[#252a45] text-[#f0c040] rounded-xl text-xs flex items-center justify-center transition cursor-pointer"
+                      title="Room Themes"
+                    >
+                      🎨
+                    </button>
+
+                    {currentUser?.uid === activeVoiceRoom.hostId && (
+                      <button
+                        onClick={() => setShowVoiceHostTools(!showVoiceHostTools)}
+                        className="px-2.5 py-1.5 bg-[#f0c040]/15 border border-[#f0c040]/30 hover:bg-[#f0c040]/25 text-[#f0c040] rounded-xl text-[10px] font-bold uppercase transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <i className="fas fa-tools text-xs"></i> <span className="hidden xs:inline">Tools</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleLeaveVoiceRoom}
+                      className="px-2.5 py-1.5 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 text-red-400 rounded-xl text-[10px] font-bold uppercase transition cursor-pointer"
+                    >
+                      Leave
+                    </button>
+                  </div>
+                </div>
+
+                {/* PK BATTLE BANNER */}
+                {pkModeActive && (
+                  <div className="relative z-10 px-3 py-1.5 bg-gradient-to-r from-red-600/40 via-purple-600/40 to-blue-600/40 border-b border-purple-500/30 flex items-center justify-between text-xs text-white font-bold shrink-0">
+                    <span className="flex items-center gap-1.5 text-[#f0c040]">
+                      <i className="fas fa-swords animate-pulse"></i> VOICE PK BATTLE LIVE!
+                    </span>
+                    <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded-full border border-white/20">
+                      LIVE ⚔️
+                    </span>
+                  </div>
+                )}
+
+                {/* SEAT GRID */}
+                <div className="relative z-10 flex-1 p-3.5 overflow-y-auto min-h-0">
+                  <div className="grid grid-cols-4 gap-2.5 sm:gap-3 content-start max-w-lg mx-auto">
+                    {Array.from({ length: activeVoiceRoom.maxSeats || 8 }, (_, idx) => {
+                      const seatNum = idx + 1;
+                      const occupant = voiceMembers.find(m => m.seatNumber === seatNum || (idx === 0 && m.uid === activeVoiceRoom.hostId && !m.seatNumber));
+
+                      return (
+                        <div
+                          key={seatNum}
+                          onClick={() => {
+                            if (occupant) {
+                              if (occupant.uid !== currentUser?.uid) {
+                                setVoiceGiftRecipient(occupant);
+                                setShowVoiceGiftModal(true);
+                              }
+                            } else {
+                              if (currentUser && voiceRoomId) {
+                                updateDoc(doc(db, 'voice_rooms', voiceRoomId, 'members', currentUser.uid), {
+                                  seatNumber: seatNum
+                                });
+                              }
+                            }
+                          }}
+                          className={`p-2.5 rounded-2xl border flex flex-col items-center justify-center text-center transition cursor-pointer relative group ${
+                            occupant
+                              ? 'bg-[#14182b]/80 border-[#282f50] hover:border-emerald-500/50 shadow-md backdrop-blur-sm'
+                              : 'bg-[#0f1222]/40 border-dashed border-[#222742] hover:border-emerald-500/30 backdrop-blur-sm'
+                          }`}
+                        >
+                          <span className="absolute top-1.5 left-2 text-[8px] font-bold text-[#8890b0]">
+                            #{seatNum}
+                          </span>
+
+                          {occupant ? (
+                            <>
+                              <div className="relative my-1">
+                                {occupant.uid === activeVoiceRoom.hostId && (
+                                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs text-[#f0c040] z-20 drop-shadow">
+                                    👑
+                                  </span>
+                                )}
+
+                                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 relative z-10 ${
+                                  occupant.speaking ? 'border-emerald-400 shadow-[0_0_12px_#10b981]' : 'border-[#282f50]'
+                                }`}>
+                                  <img src={occupant.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${occupant.uid}`} alt={occupant.name} className="w-full h-full object-cover" />
+                                </div>
+
+                                <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white z-20 border border-black ${
+                                  occupant.muted ? 'bg-red-500' : 'bg-emerald-500'
+                                }`}>
+                                  <i className={`fas ${occupant.muted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
+                                </span>
+                              </div>
+
+                              <span className="text-[10px] font-bold text-white truncate max-w-full mt-0.5 flex items-center justify-center gap-0.5">
+                                <span className={(occupant.isPremium || occupant.premium) ? 'golden-name-shimmer text-amber-400 font-extrabold' : ''}>
+                                  {occupant.name}
+                                </span>
+                                {(occupant.isVerified || occupant.hasBlueTick || occupant.blueTick || occupant.verified) && (
+                                  <img src="bluetick.png" className="w-3 h-3 inline-block align-middle shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" />
+                                )}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-[#282f50] flex items-center justify-center text-[#8890b0] group-hover:text-emerald-400 group-hover:border-emerald-500/40 my-1">
+                                <i className="fas fa-plus text-xs"></i>
+                              </div>
+                              <span className="text-[9px] font-semibold text-[#8890b0]">
+                                Take Seat
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* BOTTOM GIFT REACTION ROW */}
+                <div className="relative z-10 px-3 py-2 bg-[#111420]/90 border-t border-[#252a45] overflow-x-auto no-scrollbar shrink-0">
+                  <div className="flex items-center gap-3">
+                    {[
+                      { type: 'rose', name: 'Rose', emoji: '🌹', price: 1 },
+                      { type: 'heart', name: 'Heart', emoji: '❤️', price: 2 },
+                      { type: 'star', name: 'Star', emoji: '⭐', price: 5 },
+                      { type: 'rocket', name: 'Rocket', emoji: '🚀', price: 10 },
+                      { type: 'trophy', name: 'Trophy', emoji: '🏆', price: 20 }
+                    ].map((g) => (
+                      <button
+                        key={g.type}
+                        onClick={() => {
+                          setVoiceSelectedGift(g.type as any);
+                          setShowVoiceGiftModal(true);
+                        }}
+                        className="px-3 py-1.5 bg-[#171b2e] hover:bg-[#252a45] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex items-center gap-2 shrink-0 transition cursor-pointer active:scale-95"
+                      >
+                        <span className="text-lg">{g.emoji}</span>
+                        <div className="text-left leading-none">
+                          <div className="text-[10px] font-bold text-white">{g.name}</div>
+                          <div className="text-[8px] text-[#f0c040] font-black">{g.price} AX</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CHAT FEED */}
+                <div className="relative z-10 h-32 p-3 bg-black/40 border-t border-[#252a45] overflow-y-auto space-y-1.5 text-xs shrink-0">
+                  {voiceChats.length === 0 ? (
+                    <div className="text-center text-[10px] text-[#8890b0] py-4">
+                      💬 Squad chat is quiet. Send a message or gift!
+                    </div>
+                  ) : (
+                    voiceChats.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-start gap-2 text-xs leading-relaxed ${
+                          msg.isSystem ? 'bg-[#f0c040]/10 border border-[#f0c040]/20 rounded-lg p-1.5 text-[#f0c040] font-bold' : ''
+                        }`}
+                      >
+                        {!msg.isSystem && (
+                          <img src={msg.userAvatar} className="w-5 h-5 rounded-full border border-[#252a45] shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          {!msg.isSystem && (
+                            <span className="font-bold text-white mr-1.5 inline-flex items-center gap-0.5">
+                              <span className={(msg.isPremium || msg.premium) ? 'golden-name-shimmer text-amber-400 font-extrabold' : ''}>
+                                {msg.userName}
+                              </span>
+                              {(msg.isVerified || msg.hasBlueTick || msg.blueTick || msg.verified) && (
+                                <img src="bluetick.png" className="w-3 h-3 inline-block align-middle shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" />
+                              )}
+                              :
+                            </span>
+                          )}
+                          <span className={msg.isSystem ? 'text-[#f0c040]' : 'text-gray-200'}>{msg.message}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* BOTTOM ACTION BAR */}
+                <div className="relative z-10 p-2.5 bg-[#111420] border-t border-[#252a45] flex items-center gap-2 shrink-0">
+                  {/* Mic Toggle */}
+                  <button
+                    onClick={() => setIsVoiceMicMuted(!isVoiceMicMuted)}
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer text-xs shrink-0 ${
+                      isVoiceMicMuted ? 'bg-red-500/20 border-red-500/40 text-red-400' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    }`}
+                    title="Toggle Mic"
+                  >
+                    <i className={`fas ${isVoiceMicMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
+                  </button>
+
+                  {/* Speaker Toggle */}
+                  <button
+                    onClick={() => setIsVoiceSpeakerMuted(!isVoiceSpeakerMuted)}
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer text-xs shrink-0 ${
+                      isVoiceSpeakerMuted ? 'bg-red-500/20 border-red-500/40 text-red-400' : 'bg-[#171b2e] border-[#252a45] text-gray-300 hover:text-white'
+                    }`}
+                    title="Toggle Speaker"
+                  >
+                    <i className={`fas ${isVoiceSpeakerMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+                  </button>
+
+                  {/* Gift Modal Button */}
+                  <button
+                    onClick={() => setShowVoiceGiftModal(true)}
+                    className="w-9 h-9 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 border border-pink-500/40 text-white flex items-center justify-center transition cursor-pointer text-sm shrink-0 shadow-lg shadow-pink-500/20 active:scale-95"
+                    title="Send Gift"
+                  >
+                    🎁
+                  </button>
+
+                  {/* Chat Input & Send */}
+                  <form onSubmit={handleSendVoiceChat} className="flex-1 flex gap-1.5 min-w-0">
+                    <input
+                      type="text"
+                      placeholder="Type message..."
+                      value={voiceChatText}
+                      onChange={(e) => setVoiceChatText(e.target.value)}
+                      className="flex-1 min-w-0 bg-[#171b2e] border border-[#252a45] rounded-xl px-3 py-1.5 text-xs outline-none focus:border-emerald-500 text-white transition placeholder:text-gray-500"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition cursor-pointer shrink-0 flex items-center justify-center"
+                    >
+                      <i className="fas fa-paper-plane"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* CREATE VOICE ROOM MODAL */}
+            {showCreateVoiceModal && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                <div className="bg-[#111420] border border-[#252a45] rounded-2xl p-5 max-w-[420px] w-full space-y-4 animate-fade-in relative">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#252a45]">
+                    <h3 className="font-sans text-base font-bold text-white flex items-center gap-2">
+                      <i className="fas fa-microphone text-emerald-400"></i> Create Voice Room
+                    </h3>
+                    <button
+                      onClick={() => setShowCreateVoiceModal(false)}
+                      className="text-[#8890b0] hover:text-white transition cursor-pointer"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateVoiceRoom} className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                        Room Cover Image (Gallery)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => setCvCoverImage(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs text-[#8890b0] file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-[#171b2e] file:text-white file:font-bold hover:file:bg-[#252a45] cursor-pointer"
+                      />
+                      {cvCoverImage && (
+                        <div className="mt-2 h-20 rounded-xl overflow-hidden border border-[#252a45]">
+                          <img src={cvCoverImage} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                        Room Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Talk & Chill Squad"
+                        value={cvTitle}
+                        onChange={(e) => setCvTitle(e.target.value)}
+                        className="w-full bg-[#171b2e] border border-[#252a45] rounded-xl px-3 py-2 outline-none focus:border-emerald-500 text-white transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                        Room Tag / Category
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {(['Talk', 'Game', 'Music', 'Friends', 'Family'] as const).map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => setCvTag(tag)}
+                            className={`px-3 py-1 rounded-full text-xs font-bold transition border ${
+                              cvTag === tag
+                                ? 'bg-emerald-500/30 border-emerald-500 text-emerald-300 shadow-sm scale-105'
+                                : 'bg-[#171b2e] border-[#252a45] text-[#8890b0] hover:text-white'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                          Privacy
+                        </label>
+                        <select
+                          value={cvIsPrivate ? 'private' : 'public'}
+                          onChange={(e) => setCvIsPrivate(e.target.value === 'private')}
+                          className="w-full bg-[#171b2e] border border-[#252a45] rounded-xl px-2.5 py-2 outline-none focus:border-emerald-500 text-white transition"
+                        >
+                          <option value="public">Public</option>
+                          <option value="private">Private (Password)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                          Number of Seats
+                        </label>
+                        <select
+                          value={cvSeats}
+                          onChange={(e) => setCvSeats(parseInt(e.target.value))}
+                          className="w-full bg-[#171b2e] border border-[#252a45] rounded-xl px-2.5 py-2 outline-none focus:border-emerald-500 text-white transition"
+                        >
+                          <option value={6}>6 Seats</option>
+                          <option value={8}>8 Seats</option>
+                          <option value={10}>10 Seats</option>
+                          <option value={12}>12 Seats</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {cvIsPrivate && (
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-[#8890b0] tracking-wider mb-1">
+                          Room Password
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter password..."
+                          value={cvPassword}
+                          onChange={(e) => setCvPassword(e.target.value)}
+                          className="w-full bg-[#171b2e] border border-[#252a45] rounded-xl px-3 py-2 outline-none focus:border-emerald-500 text-white transition"
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold uppercase tracking-wider rounded-xl transition shadow-lg cursor-pointer"
+                    >
+                      Create Room 🚀
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* HOST TOOLS PANEL OVERLAY */}
+            {showVoiceHostTools && activeVoiceRoom && currentUser?.uid === activeVoiceRoom.hostId && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+                <div className="bg-[#111420] border-t sm:border border-[#252a45] rounded-t-3xl sm:rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl relative animate-slide-up">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#252a45]">
+                    <h3 className="font-sans text-sm font-bold text-[#f0c040] flex items-center gap-2">
+                      <i className="fas fa-tools"></i> Host Controls & Room Tools
+                    </h3>
+                    <button
+                      onClick={() => setShowVoiceHostTools(false)}
+                      className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <button
+                      onClick={handleHostWipeScreen}
+                      className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-white cursor-pointer group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition">🧹</span>
+                      <span className="font-bold text-[10px]">Wipe Screen</span>
+                    </button>
+
+                    <label className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-white cursor-pointer group">
+                      <span className="text-xl group-hover:scale-110 transition">🖼️</span>
+                      <span className="font-bold text-[10px]">Change BG</span>
+                      <input type="file" accept="image/*" onChange={handleHostChangeCover} className="hidden" />
+                    </label>
+
+                    <button
+                      onClick={() => {
+                        setBgmPlaying(!bgmPlaying);
+                        alert(bgmPlaying ? "Room BGM stopped 🎵" : "Room ambient squad music playing 🎵");
+                      }}
+                      className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-white cursor-pointer group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition">🎵</span>
+                      <span className="font-bold text-[10px]">{bgmPlaying ? 'Pause Music' : 'Music Player'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleHostDeleteChat}
+                      className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-red-500/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-red-400 cursor-pointer group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition">🗑️</span>
+                      <span className="font-bold text-[10px]">Delete Chat</span>
+                    </button>
+
+                    <button
+                      onClick={handleHostShareRoom}
+                      className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-white cursor-pointer group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition">📢</span>
+                      <span className="font-bold text-[10px]">Share Room</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowVoiceHostTools(false);
+                        setShowVoiceThemeSelector(true);
+                      }}
+                      className="p-3 bg-[#171b2e] border border-[#252a45] hover:border-[#f0c040]/40 rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-xs text-white cursor-pointer group"
+                    >
+                      <span className="text-xl group-hover:scale-110 transition">🎨</span>
+                      <span className="font-bold text-[10px]">Room Themes</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setPkModeActive(!pkModeActive);
+                        alert(pkModeActive ? "PK Battle Ended" : "PK Battle Mode Activated! ⚔️");
+                      }}
+                      className="col-span-3 p-3 bg-gradient-to-r from-purple-900/40 to-pink-900/40 hover:from-purple-900/60 hover:to-pink-900/60 border border-purple-500/30 rounded-xl flex items-center justify-center gap-3 transition cursor-pointer group"
+                    >
+                      <span className="text-2xl animate-pulse">⚔️</span>
+                      <div className="text-left">
+                        <div className="text-xs font-black text-white uppercase tracking-wider">{pkModeActive ? 'End PK Battle Mode' : 'Start PK Battle Mode'}</div>
+                        <div className="text-[9px] text-purple-300">Toggle 1v1 Battle Banner & Popularity Meter</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ROOM THEME SELECTOR OVERLAY */}
+            {showVoiceThemeSelector && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+                <div className="bg-[#111420] border-t sm:border border-amber-500/30 rounded-t-3xl sm:rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl relative animate-slide-up">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#252a45]">
+                    <h3 className="font-sans text-sm font-bold text-[#f0c040] flex items-center gap-2">
+                      <span>🎨</span> Room Atmosphere Themes
+                    </h3>
+                    <button
+                      onClick={() => setShowVoiceThemeSelector(false)}
+                      className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 flex items-center justify-center text-xs transition cursor-pointer"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {[
+                      { id: 'default', name: 'Default Dark', icon: '🌌' },
+                      { id: 'cyber', name: 'Cyber Neon', icon: '👾' },
+                      { id: 'purple', name: 'Royal Purple', icon: '💜' },
+                      { id: 'emerald', name: 'Emerald Arena', icon: '💚' },
+                      { id: 'sunset', name: 'Sunset Fire', icon: '🌅' },
+                      { id: 'gold', name: 'VIP Gold', icon: '👑' }
+                    ].map((theme) => (
+                      <button
+                        key={theme.id}
+                        onClick={() => {
+                          setSelectedVoiceTheme(theme.id);
+                          setShowVoiceThemeSelector(false);
+                        }}
+                        className={`p-3 border rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center cursor-pointer group ${
+                          selectedVoiceTheme === theme.id
+                            ? 'bg-[#1e2338] border-amber-400 text-amber-300 shadow-md ring-1 ring-amber-400/50'
+                            : 'bg-[#171b2e] border-[#252a45] hover:border-amber-500/40 text-gray-200'
+                        }`}
+                      >
+                        <span className="text-xl group-hover:scale-110 transition">{theme.icon}</span>
+                        <span className="text-[10px] font-bold">{theme.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VOICE ROOM GIFT / POPULARITY MODAL */}
+            {showVoiceGiftModal && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-end sm:items-center justify-center sm:p-4">
+                <div className="bg-[#101322] border-t sm:border border-[#252b47] rounded-t-3xl sm:rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-slide-up sm:animate-fade-in relative flex flex-col max-h-[85vh]">
+                  {/* Handlebar for Mobile */}
+                  <div className="w-12 h-1 bg-gray-600/50 rounded-full mx-auto my-2 shrink-0 sm:hidden"></div>
+
+                  {/* Top Bar: Recipient Selector */}
+                  <div className="p-3.5 sm:p-4 bg-[#141727] border-b border-[#252b47] flex items-center justify-between gap-3 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider shrink-0">Send to:</span>
+                      
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                        {voiceMembers
+                          .filter((m) => m.uid !== currentUser?.uid)
+                          .map((m) => {
+                            const isSelected = voiceGiftRecipient?.uid === m.uid;
+                            const isPrem = !!(m.isPremium || m.premium);
+                            const isVer = !!(m.isVerified || m.hasBlueTick || m.blueTick || m.verified);
+                            return (
+                              <button
+                                key={m.uid}
+                                onClick={() => setVoiceGiftRecipient(m)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition shrink-0 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 border-pink-500 text-white ring-1 ring-pink-500/50'
+                                    : 'border-[#293050] bg-[#1a1e34] text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                <img src={m.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.uid}`} className="w-5 h-5 rounded-full object-cover shrink-0 border border-purple-500/30" />
+                                <span className={`truncate max-w-[80px] ${isPrem ? 'golden-name-shimmer text-amber-400 font-extrabold' : ''}`}>{m.name}</span>
+                                {isVer && (
+                                  <img src="bluetick.png" className="w-3 h-3 inline-block align-middle shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" title="Verified Badge" />
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowVoiceGiftModal(false)}
+                      className="w-8 h-8 rounded-full bg-[#1e2338] hover:bg-[#282e4a] text-gray-400 hover:text-white flex items-center justify-center transition shrink-0 cursor-pointer"
+                    >
+                      <i className="fas fa-times text-xs"></i>
+                    </button>
+                  </div>
+
+                  {/* Tabs Row */}
+                  <div className="flex items-center px-4 pt-3 border-b border-[#252b47] gap-6 text-xs font-bold text-gray-400 shrink-0">
+                    <span className="pb-2 text-pink-400 border-b-2 border-pink-500 font-extrabold cursor-pointer">Gift</span>
+                    <span className="pb-2 hover:text-white cursor-pointer transition">Package</span>
+                    <span className="pb-2 hover:text-white cursor-pointer transition">Special</span>
+                    <span className="pb-2 hover:text-white cursor-pointer transition">VIP</span>
+                  </div>
+
+                  {/* Body: Gift Cards Grid */}
+                  <div className="p-4 space-y-4 overflow-y-auto max-h-[320px]">
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { type: 'rose', name: 'Roses', cost: 10, img: '/gift-roses.png' },
+                        { type: 'rocket', name: 'Rocket', cost: 100, img: '/gift-rocket.png' },
+                        { type: 'trophy', name: 'Trophy', cost: 190, img: '/gift-trophy.png' },
+                      ].map((g) => {
+                        const isSelected = voiceSelectedGift === g.type;
+                        return (
+                          <div
+                            key={g.type}
+                            onClick={() => setVoiceSelectedGift(g.type as any)}
+                            className={`relative p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 sm:gap-1.5 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-b from-pink-500/15 via-[#1a1e34] to-[#121526] border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-1 ring-pink-500/50 scale-[1.02]'
+                                : 'bg-[#141727] border-[#252b47] hover:border-pink-500/40'
+                            }`}
+                          >
+                            {isSelected && (
+                              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white text-[9px] flex items-center justify-center shadow-md">
+                                ✓
+                              </div>
+                            )}
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center p-1">
+                              <img src={g.img} alt={g.name} className="max-w-full max-h-full object-contain drop-shadow-md" />
+                            </div>
+                            <span className="text-xs font-extrabold text-white">{g.name}</span>
+                            <div className="flex items-center gap-1 bg-[#0d0f1a] px-2 py-0.5 rounded-full border border-yellow-500/30">
+                              <span className="text-[10px]">🪙</span>
+                              <span className="text-[10px] font-black text-amber-400">{g.cost}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-[11px] text-gray-400 text-center italic">
+                      {voiceSelectedGift === 'rose'
+                        ? "Receiver's Charm +1 • Gain popularity & status boost"
+                        : voiceSelectedGift === 'rocket'
+                        ? "Receiver's Charm +10 • Supercharge popularity & status boost"
+                        : "Receiver's Charm +20 • Ultimate popularity & prestige boost"}
+                    </p>
+                  </div>
+
+                  {/* Bottom Bar */}
+                  <div className="p-3.5 sm:p-4 bg-[#141727] border-t border-[#252b47] flex items-center justify-between gap-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0d0f1a] border border-yellow-500/30">
+                        <span className="text-sm">🪙</span>
+                        <span className="text-xs font-black text-amber-400">
+                          {(currentUser?.balance || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (typeof (window as any).openDepositModal === 'function') {
+                            (window as any).openDepositModal();
+                          } else {
+                            alert("Opening wallet deposit...");
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg bg-pink-500/20 hover:bg-pink-500/30 text-pink-400 border border-pink-500/40 flex items-center justify-center transition cursor-pointer font-bold text-sm"
+                        title="Recharge Coins"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (!voiceGiftRecipient) {
+                          alert("Please select a participant to receive the gift!");
+                          return;
+                        }
+                        handleSendVoiceGift(voiceGiftRecipient, voiceSelectedGift);
+                      }}
+                      className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg hover:shadow-pink-500/25 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Send Gift 🎁
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── HOME TAB ── */}
         {activeTab === 'Home' && (
@@ -3156,6 +4787,31 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               )}
             </div>
 
+            {/* 3D PLAYER SHOW CARD */}
+            <div className="p-4 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] border border-[#f0c040]/30 rounded-xl flex items-center justify-between gap-3 shadow-lg relative overflow-hidden">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f0c040]/20 to-[#f0c040]/5 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-xl shrink-0 shadow-inner">
+                  <i className="fas fa-cube"></i>
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-white text-xs sm:text-sm truncate flex items-center gap-1.5">
+                    Player Show
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 font-bold">3D Avatar</span>
+                  </h4>
+                  <p className="text-[10px] text-[#8890b0] truncate">
+                    Interactive 3D character avatar viewer
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowPlayerShowViewer(true)}
+                className="px-4 py-2 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:from-[#e8b830] hover:to-amber-500 text-[#0a0c12] rounded-lg text-xs font-black transition shrink-0 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
+              >
+                <i className="fas fa-play text-[10px]"></i> Enter
+              </button>
+            </div>
+
             {/* FEATURED SQUAD TOURNAMENT CALLOUT */}
             <div className="p-4 bg-gradient-to-r from-[#f0c040]/15 to-[#f0c040]/5 border border-[#f0c040]/25 rounded-xl flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -3228,6 +4884,18 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
               <div className="px-4 py-2.5 text-[10px] font-semibold text-[#8890b0] uppercase tracking-wider bg-[#111420]/50">
                 Account Navigation
               </div>
+
+              <button
+                onClick={() => setShowPlayerShowViewer(true)}
+                className="w-full text-left px-4 py-3 hover:bg-[#1e2340] text-sm flex items-center justify-between text-[#8890b0] hover:text-white transition cursor-pointer"
+              >
+                <span className="flex items-center gap-3 font-semibold text-white">
+                  <i className="fas fa-cube text-[#f0c040]"></i> Player Show (3D Avatar)
+                </span>
+                <span className="flex items-center gap-2">
+                  <i className="fas fa-chevron-right text-xs text-[#8890b0]"></i>
+                </span>
+              </button>
               
               <button
                 onClick={() => {
@@ -6488,6 +8156,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── 3D PLAYER SHOW VIEWER FULL PAGE ── */}
+      {showPlayerShowViewer && (
+        <PlayerShow3DViewer onClose={() => setShowPlayerShowViewer(false)} />
       )}
 
     </div>
