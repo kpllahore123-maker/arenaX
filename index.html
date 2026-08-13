@@ -21138,7 +21138,6 @@ function openPlayerShowViewer() {
               if (mat.map) {
                 if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
                 if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                mat.map.flipY = false;
                 mat.map.needsUpdate = true;
                 console.log("[PlayerShow] Mesh material map attached:", child.name, mat.name, mat.map);
               } else {
@@ -21147,7 +21146,6 @@ function openPlayerShowViewer() {
               if (mat.emissiveMap) {
                 if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
                 if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                mat.emissiveMap.flipY = false;
                 mat.emissiveMap.needsUpdate = true;
               }
               mat.needsUpdate = true;
