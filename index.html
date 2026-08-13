@@ -21060,6 +21060,7 @@ function openPlayerShowViewer() {
     playerShow3DRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     playerShow3DRenderer.setSize(width, height);
     playerShow3DRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if (THREE.SRGBColorSpace) playerShow3DRenderer.outputColorSpace = THREE.SRGBColorSpace;
     if (THREE.sRGBEncoding) playerShow3DRenderer.outputEncoding = THREE.sRGBEncoding;
 
     canvasContainer.innerHTML = '';
@@ -21129,6 +21130,30 @@ function openPlayerShowViewer() {
       function(gltf) {
         console.log("[PlayerShow] 3D GLB Model loaded!", gltf);
         playerShow3DModel = gltf.scene;
+
+        playerShow3DModel.traverse(function(child) {
+          if (child.isMesh && child.material) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach(function(mat) {
+              if (mat.map) {
+                if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                mat.map.flipY = false;
+                mat.map.needsUpdate = true;
+                console.log("[PlayerShow] Mesh material map attached:", child.name, mat.name, mat.map);
+              } else {
+                console.log("[PlayerShow] Mesh material map is null/undefined:", child.name, mat.name);
+              }
+              if (mat.emissiveMap) {
+                if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                mat.emissiveMap.flipY = false;
+                mat.emissiveMap.needsUpdate = true;
+              }
+              mat.needsUpdate = true;
+            });
+          }
+        });
 
         const box = new THREE.Box3().setFromObject(playerShow3DModel);
         const center = box.getCenter(new THREE.Vector3());
