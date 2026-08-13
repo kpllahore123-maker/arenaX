@@ -135,7 +135,78 @@ function PlayerShow3DViewer({ onClose }: { onClose: () => void }) {
       });
     }
 
-    // Load .glb file
+    // Helper function to build 3D procedural character
+    const createProceduralCharacter = () => {
+      const group = new THREE.Group();
+      const darkMetal = new THREE.MeshStandardMaterial({ color: 0x181c2b, roughness: 0.3, metalness: 0.8 });
+      const goldMetal = new THREE.MeshStandardMaterial({ color: 0xf0c040, roughness: 0.2, metalness: 0.9 });
+      const glowingVisor = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+      const glowingCore = new THREE.MeshBasicMaterial({ color: 0xf0c040 });
+
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.7, 8), darkMetal);
+      group.add(torso);
+
+      const chest = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.2), goldMetal);
+      chest.position.set(0, 0.1, 0.12);
+      group.add(chest);
+
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), glowingCore);
+      core.position.set(0, 0.1, 0.23);
+      group.add(core);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), darkMetal);
+      head.position.y = 0.55;
+      group.add(head);
+
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.08), glowingVisor);
+      visor.position.set(0, 0.58, 0.14);
+      group.add(visor);
+
+      const earL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), goldMetal);
+      earL.position.set(0.18, 0.55, 0);
+      const earR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), goldMetal);
+      earR.position.set(-0.18, 0.55, 0);
+      group.add(earL); group.add(earR);
+
+      const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMetal);
+      shoulderL.position.set(0.42, 0.25, 0);
+      const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMetal);
+      shoulderR.position.set(-0.42, 0.25, 0);
+      group.add(shoulderL); group.add(shoulderR);
+
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.5), darkMetal);
+      armL.position.set(0.42, -0.05, 0);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.5), darkMetal);
+      armR.position.set(-0.42, -0.05, 0);
+      group.add(armL); group.add(armR);
+
+      const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6), darkMetal);
+      legL.position.set(0.18, -0.65, 0);
+      const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6), darkMetal);
+      legR.position.set(-0.18, -0.65, 0);
+      group.add(legL); group.add(legR);
+
+      const coinGroup = new THREE.Group();
+      const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.04, 24), goldMetal);
+      coin.rotation.x = Math.PI / 2;
+      coinGroup.add(coin);
+      coinGroup.position.set(0, 0.92, 0);
+      group.add(coinGroup);
+
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.08, 32), new THREE.MeshStandardMaterial({ color: 0x121626, roughness: 0.4, metalness: 0.8 }));
+      pedestal.position.y = -0.98;
+      group.add(pedestal);
+
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.68, 0.74, 32), new THREE.MeshBasicMaterial({ color: 0xf0c040, side: THREE.DoubleSide }));
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = -0.93;
+      group.add(ring);
+
+      group.position.y = -0.1;
+      return group;
+    };
+
+    // Load .glb file or fallback
     const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
     if (GLTFLoader) {
       const loader = new GLTFLoader();
@@ -167,13 +238,15 @@ function PlayerShow3DViewer({ onClose }: { onClose: () => void }) {
         },
         undefined,
         (err: any) => {
-          console.error("Failed loading .glb 3D avatar:", err);
-          setLoadError("Failed to load 3D avatar model file.");
+          console.warn("Failed loading .glb 3D avatar, using 3D procedural character model:", err);
+          model = createProceduralCharacter();
+          scene.add(model);
           setLoading(false);
         }
       );
     } else {
-      setLoadError("3D Loader (GLTFLoader) not initialized.");
+      model = createProceduralCharacter();
+      scene.add(model);
       setLoading(false);
     }
 
