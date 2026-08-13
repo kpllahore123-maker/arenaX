@@ -5041,6 +5041,91 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
+<!-- ── 3D PLAYER SHOW VIEWER FULL PAGE ── -->
+<div id="pPlayerShowViewerPage" class="fixed inset-0 bg-[#0a0c12] z-[100050] flex flex-col h-full w-full text-white hidden select-none">
+  <!-- Top Header -->
+  <div class="px-4 py-3 bg-[#111420]/90 border-b border-[#252a45] flex items-center justify-between shrink-0 shadow-lg backdrop-blur-md">
+    <button
+      type="button"
+      onclick="closePlayerShowViewer()"
+      class="px-3 py-1.5 bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] rounded-xl text-xs font-bold text-white flex items-center gap-2 transition cursor-pointer active:scale-95"
+    >
+      <i class="fas fa-arrow-left text-amber-400"></i>
+      <span>Back</span>
+    </button>
+
+    <div class="text-center">
+      <h2 class="font-sans text-base font-extrabold text-white leading-tight flex items-center justify-center gap-1.5">
+        Player Show
+      </h2>
+      <span class="text-[9px] text-[#f0c040] font-bold tracking-wider uppercase bg-[#f0c040]/10 border border-[#f0c040]/30 px-2 py-0.2 rounded-full inline-block">
+        3D Avatar Viewer
+      </span>
+    </div>
+
+    <button
+      type="button"
+      onclick="closePlayerShowViewer()"
+      class="w-8 h-8 rounded-full bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] text-[#8890b0] hover:text-white flex items-center justify-center transition cursor-pointer"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- 3D Canvas Area -->
+  <div class="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center">
+    <div id="pPlayerShow3DCanvas" class="w-full h-full absolute inset-0 touch-none"></div>
+
+    <!-- Loading Spinner -->
+    <div id="pPlayerShow3DLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm z-10 pointer-events-none">
+      <div class="w-12 h-12 border-4 border-[#f0c040]/20 border-t-[#f0c040] rounded-full animate-spin mb-3"></div>
+      <p class="text-xs font-bold text-amber-300 animate-pulse">Loading 3D Character Model...</p>
+      <p class="text-[10px] text-[#8890b0] mt-1">character_boy_1_fbx.glb</p>
+    </div>
+
+    <!-- Error Fallback -->
+    <div id="pPlayerShow3DError" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0a0c12] hidden">
+      <i class="fas fa-exclamation-circle text-rose-400 text-3xl mb-2"></i>
+      <p class="text-sm font-bold text-white mb-1">Could not load 3D Model</p>
+      <p id="pPlayerShow3DErrMsg" class="text-xs text-[#8890b0] max-w-xs mb-4">Failed to load 3D avatar model file.</p>
+      <button
+        type="button"
+        onclick="closePlayerShowViewer()"
+        class="px-4 py-2 bg-[#1e2340] border border-[#252a45] rounded-xl text-xs font-bold text-white hover:bg-[#252a45]"
+      >
+        Return to Profile
+      </button>
+    </div>
+
+    <!-- Floating Interaction Hint -->
+    <div id="pPlayerShow3DHint" class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 border border-white/10 rounded-full text-[10px] text-gray-300 font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md hidden">
+      <i class="fas fa-hand-pointer text-amber-400"></i> Drag to rotate view
+    </div>
+  </div>
+
+  <!-- Bottom Information Footer -->
+  <div class="p-4 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#f0c040]/15 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-lg shrink-0">
+        <i class="fas fa-cube"></i>
+      </div>
+      <div>
+        <div class="text-xs font-bold text-white flex items-center gap-2">
+          Character Avatar Item
+          <span class="text-[10px] px-2 py-0.5 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30">
+            7000 AX Coins
+          </span>
+        </div>
+        <p class="text-[10px] text-[#8890b0] mt-0.5">3D Character Display Value</p>
+      </div>
+    </div>
+
+    <div class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 shrink-0">
+      <i class="fas fa-check-circle"></i> Free Viewer
+    </div>
+  </div>
+</div>
+
 <!-- ── UPLOAD MOMENT MODAL ── -->
 <div id="mUploadMomentModal" class="fixed inset-0 z-[100030] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
   <div class="bg-[#141726] border border-[#252a45] rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative text-white">
@@ -20839,6 +20924,330 @@ window.resetMomentFileSelection = resetMomentFileSelection;
 window.publishMoment = publishMoment;
 window.deleteMoment = deleteMoment;
 window.toggleLikeMoment = toggleLikeMoment;
+
+// ── 3D PLAYER SHOW VIEWER LOGIC ──
+let playerShow3DAnimFrame = null;
+let playerShow3DRenderer = null;
+let playerShow3DScene = null;
+let playerShow3DCamera = null;
+let playerShow3DControls = null;
+let playerShow3DModel = null;
+let playerShow3DAutoRotateTimer = null;
+let playerShowCoinGroup = null;
+
+function createProceduralCharacter3D(THREE) {
+  const group = new THREE.Group();
+
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x181c2b, roughness: 0.3, metalness: 0.8 });
+  const goldMetal = new THREE.MeshStandardMaterial({ color: 0xf0c040, roughness: 0.2, metalness: 0.9 });
+  const glowingVisor = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+  const glowingCore = new THREE.MeshBasicMaterial({ color: 0xf0c040 });
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.7, 8), darkMetal);
+  group.add(torso);
+
+  // Chest Armor Plate
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.2), goldMetal);
+  chest.position.set(0, 0.1, 0.12);
+  group.add(chest);
+
+  // Core
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), glowingCore);
+  core.position.set(0, 0.1, 0.23);
+  group.add(core);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), darkMetal);
+  head.position.y = 0.55;
+  group.add(head);
+
+  // Visor
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.08), glowingVisor);
+  visor.position.set(0, 0.58, 0.14);
+  group.add(visor);
+
+  // Ears
+  const earL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), goldMetal);
+  earL.position.set(0.18, 0.55, 0);
+  const earR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), goldMetal);
+  earR.position.set(-0.18, 0.55, 0);
+  group.add(earL); group.add(earR);
+
+  // Shoulders & Arms
+  const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMetal);
+  shoulderL.position.set(0.42, 0.25, 0);
+  const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMetal);
+  shoulderR.position.set(-0.42, 0.25, 0);
+  group.add(shoulderL); group.add(shoulderR);
+
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.5), darkMetal);
+  armL.position.set(0.42, -0.05, 0);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.5), darkMetal);
+  armR.position.set(-0.42, -0.05, 0);
+  group.add(armL); group.add(armR);
+
+  // Legs
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6), darkMetal);
+  legL.position.set(0.18, -0.65, 0);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6), darkMetal);
+  legR.position.set(-0.18, -0.65, 0);
+  group.add(legL); group.add(legR);
+
+  // Floating AX Coin above head
+  const coinGroup = new THREE.Group();
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.04, 24), goldMetal);
+  coin.rotation.x = Math.PI / 2;
+  coinGroup.add(coin);
+  coinGroup.position.set(0, 0.92, 0);
+  group.add(coinGroup);
+
+  // Pedestal Stand
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.08, 32), new THREE.MeshStandardMaterial({ color: 0x121626, roughness: 0.4, metalness: 0.8 }));
+  pedestal.position.y = -0.98;
+  group.add(pedestal);
+
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.68, 0.74, 32), new THREE.MeshBasicMaterial({ color: 0xf0c040, side: THREE.DoubleSide }));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = -0.93;
+  group.add(ring);
+
+  group.position.y = -0.1;
+  return { group, coinGroup };
+}
+
+function openPlayerShowViewer() {
+  console.log("[PlayerShow] openPlayerShowViewer initiated...");
+  const modal = document.getElementById('pPlayerShowViewerPage');
+  if (!modal) {
+    console.error("[PlayerShow] #pPlayerShowViewerPage not found in DOM");
+    return;
+  }
+
+  modal.classList.remove('hidden');
+
+  const canvasContainer = document.getElementById('pPlayerShow3DCanvas');
+  const loadingEl = document.getElementById('pPlayerShow3DLoading');
+  const errorEl = document.getElementById('pPlayerShow3DError');
+  const errMsgEl = document.getElementById('pPlayerShow3DErrMsg');
+  const hintEl = document.getElementById('pPlayerShow3DHint');
+
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  if (errorEl) errorEl.classList.add('hidden');
+  if (hintEl) hintEl.classList.add('hidden');
+
+  closePlayerShowViewerInternal();
+
+  const THREE = window.THREE;
+  if (!THREE) {
+    console.error("[PlayerShow] window.THREE missing!");
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.remove('hidden');
+    if (errMsgEl) errMsgEl.textContent = "Three.js script is missing.";
+    return;
+  }
+
+  const width = canvasContainer.clientWidth || window.innerWidth;
+  const height = canvasContainer.clientHeight || (window.innerHeight - 120);
+
+  playerShow3DScene = new THREE.Scene();
+  playerShow3DScene.background = new THREE.Color(0x0a0c12);
+
+  playerShow3DCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  playerShow3DCamera.position.set(0, 1.2, 3.5);
+
+  try {
+    playerShow3DRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    playerShow3DRenderer.setSize(width, height);
+    playerShow3DRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if (THREE.sRGBEncoding) playerShow3DRenderer.outputEncoding = THREE.sRGBEncoding;
+
+    canvasContainer.innerHTML = '';
+    canvasContainer.appendChild(playerShow3DRenderer.domElement);
+  } catch(e) {
+    console.error("[PlayerShow] WebGLRenderer error:", e);
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.remove('hidden');
+    if (errMsgEl) errMsgEl.textContent = "WebGL initialization failed.";
+    return;
+  }
+
+  // Lights
+  playerShow3DScene.add(new THREE.AmbientLight(0xffffff, 1.4));
+  const d1 = new THREE.DirectionalLight(0xfffaed, 1.8);
+  d1.position.set(3, 5, 4);
+  playerShow3DScene.add(d1);
+  const d2 = new THREE.DirectionalLight(0x4f9eff, 1.0);
+  d2.position.set(-3, 2, -3);
+  playerShow3DScene.add(d2);
+
+  // OrbitControls
+  const OrbitControlsClass = THREE.OrbitControls || window.OrbitControls;
+  if (OrbitControlsClass) {
+    playerShow3DControls = new OrbitControlsClass(playerShow3DCamera, playerShow3DRenderer.domElement);
+    playerShow3DControls.enableDamping = true;
+    playerShow3DControls.dampingFactor = 0.05;
+    playerShow3DControls.enableZoom = true;
+    playerShow3DControls.minDistance = 1.2;
+    playerShow3DControls.maxDistance = 6.0;
+    playerShow3DControls.maxPolarAngle = Math.PI / 2 + 0.1;
+    playerShow3DControls.autoRotate = true;
+    playerShow3DControls.autoRotateSpeed = 2.0;
+
+    playerShow3DControls.addEventListener('start', function() {
+      if (playerShow3DControls) playerShow3DControls.autoRotate = false;
+      if (playerShow3DAutoRotateTimer) clearTimeout(playerShow3DAutoRotateTimer);
+    });
+
+    playerShow3DControls.addEventListener('end', function() {
+      playerShow3DAutoRotateTimer = setTimeout(function() {
+        if (playerShow3DControls) playerShow3DControls.autoRotate = true;
+      }, 2000);
+    });
+  }
+
+  // Load Model with GLTFLoader or fallback to Procedural Character
+  const GLTFLoaderClass = THREE.GLTFLoader || window.GLTFLoader;
+  const basePath = typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './';
+  const modelUrl = basePath + 'character_boy_1_fbx.glb';
+
+  function setupProceduralFallback() {
+    console.log("[PlayerShow] Rendering procedural 3D character avatar model...");
+    const charData = createProceduralCharacter3D(THREE);
+    playerShow3DModel = charData.group;
+    playerShowCoinGroup = charData.coinGroup;
+    playerShow3DScene.add(playerShow3DModel);
+
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (hintEl) hintEl.classList.remove('hidden');
+  }
+
+  if (GLTFLoaderClass) {
+    const loader = new GLTFLoaderClass();
+    loader.load(
+      modelUrl,
+      function(gltf) {
+        console.log("[PlayerShow] 3D GLB Model loaded!", gltf);
+        playerShow3DModel = gltf.scene;
+
+        const box = new THREE.Box3().setFromObject(playerShow3DModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        playerShow3DModel.position.x += (playerShow3DModel.position.x - center.x);
+        playerShow3DModel.position.y += (playerShow3DModel.position.y - center.y) - 0.2;
+        playerShow3DModel.position.z += (playerShow3DModel.position.z - center.z);
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          const targetScale = 2.2 / maxDim;
+          playerShow3DModel.scale.set(targetScale, targetScale, targetScale);
+        }
+
+        playerShow3DScene.add(playerShow3DModel);
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (hintEl) hintEl.classList.remove('hidden');
+      },
+      undefined,
+      function(err) {
+        console.warn("[PlayerShow] GLB file load failed, generating 3D procedural character...", err);
+        setupProceduralFallback();
+      }
+    );
+  } else {
+    setupProceduralFallback();
+  }
+
+  window.addEventListener('resize', handlePlayerShowResize);
+
+  function animate() {
+    playerShow3DAnimFrame = requestAnimationFrame(animate);
+
+    if (playerShow3DControls) {
+      playerShow3DControls.update();
+    } else if (playerShow3DModel) {
+      playerShow3DModel.rotation.y += 0.008;
+    }
+
+    if (playerShowCoinGroup) {
+      playerShowCoinGroup.rotation.y += 0.03;
+    }
+
+    if (playerShow3DRenderer && playerShow3DScene && playerShow3DCamera) {
+      playerShow3DRenderer.render(playerShow3DScene, playerShow3DCamera);
+    }
+  }
+  animate();
+}
+
+function handlePlayerShowResize() {
+  const container = document.getElementById('pPlayerShow3DCanvas');
+  if (!container || !playerShow3DRenderer || !playerShow3DCamera) return;
+  const newW = container.clientWidth || window.innerWidth;
+  const newH = container.clientHeight || (window.innerHeight - 120);
+  playerShow3DCamera.aspect = newW / newH;
+  playerShow3DCamera.updateProjectionMatrix();
+  playerShow3DRenderer.setSize(newW, newH);
+}
+
+function closePlayerShowViewerInternal() {
+  if (playerShow3DAnimFrame) {
+    cancelAnimationFrame(playerShow3DAnimFrame);
+    playerShow3DAnimFrame = null;
+  }
+  if (playerShow3DAutoRotateTimer) {
+    clearTimeout(playerShow3DAutoRotateTimer);
+    playerShow3DAutoRotateTimer = null;
+  }
+  window.removeEventListener('resize', handlePlayerShowResize);
+
+  if (playerShow3DControls) {
+    try { playerShow3DControls.dispose(); } catch(e) {}
+    playerShow3DControls = null;
+  }
+
+  if (playerShow3DScene) {
+    playerShow3DScene.traverse((child) => {
+      if (child.isMesh) {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      }
+    });
+    playerShow3DScene = null;
+  }
+
+  if (playerShow3DRenderer) {
+    try {
+      playerShow3DRenderer.dispose();
+      if (playerShow3DRenderer.domElement && playerShow3DRenderer.domElement.parentNode) {
+        playerShow3DRenderer.domElement.parentNode.removeChild(playerShow3DRenderer.domElement);
+      }
+    } catch(e) {}
+    playerShow3DRenderer = null;
+  }
+  playerShow3DModel = null;
+  playerShowCoinGroup = null;
+  playerShow3DCamera = null;
+}
+
+function closePlayerShowViewer() {
+  console.log("[PlayerShow] closePlayerShowViewer called");
+  closePlayerShowViewerInternal();
+  const modal = document.getElementById('pPlayerShowViewerPage');
+  if (modal) modal.classList.add('hidden');
+}
+
+window.openPlayerShowViewer = openPlayerShowViewer;
+window.closePlayerShowViewer = closePlayerShowViewer;
+
+window.addEventListener('open-player-show-viewer', openPlayerShowViewer);
+window.addEventListener('open-player-show-modal', openPlayerShowViewer);
 
 // Auto initialize moments listener
 initMomentsListener();
