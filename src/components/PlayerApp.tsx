@@ -85,6 +85,7 @@ function PlayerShow3DViewer({ onClose }: { onClose: () => void }) {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if (THREE.SRGBColorSpace) (renderer as any).outputColorSpace = THREE.SRGBColorSpace;
     if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
 
     if (containerRef.current) {
@@ -217,6 +218,30 @@ function PlayerShow3DViewer({ onClose }: { onClose: () => void }) {
         modelUrl,
         (gltf: any) => {
           model = gltf.scene;
+
+          model.traverse((child: any) => {
+            if (child.isMesh && child.material) {
+              const materials = Array.isArray(child.material) ? child.material : [child.material];
+              materials.forEach((mat: any) => {
+                if (mat.map) {
+                  if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                  if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                  mat.map.flipY = false;
+                  mat.map.needsUpdate = true;
+                  console.log("[PlayerShow] Mesh material map attached:", child.name, mat.name, mat.map);
+                } else {
+                  console.log("[PlayerShow] Mesh material map is null/undefined:", child.name, mat.name);
+                }
+                if (mat.emissiveMap) {
+                  if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                  if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                  mat.emissiveMap.flipY = false;
+                  mat.emissiveMap.needsUpdate = true;
+                }
+                mat.needsUpdate = true;
+              });
+            }
+          });
 
           // Compute box to center and scale character
           const box = new THREE.Box3().setFromObject(model);
