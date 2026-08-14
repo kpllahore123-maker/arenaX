@@ -21310,23 +21310,25 @@ const CHARACTER_3D_MODELS_DATA = [
 let currentSelected3DModelId = 'classic_boy';
 let playerShow3DClock = null;
 let playerShow3DMixer = null;
-let globalCachedWavingClip = null;
+let playerShowLoggedAnim = false;
 
 function autoFramePlayerShowCamera(object, camera, controls, width, height) {
   if (!object || !camera) return;
   const THREE = window.THREE;
   if (!THREE) return;
 
+  // Reset any pre-existing rotation or translation on the model
+  object.rotation.set(0, 0, 0);
+  object.scale.set(1, 1, 1);
   object.updateMatrixWorld(true);
 
   // Calculate bounding box and center
   const box = new THREE.Box3().setFromObject(object);
   const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
 
   // Center model exactly at origin
-  object.position.x -= center.x;
-  object.position.y -= center.y;
-  object.position.z -= center.z;
+  object.position.set(-center.x, -center.y, -center.z);
   object.updateMatrixWorld(true);
 
   // Recalculate centered bounding box and size
@@ -21344,18 +21346,18 @@ function autoFramePlayerShowCamera(object, camera, controls, width, height) {
     distance = distance / aspect;
   }
 
-  // Framing padding: 1.35x provides clear view of entire model from head to feet
-  distance = Math.max(distance * 1.35, 2.5);
+  // Framing padding: 1.45x provides clear view of entire model from head to feet with generous margins
+  distance = Math.max(distance * 1.45, 2.5);
 
-  const camY = centeredSize.y * 0.08;
+  const camY = centeredSize.y * 0.05;
   camera.position.set(0, camY, distance);
   camera.lookAt(0, 0, 0);
   camera.updateProjectionMatrix();
 
   if (controls) {
     controls.target.set(0, 0, 0);
-    controls.minDistance = distance * 0.3;
-    controls.maxDistance = distance * 3.0;
+    controls.minDistance = distance * 0.25;
+    controls.maxDistance = distance * 3.5;
     if (typeof controls.reset === 'function') {
       try { controls.reset(); } catch(e) {}
     }
@@ -21589,49 +21591,26 @@ function loadPlayerShowModelFile(fileName) {
           }
         });
 
-        // ── WAVING ANIMATION PLAYBACK (ONCE FOR BOTH MODELS) ──
-        if (gltf.animations && gltf.animations.length > 0) {
-          globalCachedWavingClip = gltf.animations[0];
+        // ── ANIMATION HANDLING ──
+        // FIX 1: Classic Boy (character_boy_1_fbx.glb) has no animations played — completely static default pose.
+        // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation.
+        const isWavingHero = fileName.includes('Convert_Waving') || fileName.toLowerCase().includes('waving');
+        
+        if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
+          console.log(`[PlayerShow] Waving Hero GLB loaded. Found ${gltf.animations.length} animation(s):`, gltf.animations.map(a => a.name));
+          
+          // Find specific animation clip if named, or fallback to first clip
+          let wavingClip = gltf.animations.find(a => a.name === 'Armature|mixamo.com|Layer0') || gltf.animations[0];
+          console.log(`[PlayerShow] Playing animation clip: "${wavingClip.name}" (duration: ${wavingClip.duration.toFixed(2)}s)`);
+
           playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
-          const action = playerShow3DMixer.clipAction(globalCachedWavingClip);
-          action.setLoop(THREE.LoopOnce, 1);
-          action.clampWhenFinished = true;
+          const action = playerShow3DMixer.clipAction(wavingClip);
+          action.reset();
+          action.setLoop(THREE.LoopRepeat);
           action.play();
-        } else if (globalCachedWavingClip) {
-          try {
-            playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
-            const action = playerShow3DMixer.clipAction(globalCachedWavingClip);
-            action.setLoop(THREE.LoopOnce, 1);
-            action.clampWhenFinished = true;
-            action.play();
-          } catch(e) {
-            console.warn("[PlayerShow] Could not retarget cached waving clip to Classic Boy:", e);
-          }
+          playerShowLoggedAnim = false;
         } else {
-          // Asynchronously fetch waving animation from Convert_Waving.glb for Classic Boy
-          loader.load(
-            basePath + 'Convert_Waving.glb',
-            function(wavingGltf) {
-              if (wavingGltf.animations && wavingGltf.animations.length > 0) {
-                globalCachedWavingClip = wavingGltf.animations[0];
-                if (playerShow3DModel) {
-                  try {
-                    playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
-                    const action = playerShow3DMixer.clipAction(globalCachedWavingClip);
-                    action.setLoop(THREE.LoopOnce, 1);
-                    action.clampWhenFinished = true;
-                    action.play();
-                  } catch(e) {
-                    console.warn("[PlayerShow] Retarget waving clip to Classic Boy failed:", e);
-                  }
-                }
-              }
-            },
-            undefined,
-            function(err) {
-              console.warn("[PlayerShow] Could not fetch waving clip:", err);
-            }
-          );
+          console.log(`[PlayerShow] Model loaded as static pose (no animations played for ${fileName})`);
         }
 
         playerShow3DScene.add(playerShow3DModel);
@@ -21768,9 +21747,13 @@ function openPlayerShowViewer() {
   function animate() {
     playerShow3DAnimFrame = requestAnimationFrame(animate);
 
-    if (playerShow3DClock && playerShow3DMixer) {
-      const delta = playerShow3DClock.getDelta();
+    if (playerShow3DMixer) {
+      const delta = playerShow3DClock ? playerShow3DClock.getDelta() : 0.016;
       playerShow3DMixer.update(delta);
+      if (!playerShowLoggedAnim) {
+        console.log(`[PlayerShow] AnimationMixer is actively updating each frame (delta: ${delta.toFixed(4)}s)`);
+        playerShowLoggedAnim = true;
+      }
     }
 
     if (playerShow3DControls) {
