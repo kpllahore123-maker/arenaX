@@ -68,7 +68,7 @@ export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
     subtitle: 'Original Character',
     fileName: 'character_boy_1_fbx.glb',
     price: 7000,
-    isAnimated: false,
+    isAnimated: true,
     tag: 'Classic',
     badge: '7,000 AX',
     icon: 'fa-user'
@@ -85,6 +85,66 @@ export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
     icon: 'fa-hand-sparkles'
   }
 ];
+
+let cachedWavingClipRef: any = null;
+
+function fitCameraToTargetObject(
+  camera: any,
+  object: any,
+  controls: any,
+  width?: number,
+  height?: number,
+  offsetMultiplier: number = 1.35
+) {
+  if (!object || !camera) return;
+  const THREE = (window as any).THREE;
+  if (!THREE) return;
+
+  object.updateMatrixWorld(true);
+
+  // Compute bounding box
+  const box = new THREE.Box3().setFromObject(object);
+  const center = box.getCenter(new THREE.Vector3());
+
+  // Center model exactly at origin
+  object.position.x -= center.x;
+  object.position.y -= center.y;
+  object.position.z -= center.z;
+  object.updateMatrixWorld(true);
+
+  // Recalculate centered size
+  const centeredBox = new THREE.Box3().setFromObject(object);
+  const centeredSize = centeredBox.getSize(new THREE.Vector3());
+  const maxDim = Math.max(centeredSize.x, centeredSize.y, centeredSize.z);
+
+  const fov = camera.fov * (Math.PI / 180);
+  let distance = (maxDim / 2) / Math.tan(fov / 2);
+
+  const aspect = (width && height) ? (width / height) : (camera.aspect || 1.0);
+  camera.aspect = aspect;
+
+  if (aspect < 1.0) {
+    distance = distance / aspect;
+  }
+
+  // Framing padding
+  distance = Math.max(distance * offsetMultiplier, 2.5);
+
+  const camY = centeredSize.y * 0.08;
+  camera.position.set(0, camY, distance);
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+
+  if (controls) {
+    controls.target.set(0, 0, 0);
+    controls.minDistance = distance * 0.3;
+    controls.maxDistance = distance * 3.0;
+    if (typeof controls.reset === 'function') {
+      try { controls.reset(); } catch(e) {}
+    }
+    controls.update();
+  }
+}
 
 function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -242,14 +302,46 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
             }
           });
 
-          // Animation handling (play once for animated models like Convert_Waving.glb)
+          // Animation handling (play once for both models)
           if (gltf.animations && gltf.animations.length > 0) {
+            cachedWavingClipRef = gltf.animations[0];
             mixer = new THREE.AnimationMixer(model);
-            const clip = gltf.animations[0];
-            const action = mixer.clipAction(clip);
+            const action = mixer.clipAction(cachedWavingClipRef);
             action.setLoop(THREE.LoopOnce, 1);
             action.clampWhenFinished = true;
             action.play();
+          } else if (cachedWavingClipRef) {
+            try {
+              mixer = new THREE.AnimationMixer(model);
+              const action = mixer.clipAction(cachedWavingClipRef);
+              action.setLoop(THREE.LoopOnce, 1);
+              action.clampWhenFinished = true;
+              action.play();
+            } catch(e) {
+              console.warn("Could not apply cached waving animation:", e);
+            }
+          } else {
+            loader.load(
+              basePath + 'Convert_Waving.glb',
+              (wavingGltf: any) => {
+                if (wavingGltf.animations && wavingGltf.animations.length > 0) {
+                  cachedWavingClipRef = wavingGltf.animations[0];
+                  if (model) {
+                    try {
+                      mixer = new THREE.AnimationMixer(model);
+                      const action = mixer.clipAction(cachedWavingClipRef);
+                      action.setLoop(THREE.LoopOnce, 1);
+                      action.clampWhenFinished = true;
+                      action.play();
+                    } catch(e) {
+                      console.warn("Could not apply fetched waving animation:", e);
+                    }
+                  }
+                }
+              },
+              undefined,
+              (e: any) => console.warn("Failed fetching waving animation:", e)
+            );
           }
 
           const box = new THREE.Box3().setFromObject(model);
@@ -745,32 +837,51 @@ function PlayerShow3DViewer({
             }
           });
 
-          // Animation handling (LoopOnce + clampWhenFinished for animated models like Convert_Waving.glb)
+          // ── WAVING ANIMATION PLAYBACK (ONCE FOR BOTH MODELS) ──
           if (gltf.animations && gltf.animations.length > 0) {
+            cachedWavingClipRef = gltf.animations[0];
             mixer = new THREE.AnimationMixer(model);
-            const clip = gltf.animations[0];
-            const action = mixer.clipAction(clip);
+            const action = mixer.clipAction(cachedWavingClipRef);
             action.setLoop(THREE.LoopOnce, 1);
             action.clampWhenFinished = true;
             action.play();
-          }
-
-          // Compute box to center and scale character
-          const box = new THREE.Box3().setFromObject(model);
-          const center = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3());
-
-          model.position.x += (model.position.x - center.x);
-          model.position.y += (model.position.y - center.y) - 0.2;
-          model.position.z += (model.position.z - center.z);
-
-          const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) {
-            const targetScale = 2.2 / maxDim;
-            model.scale.set(targetScale, targetScale, targetScale);
+          } else if (cachedWavingClipRef) {
+            try {
+              mixer = new THREE.AnimationMixer(model);
+              const action = mixer.clipAction(cachedWavingClipRef);
+              action.setLoop(THREE.LoopOnce, 1);
+              action.clampWhenFinished = true;
+              action.play();
+            } catch(e) {
+              console.warn("Could not apply cached waving animation to Classic Boy:", e);
+            }
+          } else {
+            // Asynchronously fetch waving animation from Convert_Waving.glb
+            loader.load(
+              basePath + 'Convert_Waving.glb',
+              (wavingGltf: any) => {
+                if (wavingGltf.animations && wavingGltf.animations.length > 0) {
+                  cachedWavingClipRef = wavingGltf.animations[0];
+                  if (model) {
+                    try {
+                      mixer = new THREE.AnimationMixer(model);
+                      const action = mixer.clipAction(cachedWavingClipRef);
+                      action.setLoop(THREE.LoopOnce, 1);
+                      action.clampWhenFinished = true;
+                      action.play();
+                    } catch(e) {
+                      console.warn("Failed applying waving animation to Classic Boy:", e);
+                    }
+                  }
+                }
+              },
+              undefined,
+              (e: any) => console.warn("Failed fetching waving animation clip:", e)
+            );
           }
 
           scene.add(model);
+          fitCameraToTargetObject(camera, model, controls, width, height);
           setLoading(false);
         },
         undefined,
@@ -778,12 +889,14 @@ function PlayerShow3DViewer({
           console.warn("Failed loading .glb 3D avatar:", selectedModel.fileName, err);
           model = createProceduralCharacter();
           scene.add(model);
+          fitCameraToTargetObject(camera, model, controls, width, height);
           setLoading(false);
         }
       );
     } else {
       model = createProceduralCharacter();
       scene.add(model);
+      fitCameraToTargetObject(camera, model, controls, width, height);
       setLoading(false);
     }
 
