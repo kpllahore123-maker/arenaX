@@ -18,6 +18,9 @@ export interface UserProfile {
   balance: number;
   axCoins?: number;
   playerShowUnlocked?: boolean;
+  character3dUnlocked?: boolean;
+  unlocked3dModels?: string[];
+  active3dModel?: string;
   hasFrame?: boolean;
   frameEquipped?: boolean;
   frameExpiresAt?: string | null;
