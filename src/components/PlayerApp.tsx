@@ -49,7 +49,44 @@ interface PlayerAppProps {
   isAdminUID: boolean;
 }
 
-function Profile3DCharacterView() {
+export interface Character3DModelDef {
+  id: string;
+  name: string;
+  subtitle: string;
+  fileName: string;
+  price: number;
+  isAnimated?: boolean;
+  tag?: string;
+  badge?: string;
+  icon?: string;
+}
+
+export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
+  {
+    id: 'character_boy_1',
+    name: 'Classic Boy',
+    subtitle: 'Original Character',
+    fileName: 'character_boy_1_fbx.glb',
+    price: 7000,
+    isAnimated: false,
+    tag: 'Classic',
+    badge: '7,000 AX',
+    icon: 'fa-user'
+  },
+  {
+    id: 'convert_waving',
+    name: 'Waving Hero',
+    subtitle: 'Animated Wave',
+    fileName: 'Convert_Waving.glb',
+    price: 9999,
+    isAnimated: true,
+    tag: 'Animated',
+    badge: '9,999 AX',
+    icon: 'fa-hand-sparkles'
+  }
+];
+
+function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +96,7 @@ function Profile3DCharacterView() {
     let scene: any = null;
     let camera: any = null;
     let model: any = null;
+    let mixer: any = null;
 
     if (!containerRef.current) return;
 
@@ -68,6 +106,7 @@ function Profile3DCharacterView() {
       return;
     }
 
+    const clock = new THREE.Clock();
     const width = containerRef.current.clientWidth || 360;
     const height = containerRef.current.clientHeight || 340;
 
@@ -170,11 +209,12 @@ function Profile3DCharacterView() {
       return group;
     };
 
+    const modelFileToLoad = activeModelFileName || 'character_boy_1_fbx.glb';
     const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
     if (GLTFLoader) {
       const loader = new GLTFLoader();
       const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const modelUrl = basePath + 'character_boy_1_fbx.glb';
+      const modelUrl = basePath + modelFileToLoad;
 
       loader.load(
         modelUrl,
@@ -201,6 +241,16 @@ function Profile3DCharacterView() {
               });
             }
           });
+
+          // Animation handling (play once for animated models like Convert_Waving.glb)
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            const clip = gltf.animations[0];
+            const action = mixer.clipAction(clip);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+            action.play();
+          }
 
           const box = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
@@ -234,9 +284,13 @@ function Profile3DCharacterView() {
       setLoading(false);
     }
 
-    // Animation loop: Completely still, front-facing (NO automatic rotation)
+    // Animation loop: Completely still, front-facing (NO automatic rotation), updates animation mixer
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) {
+        mixer.update(delta);
+      }
       if (renderer && scene && camera) {
         renderer.render(scene, camera);
       }
@@ -257,6 +311,13 @@ function Profile3DCharacterView() {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
+
+      if (mixer) {
+        try {
+          mixer.stopAllAction();
+          mixer.uncacheRoot(mixer.getRoot());
+        } catch(e) {}
+      }
 
       if (scene) {
         scene.traverse((child: any) => {
@@ -282,7 +343,7 @@ function Profile3DCharacterView() {
         } catch(e) {}
       }
     };
-  }, []);
+  }, [activeModelFileName]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center pointer-events-none select-none">
@@ -299,18 +360,200 @@ function Profile3DCharacterView() {
 
 function PlayerShow3DViewer({
   onClose,
-  onPurchase,
-  isOwned,
-  purchasing
+  currentUser,
+  onUserUpdated,
+  isGuest
 }: {
   onClose: () => void;
-  onPurchase?: () => void;
-  isOwned?: boolean;
-  purchasing?: boolean;
+  currentUser: UserProfile | null;
+  onUserUpdated?: (updated: UserProfile) => void;
+  isGuest?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialModel = CHARACTER_3D_MODELS.find(m => m.fileName === currentUser?.active3dModel) || CHARACTER_3D_MODELS[0];
+  const [selectedModel, setSelectedModel] = useState<Character3DModelDef>(initialModel);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
+  const [equipping, setEquipping] = useState(false);
+
+  const isModelUnlocked = (modelDef: Character3DModelDef, user: UserProfile | null) => {
+    if (!user) return false;
+    const unlockedList = user.unlocked3dModels || [];
+    if (unlockedList.includes(modelDef.fileName) || unlockedList.includes(modelDef.id)) return true;
+    if (modelDef.fileName === 'character_boy_1_fbx.glb' && (user.playerShowUnlocked || user.character3dUnlocked)) return true;
+    return false;
+  };
+
+  const isModelEquipped = (modelDef: Character3DModelDef, user: UserProfile | null) => {
+    if (!user) return false;
+    if (user.active3dModel === modelDef.fileName) return true;
+    if (!user.active3dModel && modelDef.fileName === 'character_boy_1_fbx.glb' && isModelUnlocked(modelDef, user)) return true;
+    return false;
+  };
+
+  const handleEquipModel = async (modelDef: Character3DModelDef) => {
+    if (!currentUser || isGuest) {
+      alert("Please log in to equip this avatar.");
+      return;
+    }
+    setEquipping(true);
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+        active3dModel: modelDef.fileName,
+        updatedAt: serverTimestamp()
+      });
+
+      const updated = {
+        ...currentUser,
+        active3dModel: modelDef.fileName
+      };
+
+      if (onUserUpdated) onUserUpdated(updated);
+      (window as any).currentUser = updated;
+      (window as any).userProfile = updated;
+
+      if (typeof (window as any).showToastNotification === 'function') {
+        (window as any).showToastNotification("Avatar Equipped! 👑", `${modelDef.name} is now your active 3D character.`);
+      } else {
+        alert(`✅ ${modelDef.name} equipped as your active 3D Avatar!`);
+      }
+    } catch (err: any) {
+      console.error("Equip model error:", err);
+      alert(err?.message || "Failed to equip model.");
+    } finally {
+      setEquipping(false);
+    }
+  };
+
+  const handlePurchaseSelectedModel = async (modelDef: Character3DModelDef) => {
+    if (purchasing) return;
+    setPurchasing(true);
+
+    try {
+      let fireUser = auth.currentUser || (typeof (window as any).auth !== 'undefined' && (window as any).auth?.currentUser);
+      if (!fireUser && typeof (auth as any).authStateReady === 'function') {
+        try {
+          await (auth as any).authStateReady();
+          fireUser = auth.currentUser || (typeof (window as any).auth !== 'undefined' && (window as any).auth?.currentUser);
+        } catch (e) {}
+      }
+
+      const activeProfile = currentUser || (window as any).userProfile || (window as any).currentUser;
+      const targetUid = fireUser ? fireUser.uid : (activeProfile ? (activeProfile.uid || activeProfile.id) : null);
+      const isGuestUser = isGuest || (activeProfile && (activeProfile.isGuest || (typeof targetUid === 'string' && targetUid.startsWith('guest_'))));
+
+      if (!targetUid || isGuestUser) {
+        alert("Please log in to purchase the 3D Character Model.");
+        return;
+      }
+
+      const userDocRef = doc(db, 'users', targetUid);
+      let currentCoins = activeProfile?.balance !== undefined ? activeProfile.balance : (activeProfile?.axCoins !== undefined ? activeProfile.axCoins : 0);
+
+      // Pre-fetch
+      try {
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.balance !== undefined) currentCoins = data.balance;
+          else if (data.axCoins !== undefined) currentCoins = data.axCoins;
+        }
+      } catch (e) {}
+
+      if (currentCoins < modelDef.price) {
+        alert(`Not enough AX Coins. Available: ${currentCoins.toLocaleString()} AX, Required: ${modelDef.price.toLocaleString()} AX.`);
+        return;
+      }
+
+      let newBalance = currentCoins - modelDef.price;
+
+      await runTransaction(db, async (transaction) => {
+        const userSnap = await transaction.get(userDocRef);
+        if (!userSnap.exists()) {
+          const actualCoins = currentCoins;
+          if (actualCoins < modelDef.price) {
+            throw new Error(`Not enough AX Coins. Available: ${actualCoins.toLocaleString()} AX, Required: ${modelDef.price.toLocaleString()} AX.`);
+          }
+          newBalance = actualCoins - modelDef.price;
+          transaction.set(userDocRef, {
+            balance: newBalance,
+            axCoins: newBalance,
+            playerShowUnlocked: true,
+            character3dUnlocked: true,
+            unlocked3dModels: [modelDef.fileName],
+            active3dModel: modelDef.fileName,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } else {
+          const data = userSnap.data();
+          const unlockedList: string[] = data.unlocked3dModels || [];
+          if (unlockedList.includes(modelDef.fileName) || (modelDef.fileName === 'character_boy_1_fbx.glb' && (data.playerShowUnlocked || data.character3dUnlocked))) {
+            throw new Error("You already own this 3D Character Model!");
+          }
+          const actualCoins = data.balance !== undefined ? data.balance : (data.axCoins !== undefined ? data.axCoins : 0);
+          if (actualCoins < modelDef.price) {
+            throw new Error(`Not enough AX Coins. Available: ${actualCoins.toLocaleString()} AX, Required: ${modelDef.price.toLocaleString()} AX.`);
+          }
+          newBalance = actualCoins - modelDef.price;
+
+          transaction.update(userDocRef, {
+            balance: newBalance,
+            axCoins: newBalance,
+            playerShowUnlocked: true,
+            character3dUnlocked: true,
+            unlocked3dModels: arrayUnion(modelDef.fileName),
+            active3dModel: modelDef.fileName,
+            updatedAt: serverTimestamp()
+          });
+        }
+
+        const txRef = doc(collection(db, 'users', targetUid, 'transactions'));
+        transaction.set(txRef, {
+          amount: -modelDef.price,
+          type: 'purchase_3d_character',
+          description: `Purchased 3D Character Avatar (${modelDef.name})`,
+          createdAt: serverTimestamp()
+        });
+      });
+
+      const updatedUser: UserProfile = {
+        ...(activeProfile || {}),
+        uid: targetUid,
+        id: targetUid,
+        balance: newBalance,
+        axCoins: newBalance,
+        playerShowUnlocked: true,
+        character3dUnlocked: true,
+        unlocked3dModels: Array.from(new Set([...(activeProfile?.unlocked3dModels || []), modelDef.fileName])),
+        active3dModel: modelDef.fileName
+      };
+
+      if (onUserUpdated) onUserUpdated(updatedUser);
+      (window as any).currentUser = updatedUser;
+      (window as any).userProfile = updatedUser;
+
+      if (typeof (window as any).updatePlayerShowUI === 'function') {
+        (window as any).updatePlayerShowUI(updatedUser);
+      }
+      if (typeof (window as any).boot === 'function') {
+        (window as any).boot();
+      }
+
+      if (typeof (window as any).showToastNotification === 'function') {
+        (window as any).showToastNotification("Character Unlocked! 🎉", `You unlocked ${modelDef.name} for ${modelDef.price.toLocaleString()} AX Coins.`);
+      } else {
+        alert(`🎉 Congratulations! You have successfully unlocked ${modelDef.name} for ${modelDef.price.toLocaleString()} AX Coins!`);
+      }
+    } catch (err: any) {
+      console.error("3D Character purchase failed:", err);
+      alert(err?.message || "Failed to complete purchase. Please try again.");
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -319,13 +562,13 @@ function PlayerShow3DViewer({
     let camera: any = null;
     let controls: any = null;
     let model: any = null;
+    let mixer: any = null;
     let isDragging = false;
     let autoRotateTimer: any = null;
 
     if (!containerRef.current) return;
-
-    const width = containerRef.current.clientWidth || window.innerWidth;
-    const height = containerRef.current.clientHeight || window.innerHeight - 120;
+    setLoading(true);
+    setLoadError(null);
 
     const THREE = (window as any).THREE;
     if (!THREE) {
@@ -333,6 +576,10 @@ function PlayerShow3DViewer({
       setLoading(false);
       return;
     }
+
+    const clock = new THREE.Clock();
+    const width = containerRef.current.clientWidth || window.innerWidth;
+    const height = containerRef.current.clientHeight || (window.innerHeight - 200);
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0c12);
@@ -465,12 +712,12 @@ function PlayerShow3DViewer({
       return group;
     };
 
-    // Load .glb file or fallback
+    // Load selected .glb file or fallback
     const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
     if (GLTFLoader) {
       const loader = new GLTFLoader();
       const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const modelUrl = basePath + 'character_boy_1_fbx.glb';
+      const modelUrl = basePath + selectedModel.fileName;
 
       loader.load(
         modelUrl,
@@ -486,9 +733,6 @@ function PlayerShow3DViewer({
                   if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
                   mat.map.flipY = false;
                   mat.map.needsUpdate = true;
-                  console.log("[PlayerShow] Mesh material map attached:", child.name, mat.name, mat.map);
-                } else {
-                  console.log("[PlayerShow] Mesh material map is null/undefined:", child.name, mat.name);
                 }
                 if (mat.emissiveMap) {
                   if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
@@ -500,6 +744,16 @@ function PlayerShow3DViewer({
               });
             }
           });
+
+          // Animation handling (LoopOnce + clampWhenFinished for animated models like Convert_Waving.glb)
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            const clip = gltf.animations[0];
+            const action = mixer.clipAction(clip);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+            action.play();
+          }
 
           // Compute box to center and scale character
           const box = new THREE.Box3().setFromObject(model);
@@ -521,7 +775,7 @@ function PlayerShow3DViewer({
         },
         undefined,
         (err: any) => {
-          console.warn("Failed loading .glb 3D avatar, using 3D procedural character model:", err);
+          console.warn("Failed loading .glb 3D avatar:", selectedModel.fileName, err);
           model = createProceduralCharacter();
           scene.add(model);
           setLoading(false);
@@ -536,7 +790,10 @@ function PlayerShow3DViewer({
     // Animation loop
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-
+      const delta = clock.getDelta();
+      if (mixer) {
+        mixer.update(delta);
+      }
       if (controls) {
         controls.update();
       } else if (model && !isDragging) {
@@ -552,7 +809,7 @@ function PlayerShow3DViewer({
     const handleResize = () => {
       if (!containerRef.current || !renderer || !camera) return;
       const newW = containerRef.current.clientWidth || window.innerWidth;
-      const newH = containerRef.current.clientHeight || window.innerHeight - 120;
+      const newH = containerRef.current.clientHeight || (window.innerHeight - 200);
       camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
@@ -564,6 +821,13 @@ function PlayerShow3DViewer({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
       if (autoRotateTimer) clearTimeout(autoRotateTimer);
+
+      if (mixer) {
+        try {
+          mixer.stopAllAction();
+          mixer.uncacheRoot(mixer.getRoot());
+        } catch(e) {}
+      }
 
       if (controls) {
         try { controls.dispose(); } catch(e) {}
@@ -593,7 +857,7 @@ function PlayerShow3DViewer({
         } catch(e) {}
       }
     };
-  }, []);
+  }, [selectedModel.fileName]);
 
   return (
     <div className="fixed inset-0 bg-[#0a0c12] z-[100050] flex flex-col h-full w-full text-white animate-fade-in select-none">
@@ -612,7 +876,7 @@ function PlayerShow3DViewer({
             Player Show
           </h2>
           <span className="text-[9px] text-[#f0c040] font-bold tracking-wider uppercase bg-[#f0c040]/10 border border-[#f0c040]/30 px-2 py-0.2 rounded-full inline-block">
-            3D Avatar Viewer
+            3D Avatar Store
           </span>
         </div>
 
@@ -625,15 +889,15 @@ function PlayerShow3DViewer({
       </div>
 
       {/* 3D Canvas Area */}
-      <div className="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center">
+      <div className="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center min-h-0">
         <div ref={containerRef} className="w-full h-full absolute inset-0 touch-none" />
 
         {/* Loading Spinner */}
         {loading && !loadError && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm z-10 pointer-events-none">
             <div className="w-12 h-12 border-4 border-[#f0c040]/20 border-t-[#f0c040] rounded-full animate-spin mb-3"></div>
-            <p className="text-xs font-bold text-amber-300 animate-pulse">Loading 3D Character Model...</p>
-            <p className="text-[10px] text-[#8890b0] mt-1">character_boy_1_fbx.glb</p>
+            <p className="text-xs font-bold text-amber-300 animate-pulse">Loading {selectedModel.name}...</p>
+            <p className="text-[10px] text-[#8890b0] mt-1 font-mono">{selectedModel.fileName}</p>
           </div>
         )}
 
@@ -655,44 +919,128 @@ function PlayerShow3DViewer({
         {/* Floating Interaction Hint */}
         {!loading && !loadError && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 border border-white/10 rounded-full text-[10px] text-gray-300 font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md">
-            <i className="fas fa-hand-pointer text-amber-400"></i> Drag to rotate view
+            <i className="fas fa-hand-pointer text-amber-400"></i> Drag to rotate • Zoom in/out
           </div>
         )}
       </div>
 
-      {/* Bottom Information Footer */}
-      <div className="p-4 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
-        <div className="flex items-center gap-3">
+      {/* ── MODEL SELECTOR ROW (Classic Boy vs Waving Hero) ── */}
+      <div className="px-4 py-3 bg-[#0e111a]/95 border-t border-[#252a45] backdrop-blur-md shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] text-[#8890b0] font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i className="fas fa-cubes text-[#f0c040]"></i> Choose Character Model
+          </span>
+          <span className="text-[10px] text-[#f0c040] font-mono font-bold">
+            Balance: {(currentUser?.balance ?? 0).toLocaleString()} AX
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          {CHARACTER_3D_MODELS.map((modelDef) => {
+            const isSelected = selectedModel.id === modelDef.id;
+            const unlocked = isModelUnlocked(modelDef, currentUser);
+            const equipped = isModelEquipped(modelDef, currentUser);
+
+            return (
+              <button
+                key={modelDef.id}
+                onClick={() => setSelectedModel(modelDef)}
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-[#f0c040]/15 via-[#f0c040]/10 to-[#171b2e] border-[#f0c040] shadow-[0_0_15px_rgba(240,192,64,0.25)] ring-1 ring-[#f0c040]'
+                    : 'bg-[#151928] border-[#252a45] hover:border-[#3b436b] hover:bg-[#1a1f33]'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0 border transition ${
+                  isSelected
+                    ? 'bg-[#f0c040] text-[#0a0c12] border-[#f0c040] font-bold shadow'
+                    : 'bg-[#1e2340] text-[#8890b0] border-[#252a45]'
+                }`}>
+                  <i className={`fas ${modelDef.icon || 'fa-cube'}`}></i>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className={`text-xs font-black truncate ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+                      {modelDef.name}
+                    </h4>
+                    {modelDef.isAnimated && (
+                      <span className="text-[8px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-extrabold uppercase">
+                        Animated
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {equipped ? (
+                      <span className="text-[9px] text-emerald-400 font-extrabold flex items-center gap-0.5">
+                        <i className="fas fa-check-circle text-[8px]"></i> Active
+                      </span>
+                    ) : unlocked ? (
+                      <span className="text-[9px] text-amber-300 font-extrabold flex items-center gap-0.5">
+                        <i className="fas fa-unlock text-[8px]"></i> Owned
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-[#f0c040] font-bold font-mono">
+                        {modelDef.price.toLocaleString()} AX
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isSelected && (
+                  <div className="w-2 h-2 rounded-full bg-[#f0c040] animate-pulse shrink-0"></div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── ACTION & PURCHASE FOOTER ── */}
+      <div className="p-3.5 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-[#f0c040]/15 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-lg shrink-0">
-            <i className="fas fa-cube"></i>
+            <i className={`fas ${selectedModel.icon || 'fa-cube'}`}></i>
           </div>
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-2">
-              Character Avatar Item
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30">
-                7000 AX Coins
+          <div className="min-w-0">
+            <div className="text-xs font-black text-white truncate flex items-center gap-1.5">
+              {selectedModel.name}
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30 font-mono">
+                {selectedModel.price.toLocaleString()} AX
               </span>
             </div>
-            <p className="text-[10px] text-[#8890b0] mt-0.5">3D Character Profile Avatar</p>
+            <p className="text-[10px] text-[#8890b0] truncate">
+              {selectedModel.subtitle} • {selectedModel.fileName}
+            </p>
           </div>
         </div>
 
-        {isOwned ? (
-          <div className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 shrink-0">
-            <i className="fas fa-check-circle"></i> Owned
+        {/* Action Button: Equipped vs Equip vs Buy */}
+        {isModelEquipped(selectedModel, currentUser) ? (
+          <div className="text-[10px] text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-black flex items-center gap-1.5 shrink-0 shadow-sm uppercase tracking-wider">
+            <i className="fas fa-check-circle"></i> Equipped & Active
           </div>
+        ) : isModelUnlocked(selectedModel, currentUser) ? (
+          <button
+            onClick={() => handleEquipModel(selectedModel)}
+            disabled={equipping}
+            className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
+          >
+            {equipping ? <i className="fas fa-spinner animate-spin text-xs"></i> : <i className="fas fa-check text-xs"></i>}
+            <span>Equip Avatar</span>
+          </button>
         ) : (
           <button
-            onClick={onPurchase}
+            onClick={() => handlePurchaseSelectedModel(selectedModel)}
             disabled={purchasing}
-            className="px-4 py-2 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0"
+            className="px-4 py-2.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
           >
             {purchasing ? (
               <i className="fas fa-spinner animate-spin text-xs"></i>
             ) : (
               <i className="fas fa-shopping-cart text-xs"></i>
             )}
-            <span>Buy for 7,000 AX</span>
+            <span>Buy for {selectedModel.price.toLocaleString()} AX</span>
           </button>
         )}
       </div>
@@ -5312,57 +5660,37 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             </div>
 
             {/* 3D PLAYER SHOW CARD */}
-            <div className="p-4 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] border border-[#f0c040]/30 rounded-xl flex items-center justify-between gap-3 shadow-lg relative overflow-hidden">
+            <div 
+              onClick={() => setShowPlayerShowViewer(true)}
+              className="p-4 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] border border-[#f0c040]/30 hover:border-[#f0c040]/60 rounded-xl flex items-center justify-between gap-3 shadow-lg relative overflow-hidden cursor-pointer group transition"
+            >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f0c040]/20 to-[#f0c040]/5 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-xl shrink-0 shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f0c040]/20 to-[#f0c040]/5 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-xl shrink-0 shadow-inner group-hover:scale-105 transition">
                   <i className="fas fa-cube"></i>
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-bold text-white text-xs sm:text-sm truncate flex items-center gap-1.5">
                     Player Show
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 font-bold">3D Avatar</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 font-bold">3D Store</span>
                   </h4>
                   <p className="text-[10px] text-[#8890b0] truncate">
-                    {currentUser?.playerShowUnlocked ? "3D Character Avatar • Owned" : "3D Character Avatar Item • 7000 AX"}
+                    {currentUser?.playerShowUnlocked ? "2 Models Available • Switch & Equip" : "3D Character Avatars • From 7,000 AX"}
                   </p>
                 </div>
               </div>
 
-              {currentUser?.playerShowUnlocked ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded-md font-bold uppercase">
-                    <i className="fas fa-check-circle mr-1"></i>Owned
-                  </span>
-                  <button
-                    onClick={() => setShowPlayerShowViewer(true)}
-                    className="px-3.5 py-2 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-[#0a0c12] rounded-lg text-xs font-black transition shrink-0 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
-                  >
-                    <i className="fas fa-eye text-[10px]"></i> View
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowPlayerShowViewer(true)}
-                    className="px-2.5 py-2 bg-[#1e2340] hover:bg-[#252a45] text-[#8890b0] hover:text-white border border-[#252a45] rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1 cursor-pointer"
-                    title="Preview 3D Model"
-                  >
-                    <i className="fas fa-eye text-[10px]"></i>
-                  </button>
-                  <button
-                    onClick={handlePurchasePlayerShow}
-                    disabled={purchasingPlayerShow}
-                    className="px-3.5 py-2 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-[#0a0c12] rounded-lg text-xs font-black transition shrink-0 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
-                  >
-                    {purchasingPlayerShow ? (
-                      <i className="fas fa-spinner animate-spin text-[10px]"></i>
-                    ) : (
-                      <i className="fas fa-shopping-cart text-[10px]"></i>
-                    )}
-                    <span>Buy for 7,000 AX</span>
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPlayerShowViewer(true);
+                  }}
+                  className="px-3.5 py-2 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-[#0a0c12] rounded-lg text-xs font-black transition shrink-0 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
+                >
+                  <i className="fas fa-cubes text-[10px]"></i>
+                  <span>3D Store</span>
+                </button>
+              </div>
             </div>
 
             {/* FEATURED SQUAD TOURNAMENT CALLOUT */}
@@ -8774,9 +9102,11 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       {showPlayerShowViewer && (
         <PlayerShow3DViewer
           onClose={() => setShowPlayerShowViewer(false)}
-          onPurchase={handlePurchasePlayerShow}
-          isOwned={!!currentUser?.playerShowUnlocked}
-          purchasing={purchasingPlayerShow}
+          currentUser={currentUser}
+          onUserUpdated={(updated) => {
+            setCurrentUser(updated);
+          }}
+          isGuest={isGuest}
         />
       )}
 
