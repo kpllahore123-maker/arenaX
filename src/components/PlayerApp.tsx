@@ -138,9 +138,6 @@ function fitCameraToTargetObject(
     controls.target.set(0, 0, 0);
     controls.minDistance = distance * 0.25;
     controls.maxDistance = distance * 3.5;
-    if (typeof controls.reset === 'function') {
-      try { controls.reset(); } catch(e) {}
-    }
     controls.update();
   }
 }
@@ -302,9 +299,9 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
           });
 
           // ── ANIMATION HANDLING ──
-          // FIX 1: Classic Boy stays static.
+          // FIX 1: Classic Boy stays static (no animation).
           // FIX 2: Waving Hero plays waving animation.
-          const isWavingHero = (activeModelFileName || '').includes('Convert_Waving') || (activeModelFileName || '').toLowerCase().includes('waving');
+          const isWavingHero = (modelFileToLoad || '').includes('Convert_Waving') || (modelFileToLoad || '').toLowerCase().includes('waving');
           if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
             let wavingClip = gltf.animations.find((a: any) => a.name === 'Armature|mixamo.com|Layer0') || gltf.animations[0];
             mixer = new THREE.AnimationMixer(model);
@@ -314,14 +311,17 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
             action.play();
           }
 
+          // Reset rotation & scale first before measuring bounding box
+          model.rotation.set(0, 0, 0);
+          model.scale.set(1, 1, 1);
+          model.updateMatrixWorld(true);
+
           const box = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
 
-          // Position model slightly higher (+0.30) so full body is visible above the bottom avatar/card
-          model.position.x += (model.position.x - center.x);
-          model.position.y += (model.position.y - center.y) + 0.30;
-          model.position.z += (model.position.z - center.z);
+          // Position model centered and slightly lifted (+0.30) so full body is visible above the bottom avatar/card
+          model.position.set(-center.x, -center.y + 0.30, -center.z);
           model.rotation.set(0, 0, 0);
 
           const maxDim = Math.max(size.x, size.y, size.z);
@@ -8149,8 +8149,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           {/* Full Screen Page Container */}
           <div className="w-full max-w-md h-full max-h-full sm:max-h-[92vh] sm:rounded-[32px] bg-[#12101b] shadow-2xl overflow-hidden flex flex-col relative text-gray-900 animate-slide-up">
             
-            {/* Top Hero 3D Stage / Header Section (ONLY when the viewed user has unlocked Player Show) */}
-            {Boolean(viewingUserProfile.playerShowUnlocked || viewingUserProfile.character3dUnlocked) ? (
+            {/* Top Hero 3D Stage / Header Section (ONLY when the viewed user has unlocked Player Show / 3D Model) */}
+            {Boolean(viewingUserProfile.playerShowUnlocked || viewingUserProfile.character3dUnlocked || (viewingUserProfile.unlocked3dModels && viewingUserProfile.unlocked3dModels.length > 0) || viewingUserProfile.active3dModel) ? (
               <div className="relative w-full h-[330px] sm:h-[350px] bg-gradient-to-b from-[#120e24] via-[#1c1635] to-[#2a2046] overflow-hidden shrink-0 z-0">
                 {/* Soft ambient background glow & particle atmosphere */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(168,85,247,0.25),transparent_70%)] pointer-events-none" />
@@ -8188,7 +8188,13 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
 
                 {/* 3D Character Full Stage (Centered & Full-Body Visible, Non-interactive) */}
                 <div className="w-full h-full absolute inset-0 z-0 pointer-events-none">
-                  <Profile3DCharacterView />
+                  <Profile3DCharacterView activeModelFileName={
+                    viewingUserProfile.active3dModel
+                      ? (viewingUserProfile.active3dModel.includes('Convert_Waving') || viewingUserProfile.active3dModel.toLowerCase().includes('waving') || viewingUserProfile.active3dModel === 'waving_hero' ? 'Convert_Waving.glb' : 'character_boy_1_fbx.glb')
+                      : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('Convert_Waving') || m.toLowerCase().includes('waving') || m === 'waving_hero'))
+                          ? 'Convert_Waving.glb'
+                          : 'character_boy_1_fbx.glb')
+                  } />
                 </div>
 
                 {/* Blessing Badge at bottom-right of 3D stage */}
