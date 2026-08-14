@@ -266,80 +266,103 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     };
 
     const modelFileToLoad = activeModelFileName || 'character_boy_1_fbx.glb';
+    const cleanFileName = String(modelFileToLoad).replace(/^(\.\/|\/)/, '');
     const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
     if (GLTFLoader) {
       const loader = new GLTFLoader();
       const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const modelUrl = basePath + modelFileToLoad;
+      const urlsToTry = [
+        basePath + cleanFileName,
+        '/' + cleanFileName,
+        cleanFileName
+      ];
 
-      loader.load(
-        modelUrl,
-        (gltf: any) => {
-          model = gltf.scene;
-
-          model.traverse((child: any) => {
-            if (child.isMesh && child.material) {
-              const materials = Array.isArray(child.material) ? child.material : [child.material];
-              materials.forEach((mat: any) => {
-                if (mat.map) {
-                  if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                  mat.map.flipY = false;
-                  mat.map.needsUpdate = true;
-                }
-                if (mat.emissiveMap) {
-                  if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                  mat.emissiveMap.flipY = false;
-                  mat.emissiveMap.needsUpdate = true;
-                }
-                mat.needsUpdate = true;
-              });
-            }
-          });
-
-          // ── ANIMATION HANDLING ──
-          // FIX 1: Classic Boy stays static (no animation).
-          // FIX 2: Waving Hero plays waving animation.
-          const isWavingHero = (modelFileToLoad || '').includes('Convert_Waving') || (modelFileToLoad || '').toLowerCase().includes('waving');
-          if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-            let wavingClip = gltf.animations.find((a: any) => a.name === 'Armature|mixamo.com|Layer0') || gltf.animations[0];
-            mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(wavingClip);
-            action.reset();
-            action.setLoop(THREE.LoopRepeat);
-            action.play();
-          }
-
-          // Reset rotation & scale first before measuring bounding box
-          model.rotation.set(0, 0, 0);
-          model.scale.set(1, 1, 1);
-          model.updateMatrixWorld(true);
-
-          const box = new THREE.Box3().setFromObject(model);
-          const center = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3());
-
-          // Position model centered and slightly lifted (+0.30) so full body is visible above the bottom avatar/card
-          model.position.set(-center.x, -center.y + 0.30, -center.z);
-          model.rotation.set(0, 0, 0);
-
-          const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) {
-            const targetScale = 1.95 / maxDim;
-            model.scale.set(targetScale, targetScale, targetScale);
-          }
-
-          scene.add(model);
-          setLoading(false);
-        },
-        undefined,
-        () => {
+      const loadWithFallback = (index: number) => {
+        if (index >= urlsToTry.length) {
+          console.warn(`[Profile 3D] All model URLs failed for "${cleanFileName}", rendering procedural fallback.`);
           model = createProceduralCharacter();
           scene.add(model);
           setLoading(false);
+          return;
         }
-      );
+
+        const modelUrl = urlsToTry[index];
+        loader.load(
+          modelUrl,
+          (gltf: any) => {
+            model = gltf.scene;
+
+            model.traverse((child: any) => {
+              if (child.isMesh && child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((mat: any) => {
+                  if (mat.map) {
+                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                    mat.map.flipY = false;
+                    mat.map.needsUpdate = true;
+                  }
+                  if (mat.emissiveMap) {
+                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                    mat.emissiveMap.flipY = false;
+                    mat.emissiveMap.needsUpdate = true;
+                  }
+                  mat.needsUpdate = true;
+                });
+              }
+            });
+
+            // ── ANIMATION HANDLING ──
+            // FIX 1: Classic Boy stays static (no animation).
+            // FIX 2: Waving Hero plays waving animation.
+            const isWavingHero = (cleanFileName || '').includes('Convert_Waving') || (cleanFileName || '').toLowerCase().includes('waving');
+            if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
+              let wavingClip = gltf.animations.find((a: any) => 
+                a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+              ) || gltf.animations[0];
+              mixer = new THREE.AnimationMixer(model);
+              const action = mixer.clipAction(wavingClip);
+              action.reset();
+              action.setLoop(THREE.LoopRepeat);
+              action.play();
+            }
+
+            // Reset rotation & scale first before measuring bounding box
+            model.position.set(0, 0, 0);
+            model.rotation.set(0, 0, 0);
+            model.scale.set(1, 1, 1);
+            model.updateMatrixWorld(true);
+
+            const rawBox = new THREE.Box3().setFromObject(model);
+            const rawCenter = rawBox.getCenter(new THREE.Vector3());
+            const rawSize = rawBox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(rawSize.x, rawSize.y, rawSize.z);
+
+            const targetScale = maxDim > 0 ? (1.95 / maxDim) : 1.0;
+            model.scale.set(targetScale, targetScale, targetScale);
+
+            // Position model centered and slightly lifted (+0.20) so full body is visible above the bottom avatar/card
+            model.position.set(
+              -rawCenter.x * targetScale,
+              -rawCenter.y * targetScale + 0.20,
+              -rawCenter.z * targetScale
+            );
+            model.rotation.set(0, 0, 0);
+            model.updateMatrixWorld(true);
+
+            scene.add(model);
+            setLoading(false);
+          },
+          undefined,
+          (err: any) => {
+            console.warn(`[Profile 3D] Failed to load "${modelUrl}", trying next candidate...`, err);
+            loadWithFallback(index + 1);
+          }
+        );
+      };
+
+      loadWithFallback(0);
     } else {
       model = createProceduralCharacter();
       scene.add(model);
@@ -779,66 +802,84 @@ function PlayerShow3DViewer({
     if (GLTFLoader) {
       const loader = new GLTFLoader();
       const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const modelUrl = basePath + selectedModel.fileName;
+      const cleanFileName = String(selectedModel.fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
+      const urlsToTry = [
+        basePath + cleanFileName,
+        '/' + cleanFileName,
+        cleanFileName
+      ];
 
-      loader.load(
-        modelUrl,
-        (gltf: any) => {
-          model = gltf.scene;
-
-          model.traverse((child: any) => {
-            if (child.isMesh && child.material) {
-              const materials = Array.isArray(child.material) ? child.material : [child.material];
-              materials.forEach((mat: any) => {
-                if (mat.map) {
-                  if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                  mat.map.flipY = false;
-                  mat.map.needsUpdate = true;
-                }
-                if (mat.emissiveMap) {
-                  if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                  mat.emissiveMap.flipY = false;
-                  mat.emissiveMap.needsUpdate = true;
-                }
-                mat.needsUpdate = true;
-              });
-            }
-          });
-
-          // ── ANIMATION HANDLING ──
-          // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays in static default pose.
-          // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation reliably.
-          const isWavingHero = selectedModel.fileName.includes('Convert_Waving') || selectedModel.fileName.toLowerCase().includes('waving');
-
-          if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-            console.log(`[PlayerApp 3D] Waving Hero GLB loaded. Found ${gltf.animations.length} animation(s):`, gltf.animations.map((a: any) => a.name));
-            let wavingClip = gltf.animations.find((a: any) => a.name === 'Armature|mixamo.com|Layer0') || gltf.animations[0];
-            console.log(`[PlayerApp 3D] Playing clip: "${wavingClip.name}" (duration: ${wavingClip.duration.toFixed(2)}s)`);
-
-            mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(wavingClip);
-            action.reset();
-            action.setLoop(THREE.LoopRepeat);
-            action.play();
-          } else {
-            console.log(`[PlayerApp 3D] Static pose for model: ${selectedModel.fileName}`);
-          }
-
-          scene.add(model);
-          fitCameraToTargetObject(camera, model, controls, width, height);
-          setLoading(false);
-        },
-        undefined,
-        (err: any) => {
-          console.warn("Failed loading .glb 3D avatar:", selectedModel.fileName, err);
+      const loadViewerModelWithFallback = (index: number) => {
+        if (index >= urlsToTry.length) {
+          console.warn("[PlayerApp 3D] All GLB URLs failed for:", selectedModel.fileName, "using procedural fallback.");
           model = createProceduralCharacter();
           scene.add(model);
           fitCameraToTargetObject(camera, model, controls, width, height);
           setLoading(false);
+          return;
         }
-      );
+
+        const modelUrl = urlsToTry[index];
+        loader.load(
+          modelUrl,
+          (gltf: any) => {
+            model = gltf.scene;
+
+            model.traverse((child: any) => {
+              if (child.isMesh && child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((mat: any) => {
+                  if (mat.map) {
+                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                    mat.map.flipY = false;
+                    mat.map.needsUpdate = true;
+                  }
+                  if (mat.emissiveMap) {
+                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                    mat.emissiveMap.flipY = false;
+                    mat.emissiveMap.needsUpdate = true;
+                  }
+                  mat.needsUpdate = true;
+                });
+              }
+            });
+
+            // ── ANIMATION HANDLING ──
+            // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays in static default pose.
+            // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation reliably.
+            const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
+
+            if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
+              console.log(`[PlayerApp 3D] Waving Hero GLB loaded. Found ${gltf.animations.length} animation(s):`, gltf.animations.map((a: any) => a.name));
+              let wavingClip = gltf.animations.find((a: any) => 
+                a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+              ) || gltf.animations[0];
+              console.log(`[PlayerApp 3D] Playing clip: "${wavingClip.name}" (duration: ${wavingClip.duration.toFixed(2)}s)`);
+
+              mixer = new THREE.AnimationMixer(model);
+              const action = mixer.clipAction(wavingClip);
+              action.reset();
+              action.setLoop(THREE.LoopRepeat);
+              action.play();
+            } else {
+              console.log(`[PlayerApp 3D] Static pose for model: ${cleanFileName}`);
+            }
+
+            scene.add(model);
+            fitCameraToTargetObject(camera, model, controls, width, height);
+            setLoading(false);
+          },
+          undefined,
+          (err: any) => {
+            console.warn(`[PlayerApp 3D] Load failed for "${modelUrl}", trying next candidate...`, err);
+            loadViewerModelWithFallback(index + 1);
+          }
+        );
+      };
+
+      loadViewerModelWithFallback(0);
     } else {
       model = createProceduralCharacter();
       scene.add(model);
