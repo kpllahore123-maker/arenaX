@@ -142,6 +142,133 @@ function fitCameraToTargetObject(
   }
 }
 
+// ── GLOBAL ARENAX 3D ASSET PRELOAD & CACHE SYSTEM (REACT) ──
+function getArenaX3DCache() {
+  const win = window as any;
+  win.ARENAX_3D_CACHE = win.ARENAX_3D_CACHE || {
+    parsedGltf: {},
+    loadingPromises: {},
+  };
+  return win.ARENAX_3D_CACHE;
+}
+
+function cloneArenaXGltfReact(gltf: any) {
+  if (!gltf || !gltf.scene) return null;
+  const THREE = (window as any).THREE;
+  if (!THREE) return gltf.scene.clone();
+
+  const sourceScene = gltf.scene;
+  const clone = {
+    animations: gltf.animations || [],
+    scene: sourceScene.clone(true)
+  };
+
+  const parallelTraverse = (a: any, b: any, callback: any) => {
+    callback(a, b);
+    if (a.children && b.children) {
+      for (let i = 0; i < a.children.length; ++i) {
+        parallelTraverse(a.children[i], b.children[i], callback);
+      }
+    }
+  };
+
+  const bones: Record<string, any> = {};
+  const clonedMeshes: any[] = [];
+
+  parallelTraverse(sourceScene, clone.scene, (source: any, target: any) => {
+    if (source.isBone) {
+      bones[source.name || source.uuid] = target;
+    }
+    if (source.isSkinnedMesh) {
+      clonedMeshes.push({ source, target });
+    }
+  });
+
+  for (const { source, target } of clonedMeshes) {
+    if (source.skeleton) {
+      const sourceBones = source.skeleton.bones;
+      const targetBones: any[] = [];
+      for (let i = 0; i < sourceBones.length; i++) {
+        const sourceBone = sourceBones[i];
+        targetBones.push(bones[sourceBone.name || sourceBone.uuid] || sourceBone);
+      }
+      target.bind(new THREE.Skeleton(targetBones, source.skeleton.boneInverses), target.matrixWorld);
+    }
+  }
+
+  return clone;
+}
+
+function preloadArenaX3DModelReact(fileName: string): Promise<any> {
+  if (!fileName) return Promise.resolve(null);
+  const cache = getArenaX3DCache();
+  const cleanFileName = String(fileName).replace(/^(\.\/|\/)/, '');
+  if (cache.parsedGltf[cleanFileName]) {
+    return Promise.resolve(cache.parsedGltf[cleanFileName]);
+  }
+  if (cache.loadingPromises[cleanFileName]) {
+    return cache.loadingPromises[cleanFileName];
+  }
+
+  const THREE = (window as any).THREE;
+  const GLTFLoaderClass = THREE?.GLTFLoader || (window as any).GLTFLoader;
+  if (!GLTFLoaderClass) return Promise.resolve(null);
+
+  const loader = new GLTFLoaderClass();
+  const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
+  const urlsToTry = [
+    basePath + cleanFileName,
+    '/' + cleanFileName,
+    cleanFileName
+  ];
+
+  const promise = new Promise((resolve) => {
+    const tryLoad = (idx: number) => {
+      if (idx >= urlsToTry.length) {
+        resolve(null);
+        return;
+      }
+      loader.load(
+        urlsToTry[idx],
+        (gltf: any) => {
+          if (gltf && gltf.scene) {
+            gltf.scene.traverse((child: any) => {
+              if (child.isMesh && child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((mat: any) => {
+                  if (mat.map) {
+                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                    mat.map.flipY = false;
+                    mat.map.needsUpdate = true;
+                  }
+                  if (mat.emissiveMap) {
+                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                    mat.emissiveMap.flipY = false;
+                    mat.emissiveMap.needsUpdate = true;
+                  }
+                  mat.needsUpdate = true;
+                });
+              }
+            });
+          }
+          cache.parsedGltf[cleanFileName] = gltf;
+          resolve(gltf);
+        },
+        undefined,
+        () => {
+          tryLoad(idx + 1);
+        }
+      );
+    };
+    tryLoad(0);
+  });
+
+  cache.loadingPromises[cleanFileName] = promise;
+  return promise;
+}
+
 function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -169,8 +296,9 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     scene = new THREE.Scene();
     scene.background = null;
 
-    camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
-    camera.position.set(0, 0.08, 4.2);
+    // View Profile specific camera: dedicated FOV & target completely independent from Player Show
+    const viewProfileFov = 32;
+    camera = new THREE.PerspectiveCamera(viewProfileFov, width / height, 0.1, 100);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -199,51 +327,114 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     pointLight.position.set(0, 1, 2);
     scene.add(pointLight);
 
-    // Dynamic framing helper to guarantee full head-to-feet visibility and centering across any model dimensions
-    const frameProfileModel = (obj: any) => {
-      if (!obj || !camera) return;
+    // Dynamic View Profile framing: calculates accurate bounding box across all meshes/bones,
+    // normalizes character height to standard 2.0 units, lifts model slightly so feet clear the
+    // bottom card, and calculates camera distance dynamically so head-to-toe is 100% visible.
+    const setupAndFrameProfileModel = (modelObj: any, gltfAnimations: any[], isWaving: boolean) => {
+      if (!modelObj || !camera || !scene) return;
 
-      // Reset rotations & scales to ensure clean, natural bounding box measurement
-      // Leaving scale at natural 1, 1, 1 preserves SkinnedMesh and bone hierarchy transforms
-      obj.rotation.set(0, 0, 0);
-      obj.scale.set(1, 1, 1);
-      obj.updateMatrixWorld(true);
+      // Reset initial transforms
+      modelObj.position.set(0, 0, 0);
+      modelObj.rotation.set(0, 0, 0);
+      modelObj.scale.set(1, 1, 1);
+      modelObj.updateMatrixWorld(true);
 
-      // Compute bounding box and center model precisely at origin (0, 0, 0)
-      const box = new THREE.Box3().setFromObject(obj);
-      const center = box.getCenter(new THREE.Vector3());
+      // Compute bounding box taking into account skinned meshes and bones
+      const box = new THREE.Box3();
+      const v = new THREE.Vector3();
+      let hasValidBounds = false;
 
-      obj.position.set(-center.x, -center.y, -center.z);
-      obj.updateMatrixWorld(true);
+      modelObj.traverse((child: any) => {
+        if (child.isBone) {
+          child.getWorldPosition(v);
+          box.expandByPoint(v);
+          hasValidBounds = true;
+        }
+        if (child.isMesh && child.geometry) {
+          if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+          const b = child.geometry.boundingBox;
+          if (b) {
+            const corners = [
+              new THREE.Vector3(b.min.x, b.min.y, b.min.z),
+              new THREE.Vector3(b.min.x, b.min.y, b.max.z),
+              new THREE.Vector3(b.min.x, b.max.y, b.min.z),
+              new THREE.Vector3(b.min.x, b.max.y, b.max.z),
+              new THREE.Vector3(b.max.x, b.min.y, b.min.z),
+              new THREE.Vector3(b.max.x, b.min.y, b.max.z),
+              new THREE.Vector3(b.max.x, b.max.y, b.min.z),
+              new THREE.Vector3(b.max.x, b.max.y, b.max.z),
+            ];
+            corners.forEach((c) => {
+              c.applyMatrix4(child.matrixWorld);
+              box.expandByPoint(c);
+            });
+            hasValidBounds = true;
+          }
+        }
+      });
 
-      // Recalculate centered bounding box and dimensions
-      const centeredBox = new THREE.Box3().setFromObject(obj);
-      const centeredSize = centeredBox.getSize(new THREE.Vector3());
-      const maxDim = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 2.0;
+      if (!hasValidBounds || box.isEmpty()) {
+        box.setFromObject(modelObj);
+      }
 
-      // Calculate camera distance dynamically according to FOV and container aspect ratio
-      const fov = 38;
-      camera.fov = fov;
-      const fovRad = fov * (Math.PI / 180);
+      const rawSize = box.getSize(new THREE.Vector3());
+      const rawCenter = box.getCenter(new THREE.Vector3());
+      const rawHeight = rawSize.y > 0.05 ? rawSize.y : 2.0;
+      const rawWidth = rawSize.x > 0.05 ? rawSize.x : 0.8;
+
+      // Normalize character model to standard height 2.0
+      const normScale = 2.0 / rawHeight;
+      modelObj.scale.set(normScale, normScale, normScale);
+
+      // Center horizontally and vertically at origin, with a slight +0.10 lift so feet stay above the bottom card
+      const yLift = 0.10;
+      modelObj.position.set(
+        -rawCenter.x * normScale,
+        -rawCenter.y * normScale + yLift,
+        -rawCenter.z * normScale
+      );
+      modelObj.updateMatrixWorld(true);
+
+      // Position camera specifically for View Profile
       const currentW = containerRef.current?.clientWidth || width || 360;
       const currentH = containerRef.current?.clientHeight || height || 340;
       const aspect = (currentW && currentH && currentH > 0) ? (currentW / currentH) : 1.0;
       camera.aspect = aspect;
 
-      let distance = (maxDim / 2) / Math.tan(fovRad / 2);
+      const fovRad = viewProfileFov * (Math.PI / 180);
+      const normHeight = 2.0;
+      const normWidth = rawWidth * normScale;
+
+      const distV = (normHeight / 2) / Math.tan(fovRad / 2);
+      const distH = (normWidth / 2) / (Math.tan(fovRad / 2) * aspect);
+
+      // Generous framing multiplier prevents any clipping of head or waving hand at top
+      let cameraDist = Math.max(distV, distH) * 1.42;
       if (aspect < 1.0) {
-        distance = distance / aspect;
+        cameraDist = Math.max(cameraDist, (distV / aspect) * 1.25);
       }
 
-      // Framing multiplier 1.45 ensures full character from head to feet with comfortable space
-      distance = Math.max(distance * 1.45, 2.5);
-
-      const camY = centeredSize.y * 0.04;
-      camera.position.set(0, camY, distance);
-      camera.lookAt(0, 0, 0);
-      camera.near = Math.max(0.1, distance * 0.01);
-      camera.far = Math.max(1000, distance * 10);
+      camera.position.set(0, yLift, cameraDist);
+      camera.lookAt(0, yLift, 0);
+      camera.near = 0.1;
+      camera.far = 100;
       camera.updateProjectionMatrix();
+
+      // ── ANIMATION HANDLING ──
+      // FIX 1: Classic Boy stays static (no animation).
+      // FIX 2: Waving Hero plays waving animation in a loop.
+      if (isWaving && gltfAnimations && gltfAnimations.length > 0) {
+        let wavingClip = gltfAnimations.find((a: any) =>
+          a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+        ) || gltfAnimations[0];
+        mixer = new THREE.AnimationMixer(modelObj);
+        const action = mixer.clipAction(wavingClip);
+        action.reset();
+        action.setLoop(THREE.LoopRepeat);
+        action.play();
+      }
+
+      scene.add(modelObj);
     };
 
     // Non-interactive display: No OrbitControls, no dragging, no manual rotation
@@ -307,93 +498,30 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
       ring.position.y = -0.93;
       group.add(ring);
 
-      group.position.y = 0.25;
-      group.rotation.set(0, 0, 0);
       return group;
     };
 
     const modelFileToLoad = activeModelFileName || 'character_boy_1_fbx.glb';
     const cleanFileName = String(modelFileToLoad).replace(/^(\.\/|\/)/, '');
-    const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
-    if (GLTFLoader) {
-      const loader = new GLTFLoader();
-      const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const urlsToTry = [
-        basePath + cleanFileName,
-        '/' + cleanFileName,
-        cleanFileName
-      ];
+    const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
 
-      const loadWithFallback = (index: number) => {
-        if (index >= urlsToTry.length) {
-          console.warn(`[Profile 3D] All model URLs failed for "${cleanFileName}", rendering procedural fallback.`);
-          model = createProceduralCharacter();
-          scene.add(model);
-          setLoading(false);
-          return;
-        }
-
-        const modelUrl = urlsToTry[index];
-        loader.load(
-          modelUrl,
-          (gltf: any) => {
-            model = gltf.scene;
-
-            model.traverse((child: any) => {
-              if (child.isMesh && child.material) {
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.forEach((mat: any) => {
-                  if (mat.map) {
-                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                    mat.map.flipY = false;
-                    mat.map.needsUpdate = true;
-                  }
-                  if (mat.emissiveMap) {
-                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                    mat.emissiveMap.flipY = false;
-                    mat.emissiveMap.needsUpdate = true;
-                  }
-                  mat.needsUpdate = true;
-                });
-              }
-            });
-
-            // ── ANIMATION HANDLING ──
-            // FIX 1: Classic Boy stays static (no animation).
-            // FIX 2: Waving Hero plays waving animation.
-            const isWavingHero = (cleanFileName || '').includes('Convert_Waving') || (cleanFileName || '').toLowerCase().includes('waving');
-            if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-              let wavingClip = gltf.animations.find((a: any) => 
-                a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
-              ) || gltf.animations[0];
-              mixer = new THREE.AnimationMixer(model);
-              const action = mixer.clipAction(wavingClip);
-              action.reset();
-              action.setLoop(THREE.LoopRepeat);
-              action.play();
-            }
-
-            scene.add(model);
-            frameProfileModel(model);
-            setLoading(false);
-          },
-          undefined,
-          (err: any) => {
-            console.warn(`[Profile 3D] Failed to load "${modelUrl}", trying next candidate...`, err);
-            loadWithFallback(index + 1);
-          }
-        );
-      };
-
-      loadWithFallback(0);
-    } else {
+    // Load from preloaded cache or fetch silently
+    preloadArenaX3DModelReact(cleanFileName).then((cachedGltf: any) => {
+      if (cachedGltf) {
+        const cloned = cloneArenaXGltfReact(cachedGltf) || { scene: cachedGltf.scene.clone(), animations: cachedGltf.animations };
+        model = cloned.scene;
+        setupAndFrameProfileModel(model, cloned.animations || cachedGltf.animations, isWavingHero);
+        setLoading(false);
+      } else {
+        model = createProceduralCharacter();
+        setupAndFrameProfileModel(model, [], false);
+        setLoading(false);
+      }
+    }).catch(() => {
       model = createProceduralCharacter();
-      scene.add(model);
-      frameProfileModel(model);
+      setupAndFrameProfileModel(model, [], false);
       setLoading(false);
-    }
+    });
 
     // Animation loop: Completely still, front-facing (NO automatic rotation), updates animation mixer
     const animate = () => {
@@ -416,7 +544,7 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
       if (model) {
-        frameProfileModel(model);
+        setupAndFrameProfileModel(model, isWavingHero ? (model.animations || []) : [], isWavingHero);
       }
     };
 
@@ -826,95 +954,46 @@ function PlayerShow3DViewer({
       return group;
     };
 
-    // Load selected .glb file or fallback
-    const GLTFLoader = THREE.GLTFLoader || (window as any).GLTFLoader;
-    if (GLTFLoader) {
-      const loader = new GLTFLoader();
-      const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-      const cleanFileName = String(selectedModel.fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
-      const urlsToTry = [
-        basePath + cleanFileName,
-        '/' + cleanFileName,
-        cleanFileName
-      ];
+    // Load selected .glb file from preloaded cache or fetch silently
+    const cleanFileName = String(selectedModel.fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
+    const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
 
-      const loadViewerModelWithFallback = (index: number) => {
-        if (index >= urlsToTry.length) {
-          console.warn("[PlayerApp 3D] All GLB URLs failed for:", selectedModel.fileName, "using procedural fallback.");
-          model = createProceduralCharacter();
-          scene.add(model);
-          fitCameraToTargetObject(camera, model, controls, width, height);
-          setLoading(false);
-          return;
+    preloadArenaX3DModelReact(cleanFileName).then((cachedGltf: any) => {
+      if (cachedGltf) {
+        const cloned = cloneArenaXGltfReact(cachedGltf) || { scene: cachedGltf.scene.clone(), animations: cachedGltf.animations };
+        model = cloned.scene;
+
+        // ── ANIMATION HANDLING ──
+        // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays in static default pose.
+        // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation reliably.
+        const animations = cloned.animations || cachedGltf.animations;
+        if (isWavingHero && animations && animations.length > 0) {
+          let wavingClip = animations.find((a: any) => 
+            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+          ) || animations[0];
+
+          mixer = new THREE.AnimationMixer(model);
+          const action = mixer.clipAction(wavingClip);
+          action.reset();
+          action.setLoop(THREE.LoopRepeat);
+          action.play();
         }
 
-        const modelUrl = urlsToTry[index];
-        loader.load(
-          modelUrl,
-          (gltf: any) => {
-            model = gltf.scene;
-
-            model.traverse((child: any) => {
-              if (child.isMesh && child.material) {
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.forEach((mat: any) => {
-                  if (mat.map) {
-                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                    mat.map.flipY = false;
-                    mat.map.needsUpdate = true;
-                  }
-                  if (mat.emissiveMap) {
-                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                    mat.emissiveMap.flipY = false;
-                    mat.emissiveMap.needsUpdate = true;
-                  }
-                  mat.needsUpdate = true;
-                });
-              }
-            });
-
-            // ── ANIMATION HANDLING ──
-            // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays in static default pose.
-            // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation reliably.
-            const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
-
-            if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-              console.log(`[PlayerApp 3D] Waving Hero GLB loaded. Found ${gltf.animations.length} animation(s):`, gltf.animations.map((a: any) => a.name));
-              let wavingClip = gltf.animations.find((a: any) => 
-                a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
-              ) || gltf.animations[0];
-              console.log(`[PlayerApp 3D] Playing clip: "${wavingClip.name}" (duration: ${wavingClip.duration.toFixed(2)}s)`);
-
-              mixer = new THREE.AnimationMixer(model);
-              const action = mixer.clipAction(wavingClip);
-              action.reset();
-              action.setLoop(THREE.LoopRepeat);
-              action.play();
-            } else {
-              console.log(`[PlayerApp 3D] Static pose for model: ${cleanFileName}`);
-            }
-
-            scene.add(model);
-            fitCameraToTargetObject(camera, model, controls, width, height);
-            setLoading(false);
-          },
-          undefined,
-          (err: any) => {
-            console.warn(`[PlayerApp 3D] Load failed for "${modelUrl}", trying next candidate...`, err);
-            loadViewerModelWithFallback(index + 1);
-          }
-        );
-      };
-
-      loadViewerModelWithFallback(0);
-    } else {
+        scene.add(model);
+        fitCameraToTargetObject(camera, model, controls, width, height);
+        setLoading(false);
+      } else {
+        model = createProceduralCharacter();
+        scene.add(model);
+        fitCameraToTargetObject(camera, model, controls, width, height);
+        setLoading(false);
+      }
+    }).catch(() => {
       model = createProceduralCharacter();
       scene.add(model);
       fitCameraToTargetObject(camera, model, controls, width, height);
       setLoading(false);
-    }
+    });
 
     // Animation loop
     const animate = () => {
