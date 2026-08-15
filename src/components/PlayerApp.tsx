@@ -169,8 +169,8 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     scene = new THREE.Scene();
     scene.background = null;
 
-    camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0.7, 3.4);
+    camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
+    camera.position.set(0, 0.08, 4.2);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -198,6 +198,57 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     const pointLight = new THREE.PointLight(0xf0c040, 1.5, 10);
     pointLight.position.set(0, 1, 2);
     scene.add(pointLight);
+
+    // Dynamic framing helper to guarantee full head-to-feet visibility and centering across any model dimensions
+    const frameProfileModel = (obj: any) => {
+      if (!obj || !camera) return;
+      obj.position.set(0, 0, 0);
+      obj.rotation.set(0, 0, 0);
+      obj.scale.set(1, 1, 1);
+      obj.updateMatrixWorld(true);
+
+      const box = new THREE.Box3().setFromObject(obj);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const modelHeight = size.y > 0 ? size.y : 2.0;
+      const modelWidth = size.x > 0 ? size.x : 1.0;
+
+      // Normalize model so height is 2.0 units
+      const targetScale = 2.0 / modelHeight;
+      obj.scale.set(targetScale, targetScale, targetScale);
+
+      // Shift model slightly up (+0.08) so feet sit cleanly above the overlapping bottom profile card
+      const yShift = 0.08;
+      obj.position.set(
+        -center.x * targetScale,
+        -center.y * targetScale + yShift,
+        -center.z * targetScale
+      );
+      obj.rotation.set(0, 0, 0);
+      obj.updateMatrixWorld(true);
+
+      // Calculate camera distance dynamically according to FOV and container aspect ratio
+      const fov = 36;
+      camera.fov = fov;
+      const fovRad = fov * (Math.PI / 180);
+      const currentW = containerRef.current?.clientWidth || width || 360;
+      const currentH = containerRef.current?.clientHeight || height || 340;
+      const aspect = (currentW && currentH && currentH > 0) ? (currentW / currentH) : 1.0;
+      camera.aspect = aspect;
+
+      const normHeight = 2.0;
+      const normWidth = modelWidth * targetScale;
+      const distV = (normHeight / 2) / Math.tan(fovRad / 2);
+      const distH = (normWidth / 2) / (Math.tan(fovRad / 2) * aspect);
+      // 1.45 multiplier provides comfortable margins: entire head, waving hand, and shoes visible with breathing room
+      const distance = Math.max(distV, distH) * 1.45;
+
+      camera.position.set(0, yShift, distance);
+      camera.lookAt(0, yShift, 0);
+      camera.near = 0.1;
+      camera.far = 1000;
+      camera.updateProjectionMatrix();
+    };
 
     // Non-interactive display: No OrbitControls, no dragging, no manual rotation
 
@@ -328,30 +379,8 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
               action.play();
             }
 
-            // Reset rotation & scale first before measuring bounding box
-            model.position.set(0, 0, 0);
-            model.rotation.set(0, 0, 0);
-            model.scale.set(1, 1, 1);
-            model.updateMatrixWorld(true);
-
-            const rawBox = new THREE.Box3().setFromObject(model);
-            const rawCenter = rawBox.getCenter(new THREE.Vector3());
-            const rawSize = rawBox.getSize(new THREE.Vector3());
-            const maxDim = Math.max(rawSize.x, rawSize.y, rawSize.z);
-
-            const targetScale = maxDim > 0 ? (1.95 / maxDim) : 1.0;
-            model.scale.set(targetScale, targetScale, targetScale);
-
-            // Position model centered and slightly lifted (+0.20) so full body is visible above the bottom avatar/card
-            model.position.set(
-              -rawCenter.x * targetScale,
-              -rawCenter.y * targetScale + 0.20,
-              -rawCenter.z * targetScale
-            );
-            model.rotation.set(0, 0, 0);
-            model.updateMatrixWorld(true);
-
             scene.add(model);
+            frameProfileModel(model);
             setLoading(false);
           },
           undefined,
@@ -366,6 +395,7 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
     } else {
       model = createProceduralCharacter();
       scene.add(model);
+      frameProfileModel(model);
       setLoading(false);
     }
 
@@ -389,6 +419,9 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
       camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
+      if (model) {
+        frameProfileModel(model);
+      }
     };
 
     window.addEventListener('resize', handleResize);
