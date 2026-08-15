@@ -65,7 +65,7 @@ export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
   {
     id: 'character_boy_1',
     name: 'Classic Boy',
-    subtitle: 'Original Character',
+    subtitle: 'Original 3D Character',
     fileName: 'character_boy_1_fbx.glb',
     price: 7000,
     isAnimated: false,
@@ -76,15 +76,39 @@ export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
   {
     id: 'convert_waving',
     name: 'Waving Hero',
-    subtitle: 'Animated Wave',
+    subtitle: 'Animated Wave Character',
     fileName: 'Convert_Waving.glb',
-    price: 9999,
+    price: 7000,
     isAnimated: true,
     tag: 'Animated',
-    badge: '9,999 AX',
+    badge: '7,000 AX',
     icon: 'fa-hand-sparkles'
+  },
+  {
+    id: 'model3',
+    name: 'Cyber Guardian',
+    subtitle: 'Premium 3D Avatar',
+    fileName: 'model3.glb',
+    price: 9999,
+    isAnimated: true,
+    tag: 'Premium',
+    badge: '9,999 AX',
+    icon: 'fa-robot'
   }
 ];
+
+export function initArenaX3DBackgroundPreloadReact() {
+  const models = ['character_boy_1_fbx.glb', 'Convert_Waving.glb', 'model3.glb'];
+  models.forEach(m => {
+    preloadArenaX3DModelReact(m).catch(() => {});
+  });
+}
+
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    initArenaX3DBackgroundPreloadReact();
+  }, 100);
+}
 
 function fitCameraToTargetObject(
   camera: any,
@@ -422,13 +446,13 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
 
       // ── ANIMATION HANDLING ──
       // FIX 1: Classic Boy stays static (no animation).
-      // FIX 2: Waving Hero plays waving animation in a loop.
+      // FIX 2: Models with animations (Waving Hero, Model 3) play their animation in a loop.
       if (isWaving && gltfAnimations && gltfAnimations.length > 0) {
-        let wavingClip = gltfAnimations.find((a: any) =>
-          a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+        let activeClip = gltfAnimations.find((a: any) =>
+          a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('idle') || a.name.toLowerCase().includes('action') || a.name.toLowerCase().includes('layer0'))
         ) || gltfAnimations[0];
         mixer = new THREE.AnimationMixer(modelObj);
-        const action = mixer.clipAction(wavingClip);
+        const action = mixer.clipAction(activeClip);
         action.reset();
         action.setLoop(THREE.LoopRepeat);
         action.play();
@@ -503,14 +527,15 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
 
     const modelFileToLoad = activeModelFileName || 'character_boy_1_fbx.glb';
     const cleanFileName = String(modelFileToLoad).replace(/^(\.\/|\/)/, '');
-    const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
+    const isClassicBoy = cleanFileName.includes('character_boy_1');
+    const shouldAnimate = !isClassicBoy;
 
     // Load from preloaded cache or fetch silently
     preloadArenaX3DModelReact(cleanFileName).then((cachedGltf: any) => {
       if (cachedGltf) {
         const cloned = cloneArenaXGltfReact(cachedGltf) || { scene: cachedGltf.scene.clone(), animations: cachedGltf.animations };
         model = cloned.scene;
-        setupAndFrameProfileModel(model, cloned.animations || cachedGltf.animations, isWavingHero);
+        setupAndFrameProfileModel(model, cloned.animations || cachedGltf.animations, shouldAnimate);
         setLoading(false);
       } else {
         model = createProceduralCharacter();
@@ -544,7 +569,7 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
       if (model) {
-        setupAndFrameProfileModel(model, isWavingHero ? (model.animations || []) : [], isWavingHero);
+        setupAndFrameProfileModel(model, shouldAnimate ? (model.animations || []) : [], shouldAnimate);
       }
     };
 
@@ -824,7 +849,7 @@ function PlayerShow3DViewer({
     const height = containerRef.current.clientHeight || (window.innerHeight - 200);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0c12);
+    scene.background = null;
 
     camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 1.2, 3.5);
@@ -840,21 +865,21 @@ function PlayerShow3DViewer({
       containerRef.current.appendChild(renderer.domElement);
     }
 
-    // Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    // Lighting setup matching soft sky environment
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xfffaed, 1.8);
-    dirLight1.position.set(3, 5, 4);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8ba6cb, 1.2);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xfffaed, 2.0);
+    dirLight1.position.set(3, 6, 4);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x4f9eff, 1.0);
-    dirLight2.position.set(-3, 2, -3);
+    const dirLight2 = new THREE.DirectionalLight(0xaad0ff, 1.2);
+    dirLight2.position.set(-3, 3, -3);
     scene.add(dirLight2);
-
-    const pointLight = new THREE.PointLight(0xf0c040, 1.2, 10);
-    pointLight.position.set(0, 1, 2);
-    scene.add(pointLight);
 
     // OrbitControls or manual drag
     const OrbitControls = THREE.OrbitControls || (window as any).OrbitControls;
@@ -956,7 +981,7 @@ function PlayerShow3DViewer({
 
     // Load selected .glb file from preloaded cache or fetch silently
     const cleanFileName = String(selectedModel.fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
-    const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
+    const isClassicBoy = cleanFileName.includes('character_boy_1');
 
     preloadArenaX3DModelReact(cleanFileName).then((cachedGltf: any) => {
       if (cachedGltf) {
@@ -965,15 +990,15 @@ function PlayerShow3DViewer({
 
         // ── ANIMATION HANDLING ──
         // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays in static default pose.
-        // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation reliably.
+        // FIX 2: Models with animations (Waving Hero, Model 3) play their animation in a loop.
         const animations = cloned.animations || cachedGltf.animations;
-        if (isWavingHero && animations && animations.length > 0) {
-          let wavingClip = animations.find((a: any) => 
-            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+        if (!isClassicBoy && animations && animations.length > 0) {
+          let activeClip = animations.find((a: any) => 
+            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('idle') || a.name.toLowerCase().includes('action') || a.name.toLowerCase().includes('layer0'))
           ) || animations[0];
 
           mixer = new THREE.AnimationMixer(model);
-          const action = mixer.clipAction(wavingClip);
+          const action = mixer.clipAction(activeClip);
           action.reset();
           action.setLoop(THREE.LoopRepeat);
           action.play();
@@ -1068,82 +1093,115 @@ function PlayerShow3DViewer({
   }, [selectedModel.fileName]);
 
   return (
-    <div className="fixed inset-0 bg-[#0a0c12] z-[100050] flex flex-col h-full w-full text-white animate-fade-in select-none">
-      {/* Top Header */}
-      <div className="px-4 py-3 bg-[#111420]/90 border-b border-[#252a45] flex items-center justify-between shrink-0 shadow-lg backdrop-blur-md">
+    <div className="fixed inset-0 bg-gradient-to-b from-[#8ba7cb] via-[#a2bfde] to-[#c8dbee] z-[100050] flex flex-col h-full w-full text-white animate-fade-in select-none overflow-hidden">
+      {/* Top Header Bar matching Reference */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 pt-3 pb-2 flex items-center justify-between pointer-events-auto">
+        {/* Top-Left Back Button */}
         <button
           onClick={onClose}
-          className="px-3 py-1.5 bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] rounded-xl text-xs font-bold text-white flex items-center gap-2 transition cursor-pointer active:scale-95"
+          className="w-10 h-10 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md text-white flex items-center justify-center text-base transition-all shadow-md active:scale-95 cursor-pointer border border-white/10"
+          title="Back to Profile"
         >
-          <i className="fas fa-arrow-left text-amber-400"></i>
-          <span>Back</span>
+          <i className="fas fa-chevron-left"></i>
         </button>
 
-        <div className="text-center">
-          <h2 className="font-sans text-base font-extrabold text-white leading-tight flex items-center justify-center gap-1.5">
-            Player Show
-          </h2>
-          <span className="text-[9px] text-[#f0c040] font-bold tracking-wider uppercase bg-[#f0c040]/10 border border-[#f0c040]/30 px-2 py-0.2 rounded-full inline-block">
-            3D Avatar Store
-          </span>
+        {/* Top-Right Currency / Status Capsule */}
+        <div className="bg-black/35 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1.5 flex items-center gap-2 shadow-lg">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+            <span className="text-sm">🪙</span>
+            <span className="font-mono text-[#ffd700] font-black">
+              {(currentUser?.balance ?? 0).toLocaleString()}
+            </span>
+            <span className="w-4 h-4 rounded-full bg-[#f7d154] text-slate-950 flex items-center justify-center text-[10px] font-black leading-none ml-0.5 shadow-sm">
+              +
+            </span>
+          </div>
         </div>
-
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] text-[#8890b0] hover:text-white flex items-center justify-center transition cursor-pointer"
-        >
-          <i className="fas fa-times"></i>
-        </button>
       </div>
 
-      {/* 3D Canvas Area */}
-      <div className="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center min-h-0">
+      {/* 3D Canvas Showcase Area */}
+      <div className="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center min-h-0">
         <div ref={containerRef} className="w-full h-full absolute inset-0 touch-none" />
+
+        {/* Subtle Ambient Ground Glow */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-64 h-16 bg-black/15 blur-xl rounded-full pointer-events-none"></div>
 
         {/* Loading Spinner */}
         {loading && !loadError && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm z-10 pointer-events-none">
-            <div className="w-12 h-12 border-4 border-[#f0c040]/20 border-t-[#f0c040] rounded-full animate-spin mb-3"></div>
-            <p className="text-xs font-bold text-amber-300 animate-pulse">Loading {selectedModel.name}...</p>
-            <p className="text-[10px] text-[#8890b0] mt-1 font-mono">{selectedModel.fileName}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-xs z-10 pointer-events-none">
+            <div className="w-12 h-12 border-4 border-white/30 border-t-[#24d9c8] rounded-full animate-spin mb-3 shadow-lg"></div>
+            <p className="text-xs font-extrabold text-white drop-shadow-md animate-pulse">Loading {selectedModel.name}...</p>
+            <p className="text-[10px] text-white/80 mt-1 font-mono drop-shadow">{selectedModel.fileName}</p>
           </div>
         )}
 
         {/* Error Fallback */}
         {loadError && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0a0c12]">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-black/60 backdrop-blur-md">
             <i className="fas fa-exclamation-circle text-rose-400 text-3xl mb-2"></i>
             <p className="text-sm font-bold text-white mb-1">Could not load 3D Model</p>
-            <p className="text-xs text-[#8890b0] max-w-xs mb-4">{loadError}</p>
+            <p className="text-xs text-gray-200 max-w-xs mb-4">{loadError}</p>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-[#1e2340] border border-[#252a45] rounded-xl text-xs font-bold text-white hover:bg-[#252a45]"
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/20 rounded-xl text-xs font-bold text-white cursor-pointer"
             >
               Return to Profile
             </button>
           </div>
         )}
+      </div>
 
-        {/* Floating Interaction Hint */}
-        {!loading && !loadError && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 border border-white/10 rounded-full text-[10px] text-gray-300 font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md">
-            <i className="fas fa-hand-pointer text-amber-400"></i> Drag to rotate • Zoom in/out
+      {/* Middle Floating Control Bar (Shop/Mine toggle + Purchase button) */}
+      <div className="px-4 pb-2 z-20 flex items-center justify-between pointer-events-auto">
+        {/* Segmented Pill (Shop / Mine) */}
+        <div className="bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/15 flex items-center shadow-lg">
+          <div className="bg-[#24d9c8] text-[#051c24] font-black px-3.5 py-1 rounded-full text-xs flex items-center gap-1.5 shadow-sm">
+            <span>Shop</span>
+            <i className="fas fa-chevron-down text-[10px]"></i>
           </div>
+          <div className="text-white/90 font-bold px-3 py-1 text-xs">
+            Mine
+          </div>
+        </div>
+
+        {/* Action Button: Purchase vs Equip vs Active */}
+        {isModelEquipped(selectedModel, currentUser) ? (
+          <div className="bg-emerald-500/90 text-slate-950 font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(16,185,129,0.35)] flex items-center gap-1.5 uppercase tracking-wider backdrop-blur-md">
+            <i className="fas fa-check-circle text-xs"></i>
+            <span>Active</span>
+          </div>
+        ) : isModelUnlocked(selectedModel, currentUser) ? (
+          <button
+            onClick={() => handleEquipModel(selectedModel)}
+            disabled={equipping}
+            className="bg-[#24d9c8] hover:bg-[#1eccba] active:scale-95 text-[#051c24] font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(36,217,200,0.35)] flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider"
+          >
+            {equipping ? <i className="fas fa-spinner animate-spin text-xs"></i> : <i className="fas fa-magic text-xs"></i>}
+            <span>Equip</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => handlePurchaseSelectedModel(selectedModel)}
+            disabled={purchasing}
+            className="bg-[#24d9c8] hover:bg-[#1eccba] active:scale-95 text-[#051c24] font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(36,217,200,0.35)] flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider"
+          >
+            {purchasing ? (
+              <i className="fas fa-spinner animate-spin text-xs"></i>
+            ) : (
+              <i className="fas fa-shopping-cart text-xs"></i>
+            )}
+            <span>Purchase</span>
+            <span className="w-4 h-4 rounded-full bg-[#051c24] text-[#24d9c8] text-[10px] font-black flex items-center justify-center">
+              1
+            </span>
+          </button>
         )}
       </div>
 
-      {/* ── MODEL SELECTOR ROW (Classic Boy vs Waving Hero) ── */}
-      <div className="px-4 py-3 bg-[#0e111a]/95 border-t border-[#252a45] backdrop-blur-md shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] text-[#8890b0] font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <i className="fas fa-cubes text-[#f0c040]"></i> Choose Character Model
-          </span>
-          <span className="text-[10px] text-[#f0c040] font-mono font-bold">
-            Balance: {(currentUser?.balance ?? 0).toLocaleString()} AX
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5">
+      {/* Bottom Shop Drawer Area (No Customization Tabs) */}
+      <div className="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0">
+        {/* Exactly 3 Model Cards */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {CHARACTER_3D_MODELS.map((modelDef) => {
             const isSelected = selectedModel.id === modelDef.id;
             const unlocked = isModelUnlocked(modelDef, currentUser);
@@ -1153,104 +1211,52 @@ function PlayerShow3DViewer({
               <button
                 key={modelDef.id}
                 onClick={() => setSelectedModel(modelDef)}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                className={`relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
                   isSelected
-                    ? 'bg-gradient-to-r from-[#f0c040]/15 via-[#f0c040]/10 to-[#171b2e] border-[#f0c040] shadow-[0_0_15px_rgba(240,192,64,0.25)] ring-1 ring-[#f0c040]'
-                    : 'bg-[#151928] border-[#252a45] hover:border-[#3b436b] hover:bg-[#1a1f33]'
+                    ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
+                    : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0 border transition ${
-                  isSelected
-                    ? 'bg-[#f0c040] text-[#0a0c12] border-[#f0c040] font-bold shadow'
-                    : 'bg-[#1e2340] text-[#8890b0] border-[#252a45]'
-                }`}>
-                  <i className={`fas ${modelDef.icon || 'fa-cube'}`}></i>
+                {/* Top Card Badges */}
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
+                    {modelDef.isAnimated ? 'ANIM' : '3D'}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
+                    {modelDef.isAnimated ? 'S' : 'S'}
+                  </span>
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h4 className={`text-xs font-black truncate ${isSelected ? 'text-white' : 'text-gray-200'}`}>
-                      {modelDef.name}
-                    </h4>
-                    {modelDef.isAnimated && (
-                      <span className="text-[8px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-extrabold uppercase">
-                        Animated
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                {/* Center Icon Thumbnail */}
+                <div className="flex items-center justify-center my-auto text-2xl text-white/90">
+                  <i className={`fas ${modelDef.icon || 'fa-user'}`}></i>
+                </div>
+
+                {/* Bottom Model Details */}
+                <div className="w-full pt-1">
+                  <p className="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
+                    {modelDef.name}
+                  </p>
+                  <div className="flex items-center gap-1 mt-0.5">
                     {equipped ? (
-                      <span className="text-[9px] text-emerald-400 font-extrabold flex items-center gap-0.5">
-                        <i className="fas fa-check-circle text-[8px]"></i> Active
+                      <span className="text-[10px] text-emerald-300 font-black flex items-center gap-0.5">
+                        <i className="fas fa-check-circle text-[9px]"></i> Active
                       </span>
                     ) : unlocked ? (
-                      <span className="text-[9px] text-amber-300 font-extrabold flex items-center gap-0.5">
-                        <i className="fas fa-unlock text-[8px]"></i> Owned
+                      <span className="text-[10px] text-amber-300 font-black flex items-center gap-0.5">
+                        <i className="fas fa-unlock text-[9px]"></i> Owned
                       </span>
                     ) : (
-                      <span className="text-[9px] text-[#f0c040] font-bold font-mono">
-                        {modelDef.price.toLocaleString()} AX
+                      <span className="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1">
+                        <span>🪙</span> {modelDef.price.toLocaleString()}
                       </span>
                     )}
                   </div>
                 </div>
-
-                {isSelected && (
-                  <div className="w-2 h-2 rounded-full bg-[#f0c040] animate-pulse shrink-0"></div>
-                )}
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* ── ACTION & PURCHASE FOOTER ── */}
-      <div className="p-3.5 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#f0c040]/15 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-lg shrink-0">
-            <i className={`fas ${selectedModel.icon || 'fa-cube'}`}></i>
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-black text-white truncate flex items-center gap-1.5">
-              {selectedModel.name}
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30 font-mono">
-                {selectedModel.price.toLocaleString()} AX
-              </span>
-            </div>
-            <p className="text-[10px] text-[#8890b0] truncate">
-              {selectedModel.subtitle} • {selectedModel.fileName}
-            </p>
-          </div>
-        </div>
-
-        {/* Action Button: Equipped vs Equip vs Buy */}
-        {isModelEquipped(selectedModel, currentUser) ? (
-          <div className="text-[10px] text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-black flex items-center gap-1.5 shrink-0 shadow-sm uppercase tracking-wider">
-            <i className="fas fa-check-circle"></i> Equipped & Active
-          </div>
-        ) : isModelUnlocked(selectedModel, currentUser) ? (
-          <button
-            onClick={() => handleEquipModel(selectedModel)}
-            disabled={equipping}
-            className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
-          >
-            {equipping ? <i className="fas fa-spinner animate-spin text-xs"></i> : <i className="fas fa-check text-xs"></i>}
-            <span>Equip Avatar</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => handlePurchaseSelectedModel(selectedModel)}
-            disabled={purchasing}
-            className="px-4 py-2.5 bg-gradient-to-r from-[#f0c040] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
-          >
-            {purchasing ? (
-              <i className="fas fa-spinner animate-spin text-xs"></i>
-            ) : (
-              <i className="fas fa-shopping-cart text-xs"></i>
-            )}
-            <span>Buy for {selectedModel.price.toLocaleString()} AX</span>
-          </button>
-        )}
       </div>
     </div>
   );
@@ -8339,10 +8345,16 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 <div className="w-full h-full absolute inset-0 z-0 pointer-events-none">
                   <Profile3DCharacterView activeModelFileName={
                     viewingUserProfile.active3dModel
-                      ? (viewingUserProfile.active3dModel.includes('Convert_Waving') || viewingUserProfile.active3dModel.toLowerCase().includes('waving') || viewingUserProfile.active3dModel === 'waving_hero' ? 'Convert_Waving.glb' : 'character_boy_1_fbx.glb')
-                      : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('Convert_Waving') || m.toLowerCase().includes('waving') || m === 'waving_hero'))
-                          ? 'Convert_Waving.glb'
-                          : 'character_boy_1_fbx.glb')
+                      ? (viewingUserProfile.active3dModel.includes('model3')
+                          ? 'model3.glb'
+                          : (viewingUserProfile.active3dModel.includes('Convert_Waving') || viewingUserProfile.active3dModel.toLowerCase().includes('waving') || viewingUserProfile.active3dModel === 'waving_hero'
+                              ? 'Convert_Waving.glb'
+                              : 'character_boy_1_fbx.glb'))
+                      : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('model3') || m === 'model3'))
+                          ? 'model3.glb'
+                          : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('Convert_Waving') || m.toLowerCase().includes('waving') || m === 'waving_hero'))
+                              ? 'Convert_Waving.glb'
+                              : 'character_boy_1_fbx.glb'))
                   } />
                 </div>
 
