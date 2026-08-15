@@ -5085,105 +5085,91 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <!-- ── 3D PLAYER SHOW VIEWER FULL PAGE ── -->
-<div id="pPlayerShowViewerPage" class="fixed inset-0 bg-[#0a0c12] z-[100050] flex flex-col h-full w-full text-white hidden select-none">
-  <!-- Top Header -->
-  <div class="px-4 py-3 bg-[#111420]/90 border-b border-[#252a45] flex items-center justify-between shrink-0 shadow-lg backdrop-blur-md">
+<div id="pPlayerShowViewerPage" class="fixed inset-0 bg-gradient-to-b from-[#8ba7cb] via-[#a2bfde] to-[#c8dbee] z-[100050] flex flex-col h-full w-full text-white hidden select-none overflow-hidden">
+  <!-- Top Header Bar matching Reference -->
+  <div class="absolute top-0 left-0 right-0 z-30 px-4 pt-3 pb-2 flex items-center justify-between pointer-events-auto">
+    <!-- Top-Left Back Button -->
     <button
       type="button"
       onclick="closePlayerShowViewer()"
-      class="px-3 py-1.5 bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] rounded-xl text-xs font-bold text-white flex items-center gap-2 transition cursor-pointer active:scale-95"
+      class="w-10 h-10 rounded-full bg-black/30 hover:bg-black/45 backdrop-blur-md text-white flex items-center justify-center text-base transition-all shadow-md active:scale-95 cursor-pointer border border-white/10"
+      title="Back to Profile"
     >
-      <i class="fas fa-arrow-left text-amber-400"></i>
-      <span>Back</span>
+      <i class="fas fa-chevron-left"></i>
     </button>
 
-    <div class="text-center">
-      <h2 class="font-sans text-base font-extrabold text-white leading-tight flex items-center justify-center gap-1.5">
-        Player Show
-      </h2>
-      <span class="text-[9px] text-[#f0c040] font-bold tracking-wider uppercase bg-[#f0c040]/10 border border-[#f0c040]/30 px-2 py-0.2 rounded-full inline-block">
-        3D Avatar Store
-      </span>
+    <!-- Top-Right Currency / Status Capsule matching Reference -->
+    <div class="bg-black/35 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1.5 flex items-center gap-2 shadow-lg">
+      <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+        <span class="text-sm">🪙</span>
+        <span id="pPlayerShowViewerUserBalance" class="font-mono text-[#ffd700] font-black">
+          0
+        </span>
+        <span class="w-4 h-4 rounded-full bg-[#f7d154] text-slate-950 flex items-center justify-center text-[10px] font-black leading-none ml-0.5 shadow-sm">
+          +
+        </span>
+      </div>
     </div>
-
-    <button
-      type="button"
-      onclick="closePlayerShowViewer()"
-      class="w-8 h-8 rounded-full bg-[#1e2340] hover:bg-[#252a45] border border-[#252a45] text-[#8890b0] hover:text-white flex items-center justify-center transition cursor-pointer"
-    >
-      <i class="fas fa-times"></i>
-    </button>
   </div>
 
-  <!-- 3D Canvas Area -->
-  <div class="flex-1 relative w-full h-full bg-[#0a0c12] overflow-hidden flex items-center justify-center min-h-0">
+  <!-- 3D Canvas Showcase Area -->
+  <div class="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center min-h-0">
     <div id="pPlayerShow3DCanvas" class="w-full h-full absolute inset-0 touch-none"></div>
 
+    <!-- Subtle Ambient Ground Glow -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-64 h-16 bg-black/15 blur-xl rounded-full pointer-events-none"></div>
+
     <!-- Loading Spinner -->
-    <div id="pPlayerShow3DLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm z-10 pointer-events-none">
-      <div class="w-12 h-12 border-4 border-[#f0c040]/20 border-t-[#f0c040] rounded-full animate-spin mb-3"></div>
-      <p id="pPlayerShowLoadingText" class="text-xs font-bold text-amber-300 animate-pulse">Loading 3D Character Model...</p>
-      <p id="pPlayerShowLoadingSub" class="text-[10px] text-[#8890b0] mt-1 font-mono">character_boy_1_fbx.glb</p>
+    <div id="pPlayerShow3DLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-xs z-10 pointer-events-none">
+      <div class="w-12 h-12 border-4 border-white/30 border-t-[#24d9c8] rounded-full animate-spin mb-3 shadow-lg"></div>
+      <p id="pPlayerShowLoadingText" class="text-xs font-extrabold text-white drop-shadow-md animate-pulse">Loading 3D Character Model...</p>
+      <p id="pPlayerShowLoadingSub" class="text-[10px] text-white/80 mt-1 font-mono drop-shadow">character_boy_1_fbx.glb</p>
     </div>
 
     <!-- Error Fallback -->
-    <div id="pPlayerShow3DError" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0a0c12] hidden">
+    <div id="pPlayerShow3DError" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-black/60 backdrop-blur-md hidden">
       <i class="fas fa-exclamation-circle text-rose-400 text-3xl mb-2"></i>
       <p class="text-sm font-bold text-white mb-1">Could not load 3D Model</p>
-      <p id="pPlayerShow3DErrMsg" class="text-xs text-[#8890b0] max-w-xs mb-4">Failed to load 3D avatar model file.</p>
+      <p id="pPlayerShow3DErrMsg" class="text-xs text-gray-200 max-w-xs mb-4">Failed to load 3D avatar model file.</p>
       <button
         type="button"
         onclick="closePlayerShowViewer()"
-        class="px-4 py-2 bg-[#1e2340] border border-[#252a45] rounded-xl text-xs font-bold text-white hover:bg-[#252a45]"
+        class="px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/20 rounded-xl text-xs font-bold text-white cursor-pointer"
       >
         Return to Profile
       </button>
     </div>
 
     <!-- Floating Interaction Hint -->
-    <div id="pPlayerShow3DHint" class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 border border-white/10 rounded-full text-[10px] text-gray-300 font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md hidden">
-      <i class="fas fa-hand-pointer text-amber-400"></i> Drag to rotate • Zoom in/out
+    <div id="pPlayerShow3DHint" class="absolute top-16 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/40 border border-white/10 rounded-full text-[10px] text-white font-medium pointer-events-none backdrop-blur-sm flex items-center gap-1.5 shadow-md hidden">
+      <i class="fas fa-hand-pointer text-[#24d9c8]"></i> Drag to rotate • Zoom in/out
     </div>
   </div>
 
-  <!-- ── MODEL SELECTOR ROW (Dual-Model Switching Bar) ── -->
-  <div class="px-4 py-3 bg-[#0e111a]/95 border-t border-[#252a45] backdrop-blur-md shrink-0">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-[10px] text-[#8890b0] font-bold uppercase tracking-wider flex items-center gap-1.5">
-        <i class="fas fa-cubes text-[#f0c040]"></i> Choose Character Model
-      </span>
-      <span id="pPlayerShowViewerUserBalance" class="text-[10px] text-[#f0c040] font-mono font-bold">
-        Balance: 0 AX
-      </span>
-    </div>
-
-    <!-- Dynamic Model Selection Cards Container -->
-    <div id="pPlayerShowModelCardsList" class="grid grid-cols-2 gap-2.5">
-      <!-- Injected dynamically by JS -->
-    </div>
-  </div>
-
-  <!-- ── BOTTOM INFORMATION & ACTION FOOTER ── -->
-  <div id="pPlayerShowViewerFooter" class="p-3.5 bg-[#111420] border-t border-[#252a45] flex items-center justify-between gap-3 shrink-0 shadow-lg">
-    <div class="flex items-center gap-2.5 min-w-0">
-      <div id="pPlayerShowFooterIcon" class="w-10 h-10 rounded-xl bg-[#f0c040]/15 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-lg shrink-0">
-        <i class="fas fa-cube"></i>
+  <!-- Middle Floating Control Bar (Shop/Mine toggle + Purchase button) -->
+  <div class="px-4 pb-2 z-20 flex items-center justify-between pointer-events-auto">
+    <!-- Segmented Pill (Shop / Mine) -->
+    <div class="bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/15 flex items-center shadow-lg">
+      <div class="bg-[#24d9c8] text-[#051c24] font-black px-3.5 py-1 rounded-full text-xs flex items-center gap-1.5 shadow-sm">
+        <span>Shop</span>
+        <i class="fas fa-chevron-down text-[10px]"></i>
       </div>
-      <div class="min-w-0">
-        <div class="text-xs font-black text-white truncate flex items-center gap-1.5">
-          <span id="pPlayerShowFooterTitle">Classic Boy</span>
-          <span id="pPlayerShowFooterPriceBadge" class="text-[9px] px-1.5 py-0.2 rounded bg-[#f0c040]/20 text-[#f0c040] font-bold border border-[#f0c040]/30 font-mono">
-            7,000 AX
-          </span>
-        </div>
-        <p id="pPlayerShowFooterSubtitle" class="text-[10px] text-[#8890b0] truncate">
-          3D Character Profile Avatar • character_boy_1_fbx.glb
-        </p>
+      <div class="text-white/90 font-bold px-3 py-1 text-xs">
+        Mine
       </div>
     </div>
 
+    <!-- Action Button Slot (Purchase vs Equip vs Active) -->
     <div id="pPlayerShowViewerFooterAction">
-      <!-- Injected by JS (Buy vs Equip vs Active) -->
+      <!-- Dynamically injected by JS -->
+    </div>
+  </div>
+
+  <!-- Bottom Shop Drawer Area (No Customization Tabs) -->
+  <div class="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0">
+    <!-- Exactly 3 Model Cards Container -->
+    <div id="pPlayerShowModelCardsList" class="grid grid-cols-3 gap-2 sm:gap-3">
+      <!-- Injected dynamically by JS -->
     </div>
   </div>
 </div>
@@ -5946,7 +5932,8 @@ function preloadArenaX3DModel(fileName) {
 function initArenaX3DBackgroundPreload() {
   const models = [
     'character_boy_1_fbx.glb',
-    'Convert_Waving.glb'
+    'Convert_Waving.glb',
+    'model3.glb'
   ];
   if (Array.isArray(window.CHARACTER_3D_MODELS_DATA)) {
     window.CHARACTER_3D_MODELS_DATA.forEach(m => {
@@ -21498,7 +21485,7 @@ function createProceduralCharacter3D(THREE) {
   return { group, coinGroup };
 }
 
-// ── DUAL 3D MODELS DEFINITION ──
+// ── 3D MODELS DEFINITION ──
 const CHARACTER_3D_MODELS_DATA = [
   {
     id: 'classic_boy',
@@ -21515,10 +21502,20 @@ const CHARACTER_3D_MODELS_DATA = [
     name: 'Waving Hero',
     subtitle: 'Animated Waving Avatar',
     fileName: 'Convert_Waving.glb',
-    price: 9999,
+    price: 7000,
     icon: 'fa-child',
     isAnimated: true,
     badgeText: 'Animated'
+  },
+  {
+    id: 'model3',
+    name: 'Cyber Guardian',
+    subtitle: 'Premium 3D Avatar',
+    fileName: 'model3.glb',
+    price: 9999,
+    icon: 'fa-robot',
+    isAnimated: true,
+    badgeText: '9,999 AX'
   }
 ];
 
@@ -21613,15 +21610,11 @@ function renderPlayerShowSelectorUI() {
   const profile = window.userProfile || window.currentUser || (typeof window.getActiveUserProfile === 'function' ? window.getActiveUserProfile() : null);
   const container = document.getElementById('pPlayerShowModelCardsList');
   const balanceEl = document.getElementById('pPlayerShowViewerUserBalance');
-  const footerTitle = document.getElementById('pPlayerShowFooterTitle');
-  const footerPriceBadge = document.getElementById('pPlayerShowFooterPriceBadge');
-  const footerSubtitle = document.getElementById('pPlayerShowFooterSubtitle');
-  const footerIcon = document.getElementById('pPlayerShowFooterIcon');
   const footerAction = document.getElementById('pPlayerShowViewerFooterAction');
 
   const userCoins = profile?.balance !== undefined ? profile.balance : (profile?.axCoins || 0);
   if (balanceEl) {
-    balanceEl.textContent = `Balance: ${Number(userCoins).toLocaleString()} AX`;
+    balanceEl.textContent = Number(userCoins).toLocaleString();
   }
 
   const activeFileName = getActive3DModelFileName(profile);
@@ -21634,65 +21627,64 @@ function renderPlayerShowSelectorUI() {
       const isUnlocked = is3DModelUnlocked(profile, m);
       const isEquipped = isUnlocked && (activeFileName === m.fileName || (m.id === 'classic_boy' && activeFileName === 'character_boy_1_fbx.glb'));
 
-      let statusBadge = '';
+      let statusDisplay = '';
       if (isEquipped) {
-        statusBadge = '<span class="text-[9px] text-emerald-400 font-black bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 rounded flex items-center gap-1 shadow-sm"><i class="fas fa-check-circle text-[8px]"></i> Active</span>';
+        statusDisplay = '<span class="text-[10px] text-emerald-300 font-black flex items-center gap-0.5"><i class="fas fa-check-circle text-[9px]"></i> Active</span>';
       } else if (isUnlocked) {
-        statusBadge = '<span class="text-[9px] text-amber-300 font-bold bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded flex items-center gap-1"><i class="fas fa-unlock text-[8px]"></i> Owned</span>';
+        statusDisplay = '<span class="text-[10px] text-amber-300 font-black flex items-center gap-0.5"><i class="fas fa-unlock text-[9px]"></i> Owned</span>';
       } else {
-        statusBadge = `<span class="text-[9px] text-[#f0c040] font-black font-mono bg-[#f0c040]/10 border border-[#f0c040]/30 px-1.5 py-0.2 rounded">${m.price.toLocaleString()} AX</span>`;
+        statusDisplay = `<span class="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1"><span>🪙</span> ${m.price.toLocaleString()}</span>`;
       }
 
       return `
         <button
           type="button"
           onclick="window.selectPlayerShowModel('${m.id}')"
-          class="relative p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-            isSelected 
-              ? 'bg-gradient-to-br from-[#23273e] via-[#1a1e32] to-[#121524] border-[#f0c040] shadow-[0_0_15px_rgba(240,192,64,0.25)] ring-1 ring-[#f0c040]' 
-              : 'bg-[#141726]/80 hover:bg-[#1b1f33] border-[#252a45] hover:border-[#3a4168]'
+          class="relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
+            isSelected
+              ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
+              : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
           }"
         >
-          <div class="flex items-start justify-between gap-1.5 w-full mb-1.5">
-            <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-lg ${isSelected ? 'bg-[#f0c040]/20 text-[#f0c040]' : 'bg-[#1e233d] text-[#8890b0]'} flex items-center justify-center text-xs shrink-0 border border-white/5">
-                <i class="fas ${m.icon}"></i>
-              </div>
-              <div class="min-w-0">
-                <p class="text-xs font-black text-white truncate leading-tight">${m.name}</p>
-                <span class="text-[8px] text-[#8890b0] font-medium tracking-wide uppercase">${m.badgeText}</span>
-              </div>
-            </div>
-            ${isSelected ? '<span class="w-2 h-2 rounded-full bg-[#f0c040] animate-pulse shrink-0"></span>' : ''}
+          <!-- Top Card Badges -->
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
+              ${m.isAnimated ? 'ANIM' : '3D'}
+            </span>
+            <span class="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
+              S
+            </span>
           </div>
 
-          <div class="flex items-center justify-between gap-1 mt-1 pt-1.5 border-t border-white/5 w-full">
-            <span class="text-[8px] text-[#6b7280] truncate font-mono">${m.fileName}</span>
-            <div class="shrink-0">${statusBadge}</div>
+          <!-- Center Icon Thumbnail -->
+          <div class="flex items-center justify-center my-auto text-2xl text-white/90">
+            <i class="fas ${m.icon || 'fa-user'}"></i>
+          </div>
+
+          <!-- Bottom Model Details -->
+          <div class="w-full pt-1">
+            <p class="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
+              ${m.name}
+            </p>
+            <div class="flex items-center gap-1 mt-0.5">
+              ${statusDisplay}
+            </div>
           </div>
         </button>
       `;
     }).join('');
   }
 
-  // Update Footer UI
-  if (footerTitle) footerTitle.textContent = selectedModel.name;
-  if (footerPriceBadge) footerPriceBadge.textContent = `${selectedModel.price.toLocaleString()} AX`;
-  if (footerSubtitle) footerSubtitle.textContent = `${selectedModel.subtitle} • ${selectedModel.fileName}`;
-  if (footerIcon) {
-    footerIcon.innerHTML = `<i class="fas ${selectedModel.icon}"></i>`;
-  }
-
-  // Update Footer Action Button
+  // Update Floating Action Button
   if (footerAction) {
     const isUnlocked = is3DModelUnlocked(profile, selectedModel);
     const isEquipped = isUnlocked && (activeFileName === selectedModel.fileName || (selectedModel.id === 'classic_boy' && activeFileName === 'character_boy_1_fbx.glb'));
 
     if (isEquipped) {
       footerAction.innerHTML = `
-        <div class="px-4 py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm uppercase tracking-wider shrink-0">
-          <i class="fas fa-check-circle"></i>
-          <span>Equipped & Active</span>
+        <div class="bg-emerald-500/90 text-slate-950 font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(16,185,129,0.35)] flex items-center gap-1.5 uppercase tracking-wider backdrop-blur-md">
+          <i class="fas fa-check-circle text-xs"></i>
+          <span>Active</span>
         </div>
       `;
     } else if (isUnlocked) {
@@ -21700,10 +21692,10 @@ function renderPlayerShowSelectorUI() {
         <button
           type="button"
           onclick="window.equipSelected3DModel('${selectedModel.id}')"
-          class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
+          class="bg-[#24d9c8] hover:bg-[#1eccba] active:scale-95 text-[#051c24] font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(36,217,200,0.35)] flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider"
         >
           <i class="fas fa-magic text-xs"></i>
-          <span>Equip Avatar</span>
+          <span>Equip</span>
         </button>
       `;
     } else {
@@ -21712,10 +21704,13 @@ function renderPlayerShowSelectorUI() {
           id="btnViewerFooterBuy"
           type="button"
           onclick="window.purchaseSelected3DModel('${selectedModel.id}')"
-          class="px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition cursor-pointer flex items-center gap-1.5 uppercase shrink-0 tracking-wider"
+          class="bg-[#24d9c8] hover:bg-[#1eccba] active:scale-95 text-[#051c24] font-black text-xs px-4 py-2 rounded-2xl shadow-[0_4px_16px_rgba(36,217,200,0.35)] flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider"
         >
           <i class="fas fa-shopping-cart text-xs"></i>
-          <span>Buy for ${selectedModel.price.toLocaleString()} AX</span>
+          <span>Purchase</span>
+          <span class="w-4 h-4 rounded-full bg-[#051c24] text-[#24d9c8] text-[10px] font-black flex items-center justify-center">
+            1
+          </span>
         </button>
       `;
     }
@@ -21786,17 +21781,17 @@ function loadPlayerShowModelFile(fileName) {
 
         // ── ANIMATION HANDLING ──
         // FIX 1: Classic Boy (character_boy_1_fbx.glb) has no animations played — completely static default pose.
-        // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation.
-        const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
+        // FIX 2: Models with animations (Convert_Waving.glb, model3.glb) play their animation in a loop.
+        const isClassicBoy = cleanFileName.includes('character_boy_1');
         
         const animations = cloned.animations || cachedGltf.animations;
-        if (isWavingHero && animations && animations.length > 0) {
-          let wavingClip = animations.find(a => 
-            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+        if (!isClassicBoy && animations && animations.length > 0) {
+          let activeClip = animations.find(a => 
+            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('idle') || a.name.toLowerCase().includes('action') || a.name.toLowerCase().includes('layer0'))
           ) || animations[0];
 
           playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
-          const action = playerShow3DMixer.clipAction(wavingClip);
+          const action = playerShow3DMixer.clipAction(activeClip);
           action.reset();
           action.setLoop(THREE.LoopRepeat);
           action.play();
@@ -21863,7 +21858,7 @@ function openPlayerShowViewer() {
   const height = canvasContainer.clientHeight || (window.innerHeight - 180);
 
   playerShow3DScene = new THREE.Scene();
-  playerShow3DScene.background = new THREE.Color(0x0a0c12);
+  playerShow3DScene.background = null;
 
   playerShow3DCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
   playerShow3DCamera.position.set(0, 1.2, 3.5);
@@ -21885,13 +21880,17 @@ function openPlayerShowViewer() {
     return;
   }
 
-  // Lights
-  playerShow3DScene.add(new THREE.AmbientLight(0xffffff, 1.4));
-  const d1 = new THREE.DirectionalLight(0xfffaed, 1.8);
-  d1.position.set(3, 5, 4);
+  // Lights matching soft sky environment
+  playerShow3DScene.add(new THREE.AmbientLight(0xffffff, 1.6));
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8ba6cb, 1.2);
+  hemiLight.position.set(0, 20, 0);
+  playerShow3DScene.add(hemiLight);
+
+  const d1 = new THREE.DirectionalLight(0xfffaed, 2.0);
+  d1.position.set(3, 6, 4);
   playerShow3DScene.add(d1);
-  const d2 = new THREE.DirectionalLight(0x4f9eff, 1.0);
-  d2.position.set(-3, 2, -3);
+  const d2 = new THREE.DirectionalLight(0xaad0ff, 1.2);
+  d2.position.set(-3, 3, -3);
   playerShow3DScene.add(d2);
 
   // OrbitControls
@@ -22048,7 +22047,7 @@ window.updatePlayerShowUI = function(p) {
 
   const desc = document.getElementById('pPlayerShowDesc');
   if (desc) {
-    desc.textContent = isOwned ? "2 Models Available • Switch & Equip" : "3D Character Avatars • From 7,000 AX";
+    desc.textContent = isOwned ? "3 Models Available • Switch & Equip" : "3D Character Avatars • From 7,000 AX";
   }
 
   renderPlayerShowSelectorUI();
