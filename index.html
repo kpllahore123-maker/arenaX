@@ -5816,6 +5816,156 @@ document.addEventListener('mouseup', () => cur.classList.remove('scale-150'));
 
 // Screen Route controls
 let splashDismissed = false;
+
+// ── GLOBAL ARENAX 3D ASSET PRELOAD & CACHE SYSTEM ──
+window.ARENAX_3D_CACHE = window.ARENAX_3D_CACHE || {
+  parsedGltf: {},
+  loadingPromises: {},
+};
+
+// Deep clones GLTF scenes while correctly rebinding SkinnedMeshes and Skeletons
+function cloneArenaXGltf(gltf) {
+  if (!gltf || !gltf.scene) return null;
+  const THREE = window.THREE;
+  if (!THREE) return gltf.scene.clone();
+
+  const sourceScene = gltf.scene;
+  const clone = {
+    animations: gltf.animations || [],
+    scene: sourceScene.clone(true)
+  };
+
+  const parallelTraverse = (a, b, callback) => {
+    callback(a, b);
+    if (a.children && b.children) {
+      for (let i = 0; i < a.children.length; ++i) {
+        parallelTraverse(a.children[i], b.children[i], callback);
+      }
+    }
+  };
+
+  const bones = {};
+  const clonedMeshes = [];
+
+  parallelTraverse(sourceScene, clone.scene, (source, target) => {
+    if (source.isBone) {
+      bones[source.name || source.uuid] = target;
+    }
+    if (source.isSkinnedMesh) {
+      clonedMeshes.push({ source, target });
+    }
+  });
+
+  for (const { source, target } of clonedMeshes) {
+    if (source.skeleton) {
+      const sourceBones = source.skeleton.bones;
+      const targetBones = [];
+      for (let i = 0; i < sourceBones.length; i++) {
+        const sourceBone = sourceBones[i];
+        targetBones.push(bones[sourceBone.name || sourceBone.uuid] || sourceBone);
+      }
+      target.bind(new THREE.Skeleton(targetBones, source.skeleton.boneInverses), target.matrixWorld);
+    }
+  }
+
+  return clone;
+}
+
+// Loads and caches a 3D model asset silently in the background
+function preloadArenaX3DModel(fileName) {
+  if (!fileName) return Promise.resolve(null);
+  const cleanFileName = String(fileName).replace(/^(\.\/|\/)/, '');
+  if (window.ARENAX_3D_CACHE.parsedGltf[cleanFileName]) {
+    return Promise.resolve(window.ARENAX_3D_CACHE.parsedGltf[cleanFileName]);
+  }
+  if (window.ARENAX_3D_CACHE.loadingPromises[cleanFileName]) {
+    return window.ARENAX_3D_CACHE.loadingPromises[cleanFileName];
+  }
+
+  const THREE = window.THREE;
+  const GLTFLoaderClass = THREE?.GLTFLoader || window.GLTFLoader;
+  if (!GLTFLoaderClass) return Promise.resolve(null);
+
+  const loader = new GLTFLoaderClass();
+  const basePath = typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './';
+  const urlsToTry = [
+    basePath + cleanFileName,
+    '/' + cleanFileName,
+    cleanFileName
+  ];
+
+  const promise = new Promise((resolve) => {
+    const tryLoad = (idx) => {
+      if (idx >= urlsToTry.length) {
+        resolve(null);
+        return;
+      }
+      loader.load(
+        urlsToTry[idx],
+        (gltf) => {
+          // Prepare textures
+          if (gltf && gltf.scene) {
+            gltf.scene.traverse((child) => {
+              if (child.isMesh && child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((mat) => {
+                  if (mat.map) {
+                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                    mat.map.flipY = false;
+                    mat.map.needsUpdate = true;
+                  }
+                  if (mat.emissiveMap) {
+                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                    mat.emissiveMap.flipY = false;
+                    mat.emissiveMap.needsUpdate = true;
+                  }
+                  mat.needsUpdate = true;
+                });
+              }
+            });
+          }
+          window.ARENAX_3D_CACHE.parsedGltf[cleanFileName] = gltf;
+          resolve(gltf);
+        },
+        undefined,
+        () => {
+          tryLoad(idx + 1);
+        }
+      );
+    };
+    tryLoad(0);
+  });
+
+  window.ARENAX_3D_CACHE.loadingPromises[cleanFileName] = promise;
+  return promise;
+}
+
+// Background preloader: runs silently during splash screen without creating any canvas/DOM elements
+function initArenaX3DBackgroundPreload() {
+  const models = [
+    'character_boy_1_fbx.glb',
+    'Convert_Waving.glb'
+  ];
+  if (Array.isArray(window.CHARACTER_3D_MODELS_DATA)) {
+    window.CHARACTER_3D_MODELS_DATA.forEach(m => {
+      if (m.fileName && !models.includes(m.fileName)) {
+        models.push(m.fileName);
+      }
+    });
+  }
+  models.forEach(m => {
+    preloadArenaX3DModel(m).catch(() => {});
+  });
+}
+
+// Kick off background preload immediately while splash screen is showing
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    initArenaX3DBackgroundPreload();
+  }, 50);
+}
 function goTo(screenId) {
   document.querySelectorAll('.scr, #sLogin, #sDash').forEach(s => s.classList.add('hidden'));
   const target = $(screenId);
@@ -11381,8 +11531,9 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
   const scene = new THREE.Scene();
   scene.background = null;
 
-  const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-  camera.position.set(0, 0.1, 4.0);
+  // View Profile specific camera: dedicated FOV & target completely independent from Player Show
+  const viewProfileFov = 32;
+  const camera = new THREE.PerspectiveCamera(viewProfileFov, width / height, 0.1, 100);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setSize(width, height);
@@ -11407,58 +11558,119 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
   pointLight.position.set(0, 1, 2);
   scene.add(pointLight);
 
-  // Dynamic framing helper to guarantee full head-to-feet visibility and centering across any model dimensions
-  const frameProfileModel = (obj) => {
-    if (!obj || !camera) return;
+  let model = null;
+  let mixer = null;
+  const clock = new THREE.Clock();
 
-    // Reset rotations & scales to ensure clean, natural bounding box measurement
-    // Leaving scale at natural 1, 1, 1 preserves SkinnedMesh and bone hierarchy transforms
-    obj.rotation.set(0, 0, 0);
-    obj.scale.set(1, 1, 1);
-    obj.updateMatrixWorld(true);
+  // Dynamic View Profile framing: calculates accurate bounding box across all meshes/bones,
+  // normalizes character height to standard 2.0 units, lifts model slightly so feet clear the
+  // bottom card, and calculates camera distance dynamically so head-to-toe is 100% visible.
+  const setupAndFrameProfileModel = (modelObj, gltfAnimations, isWaving) => {
+    if (!modelObj || !camera || !scene) return;
 
-    // Compute bounding box and center model precisely at origin (0, 0, 0)
-    const box = new THREE.Box3().setFromObject(obj);
-    const center = box.getCenter(new THREE.Vector3());
+    // Reset initial transforms
+    modelObj.position.set(0, 0, 0);
+    modelObj.rotation.set(0, 0, 0);
+    modelObj.scale.set(1, 1, 1);
+    modelObj.updateMatrixWorld(true);
 
-    obj.position.set(-center.x, -center.y, -center.z);
-    obj.updateMatrixWorld(true);
+    // Compute bounding box taking into account skinned meshes and bones
+    const box = new THREE.Box3();
+    const v = new THREE.Vector3();
+    let hasValidBounds = false;
 
-    // Recalculate centered bounding box and dimensions
-    const centeredBox = new THREE.Box3().setFromObject(obj);
-    const centeredSize = centeredBox.getSize(new THREE.Vector3());
-    const maxDim = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 2.0;
+    modelObj.traverse((child) => {
+      if (child.isBone) {
+        child.getWorldPosition(v);
+        box.expandByPoint(v);
+        hasValidBounds = true;
+      }
+      if (child.isMesh && child.geometry) {
+        if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+        const b = child.geometry.boundingBox;
+        if (b) {
+          const corners = [
+            new THREE.Vector3(b.min.x, b.min.y, b.min.z),
+            new THREE.Vector3(b.min.x, b.min.y, b.max.z),
+            new THREE.Vector3(b.min.x, b.max.y, b.min.z),
+            new THREE.Vector3(b.min.x, b.max.y, b.max.z),
+            new THREE.Vector3(b.max.x, b.min.y, b.min.z),
+            new THREE.Vector3(b.max.x, b.min.y, b.max.z),
+            new THREE.Vector3(b.max.x, b.max.y, b.min.z),
+            new THREE.Vector3(b.max.x, b.max.y, b.max.z),
+          ];
+          corners.forEach((c) => {
+            c.applyMatrix4(child.matrixWorld);
+            box.expandByPoint(c);
+          });
+          hasValidBounds = true;
+        }
+      }
+    });
 
-    // Calculate camera distance dynamically according to FOV and container aspect ratio
-    const fov = 38;
-    camera.fov = fov;
-    const fovRad = fov * (Math.PI / 180);
+    if (!hasValidBounds || box.isEmpty()) {
+      box.setFromObject(modelObj);
+    }
+
+    const rawSize = box.getSize(new THREE.Vector3());
+    const rawCenter = box.getCenter(new THREE.Vector3());
+    const rawHeight = rawSize.y > 0.05 ? rawSize.y : 2.0;
+    const rawWidth = rawSize.x > 0.05 ? rawSize.x : 0.8;
+
+    // Normalize character model to standard height 2.0
+    const normScale = 2.0 / rawHeight;
+    modelObj.scale.set(normScale, normScale, normScale);
+
+    // Center horizontally and vertically at origin, with a slight +0.10 lift so feet stay above the bottom card
+    const yLift = 0.10;
+    modelObj.position.set(
+      -rawCenter.x * normScale,
+      -rawCenter.y * normScale + yLift,
+      -rawCenter.z * normScale
+    );
+    modelObj.updateMatrixWorld(true);
+
+    // Position camera specifically for View Profile
     const currentW = container.clientWidth || width || 360;
     const currentH = container.clientHeight || height || 340;
     const aspect = (currentW && currentH && currentH > 0) ? (currentW / currentH) : 1.0;
     camera.aspect = aspect;
 
-    let distance = (maxDim / 2) / Math.tan(fovRad / 2);
+    const fovRad = viewProfileFov * (Math.PI / 180);
+    const normHeight = 2.0;
+    const normWidth = rawWidth * normScale;
+
+    const distV = (normHeight / 2) / Math.tan(fovRad / 2);
+    const distH = (normWidth / 2) / (Math.tan(fovRad / 2) * aspect);
+
+    // Generous framing multiplier prevents any clipping of head or waving hand at top
+    let cameraDist = Math.max(distV, distH) * 1.42;
     if (aspect < 1.0) {
-      distance = distance / aspect;
+      cameraDist = Math.max(cameraDist, (distV / aspect) * 1.25);
     }
 
-    // Framing multiplier 1.45 ensures full character from head to feet with comfortable space
-    distance = Math.max(distance * 1.45, 2.5);
-
-    const camY = centeredSize.y * 0.04;
-    camera.position.set(0, camY, distance);
-    camera.lookAt(0, 0, 0);
-    camera.near = Math.max(0.1, distance * 0.01);
-    camera.far = Math.max(1000, distance * 10);
+    camera.position.set(0, yLift, cameraDist);
+    camera.lookAt(0, yLift, 0);
+    camera.near = 0.1;
+    camera.far = 100;
     camera.updateProjectionMatrix();
+
+    // ── ANIMATION HANDLING ──
+    // FIX 1: Classic Boy stays static (no animation).
+    // FIX 2: Waving Hero plays waving animation in a loop.
+    if (isWaving && gltfAnimations && gltfAnimations.length > 0) {
+      let wavingClip = gltfAnimations.find((a) =>
+        a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+      ) || gltfAnimations[0];
+      mixer = new THREE.AnimationMixer(modelObj);
+      const action = mixer.clipAction(wavingClip);
+      action.reset();
+      action.setLoop(THREE.LoopRepeat);
+      action.play();
+    }
+
+    scene.add(modelObj);
   };
-
-  // CRITICAL: NO OrbitControls created or enabled! Non-interactive profile display.
-
-  let model = null;
-  let mixer = null;
-  const clock = new THREE.Clock();
 
   const createProcedural = () => {
     const group = new THREE.Group();
@@ -11488,88 +11700,31 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
     ring.rotation.x = Math.PI / 2;
     ring.position.y = -0.93;
     group.add(ring);
-    group.position.y = 0.25;
-    group.rotation.set(0, 0, 0);
     return group;
   };
 
   const modelFileToLoad = activeModelFileName || 'character_boy_1_fbx.glb';
   const cleanFileName = String(modelFileToLoad).replace(/^(\.\/|\/)/, '');
-  const GLTFLoader = THREE.GLTFLoader || window.GLTFLoader;
-  if (GLTFLoader) {
-    const loader = new GLTFLoader();
-    const basePath = typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './';
-    const urlsToTry = [
-      basePath + cleanFileName,
-      '/' + cleanFileName,
-      cleanFileName
-    ];
+  const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
 
-    const loadWithFallback = (index) => {
-      if (index >= urlsToTry.length) {
+  // Load from preloaded cache or fetch silently
+  if (typeof preloadArenaX3DModel === 'function') {
+    preloadArenaX3DModel(cleanFileName).then((cachedGltf) => {
+      if (cachedGltf) {
+        const cloned = typeof cloneArenaXGltf === 'function' ? cloneArenaXGltf(cachedGltf) : { scene: cachedGltf.scene.clone(), animations: cachedGltf.animations };
+        model = cloned.scene;
+        setupAndFrameProfileModel(model, cloned.animations || cachedGltf.animations, isWavingHero);
+      } else {
         model = createProcedural();
-        scene.add(model);
-        frameProfileModel(model);
-        return;
+        setupAndFrameProfileModel(model, [], false);
       }
-
-      const modelUrl = urlsToTry[index];
-      loader.load(
-        modelUrl,
-        (gltf) => {
-          model = gltf.scene;
-          model.traverse((child) => {
-            if (child.isMesh && child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach((m) => {
-                if (m.map) {
-                  if (THREE.SRGBColorSpace) m.map.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) m.map.encoding = THREE.sRGBEncoding;
-                  m.map.flipY = false;
-                  m.map.needsUpdate = true;
-                }
-                if (m.emissiveMap) {
-                  if (THREE.SRGBColorSpace) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) m.emissiveMap.encoding = THREE.sRGBEncoding;
-                  m.emissiveMap.flipY = false;
-                  m.emissiveMap.needsUpdate = true;
-                }
-                m.needsUpdate = true;
-              });
-            }
-          });
-
-          // ── ANIMATION HANDLING ──
-          // FIX 1: Classic Boy (character_boy_1_fbx.glb) stays completely still (no animation played).
-          // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation in a loop.
-          const isWavingHero = (cleanFileName || '').includes('Convert_Waving') || (cleanFileName || '').toLowerCase().includes('waving');
-          if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-            let wavingClip = gltf.animations.find(a => 
-              a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
-            ) || gltf.animations[0];
-            mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(wavingClip);
-            action.reset();
-            action.setLoop(THREE.LoopRepeat);
-            action.play();
-          }
-
-          scene.add(model);
-          frameProfileModel(model);
-        },
-        undefined,
-        (err) => {
-          console.warn(`[Profile 3D HTML] Failed to load "${modelUrl}", trying fallback...`, err);
-          loadWithFallback(index + 1);
-        }
-      );
-    };
-
-    loadWithFallback(0);
+    }).catch(() => {
+      model = createProcedural();
+      setupAndFrameProfileModel(model, [], false);
+    });
   } else {
     model = createProcedural();
-    scene.add(model);
-    frameProfileModel(model);
+    setupAndFrameProfileModel(model, [], false);
   }
 
   let frameId;
@@ -11579,7 +11734,7 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
     if (mixer) {
       mixer.update(delta);
     }
-    // NO automatic rotation! Model remains standing front-facing and completely still.
+    // Non-interactive: Front-facing, completely still pose (or waving if Convert_Waving), no manual rotation
     if (renderer && scene && camera) renderer.render(scene, camera);
   };
   animate();
@@ -21621,90 +21776,43 @@ function loadPlayerShowModelFile(fileName) {
     if (hintEl) hintEl.classList.remove('hidden');
   }
 
-  const GLTFLoaderClass = THREE.GLTFLoader || window.GLTFLoader;
-  const basePath = typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './';
   const cleanFileName = String(fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
-  const urlsToTry = [
-    basePath + cleanFileName,
-    '/' + cleanFileName,
-    cleanFileName
-  ];
 
-  if (GLTFLoaderClass) {
-    const loader = new GLTFLoaderClass();
+  if (typeof preloadArenaX3DModel === 'function') {
+    preloadArenaX3DModel(cleanFileName).then((cachedGltf) => {
+      if (cachedGltf) {
+        const cloned = typeof cloneArenaXGltf === 'function' ? cloneArenaXGltf(cachedGltf) : { scene: cachedGltf.scene.clone(), animations: cachedGltf.animations };
+        playerShow3DModel = cloned.scene;
 
-    const tryLoad = function(idx) {
-      if (idx >= urlsToTry.length) {
-        console.warn("[PlayerShow] All GLB URLs failed for " + fileName + ", using procedural character.");
-        setupProceduralFallback();
-        return;
-      }
-      const currentUrl = urlsToTry[idx];
-      loader.load(
-        currentUrl,
-        function(gltf) {
-          console.log("[PlayerShow] 3D GLB Model loaded successfully from:", currentUrl, gltf);
-          playerShow3DModel = gltf.scene;
+        // ── ANIMATION HANDLING ──
+        // FIX 1: Classic Boy (character_boy_1_fbx.glb) has no animations played — completely static default pose.
+        // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation.
+        const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
+        
+        const animations = cloned.animations || cachedGltf.animations;
+        if (isWavingHero && animations && animations.length > 0) {
+          let wavingClip = animations.find(a => 
+            a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
+          ) || animations[0];
 
-          playerShow3DModel.traverse(function(child) {
-            if (child.isMesh && child.material) {
-              const materials = Array.isArray(child.material) ? child.material : [child.material];
-              materials.forEach(function(mat) {
-                if (mat.map) {
-                  if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                  mat.map.flipY = false;
-                  mat.map.needsUpdate = true;
-                }
-                if (mat.emissiveMap) {
-                  if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                  if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                  mat.emissiveMap.flipY = false;
-                  mat.emissiveMap.needsUpdate = true;
-                }
-                mat.needsUpdate = true;
-              });
-            }
-          });
-
-          // ── ANIMATION HANDLING ──
-          // FIX 1: Classic Boy (character_boy_1_fbx.glb) has no animations played — completely static default pose.
-          // FIX 2: Waving Hero (Convert_Waving.glb) plays its waving animation.
-          const isWavingHero = cleanFileName.includes('Convert_Waving') || cleanFileName.toLowerCase().includes('waving');
-          
-          if (isWavingHero && gltf.animations && gltf.animations.length > 0) {
-            console.log(`[PlayerShow] Waving Hero GLB loaded. Found ${gltf.animations.length} animation(s):`, gltf.animations.map(a => a.name));
-            
-            // Find specific animation clip if named, or fallback to first clip
-            let wavingClip = gltf.animations.find(a => 
-              a.name && (a.name.toLowerCase().includes('wave') || a.name.toLowerCase().includes('mixamo') || a.name.toLowerCase().includes('layer0'))
-            ) || gltf.animations[0];
-            console.log(`[PlayerShow] Playing animation clip: "${wavingClip.name}" (duration: ${wavingClip.duration.toFixed(2)}s)`);
-
-            playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
-            const action = playerShow3DMixer.clipAction(wavingClip);
-            action.reset();
-            action.setLoop(THREE.LoopRepeat);
-            action.play();
-            playerShowLoggedAnim = false;
-          } else {
-            console.log(`[PlayerShow] Model loaded as static pose (no animations played for ${cleanFileName})`);
-          }
-
-          playerShow3DScene.add(playerShow3DModel);
-          autoFramePlayerShowCamera(playerShow3DModel, playerShow3DCamera, playerShow3DControls);
-          if (loadingEl) loadingEl.classList.add('hidden');
-          if (hintEl) hintEl.classList.remove('hidden');
-        },
-        undefined,
-        function(err) {
-          console.warn(`[PlayerShow] Load failed for "${currentUrl}", trying next candidate...`, err);
-          tryLoad(idx + 1);
+          playerShow3DMixer = new THREE.AnimationMixer(playerShow3DModel);
+          const action = playerShow3DMixer.clipAction(wavingClip);
+          action.reset();
+          action.setLoop(THREE.LoopRepeat);
+          action.play();
+          playerShowLoggedAnim = false;
         }
-      );
-    };
 
-    tryLoad(0);
+        playerShow3DScene.add(playerShow3DModel);
+        autoFramePlayerShowCamera(playerShow3DModel, playerShow3DCamera, playerShow3DControls);
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (hintEl) hintEl.classList.remove('hidden');
+      } else {
+        setupProceduralFallback();
+      }
+    }).catch(() => {
+      setupProceduralFallback();
+    });
   } else {
     setupProceduralFallback();
   }
