@@ -11410,33 +11410,27 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
   // Dynamic framing helper to guarantee full head-to-feet visibility and centering across any model dimensions
   const frameProfileModel = (obj) => {
     if (!obj || !camera) return;
-    obj.position.set(0, 0, 0);
+
+    // Reset rotations & scales to ensure clean, natural bounding box measurement
+    // Leaving scale at natural 1, 1, 1 preserves SkinnedMesh and bone hierarchy transforms
     obj.rotation.set(0, 0, 0);
     obj.scale.set(1, 1, 1);
     obj.updateMatrixWorld(true);
 
+    // Compute bounding box and center model precisely at origin (0, 0, 0)
     const box = new THREE.Box3().setFromObject(obj);
     const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const modelHeight = size.y > 0 ? size.y : 2.0;
-    const modelWidth = size.x > 0 ? size.x : 1.0;
 
-    // Normalize model so height is 2.0 units
-    const targetScale = 2.0 / modelHeight;
-    obj.scale.set(targetScale, targetScale, targetScale);
-
-    // Shift model slightly up (+0.08) so feet sit cleanly above the overlapping bottom profile card
-    const yShift = 0.08;
-    obj.position.set(
-      -center.x * targetScale,
-      -center.y * targetScale + yShift,
-      -center.z * targetScale
-    );
-    obj.rotation.set(0, 0, 0);
+    obj.position.set(-center.x, -center.y, -center.z);
     obj.updateMatrixWorld(true);
 
+    // Recalculate centered bounding box and dimensions
+    const centeredBox = new THREE.Box3().setFromObject(obj);
+    const centeredSize = centeredBox.getSize(new THREE.Vector3());
+    const maxDim = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 2.0;
+
     // Calculate camera distance dynamically according to FOV and container aspect ratio
-    const fov = 36;
+    const fov = 38;
     camera.fov = fov;
     const fovRad = fov * (Math.PI / 180);
     const currentW = container.clientWidth || width || 360;
@@ -11444,17 +11438,19 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
     const aspect = (currentW && currentH && currentH > 0) ? (currentW / currentH) : 1.0;
     camera.aspect = aspect;
 
-    const normHeight = 2.0;
-    const normWidth = modelWidth * targetScale;
-    const distV = (normHeight / 2) / Math.tan(fovRad / 2);
-    const distH = (normWidth / 2) / (Math.tan(fovRad / 2) * aspect);
-    // 1.45 multiplier provides comfortable margins: entire head, waving hand, and shoes visible with breathing room
-    let distance = Math.max(distV, distH) * 1.45;
+    let distance = (maxDim / 2) / Math.tan(fovRad / 2);
+    if (aspect < 1.0) {
+      distance = distance / aspect;
+    }
 
-    camera.position.set(0, yShift, distance);
-    camera.lookAt(0, yShift, 0);
-    camera.near = 0.1;
-    camera.far = 1000;
+    // Framing multiplier 1.45 ensures full character from head to feet with comfortable space
+    distance = Math.max(distance * 1.45, 2.5);
+
+    const camY = centeredSize.y * 0.04;
+    camera.position.set(0, camY, distance);
+    camera.lookAt(0, 0, 0);
+    camera.near = Math.max(0.1, distance * 0.01);
+    camera.far = Math.max(1000, distance * 10);
     camera.updateProjectionMatrix();
   };
 
