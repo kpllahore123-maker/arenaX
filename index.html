@@ -5166,9 +5166,9 @@ if (typeof tailwind !== 'undefined') {
   </div>
 
   <!-- Bottom Shop Drawer Area (No Customization Tabs) -->
-  <div class="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0">
-    <!-- Exactly 3 Model Cards Container -->
-    <div id="pPlayerShowModelCardsList" class="grid grid-cols-3 gap-2 sm:gap-3">
+  <div class="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0 max-h-72 overflow-y-auto no-scrollbar">
+    <!-- 6 Model Cards Container in 2 rows -->
+    <div id="pPlayerShowModelCardsList" class="flex flex-col gap-2.5">
       <!-- Injected dynamically by JS -->
     </div>
   </div>
@@ -5933,7 +5933,10 @@ function initArenaX3DBackgroundPreload() {
   const models = [
     'character_boy_1_fbx.glb',
     'Convert_Waving.glb',
-    'model3.glb'
+    'model3.glb',
+    'model4.glb',
+    'model5.glb',
+    'model6.glb'
   ];
   if (Array.isArray(window.CHARACTER_3D_MODELS_DATA)) {
     window.CHARACTER_3D_MODELS_DATA.forEach(m => {
@@ -21516,6 +21519,36 @@ const CHARACTER_3D_MODELS_DATA = [
     icon: 'fa-robot',
     isAnimated: true,
     badgeText: '9,999 AX'
+  },
+  {
+    id: 'model4',
+    name: 'Cyber Titan',
+    subtitle: 'Heavy Armor 3D Avatar',
+    fileName: 'model4.glb',
+    price: 9999,
+    icon: 'fa-shield-halved',
+    isAnimated: true,
+    badgeText: '9,999 AX'
+  },
+  {
+    id: 'model5',
+    name: 'Shadow Striker',
+    subtitle: 'Stealth 3D Avatar',
+    fileName: 'model5.glb',
+    price: 9999,
+    icon: 'fa-bolt',
+    isAnimated: true,
+    badgeText: '9,999 AX'
+  },
+  {
+    id: 'model6',
+    name: 'Nexus Ranger',
+    subtitle: 'Futuristic 3D Avatar',
+    fileName: 'model6.glb',
+    price: 9999,
+    icon: 'fa-crosshairs',
+    isAnimated: true,
+    badgeText: '9,999 AX'
   }
 ];
 
@@ -21595,13 +21628,23 @@ function getActive3DModelFileName(profile) {
   if (!profile) return 'character_boy_1_fbx.glb';
   if (profile.active3dModel) {
     const act = String(profile.active3dModel).toLowerCase();
+    if (act.includes('model6')) return 'model6.glb';
+    if (act.includes('model5')) return 'model5.glb';
+    if (act.includes('model4')) return 'model4.glb';
+    if (act.includes('model3')) return 'model3.glb';
     if (act.includes('waving') || act.includes('hero')) return 'Convert_Waving.glb';
     if (act.includes('classic') || act.includes('boy')) return 'character_boy_1_fbx.glb';
     return profile.active3dModel;
   }
   if (profile.unlocked3dModels && Array.isArray(profile.unlocked3dModels)) {
-    const hasWaving = profile.unlocked3dModels.some(m => typeof m === 'string' && (m.toLowerCase().includes('waving') || m.toLowerCase().includes('hero')));
-    if (hasWaving) return 'Convert_Waving.glb';
+    const last = profile.unlocked3dModels[profile.unlocked3dModels.length - 1];
+    if (typeof last === 'string') {
+      if (last.includes('model6')) return 'model6.glb';
+      if (last.includes('model5')) return 'model5.glb';
+      if (last.includes('model4')) return 'model4.glb';
+      if (last.includes('model3')) return 'model3.glb';
+      if (last.toLowerCase().includes('waving') || last.toLowerCase().includes('hero')) return 'Convert_Waving.glb';
+    }
   }
   return 'character_boy_1_fbx.glb';
 }
@@ -21620,9 +21663,9 @@ function renderPlayerShowSelectorUI() {
   const activeFileName = getActive3DModelFileName(profile);
   const selectedModel = CHARACTER_3D_MODELS_DATA.find(m => m.id === currentSelected3DModelId) || CHARACTER_3D_MODELS_DATA[0];
 
-  // Render cards
+  // Render cards in two rows: Row 1 (first 3 models) and Row 2 (newly added models)
   if (container) {
-    container.innerHTML = CHARACTER_3D_MODELS_DATA.map(m => {
+    function renderModelCardHTML(m) {
       const isSelected = m.id === selectedModel.id;
       const isUnlocked = is3DModelUnlocked(profile, m);
       const isEquipped = isUnlocked && (activeFileName === m.fileName || (m.id === 'classic_boy' && activeFileName === 'character_boy_1_fbx.glb'));
@@ -21672,7 +21715,16 @@ function renderPlayerShowSelectorUI() {
           </div>
         </button>
       `;
-    }).join('');
+    }
+
+    const row1 = CHARACTER_3D_MODELS_DATA.slice(0, 3);
+    const row2 = CHARACTER_3D_MODELS_DATA.slice(3);
+
+    let html = `<div class="grid grid-cols-3 gap-2 sm:gap-3">${row1.map(renderModelCardHTML).join('')}</div>`;
+    if (row2.length > 0) {
+      html += `<div class="grid grid-cols-3 gap-2 sm:gap-3 overflow-x-auto pb-0.5 no-scrollbar">${row2.map(renderModelCardHTML).join('')}</div>`;
+    }
+    container.innerHTML = html;
   }
 
   // Update Floating Action Button
@@ -22047,7 +22099,7 @@ window.updatePlayerShowUI = function(p) {
 
   const desc = document.getElementById('pPlayerShowDesc');
   if (desc) {
-    desc.textContent = isOwned ? "3 Models Available • Switch & Equip" : "3D Character Avatars • From 7,000 AX";
+    desc.textContent = isOwned ? "6 Models Available • Switch & Equip" : "3D Character Avatars • From 7,000 AX";
   }
 
   renderPlayerShowSelectorUI();
