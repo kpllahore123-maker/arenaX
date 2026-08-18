@@ -94,11 +94,51 @@ export const CHARACTER_3D_MODELS: Character3DModelDef[] = [
     tag: 'Premium',
     badge: '9,999 AX',
     icon: 'fa-robot'
+  },
+  {
+    id: 'model4',
+    name: 'Cyber Titan',
+    subtitle: 'Heavy Armor 3D Avatar',
+    fileName: 'model4.glb',
+    price: 9999,
+    isAnimated: true,
+    tag: 'Titan',
+    badge: '9,999 AX',
+    icon: 'fa-shield-halved'
+  },
+  {
+    id: 'model5',
+    name: 'Shadow Striker',
+    subtitle: 'Stealth 3D Avatar',
+    fileName: 'model5.glb',
+    price: 9999,
+    isAnimated: true,
+    tag: 'Stealth',
+    badge: '9,999 AX',
+    icon: 'fa-bolt'
+  },
+  {
+    id: 'model6',
+    name: 'Nexus Ranger',
+    subtitle: 'Futuristic 3D Avatar',
+    fileName: 'model6.glb',
+    price: 9999,
+    isAnimated: true,
+    tag: 'Ranger',
+    badge: '9,999 AX',
+    icon: 'fa-crosshairs'
   }
 ];
 
 export function initArenaX3DBackgroundPreloadReact() {
-  const models = ['character_boy_1_fbx.glb', 'Convert_Waving.glb', 'model3.glb'];
+  const models = [
+    'character_boy_1_fbx.glb',
+    'Convert_Waving.glb',
+    'model3.glb',
+    'model4.glb',
+    'model5.glb',
+    'model6.glb'
+  ];
   models.forEach(m => {
     preloadArenaX3DModelReact(m).catch(() => {});
   });
@@ -1199,63 +1239,125 @@ function PlayerShow3DViewer({
       </div>
 
       {/* Bottom Shop Drawer Area (No Customization Tabs) */}
-      <div className="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0">
-        {/* Exactly 3 Model Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {CHARACTER_3D_MODELS.map((modelDef) => {
-            const isSelected = selectedModel.id === modelDef.id;
-            const unlocked = isModelUnlocked(modelDef, currentUser);
-            const equipped = isModelEquipped(modelDef, currentUser);
+      <div className="bg-[#667a93]/90 backdrop-blur-xl rounded-t-[28px] border-t border-white/25 p-4 shadow-2xl z-20 shrink-0 max-h-72 overflow-y-auto no-scrollbar">
+        <div className="flex flex-col gap-2.5">
+          {/* Row 1: Original 3 Models (Classic Boy, Waving Hero, Cyber Guardian) */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {CHARACTER_3D_MODELS.slice(0, 3).map((modelDef) => {
+              const isSelected = selectedModel.id === modelDef.id;
+              const unlocked = isModelUnlocked(modelDef, currentUser);
+              const equipped = isModelEquipped(modelDef, currentUser);
 
-            return (
-              <button
-                key={modelDef.id}
-                onClick={() => setSelectedModel(modelDef)}
-                className={`relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
-                  isSelected
-                    ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
-                    : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
-                }`}
-              >
-                {/* Top Card Badges */}
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
-                    {modelDef.isAnimated ? 'ANIM' : '3D'}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
-                    {modelDef.isAnimated ? 'S' : 'S'}
-                  </span>
-                </div>
-
-                {/* Center Icon Thumbnail */}
-                <div className="flex items-center justify-center my-auto text-2xl text-white/90">
-                  <i className={`fas ${modelDef.icon || 'fa-user'}`}></i>
-                </div>
-
-                {/* Bottom Model Details */}
-                <div className="w-full pt-1">
-                  <p className="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
-                    {modelDef.name}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {equipped ? (
-                      <span className="text-[10px] text-emerald-300 font-black flex items-center gap-0.5">
-                        <i className="fas fa-check-circle text-[9px]"></i> Active
-                      </span>
-                    ) : unlocked ? (
-                      <span className="text-[10px] text-amber-300 font-black flex items-center gap-0.5">
-                        <i className="fas fa-unlock text-[9px]"></i> Owned
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1">
-                        <span>🪙</span> {modelDef.price.toLocaleString()}
-                      </span>
-                    )}
+              return (
+                <button
+                  key={modelDef.id}
+                  onClick={() => setSelectedModel(modelDef)}
+                  className={`relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
+                      : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
+                  }`}
+                >
+                  {/* Top Card Badges */}
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
+                      {modelDef.isAnimated ? 'ANIM' : '3D'}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
+                      S
+                    </span>
                   </div>
-                </div>
-              </button>
-            );
-          })}
+
+                  {/* Center Icon Thumbnail */}
+                  <div className="flex items-center justify-center my-auto text-2xl text-white/90">
+                    <i className={`fas ${modelDef.icon || 'fa-user'}`}></i>
+                  </div>
+
+                  {/* Bottom Model Details */}
+                  <div className="w-full pt-1">
+                    <p className="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
+                      {modelDef.name}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {equipped ? (
+                        <span className="text-[10px] text-emerald-300 font-black flex items-center gap-0.5">
+                          <i className="fas fa-check-circle text-[9px]"></i> Active
+                        </span>
+                      ) : unlocked ? (
+                        <span className="text-[10px] text-amber-300 font-black flex items-center gap-0.5">
+                          <i className="fas fa-unlock text-[9px]"></i> Owned
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1">
+                          <span>🪙</span> {modelDef.price.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Row 2: Newly Added Models in a second horizontal row below */}
+          {CHARACTER_3D_MODELS.length > 3 && (
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 overflow-x-auto pb-0.5 no-scrollbar">
+              {CHARACTER_3D_MODELS.slice(3).map((modelDef) => {
+                const isSelected = selectedModel.id === modelDef.id;
+                const unlocked = isModelUnlocked(modelDef, currentUser);
+                const equipped = isModelEquipped(modelDef, currentUser);
+
+                return (
+                  <button
+                    key={modelDef.id}
+                    onClick={() => setSelectedModel(modelDef)}
+                    className={`relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
+                        : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
+                    }`}
+                  >
+                    {/* Top Card Badges */}
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
+                        {modelDef.isAnimated ? 'ANIM' : '3D'}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
+                        S
+                      </span>
+                    </div>
+
+                    {/* Center Icon Thumbnail */}
+                    <div className="flex items-center justify-center my-auto text-2xl text-white/90">
+                      <i className={`fas ${modelDef.icon || 'fa-user'}`}></i>
+                    </div>
+
+                    {/* Bottom Model Details */}
+                    <div className="w-full pt-1">
+                      <p className="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
+                        {modelDef.name}
+                      </p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {equipped ? (
+                          <span className="text-[10px] text-emerald-300 font-black flex items-center gap-0.5">
+                            <i className="fas fa-check-circle text-[9px]"></i> Active
+                          </span>
+                        ) : unlocked ? (
+                          <span className="text-[10px] text-amber-300 font-black flex items-center gap-0.5">
+                            <i className="fas fa-unlock text-[9px]"></i> Owned
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1">
+                            <span>🪙</span> {modelDef.price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -8344,17 +8446,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 {/* 3D Character Full Stage (Centered & Full-Body Visible, Non-interactive) */}
                 <div className="w-full h-full absolute inset-0 z-0 pointer-events-none">
                   <Profile3DCharacterView activeModelFileName={
-                    viewingUserProfile.active3dModel
-                      ? (viewingUserProfile.active3dModel.includes('model3')
-                          ? 'model3.glb'
-                          : (viewingUserProfile.active3dModel.includes('Convert_Waving') || viewingUserProfile.active3dModel.toLowerCase().includes('waving') || viewingUserProfile.active3dModel === 'waving_hero'
-                              ? 'Convert_Waving.glb'
-                              : 'character_boy_1_fbx.glb'))
-                      : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('model3') || m === 'model3'))
-                          ? 'model3.glb'
-                          : (viewingUserProfile.unlocked3dModels?.some((m: string) => typeof m === 'string' && (m.includes('Convert_Waving') || m.toLowerCase().includes('waving') || m === 'waving_hero'))
-                              ? 'Convert_Waving.glb'
-                              : 'character_boy_1_fbx.glb'))
+                    (() => {
+                      const user = viewingUserProfile;
+                      const active = user.active3dModel || (Array.isArray(user.unlocked3dModels) ? user.unlocked3dModels.find((m: any) => typeof m === 'string' && (m.includes('model') || m.includes('Waving') || m.includes('character_boy'))) : null);
+                      if (!active || typeof active !== 'string') return 'character_boy_1_fbx.glb';
+                      if (active.includes('model6')) return 'model6.glb';
+                      if (active.includes('model5')) return 'model5.glb';
+                      if (active.includes('model4')) return 'model4.glb';
+                      if (active.includes('model3')) return 'model3.glb';
+                      if (active.includes('Convert_Waving') || active.toLowerCase().includes('waving') || active === 'waving_hero' || active === 'convert_waving') return 'Convert_Waving.glb';
+                      return 'character_boy_1_fbx.glb';
+                    })()
                   } />
                 </div>
 
