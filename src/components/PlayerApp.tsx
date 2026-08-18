@@ -289,12 +289,15 @@ function preloadArenaX3DModelReact(fileName: string): Promise<any> {
   const promise = new Promise((resolve) => {
     const tryLoad = (idx: number) => {
       if (idx >= urlsToTry.length) {
+        console.warn(`[ArenaX 3D] Failed to load model "${cleanFileName}" from any candidate URL (${urlsToTry.join(', ')}). Using procedural fallback.`);
         resolve(null);
         return;
       }
+      const targetUrl = urlsToTry[idx];
       loader.load(
-        urlsToTry[idx],
+        targetUrl,
         (gltf: any) => {
+          console.log(`[ArenaX 3D] Successfully loaded model "${cleanFileName}" from ${targetUrl}`);
           if (gltf && gltf.scene) {
             gltf.scene.traverse((child: any) => {
               if (child.isMesh && child.material) {
@@ -321,7 +324,8 @@ function preloadArenaX3DModelReact(fileName: string): Promise<any> {
           resolve(gltf);
         },
         undefined,
-        () => {
+        (err: any) => {
+          console.warn(`[ArenaX 3D] Attempt ${idx + 1}/${urlsToTry.length} failed for "${targetUrl}":`, err?.message || err);
           tryLoad(idx + 1);
         }
       );
