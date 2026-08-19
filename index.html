@@ -5883,12 +5883,15 @@ function preloadArenaX3DModel(fileName) {
   const promise = new Promise((resolve) => {
     const tryLoad = (idx) => {
       if (idx >= urlsToTry.length) {
+        console.warn(`[ArenaX 3D] Failed to load model "${cleanFileName}" from any candidate URL (${urlsToTry.join(', ')}). Using procedural fallback.`);
         resolve(null);
         return;
       }
+      const targetUrl = urlsToTry[idx];
       loader.load(
-        urlsToTry[idx],
+        targetUrl,
         (gltf) => {
+          console.log(`[ArenaX 3D] Successfully loaded model "${cleanFileName}" from ${targetUrl}`);
           // Prepare textures
           if (gltf && gltf.scene) {
             gltf.scene.traverse((child) => {
@@ -5916,7 +5919,8 @@ function preloadArenaX3DModel(fileName) {
           resolve(gltf);
         },
         undefined,
-        () => {
+        (err) => {
+          console.warn(`[ArenaX 3D] Attempt ${idx + 1}/${urlsToTry.length} failed for "${targetUrl}":`, err?.message || err);
           tryLoad(idx + 1);
         }
       );
