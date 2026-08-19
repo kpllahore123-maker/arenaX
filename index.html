@@ -92,6 +92,7 @@ if ('serviceWorker' in navigator) {
 <!-- Three.js & Loaders for 3D Player Show -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <!-- Lottie Player CDN -->
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -5873,12 +5874,32 @@ function preloadArenaX3DModel(fileName) {
   if (!GLTFLoaderClass) return Promise.resolve(null);
 
   const loader = new GLTFLoaderClass();
-  const basePath = typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './';
-  const urlsToTry = [
-    basePath + cleanFileName,
+  const DRACOLoaderClass = THREE?.DRACOLoader || window.DRACOLoader;
+  if (DRACOLoaderClass) {
+    try {
+      const dracoLoader = new DRACOLoaderClass();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+      dracoLoader.setDecoderConfig({ type: 'js' });
+      loader.setDRACOLoader(dracoLoader);
+    } catch(e) {
+      console.warn('[ArenaX 3D] DRACOLoader setup error:', e);
+    }
+  }
+
+  const candidateUrls = [
     '/' + cleanFileName,
+    './' + cleanFileName,
     cleanFileName
   ];
+  if (typeof window.getAppBasePath === 'function') {
+    try {
+      const b = window.getAppBasePath();
+      if (b && b !== '/' && b !== './') {
+        candidateUrls.push(b.endsWith('/') ? b + cleanFileName : b + '/' + cleanFileName);
+      }
+    } catch(e) {}
+  }
+  const urlsToTry = Array.from(new Set(candidateUrls));
 
   const promise = new Promise((resolve) => {
     const tryLoad = (idx) => {
@@ -21859,10 +21880,24 @@ function loadPlayerShowModelFile(fileName) {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (hintEl) hintEl.classList.remove('hidden');
       } else {
+        const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+        if (isNewModel) {
+          if (loadingEl) loadingEl.classList.add('hidden');
+          if (errorEl) errorEl.classList.remove('hidden');
+          if (errMsgEl) errMsgEl.textContent = `Failed to load 3D model asset: ${cleanFileName}`;
+        } else {
+          setupProceduralFallback();
+        }
+      }
+    }).catch((err) => {
+      const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+      if (isNewModel) {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (errorEl) errorEl.classList.remove('hidden');
+        if (errMsgEl) errMsgEl.textContent = `Failed to load 3D model: ${err?.message || cleanFileName}`;
+      } else {
         setupProceduralFallback();
       }
-    }).catch(() => {
-      setupProceduralFallback();
     });
   } else {
     setupProceduralFallback();
