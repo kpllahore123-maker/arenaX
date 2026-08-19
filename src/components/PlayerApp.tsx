@@ -279,12 +279,32 @@ function preloadArenaX3DModelReact(fileName: string): Promise<any> {
   if (!GLTFLoaderClass) return Promise.resolve(null);
 
   const loader = new GLTFLoaderClass();
-  const basePath = typeof (window as any).getAppBasePath === 'function' ? (window as any).getAppBasePath() : './';
-  const urlsToTry = [
-    basePath + cleanFileName,
+  const DRACOLoaderClass = THREE?.DRACOLoader || (window as any).DRACOLoader;
+  if (DRACOLoaderClass) {
+    try {
+      const dracoLoader = new DRACOLoaderClass();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+      dracoLoader.setDecoderConfig({ type: 'js' });
+      loader.setDRACOLoader(dracoLoader);
+    } catch (e) {
+      console.warn('[ArenaX 3D React] DRACOLoader setup error:', e);
+    }
+  }
+
+  const candidateUrls = [
     '/' + cleanFileName,
+    './' + cleanFileName,
     cleanFileName
   ];
+  if (typeof (window as any).getAppBasePath === 'function') {
+    try {
+      const b = (window as any).getAppBasePath();
+      if (b && b !== '/' && b !== './') {
+        candidateUrls.push(b.endsWith('/') ? b + cleanFileName : b + '/' + cleanFileName);
+      }
+    } catch (e) {}
+  }
+  const urlsToTry = Array.from(new Set(candidateUrls));
 
   const promise = new Promise((resolve) => {
     const tryLoad = (idx: number) => {
@@ -582,13 +602,19 @@ function Profile3DCharacterView({ activeModelFileName }: { activeModelFileName?:
         setupAndFrameProfileModel(model, cloned.animations || cachedGltf.animations, shouldAnimate);
         setLoading(false);
       } else {
-        model = createProceduralCharacter();
-        setupAndFrameProfileModel(model, [], false);
+        const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+        if (!isNewModel) {
+          model = createProceduralCharacter();
+          setupAndFrameProfileModel(model, [], false);
+        }
         setLoading(false);
       }
     }).catch(() => {
-      model = createProceduralCharacter();
-      setupAndFrameProfileModel(model, [], false);
+      const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+      if (!isNewModel) {
+        model = createProceduralCharacter();
+        setupAndFrameProfileModel(model, [], false);
+      }
       setLoading(false);
     });
 
@@ -1052,16 +1078,28 @@ function PlayerShow3DViewer({
         fitCameraToTargetObject(camera, model, controls, width, height);
         setLoading(false);
       } else {
+        const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+        if (isNewModel) {
+          setLoadError(`Failed to load ${selectedModel.name} (${cleanFileName}).`);
+          setLoading(false);
+        } else {
+          model = createProceduralCharacter();
+          scene.add(model);
+          fitCameraToTargetObject(camera, model, controls, width, height);
+          setLoading(false);
+        }
+      }
+    }).catch((err: any) => {
+      const isNewModel = ['model4.glb', 'model5.glb', 'model6.glb'].includes(cleanFileName);
+      if (isNewModel) {
+        setLoadError(`Error loading ${selectedModel.name}: ${err?.message || 'Network or decoding error'}`);
+        setLoading(false);
+      } else {
         model = createProceduralCharacter();
         scene.add(model);
         fitCameraToTargetObject(camera, model, controls, width, height);
         setLoading(false);
       }
-    }).catch(() => {
-      model = createProceduralCharacter();
-      scene.add(model);
-      fitCameraToTargetObject(camera, model, controls, width, height);
-      setLoading(false);
     });
 
     // Animation loop
