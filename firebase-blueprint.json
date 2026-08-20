@@ -152,9 +152,48 @@
         "rejectReason": { "type": "string" }
       },
       "required": ["userId", "platform", "videoLink", "status"]
+    },
+    "Moment": {
+      "title": "Community Moment",
+      "description": "Short video or image highlight shared by a player",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAv": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video"] },
+        "caption": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "likeCount": { "type": "number" }
+      },
+      "required": ["userId", "userName", "mediaUrl", "mediaType"]
+    },
+    "MomentPremiumReaction": {
+      "title": "Moment Premium Reaction",
+      "description": "Animated GIF reaction by a Premium player on a Moment",
+      "type": "object",
+      "properties": {
+        "momentId": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "profilePhoto": { "type": "string" },
+        "reactionType": { "type": "string", "enum": ["cat", "teasing"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["momentId", "userId", "username", "reactionType"]
     }
   },
   "firestore": {
+    "/moments/{momentId}": {
+      "schema": "Moment",
+      "description": "Community moments feed entries"
+    },
+    "/moments/{momentId}/premiumReactions/{userId}": {
+      "schema": "MomentPremiumReaction",
+      "description": "Premium reactions associated with a specific moment"
+    },
     "/video_submissions/{docId}": {
       "schema": "VideoSubmission",
       "description": "Promo video submissions submitted by players for reviews"
