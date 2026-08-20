@@ -143,3 +143,13 @@ export interface MomentItem {
   likes?: string[];
   likeCount?: number;
 }
+
+export interface PremiumReactionItem {
+  id?: string;
+  momentId: string;
+  userId: string;
+  username: string;
+  profilePhoto?: string;
+  reactionType: 'cat' | 'teasing' | string;
+  createdAt?: any;
+}
