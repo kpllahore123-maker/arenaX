@@ -28,7 +28,8 @@ import {
   limit,
   arrayUnion,
   increment,
-  runTransaction
+  runTransaction,
+  collectionGroup
 } from 'firebase/firestore';
 import {
   UserProfile,
@@ -39,7 +40,8 @@ import {
   DirectMessage,
   SupportMessage,
   Transaction,
-  MomentItem
+  MomentItem,
+  PremiumReactionItem
 } from '../types';
 import { ReportModal } from './ReportModal';
 import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener, autoRequestPermission } from '../fcm';
@@ -1472,6 +1474,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const [showUploadMomentModal, setShowUploadMomentModal] = useState(false);
   const [selectedMomentForView, setSelectedMomentForView] = useState<MomentItem | null>(null);
 
+  // Moments Premium Reactions State
+  const [momentReactions, setMomentReactions] = useState<Record<string, PremiumReactionItem[]>>({});
+  const [reactionPickerMomentId, setReactionPickerMomentId] = useState<string | null>(null);
+  const [reactionDetailsMoment, setReactionDetailsMoment] = useState<{ moment: MomentItem; reactions: PremiumReactionItem[] } | null>(null);
+  const [submittingReaction, setSubmittingReaction] = useState(false);
+
   // Moment Upload Form State
   const [momentCaption, setMomentCaption] = useState('');
   const [momentFile, setMomentFile] = useState<File | null>(null);
@@ -1972,6 +1980,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     return () => unsub();
   }, []);
 
+  // Real-time listener for Premium Reactions collection group
+  useEffect(() => {
+    try {
+      const qReactions = query(collectionGroup(db, 'premiumReactions'));
+      const unsub = onSnapshot(qReactions, (snap) => {
+        const map: Record<string, PremiumReactionItem[]> = {};
+        snap.forEach((docSnap) => {
+          const data = docSnap.data() as PremiumReactionItem;
+          const parentMomentId = data.momentId || docSnap.ref.parent?.parent?.id;
+          if (parentMomentId) {
+            if (!map[parentMomentId]) map[parentMomentId] = [];
+            map[parentMomentId].push({
+              id: docSnap.id,
+              ...data,
+              momentId: parentMomentId
+            });
+          }
+        });
+        setMomentReactions(map);
+      }, (err) => {
+        console.warn("Error subscribing to premiumReactions:", err);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.warn("Error setting up reactions listener:", e);
+    }
+  }, []);
+
   const myMoments = moments.filter(m => currentUser && m.userId === currentUser.uid);
 
   // File Change Handler with 30-sec Video Duration Enforcement
@@ -2125,6 +2161,47 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       }
     } catch (err) {
       console.error("Failed to toggle like:", err);
+    }
+  };
+
+  // Premium Reaction Select / Toggle Handler
+  const handleSelectReaction = async (momentId: string, reactionType: 'cat' | 'teasing') => {
+    if (!currentUser) {
+      alert('Please connect your ArenaX account to react.');
+      return;
+    }
+    const isPrem = !!(currentUser.premium || (currentUser as any).isPremium || (currentUser as any).isVIP);
+    if (!isPrem) {
+      alert('👑 Premium Reactions are an exclusive feature for ArenaX Premium members! Upgrade in Profile → Premium Plans to unlock.');
+      return;
+    }
+
+    const currentReactions = momentReactions[momentId] || [];
+    const myExistingReaction = currentReactions.find(r => r.userId === currentUser.uid);
+    const reactionDocRef = doc(db, 'moments', momentId, 'premiumReactions', currentUser.uid);
+
+    try {
+      setSubmittingReaction(true);
+      if (myExistingReaction && myExistingReaction.reactionType === reactionType) {
+        // Toggle reaction off
+        await deleteDoc(reactionDocRef);
+      } else {
+        // Create or update reaction
+        await setDoc(reactionDocRef, {
+          momentId,
+          userId: currentUser.uid,
+          username: currentUser.name || 'Player',
+          profilePhoto: currentUser.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+          reactionType,
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      }
+      setReactionPickerMomentId(null);
+    } catch (err: any) {
+      console.error("Error setting premium reaction:", err);
+      alert('Failed to save reaction: ' + (err.message || 'Error'));
+    } finally {
+      setSubmittingReaction(false);
     }
   };
 
@@ -9272,9 +9349,71 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                         </span>
                       </div>
 
-                      <span className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
-                        ArenaX Moments
-                      </span>
+                      {/* Right Area / Green-Marked Section */}
+                      {(() => {
+                        const mId = m.id || '';
+                        const reactionsList = momentReactions[mId] || [];
+                        const catCount = reactionsList.filter(r => r.reactionType === 'cat').length;
+                        const teasingCount = reactionsList.filter(r => r.reactionType === 'teasing').length;
+                        const isPrem = !!(currentUser && (currentUser.premium || (currentUser as any).isPremium || (currentUser as any).isVIP));
+                        const myReac = reactionsList.find(r => currentUser && r.userId === currentUser.uid);
+
+                        return (
+                          <div className="flex items-center gap-2">
+                            {/* Reaction Summary Pill - visible to anyone if reactions exist */}
+                            {reactionsList.length > 0 && (
+                              <button
+                                onClick={() => setReactionDetailsMoment({ moment: m, reactions: reactionsList })}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-[#1b1f35] hover:bg-[#252c4a] border border-amber-400/30 text-amber-300 active:scale-95 transition cursor-pointer shadow-xs"
+                                title="View who reacted"
+                              >
+                                {catCount > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <img src="/cat.gif" alt="Cat" className="w-5 h-5 object-contain" />
+                                    <span className="text-[11px] font-extrabold text-amber-300">{catCount}</span>
+                                  </span>
+                                )}
+                                {teasingCount > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <img src="/teasing.gif" alt="Teasing" className="w-5 h-5 object-contain" />
+                                    <span className="text-[11px] font-extrabold text-amber-300">{teasingCount}</span>
+                                  </span>
+                                )}
+                              </button>
+                            )}
+
+                            {/* Premium Reaction Button - ONLY FOR PREMIUM USERS */}
+                            {isPrem && (
+                              <button
+                                onClick={() => setReactionPickerMomentId(mId)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer shadow-xs ${
+                                  myReac
+                                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(240,192,64,0.2)]'
+                                    : 'bg-gradient-to-r from-purple-500/15 via-[#1b1e32] to-amber-500/15 hover:from-purple-500/25 hover:to-amber-500/25 border-amber-400/40 hover:border-amber-400 text-amber-300'
+                                }`}
+                                title="Premium Reaction"
+                              >
+                                <i className="fas fa-crown text-[10px] text-amber-400"></i>
+                                <span>{myReac ? 'Reacted' : 'React'}</span>
+                                {myReac && (
+                                  <img
+                                    src={myReac.reactionType === 'cat' ? '/cat.gif' : '/teasing.gif'}
+                                    alt="My Reaction"
+                                    className="w-4 h-4 object-contain inline-block ml-0.5"
+                                  />
+                                )}
+                              </button>
+                            )}
+
+                            {/* Default subtle label for non-premium without reactions */}
+                            {!isPrem && reactionsList.length === 0 && (
+                              <span className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                                ArenaX Moments
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
@@ -9455,13 +9594,260 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 <span>{selectedMomentForView.likeCount || selectedMomentForView.likes?.length || 0}</span>
               </button>
 
-              {currentUser && selectedMomentForView.userId === currentUser.uid && (
-                <button
-                  onClick={() => handleDeleteMoment(selectedMomentForView.id)}
-                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl flex items-center gap-1 transition"
-                >
-                  <i className="fas fa-trash"></i> Delete
-                </button>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const mId = selectedMomentForView.id || '';
+                  const reactionsList = momentReactions[mId] || [];
+                  const catCount = reactionsList.filter(r => r.reactionType === 'cat').length;
+                  const teasingCount = reactionsList.filter(r => r.reactionType === 'teasing').length;
+                  const isPrem = !!(currentUser && (currentUser.premium || (currentUser as any).isPremium || (currentUser as any).isVIP));
+                  const myReac = reactionsList.find(r => currentUser && r.userId === currentUser.uid);
+
+                  return (
+                    <div className="flex items-center gap-2">
+                      {reactionsList.length > 0 && (
+                        <button
+                          onClick={() => setReactionDetailsMoment({ moment: selectedMomentForView, reactions: reactionsList })}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-[#1b1f35] hover:bg-[#252c4a] border border-amber-400/30 text-amber-300 active:scale-95 transition cursor-pointer shadow-xs"
+                          title="View who reacted"
+                        >
+                          {catCount > 0 && (
+                            <span className="flex items-center gap-1">
+                              <img src="/cat.gif" alt="Cat" className="w-5 h-5 object-contain" />
+                              <span className="text-[11px] font-extrabold text-amber-300">{catCount}</span>
+                            </span>
+                          )}
+                          {teasingCount > 0 && (
+                            <span className="flex items-center gap-1">
+                              <img src="/teasing.gif" alt="Teasing" className="w-5 h-5 object-contain" />
+                              <span className="text-[11px] font-extrabold text-amber-300">{teasingCount}</span>
+                            </span>
+                          )}
+                        </button>
+                      )}
+
+                      {isPrem && (
+                        <button
+                          onClick={() => setReactionPickerMomentId(mId)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer shadow-xs ${
+                            myReac
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(240,192,64,0.2)]'
+                              : 'bg-gradient-to-r from-purple-500/15 via-[#1b1e32] to-amber-500/15 hover:from-purple-500/25 hover:to-amber-500/25 border-amber-400/40 hover:border-amber-400 text-amber-300'
+                          }`}
+                          title="Premium Reaction"
+                        >
+                          <i className="fas fa-crown text-[10px] text-amber-400"></i>
+                          <span>{myReac ? 'Reacted' : 'React'}</span>
+                          {myReac && (
+                            <img
+                              src={myReac.reactionType === 'cat' ? '/cat.gif' : '/teasing.gif'}
+                              alt="My Reaction"
+                              className="w-4 h-4 object-contain inline-block ml-0.5"
+                            />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {currentUser && selectedMomentForView.userId === currentUser.uid && (
+                  <button
+                    onClick={() => handleDeleteMoment(selectedMomentForView.id)}
+                    className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl flex items-center gap-1 transition"
+                  >
+                    <i className="fas fa-trash"></i> Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PREMIUM REACTION PICKER BOTTOM SHEET MODAL ── */}
+      {reactionPickerMomentId && (
+        <div
+          className="fixed inset-0 z-[100040] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn"
+          onClick={() => setReactionPickerMomentId(null)}
+        >
+          <div
+            className="bg-[#141726] border-t sm:border border-[#2d3356] rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/20 to-purple-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shadow-xs">
+                  <i className="fas fa-crown text-sm"></i>
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Premium Reactions</h3>
+                  <p className="text-[10px] text-gray-400">Select an animated reaction</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReactionPickerMomentId(null)}
+                className="text-gray-400 hover:text-white text-sm p-1.5 transition rounded-lg hover:bg-white/5 cursor-pointer"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* 2 Reaction Options */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Cat Reaction Card */}
+              {(() => {
+                const myReac = (momentReactions[reactionPickerMomentId] || []).find(r => currentUser && r.userId === currentUser.uid);
+                const isSelected = myReac?.reactionType === 'cat';
+                return (
+                  <button
+                    onClick={() => handleSelectReaction(reactionPickerMomentId, 'cat')}
+                    disabled={submittingReaction}
+                    className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer active:scale-95 group ${
+                      isSelected
+                        ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_15px_rgba(240,192,64,0.25)]'
+                        : 'bg-[#1a1e33] border-[#292f50] hover:border-amber-400/50 hover:bg-[#20253e]'
+                    }`}
+                  >
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center p-1 group-hover:scale-105 transition">
+                      <img src="/cat.gif" alt="Cat Reaction" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="text-center">
+                      <span className="text-xs font-bold text-white block">Cat Wink</span>
+                      <span className="text-[10px] text-amber-400/80 font-semibold">{isSelected ? '✓ Selected' : 'Tap to React'}</span>
+                    </div>
+                  </button>
+                );
+              })()}
+
+              {/* Teasing Reaction Card */}
+              {(() => {
+                const myReac = (momentReactions[reactionPickerMomentId] || []).find(r => currentUser && r.userId === currentUser.uid);
+                const isSelected = myReac?.reactionType === 'teasing';
+                return (
+                  <button
+                    onClick={() => handleSelectReaction(reactionPickerMomentId, 'teasing')}
+                    disabled={submittingReaction}
+                    className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer active:scale-95 group ${
+                      isSelected
+                        ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_15px_rgba(240,192,64,0.25)]'
+                        : 'bg-[#1a1e33] border-[#292f50] hover:border-amber-400/50 hover:bg-[#20253e]'
+                    }`}
+                  >
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center p-1 group-hover:scale-105 transition">
+                      <img src="/teasing.gif" alt="Teasing Reaction" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="text-center">
+                      <span className="text-xs font-bold text-white block">Teasing Wink</span>
+                      <span className="text-[10px] text-amber-400/80 font-semibold">{isSelected ? '✓ Selected' : 'Tap to React'}</span>
+                    </div>
+                  </button>
+                );
+              })()}
+            </div>
+
+            {/* Remove Reaction Option if already reacted */}
+            {(() => {
+              const myReac = (momentReactions[reactionPickerMomentId] || []).find(r => currentUser && r.userId === currentUser.uid);
+              if (!myReac) return null;
+              return (
+                <div className="pt-2 text-center border-t border-[#252a45]">
+                  <button
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        setSubmittingReaction(true);
+                        await deleteDoc(doc(db, 'moments', reactionPickerMomentId, 'premiumReactions', currentUser.uid));
+                        setReactionPickerMomentId(null);
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setSubmittingReaction(false);
+                      }
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 font-semibold py-1 px-3 rounded-lg hover:bg-red-500/10 transition cursor-pointer"
+                  >
+                    <i className="fas fa-trash-alt mr-1"></i> Remove My Reaction
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ── WHO REACTED MODAL ── */}
+      {reactionDetailsMoment && (
+        <div
+          className="fixed inset-0 z-[100045] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setReactionDetailsMoment(null)}
+        >
+          <div
+            className="bg-[#141726] border border-[#2d3356] rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#252a45] pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shadow-xs">
+                  <i className="fas fa-crown text-sm"></i>
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Premium Reactions</h3>
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    {reactionDetailsMoment.reactions.length} total reaction{reactionDetailsMoment.reactions.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setReactionDetailsMoment(null)}
+                className="text-gray-400 hover:text-white text-sm p-1.5 transition rounded-lg hover:bg-white/5 cursor-pointer"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto flex-1 space-y-2.5 pr-1 -mr-1">
+              {reactionDetailsMoment.reactions.length === 0 ? (
+                <div className="py-8 text-center text-gray-400 text-xs">
+                  No reactions yet.
+                </div>
+              ) : (
+                reactionDetailsMoment.reactions.map((r, i) => {
+                  const isCat = r.reactionType === 'cat';
+                  const gifUrl = isCat ? '/cat.gif' : '/teasing.gif';
+                  const reacLabel = isCat ? 'Cat Wink' : 'Teasing Wink';
+                  return (
+                    <div
+                      key={r.id || `${r.userId}-${i}`}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#1b1f35] border border-[#262c4c]"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={r.profilePhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${r.userId}`}
+                          alt={r.username}
+                          className="w-9 h-9 rounded-full object-cover border border-amber-400/40 bg-[#101320]"
+                        />
+                        <div>
+                          <h5 className="text-xs font-bold text-white flex items-center gap-1">
+                            <span className="golden-name-shimmer text-amber-300 font-extrabold">{r.username}</span>
+                            <i className="fas fa-crown text-amber-400 text-[10px]" title="Premium"></i>
+                          </h5>
+                          <span className="text-[10px] text-gray-400">
+                            {r.createdAt && r.createdAt.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 border border-white/10">
+                        <img src={gifUrl} alt={reacLabel} className="w-6 h-6 object-contain" />
+                        <span className="text-[10px] font-bold text-amber-300 hidden xs:inline">{reacLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
