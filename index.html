@@ -5085,6 +5085,63 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
+<!-- ── PREMIUM REACTION PICKER BOTTOM SHEET MODAL (HTML) ── -->
+<div id="mPremiumReactionPickerModal" class="fixed inset-0 z-[100040] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden animate-fadeIn">
+  <div class="bg-[#141726] border-t sm:border border-[#2d3356] rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[#252a45] pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/20 to-purple-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shadow-xs">
+          <i class="fas fa-crown text-sm"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-extrabold text-white">Premium Reactions</h3>
+          <p class="text-[10px] text-gray-400">Select an animated reaction</p>
+        </div>
+      </div>
+      <button onclick="closePremiumReactionPicker()" class="text-gray-400 hover:text-white text-sm p-1.5 transition rounded-lg hover:bg-white/5 cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Reactions Container -->
+    <div id="premiumReactionPickerOptions" class="grid grid-cols-2 gap-3 pt-1">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Remove reaction container -->
+    <div id="premiumReactionPickerRemoveArea" class="pt-2 text-center border-t border-[#252a45] hidden">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ── WHO REACTED MODAL (HTML) ── -->
+<div id="mWhoReactedModal" class="fixed inset-0 z-[100045] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-fadeIn">
+  <div class="bg-[#141726] border border-[#2d3356] rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[#252a45] pb-3 shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shadow-xs">
+          <i class="fas fa-crown text-sm"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-extrabold text-white">Premium Reactions</h3>
+          <span id="whoReactedSubtitle" class="text-[10px] text-gray-400 font-medium">0 reactions</span>
+        </div>
+      </div>
+      <button onclick="closeWhoReactedModal()" class="text-gray-400 hover:text-white text-sm p-1.5 transition rounded-lg hover:bg-white/5 cursor-pointer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- List -->
+    <div id="whoReactedList" class="overflow-y-auto flex-1 space-y-2.5 pr-1 -mr-1">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
 <!-- ── 3D PLAYER SHOW VIEWER FULL PAGE ── -->
 <div id="pPlayerShowViewerPage" class="fixed inset-0 bg-gradient-to-b from-[#8ba7cb] via-[#a2bfde] to-[#c8dbee] z-[100050] flex flex-col h-full w-full text-white hidden select-none overflow-hidden">
   <!-- Top Header Bar matching Reference -->
@@ -20770,6 +20827,9 @@ function safeMomentTxt(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+let allMomentReactionsMap = {};
+let reactionsSubscribed = false;
+
 function initMomentsListener() {
   if (momentsSubscribed) return;
   momentsSubscribed = true;
@@ -20792,6 +20852,37 @@ function initMomentsListener() {
     });
   } catch(e) {
     console.warn("Failed to subscribe to moments:", e);
+  }
+
+  // Also subscribe to all premiumReactions
+  if (!reactionsSubscribed) {
+    reactionsSubscribed = true;
+    try {
+      const qReactions = query(collectionGroup(db, 'premiumReactions'));
+      onSnapshot(qReactions, (snap) => {
+        const map = {};
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          const pMomentId = data.momentId || docSnap.ref.parent?.parent?.id;
+          if (pMomentId) {
+            if (!map[pMomentId]) map[pMomentId] = [];
+            map[pMomentId].push({
+              id: docSnap.id,
+              ...data,
+              momentId: pMomentId
+            });
+          }
+        });
+        allMomentReactionsMap = map;
+        if ($('mMomentsFeedModal') && !$('mMomentsFeedModal').classList.contains('hidden')) {
+          renderMomentsFeedPage();
+        }
+      }, (err) => {
+        console.warn("Error listening to reactions:", err);
+      });
+    } catch(e) {
+      console.warn("Failed to subscribe to reactions:", e);
+    }
   }
 }
 
@@ -20926,6 +21017,7 @@ function renderMomentsFeedPage() {
   const container = $('momentsFeedPageContent');
   if (!container) return;
   const profile = userProfile || guestProfile || window.currentUser;
+  const isPremUser = !!(profile && (profile.premium || profile.isPremium || profile.isVIP));
 
   // Header Title Update if element exists
   if ($('momentsFeedTitle')) {
@@ -20958,6 +21050,12 @@ function renderMomentsFeedPage() {
       const isMine = profile && m.userId === profile.uid;
       const dateStr = m.createdAt && m.createdAt.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : 'Just now';
       const userHtml = window.formatPlayerNameHtml(m, 'text-xs font-bold');
+
+      // Reactions calculations
+      const reactions = allMomentReactionsMap[m.id] || [];
+      const catCount = reactions.filter(r => r.reactionType === 'cat').length;
+      const teasingCount = reactions.filter(r => r.reactionType === 'teasing').length;
+      const myReac = profile ? reactions.find(r => r.userId === profile.uid) : null;
 
       return `
         <div class="bg-[#141726] border border-[#252a45] rounded-2xl overflow-hidden shadow-xl space-y-3 p-3.5">
@@ -21019,13 +21117,246 @@ function renderMomentsFeedPage() {
                 ${m.likeCount || (m.likes ? m.likes.length : 0)}
               </span>
             </div>
-            <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">ArenaX Moments</span>
+
+            <!-- Right Area: Premium Reactions UI -->
+            <div class="flex items-center gap-2">
+              ${reactions.length > 0 ? `
+                <button
+                  type="button"
+                  onclick="openWhoReactedModal('${m.id}')"
+                  class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-[#1b1f35] hover:bg-[#252c4a] border border-amber-400/30 text-amber-300 active:scale-95 transition cursor-pointer shadow-xs"
+                  title="View who reacted"
+                >
+                  ${catCount > 0 ? `
+                    <span class="flex items-center gap-1">
+                      <img src="/cat.gif" alt="Cat" class="w-5 h-5 object-contain" />
+                      <span class="text-[11px] font-extrabold text-amber-300">${catCount}</span>
+                    </span>
+                  ` : ''}
+                  ${teasingCount > 0 ? `
+                    <span class="flex items-center gap-1">
+                      <img src="/teasing.gif" alt="Teasing" class="w-5 h-5 object-contain" />
+                      <span class="text-[11px] font-extrabold text-amber-300">${teasingCount}</span>
+                    </span>
+                  ` : ''}
+                </button>
+              ` : ''}
+
+              ${isPremUser ? `
+                <button
+                  type="button"
+                  onclick="openPremiumReactionPicker('${m.id}')"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer shadow-xs ${
+                    myReac
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(240,192,64,0.2)]'
+                      : 'bg-gradient-to-r from-purple-500/15 via-[#1b1e32] to-amber-500/15 hover:from-purple-500/25 hover:to-amber-500/25 border-amber-400/40 hover:border-amber-400 text-amber-300'
+                  }"
+                  title="Premium Reaction"
+                >
+                  <i class="fas fa-crown text-[10px] text-amber-400"></i>
+                  <span>${myReac ? 'Reacted' : 'React'}</span>
+                  ${myReac ? `
+                    <img src="${myReac.reactionType === 'cat' ? '/cat.gif' : '/teasing.gif'}" alt="Reaction" class="w-4 h-4 object-contain inline-block ml-0.5" />
+                  ` : ''}
+                </button>
+              ` : ''}
+
+              ${!isPremUser && reactions.length === 0 ? `
+                <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">ArenaX Moments</span>
+              ` : ''}
+            </div>
           </div>
         </div>
       `;
     }).join('');
   }
 }
+
+// Premium Reaction Picker & Details Handlers
+let activeReactionPickerMomentId = null;
+
+function openPremiumReactionPicker(momentId) {
+  activeReactionPickerMomentId = momentId;
+  const profile = userProfile || guestProfile || window.currentUser;
+  if (!profile) {
+    alert('Please sign in to react.');
+    return;
+  }
+  const isPrem = !!(profile.premium || profile.isPremium || profile.isVIP);
+  if (!isPrem) {
+    alert('👑 Premium Reactions are exclusive to ArenaX Premium members!');
+    return;
+  }
+
+  const reactions = allMomentReactionsMap[momentId] || [];
+  const myReac = reactions.find(r => r.userId === profile.uid);
+
+  const container = $('premiumReactionPickerOptions');
+  if (container) {
+    container.innerHTML = `
+      <button
+        onclick="submitPremiumReaction('${momentId}', 'cat')"
+        class="p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer active:scale-95 group ${
+          myReac && myReac.reactionType === 'cat'
+            ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_15px_rgba(240,192,64,0.25)]'
+            : 'bg-[#1a1e33] border-[#292f50] hover:border-amber-400/50 hover:bg-[#20253e]'
+        }"
+      >
+        <div class="w-20 h-20 rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center p-1 group-hover:scale-105 transition">
+          <img src="/cat.gif" alt="Cat Reaction" class="w-full h-full object-contain" />
+        </div>
+        <div class="text-center">
+          <span class="text-xs font-bold text-white block">Cat Wink</span>
+          <span class="text-[10px] text-amber-400/80 font-semibold">${myReac && myReac.reactionType === 'cat' ? '✓ Selected' : 'Tap to React'}</span>
+        </div>
+      </button>
+
+      <button
+        onclick="submitPremiumReaction('${momentId}', 'teasing')"
+        class="p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer active:scale-95 group ${
+          myReac && myReac.reactionType === 'teasing'
+            ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_15px_rgba(240,192,64,0.25)]'
+            : 'bg-[#1a1e33] border-[#292f50] hover:border-amber-400/50 hover:bg-[#20253e]'
+        }"
+      >
+        <div class="w-20 h-20 rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center p-1 group-hover:scale-105 transition">
+          <img src="/teasing.gif" alt="Teasing Reaction" class="w-full h-full object-contain" />
+        </div>
+        <div class="text-center">
+          <span class="text-xs font-bold text-white block">Teasing Wink</span>
+          <span class="text-[10px] text-amber-400/80 font-semibold">${myReac && myReac.reactionType === 'teasing' ? '✓ Selected' : 'Tap to React'}</span>
+        </div>
+      </button>
+    `;
+  }
+
+  const removeArea = $('premiumReactionPickerRemoveArea');
+  if (removeArea) {
+    if (myReac) {
+      removeArea.classList.remove('hidden');
+      removeArea.innerHTML = `
+        <button
+          onclick="removePremiumReaction('${momentId}')"
+          class="text-xs text-red-400 hover:text-red-300 font-semibold py-1 px-3 rounded-lg hover:bg-red-500/10 transition cursor-pointer"
+        >
+          <i class="fas fa-trash-alt mr-1"></i> Remove My Reaction
+        </button>
+      `;
+    } else {
+      removeArea.classList.add('hidden');
+    }
+  }
+
+  if ($('mPremiumReactionPickerModal')) {
+    $('mPremiumReactionPickerModal').classList.remove('hidden');
+  }
+}
+
+function closePremiumReactionPicker() {
+  activeReactionPickerMomentId = null;
+  if ($('mPremiumReactionPickerModal')) {
+    $('mPremiumReactionPickerModal').classList.add('hidden');
+  }
+}
+
+async function submitPremiumReaction(momentId, reactionType) {
+  const profile = userProfile || guestProfile || window.currentUser;
+  if (!profile) return;
+  const reactions = allMomentReactionsMap[momentId] || [];
+  const myReac = reactions.find(r => r.userId === profile.uid);
+
+  try {
+    const docRef = doc(db, 'moments', momentId, 'premiumReactions', profile.uid);
+    if (myReac && myReac.reactionType === reactionType) {
+      await deleteDoc(docRef);
+    } else {
+      await setDoc(docRef, {
+        momentId,
+        userId: profile.uid,
+        username: profile.name || 'Player',
+        profilePhoto: profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid}`,
+        reactionType,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+    }
+    closePremiumReactionPicker();
+  } catch(e) {
+    console.error("Failed to submit reaction:", e);
+    alert('Failed to save reaction: ' + (e.message || 'Error'));
+  }
+}
+
+async function removePremiumReaction(momentId) {
+  const profile = userProfile || guestProfile || window.currentUser;
+  if (!profile) return;
+  try {
+    const docRef = doc(db, 'moments', momentId, 'premiumReactions', profile.uid);
+    await deleteDoc(docRef);
+    closePremiumReactionPicker();
+  } catch(e) {
+    console.error("Failed to delete reaction:", e);
+  }
+}
+
+function openWhoReactedModal(momentId) {
+  const reactions = allMomentReactionsMap[momentId] || [];
+  if ($('whoReactedSubtitle')) {
+    $('whoReactedSubtitle').textContent = `${reactions.length} total reaction${reactions.length === 1 ? '' : 's'}`;
+  }
+  const listEl = $('whoReactedList');
+  if (listEl) {
+    if (reactions.length === 0) {
+      listEl.innerHTML = '<div class="py-8 text-center text-gray-400 text-xs">No reactions yet.</div>';
+    } else {
+      listEl.innerHTML = reactions.map(r => {
+        const isCat = r.reactionType === 'cat';
+        const gif = isCat ? '/cat.gif' : '/teasing.gif';
+        const label = isCat ? 'Cat Wink' : 'Teasing Wink';
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#1b1f35] border border-[#262c4c]">
+            <div class="flex items-center gap-2.5">
+              <img
+                src="${r.profilePhoto || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + r.userId}"
+                alt="${safeMomentTxt(r.username)}"
+                class="w-9 h-9 rounded-full object-cover border border-amber-400/40 bg-[#101320]"
+              />
+              <div>
+                <h5 class="text-xs font-bold text-white flex items-center gap-1">
+                  <span class="golden-name-shimmer text-amber-300 font-extrabold">${safeMomentTxt(r.username)}</span>
+                  <i class="fas fa-crown text-amber-400 text-[10px]" title="Premium"></i>
+                </h5>
+                <span class="text-[10px] text-gray-400">
+                  ${r.createdAt && r.createdAt.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 border border-white/10">
+              <img src="${gif}" alt="${label}" class="w-6 h-6 object-contain" />
+              <span class="text-[10px] font-bold text-amber-300 hidden xs:inline">${label}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  if ($('mWhoReactedModal')) {
+    $('mWhoReactedModal').classList.remove('hidden');
+  }
+}
+
+function closeWhoReactedModal() {
+  if ($('mWhoReactedModal')) {
+    $('mWhoReactedModal').classList.add('hidden');
+  }
+}
+
+window.openPremiumReactionPicker = openPremiumReactionPicker;
+window.closePremiumReactionPicker = closePremiumReactionPicker;
+window.submitPremiumReaction = submitPremiumReaction;
+window.removePremiumReaction = removePremiumReaction;
+window.openWhoReactedModal = openWhoReactedModal;
+window.closeWhoReactedModal = closeWhoReactedModal;
 
 // 4. Modal Visibility Toggles
 function openMomentsProfileModal() {
