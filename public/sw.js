@@ -1,29 +1,47 @@
 // ArenaX Unified PWA Service Worker (Offline & Push Notifications)
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+if (typeof firebase === 'undefined') {
+  try {
+    importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+    importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+  } catch (e) {
+    console.warn('[sw.js] Firebase scripts could not be imported:', e);
+  }
+}
 
-firebase.initializeApp({
-  apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
-  authDomain: "arenax-c1586.firebaseapp.com",
-  projectId: "arenax-c1586",
-  storageBucket: "arenax-c1586.firebasestorage.app",
-  messagingSenderId: "1069776825982",
-  appId: "1:1069776825982:web:f2d7f11cef4c206206b22f"
-});
+if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
+    authDomain: "arenax-c1586.firebaseapp.com",
+    projectId: "arenax-c1586",
+    storageBucket: "arenax-c1586.firebasestorage.app",
+    messagingSenderId: "1069776825982",
+    appId: "1:1069776825982:web:f2d7f11cef4c206206b22f"
+  });
+}
 
-const messaging = firebase.messaging();
+if (typeof firebase !== 'undefined' && firebase.messaging) {
+  try {
+    const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  console.log('[sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification?.title || 'ArenaX Notification';
-  const notificationOptions = {
-    body: payload.notification?.body || '',
-    icon: payload.notification?.icon || 'favicon.ico',
-    data: payload.data
-  };
+    messaging.onBackgroundMessage((payload) => {
+      console.log('[sw.js] Received background message ', payload);
+      const notificationTitle = payload.notification?.title || payload.data?.title || 'ArenaX Notification';
+      const notificationOptions = {
+        body: payload.notification?.body || payload.data?.body || '',
+        icon: payload.notification?.icon || payload.data?.icon || 'arenax_logo.jpg',
+        badge: payload.notification?.badge || payload.data?.badge || 'favicon.ico',
+        data: {
+          url: payload.fcmOptions?.link || payload.notification?.click_action || payload.data?.click_action || payload.data?.url || './',
+          ...payload.data
+        }
+      };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
+      self.registration.showNotification(notificationTitle, notificationOptions);
+    });
+  } catch (e) {
+    console.warn('[sw.js] Error attaching onBackgroundMessage:', e);
+  }
+}
 
 // Cache & Offline Support
 const CACHE_NAME = 'arenax-cache-v11';
