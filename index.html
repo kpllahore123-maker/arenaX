@@ -546,6 +546,168 @@ if (typeof tailwind !== 'undefined') {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+  /* ── ArenaX Splash Screen Styles ── */
+  :root{
+    --violet:#9B7BFF; --magenta:#FF5CB0; --cyan:#3DD8FF; --mint:#2EE8B4;
+    --text:#F4F6FB; --muted:#8B93A7;
+  }
+
+  /* ── stage ─────────────────────────────────────────── */
+  .splash{
+    position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;
+    z-index:9999999 !important;
+    display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;
+    background:radial-gradient(130% 100% at 50% 0%,#12172A 0%,#05070C 70%) !important;
+    transition:opacity .6s cubic-bezier(0.4, 0, 0.2, 1),transform .6s cubic-bezier(0.4, 0, 0.2, 1),visibility .6s ease;
+    opacity:1;
+    pointer-events:auto;
+    user-select:none;
+    overflow:hidden;
+  }
+  body.done .splash{
+    opacity:0 !important;
+    transform:scale(1.06) !important;
+    pointer-events:none !important;
+    visibility:hidden !important;
+  }
+
+  .glow{
+    position:absolute;width:min(65vw,320px);height:min(65vw,320px);border-radius:50%;
+    background:radial-gradient(circle,rgba(124,77,255,.42),rgba(255,46,158,.18) 52%,transparent 72%);
+    filter:blur(16px);opacity:1;
+    pointer-events:none;
+    animation:glowIn 1.4s ease forwards, glowFloat 3s ease-in-out 1.4s infinite alternate;
+  }
+  @keyframes glowIn{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:scale(1)}}
+  @keyframes glowFloat{0%{transform:scale(0.95);opacity:0.8}100%{transform:scale(1.05);opacity:1}}
+
+  /* ── logo group (mark + wordmark + tagline) ────────── */
+  .logo{
+    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:2;
+    animation:floatLogo 3.2s ease-in-out infinite;
+  }
+  @keyframes floatLogo{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+  .mark{
+    position:relative;width:min(28vw,120px);height:min(28vw,120px);aspect-ratio:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mark svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+
+  /* 4 distinct colored arms with stroke draw & continuous pinwheel pulse */
+  .arm{
+    stroke-linecap:round;stroke-width:72;fill:none;opacity:1;
+  }
+  .arm-1{
+    stroke:#9B7BFF;
+    animation:drawArm1 .55s cubic-bezier(.4,0,.2,1) .05s both, pinwheelPulse 1.4s ease-in-out 1.6s infinite;
+  }
+  .arm-2{
+    stroke:#FF5CB0;
+    animation:drawArm2 .55s cubic-bezier(.4,0,.2,1) .22s both, pinwheelPulse 1.4s ease-in-out 1.95s infinite;
+  }
+  .arm-3{
+    stroke:#3DD8FF;
+    animation:drawArm3 .55s cubic-bezier(.4,0,.2,1) .39s both, pinwheelPulse 1.4s ease-in-out 2.30s infinite;
+  }
+  .arm-4{
+    stroke:#2EE8B4;
+    animation:drawArm4 .55s cubic-bezier(.4,0,.2,1) .56s both, pinwheelPulse 1.4s ease-in-out 2.65s infinite;
+  }
+
+  @keyframes drawArm1{
+    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
+    30%{opacity:1}
+    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
+  }
+  @keyframes drawArm2{
+    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
+    30%{opacity:1}
+    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
+  }
+  @keyframes drawArm3{
+    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
+    30%{opacity:1}
+    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
+  }
+  @keyframes drawArm4{
+    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
+    30%{opacity:1}
+    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
+  }
+
+  @keyframes pinwheelPulse{
+    0%,100%{opacity:1}
+    50%{opacity:0.18}
+  }
+
+  /* ── wordmark: "Arena" + custom woven X glyph ──────── */
+  .wordmark{
+    margin-top:24px;font-size:clamp(32px,7.5vw,46px);font-weight:800;letter-spacing:-.02em;
+    color:var(--text);display:flex;align-items:center;justify-content:center;line-height:1;
+    opacity:1;transform:translateY(0);
+    animation:riseWordmark .6s ease .6s both;
+  }
+  @keyframes riseWordmark{
+    0%{opacity:0;transform:translateY(12px)}
+    100%{opacity:1;transform:translateY(0)}
+  }
+
+  .x-glyph{
+    height:0.76em;width:0.72em;min-width:24px;min-height:24px;
+    margin-left:2px;display:inline-block;vertical-align:middle;overflow:visible;flex-shrink:0;
+  }
+
+  .tagline{
+    margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--muted);text-align:center;
+    opacity:1;transform:translateY(0);
+    animation:riseTagline .6s ease .8s both;
+  }
+  @keyframes riseTagline{
+    0%{opacity:0;transform:translateY(10px)}
+    100%{opacity:1;transform:translateY(0)}
+  }
+
+  /* ── status + progress ─────────────────────────────── */
+  .loader-row{
+    display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:36px;
+    z-index:2;
+    opacity:1;transform:translateY(0);
+    animation:riseLoader .6s ease 1.0s both;
+  }
+  @keyframes riseLoader{
+    0%{opacity:0;transform:translateY(10px)}
+    100%{opacity:1;transform:translateY(0)}
+  }
+
+  .status{color:var(--muted);font-size:13px;font-weight:500;min-height:18px;letter-spacing:.04em;text-align:center}
+  .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+
+  .track{width:min(45vw,190px);height:4px;border-radius:999px;background:#1C2233;overflow:hidden;position:relative}
+  .fill{
+    height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg,#7C4DFF,#FF2E9E,#00C8FF);
+    transform-origin:left center;
+    animation:fillProgress 2.2s cubic-bezier(.3,0,.2,1) 1.0s both;
+  }
+  @keyframes fillProgress{
+    0%{transform:scaleX(0)}
+    100%{transform:scaleX(1)}
+  }
+
+  .foot{position:absolute;bottom:22px;font-size:11px;color:#565E72;letter-spacing:.08em;text-align:center;font-weight:500;z-index:2}
+
+  /* ── accessibility ─────────────────────────────────── */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0ms !important;animation-iteration-count:1 !important}
+    .arm-1,.arm-2,.arm-3,.arm-4{stroke-dasharray:none !important;stroke-dashoffset:0 !important;opacity:1 !important}
+    .wordmark,.tagline,.loader-row,.glow{opacity:1 !important;transform:none !important}
+    .fill{transform:scaleX(1) !important}
+  }
 </style>
 
 </head>
@@ -555,30 +717,114 @@ if (typeof tailwind !== 'undefined') {
 <div id="cur" class="hidden md:block"></div>
 <div id="curR" class="hidden md:block"></div>
 
-<!-- ==================== SPLASH / LOADING SCREEN ==================== -->
-<div id="sSplash" class="fixed inset-0 bg-[#0a0c12] z-[200] flex flex-col items-center justify-center p-4">
-  <div class="absolute inset-0 pointer-events-none overflow-hidden">
-    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-[#f0c040]/10 to-transparent rounded-full filter blur-[130px]"></div>
+<!-- ==================== ARENAX SPLASH / LOADING SCREEN ==================== -->
+<div class="splash" id="sSplash">
+  <div class="glow"></div>
+
+  <div class="logo">
+    <!-- the 4-blade X mark -->
+    <div class="mark">
+      <svg viewBox="0 0 512 512" aria-label="ArenaX Logo">
+        <g>
+          <line class="arm arm-1" x1="316.8" y1="246.1" x2="401.7" y2="161.2"/>
+          <line class="arm arm-2" x1="265.9" y1="316.8" x2="350.8" y2="401.7"/>
+          <line class="arm arm-3" x1="195.2" y1="265.9" x2="110.3" y2="350.8"/>
+          <line class="arm arm-4" x1="246.1" y1="195.2" x2="161.2" y2="110.3"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="wordmark">
+      <span>Arena</span><svg class="x-glyph" viewBox="0 0 104 112" aria-hidden="true">
+        <defs>
+          <linearGradient id="wxa" x1="12" y1="100" x2="92" y2="12" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#9B7BFF"/>
+            <stop offset="100%" stop-color="#3DD8FF"/>
+          </linearGradient>
+          <linearGradient id="wxb" x1="12" y1="12" x2="92" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FF5CB0"/>
+            <stop offset="100%" stop-color="#FF9A66"/>
+          </linearGradient>
+          <mask id="wxm" maskUnits="userSpaceOnUse" x="0" y="0" width="104" height="112">
+            <rect width="104" height="112" fill="#ffffff"/>
+            <line x1="12" y1="12" x2="92" y2="100" stroke="#000000" stroke-width="43" stroke-linecap="round"/>
+          </mask>
+        </defs>
+        <g stroke-linecap="round" fill="none">
+          <g mask="url(#wxm)">
+            <line x1="12" y1="100" x2="92" y2="12" stroke="url(#wxa)" stroke-width="30"/>
+          </g>
+          <line x1="12" y1="12" x2="92" y2="100" stroke="url(#wxb)" stroke-width="30"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="tagline">ENTER THE ARENA</div>
   </div>
-  <div class="relative text-center space-y-6">
-    <!-- Top Icon Badge replaced with arenaX.png -->
-    <div class="w-28 h-28 sm:w-32 sm:h-32 mx-auto flex items-center justify-center animate-pulse">
-      <img src="arenaX.png" alt="ArenaX" class="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(240,192,64,0.35)]" referrerPolicy="no-referrer" />
-    </div>
-    <div class="space-y-2">
-      <div class="flex items-center justify-center leading-none">
-        <span class="font-display text-4xl sm:text-5xl font-extrabold tracking-wider text-white">Arena</span>
-        <img src="AX.png" alt="X" class="h-11 sm:h-14 w-auto object-contain inline-block -ml-2.5 sm:-ml-3" referrerPolicy="no-referrer" />
-      </div>
-      <p class="text-[11px] text-[#f0c040] tracking-[3px] uppercase font-bold">COMPETE · RISE · DOMINATE</p>
-    </div>
-    <div class="flex flex-col items-center gap-1 pt-2">
-      <!-- Gold Lottie Animation Loader --> 
-      <lottie-player src="./loading.json" background="transparent" speed="1.2" style="width: 160px; height: 100px; filter: drop-shadow(0 0 8px rgba(240,192,64,0.3));" loop autoplay class="mx-auto"></lottie-player>  
-      <span class="text-[9px] text-[#f0c040] uppercase font-black tracking-widest font-mono animate-pulse">ENTERING ARENA...</span>  
-    </div>
-  </div>  
+
+  <div class="loader-row">
+    <div class="status dots" id="splashStatus">Preparing the arena</div>
+    <div class="track"><div class="fill"></div></div>
+  </div>
+
+  <div class="foot">© 2026 ArenaX</div>
 </div>
+
+<script>
+  /* ── ArenaX Splash Controller API ── */
+  var ArenaSplash = {
+    startTime: Date.now(),
+    minDuration: 2800,
+    isFinished: false,
+    appReady: false,
+    status: function(text){
+      var el = document.getElementById('splashStatus');
+      if (el) {
+        if (text === 'Ready') {
+          el.textContent = 'Ready';
+          el.classList.remove('dots');
+        } else {
+          el.textContent = text;
+          el.classList.add('dots');
+        }
+      }
+    },
+    finish: function(force){
+      this.appReady = true;
+      if (this.isFinished) return;
+      var elapsed = Date.now() - this.startTime;
+      var remaining = Math.max(0, this.minDuration - elapsed);
+
+      if (force || remaining <= 0) {
+        this.isFinished = true;
+        this.status('Ready');
+        setTimeout(function(){
+          document.body.classList.add('done');
+          setTimeout(function(){
+            var splash = document.getElementById('sSplash');
+            if (splash) {
+              splash.style.pointerEvents = 'none';
+              splash.style.display = 'none';
+            }
+          }, 650);
+        }, 350);
+      } else {
+        var self = this;
+        setTimeout(function(){
+          self.finish(true);
+        }, remaining);
+      }
+    }
+  };
+  window.ArenaSplash = ArenaSplash;
+
+  // Auto safety trigger: ensure splash transitions cleanly once full intro animation completes
+  setTimeout(function(){
+    if (window.ArenaSplash && !window.ArenaSplash.isFinished) {
+      window.ArenaSplash.finish(true);
+    }
+  }, 4500);
+</script>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
 <div id="sLogin" class="fixed inset-0 bg-[#0a0c12] z-[100] flex items-center justify-center p-4 hidden">
@@ -6043,18 +6289,9 @@ function goTo(screenId) {
   const target = $(screenId);
   if (target) target.classList.remove('hidden');
 
-  // Permanently hide and destroy splash screen once route changes
-  const splash = $('sSplash');
-  if (splash) {
-    splashDismissed = true;
-    splash.classList.add('opacity-0', 'hidden');
-    splash.style.pointerEvents = 'none';
-    splash.style.display = 'none';
-    try {
-      splash.remove();
-    } catch (err) {
-      if (splash.parentNode) splash.parentNode.removeChild(splash);
-    }
+  // Trigger smooth ArenaX splash exit if not already dismissed
+  if (window.ArenaSplash) {
+    window.ArenaSplash.finish();
   }
 }
 window.goTo = goTo;
@@ -6369,17 +6606,9 @@ function boot() {
   loadLiveNotifications();
   initGlobalChat();
   
-  // Ensure splash screen is completely removed from DOM
-  const splash = $('sSplash');
-  if (splash) {
-    splash.classList.add('opacity-0', 'hidden');
-    splash.style.pointerEvents = 'none';
-    splash.style.display = 'none';
-    try {
-      splash.remove();
-    } catch (err) {
-      if (splash.parentNode) splash.parentNode.removeChild(splash);
-    }
+  if (window.ArenaSplash) {
+    window.ArenaSplash.status('Ready');
+    window.ArenaSplash.finish();
   }
 
   goTo('sDash');
@@ -13602,16 +13831,8 @@ function dismissUnderDevBannerModal() {
     popup.classList.add('hidden');
     popup.style.display = 'none';
   }
-  const splash = $('sSplash');
-  if (splash) {
-    splash.classList.add('opacity-0', 'hidden');
-    splash.style.pointerEvents = 'none';
-    splash.style.display = 'none';
-    try {
-      splash.remove();
-    } catch (err) {
-      if (splash.parentNode) splash.parentNode.removeChild(splash);
-    }
+  if (window.ArenaSplash) {
+    window.ArenaSplash.finish();
   }
   if (typeof window.checkAndShowNotificationPopup === 'function') {
     window.checkAndShowNotificationPopup();
