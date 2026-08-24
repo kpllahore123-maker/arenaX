@@ -2784,6 +2784,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       (window as any).currentUser = currentUser;
       (window as any).userProfile = currentUser;
       if (isGuest) (window as any).guestProfile = currentUser;
+      if ((window as any).ArenaSplash) {
+        (window as any).ArenaSplash.finish();
+      }
     } else {
       (window as any).currentUser = null;
       (window as any).userProfile = null;
