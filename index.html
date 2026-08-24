@@ -5785,9 +5785,15 @@ if ('serviceWorker' in navigator) {
   const registerSW = async () => {
     try {
       const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
-      const swPath = basePath + 'sw.js';
+      const swPath = basePath + 'firebase-messaging-sw.js';
       console.log('Registering Service Worker for ArenaX at:', swPath);
-      const reg = await navigator.serviceWorker.register(swPath);
+      let reg;
+      try {
+        reg = await navigator.serviceWorker.register(swPath);
+      } catch (swErr) {
+        console.warn('Fallback registering sw.js:', swErr);
+        reg = await navigator.serviceWorker.register(basePath + 'sw.js');
+      }
       console.log('Service Worker registered successfully with scope:', reg.scope);
       
       // Setup PWA Update detection and auto-update flow
@@ -5803,12 +5809,16 @@ if ('serviceWorker' in navigator) {
             console.log('FCM: Foreground message received:', payload);
             // Show foreground notification as browser notification if possible
             if (Notification.permission === 'granted') {
-              const title = payload.notification?.title || 'ArenaX Tournament Alert';
+              const title = payload.notification?.title || payload.data?.title || 'ArenaX Tournament Alert';
               const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
               const options = {
-                body: payload.notification?.body || '',
-                icon: payload.notification?.icon || basePath + 'icon-192.png',
-                data: payload.data
+                body: payload.notification?.body || payload.data?.body || '',
+                icon: payload.notification?.icon || payload.data?.icon || basePath + 'icon-192.png',
+                badge: payload.notification?.badge || payload.data?.badge || basePath + 'favicon.ico',
+                data: {
+                  url: payload.fcmOptions?.link || payload.notification?.click_action || payload.data?.click_action || payload.data?.url || './',
+                  ...payload.data
+                }
               };
               new Notification(title, options);
             }
@@ -5856,8 +5866,14 @@ async function requestFCMToken(showSuccessAlert = false) {
     }
     
     const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
-    const swPath = basePath + 'sw.js';
-    const reg = await navigator.serviceWorker.register(swPath);
+    const swPath = basePath + 'firebase-messaging-sw.js';
+    let reg;
+    try {
+      reg = await navigator.serviceWorker.register(swPath);
+    } catch (swErr) {
+      reg = await navigator.serviceWorker.register(basePath + 'sw.js');
+    }
+    await navigator.serviceWorker.ready;
     
     const token = await getToken(messaging, {
       vapidKey: "BDdgfDjDrlojgRVmno7aaRuIpUyZMBI7Dh-EnXLBvXzXMsIsvojEag3SvYX63M67MtIClFHUMkyiCmmIwA00FEM",
