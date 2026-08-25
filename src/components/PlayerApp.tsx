@@ -45,6 +45,7 @@ import {
 } from '../types';
 import { ReportModal } from './ReportModal';
 import { requestNotificationPermissionAndGetToken, setupForegroundNotificationListener, autoRequestPermission } from '../fcm';
+import { sendPersonalNotification, formatGiftDisplayName } from '../fcmNotifications';
 
 interface PlayerAppProps {
   onSwitchToAdmin: () => void;
@@ -1887,6 +1888,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             popGain: popGain,
             timestamp: serverTimestamp()
           });
+
+          // Send push notification to the recipient
+          sendPersonalNotification(recipientUid, {
+            title: "New Gift! 🎁",
+            body: `${currentUser.name || 'Player'} sent you a ${formatGiftDisplayName(giftType)}`,
+            icon: 'rose.png',
+            url: 'https://arenax.cyou/#profile',
+            data: {
+              type: 'gift',
+              senderUid: currentUser.uid,
+              giftType: giftType
+            }
+          }).catch(console.warn);
         } catch(e){}
       }
 
@@ -2448,6 +2462,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             popGain: popGain,
             timestamp: serverTimestamp()
           });
+
+          // Send push notification to profile owner
+          sendPersonalNotification(targetUid, {
+            title: "New Gift! 🎁",
+            body: `${currentUser.name || 'Player'} sent you a ${formatGiftDisplayName(selectedGiftType)}`,
+            icon: 'rose.png',
+            url: 'https://arenax.cyou/#profile',
+            data: {
+              type: 'gift',
+              senderUid: currentUser.uid,
+              giftType: selectedGiftType
+            }
+          }).catch(console.warn);
         } catch (e) {
           console.warn("Could not log popularity history in React app:", e);
         }
@@ -3672,6 +3699,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         senderName: currentUser.name,
         createdAt: serverTimestamp()
       });
+
+      // Send push notification to the other participant
+      sendPersonalNotification(activeFriend.uid, {
+        title: currentUser.name || 'ArenaX Player',
+        body: txt.length > 100 ? txt.slice(0, 97) + '...' : txt,
+        icon: currentUser.av || 'arenax_logo.jpg',
+        url: 'https://arenax.cyou/#chat',
+        data: {
+          type: 'dm',
+          chatId: chatId,
+          senderUid: currentUser.uid
+        }
+      }).catch(console.warn);
     } catch (e: any) {
       console.error('Error sending DM: ', e);
     }
@@ -3919,6 +3959,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         av: currentUser.av,
         sentAt: serverTimestamp()
       });
+
+      // Send push notification to the receiver of the friend request
+      sendPersonalNotification(searchResult.uid, {
+        title: "New Friend Request 👥",
+        body: `${currentUser.name || 'Someone'} wants to be your friend`,
+        icon: currentUser.av || 'arenax_logo.jpg',
+        url: 'https://arenax.cyou/#friends',
+        data: {
+          type: 'friend_request',
+          senderUid: currentUser.uid
+        }
+      }).catch(console.warn);
+
       setShowAddFriendModal(false);
       setSearchHandle('');
       setSearchResult(null);
@@ -3949,6 +4002,19 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       });
       // Delete friend request
       await deleteDoc(doc(db, 'users', currentUser.uid, 'friendRequests', req.uid));
+
+      // Send push notification to the original requester that their request was accepted
+      sendPersonalNotification(req.uid, {
+        title: "Friend Request Accepted ✅",
+        body: `${currentUser.name || 'Someone'} accepted your friend request`,
+        icon: currentUser.av || 'arenax_logo.jpg',
+        url: 'https://arenax.cyou/#friends',
+        data: {
+          type: 'friend_accepted',
+          friendUid: currentUser.uid
+        }
+      }).catch(console.warn);
+
       alert(`Friendship accepted with ${req.name}!`);
     } catch (error: any) {
       alert('Error accepting friend request: ' + error.message);
