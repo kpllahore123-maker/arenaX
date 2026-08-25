@@ -1,4 +1,22 @@
 // ArenaX Unified Firebase Cloud Messaging & PWA Service Worker
+// 0. Force immediate installation and activation
+self.addEventListener('install', () => {
+  console.log('[firebase-messaging-sw.js] Service Worker installed, calling skipWaiting()');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('[firebase-messaging-sw.js] Service Worker activated, claiming clients()');
+  event.waitUntil(clients.claim());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data.action === 'skipWaiting')) {
+    console.log('[firebase-messaging-sw.js] Received SKIP_WAITING signal');
+    self.skipWaiting();
+  }
+});
+
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
