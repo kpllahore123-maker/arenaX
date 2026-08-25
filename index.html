@@ -5777,24 +5777,84 @@ if ('serviceWorker' in navigator) {
     }, 150);
   }
 
-  // Controller change listener to reload page
+  // Controller change listener to reload page when a new SW takes control
+  let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    if (!refreshing) {
+      refreshing = true;
+      console.log('[SW Lifecycle] Service Worker controller changed. Reloading page...');
+      window.location.reload();
+    }
   });
+
+  // Stale Service Worker Cleanup Helper
+  async function cleanupStaleServiceWorkers(expectedScriptFilename, expectedScope) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      console.log('[SW Diagnostics] Active Service Worker registrations count:', regs.length);
+      for (const reg of regs) {
+        const activeUrl = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || '';
+        const isExpectedScript = activeUrl.includes(expectedScriptFilename);
+        const isExpectedScope = expectedScope ? reg.scope === expectedScope : true;
+
+        console.log(`[SW Diagnostics] Registration inspect -> Scope: ${reg.scope} | Script: ${activeUrl}`);
+
+        if (!isExpectedScript || !isExpectedScope) {
+          console.warn(`[SW Cleanup] Unregistering conflicting/stale worker: ${activeUrl} at scope: ${reg.scope}`);
+          await reg.unregister();
+        }
+      }
+    } catch (err) {
+      console.warn('[SW Cleanup] Error cleaning up stale registrations:', err);
+    }
+  }
 
   const registerSW = async () => {
     try {
       const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
       const swPath = basePath + 'firebase-messaging-sw.js';
-      console.log('Registering Service Worker for ArenaX at:', swPath);
+      const targetScope = new URL(basePath, window.location.href).href;
+
+      console.log('=== [ArenaX Push Notification & Service Worker Diagnostics] ===');
+      console.log('1. Base Path:', basePath);
+      console.log('2. SW Script Path:', swPath);
+      console.log('3. Target Scope:', targetScope);
+      console.log('4. Active Controller:', navigator.serviceWorker.controller ? navigator.serviceWorker.controller.scriptURL : 'None (Uncontrolled on first boot)');
+      console.log('5. Current Notification Permission:', typeof Notification !== 'undefined' ? Notification.permission : 'Unsupported');
+      console.log('=================================================================');
+
+      // Cleanup any obsolete or duplicate service workers
+      await cleanupStaleServiceWorkers('firebase-messaging-sw.js', targetScope);
+
       let reg;
       try {
-        reg = await navigator.serviceWorker.register(swPath);
+        reg = await navigator.serviceWorker.register(swPath, { scope: basePath });
       } catch (swErr) {
-        console.warn('Fallback registering sw.js:', swErr);
-        reg = await navigator.serviceWorker.register(basePath + 'sw.js');
+        console.warn('Fallback registering sw.js at scope:', basePath, swErr);
+        reg = await navigator.serviceWorker.register(basePath + 'sw.js', { scope: basePath });
       }
       console.log('Service Worker registered successfully with scope:', reg.scope);
+
+      // Force activation immediately if worker is waiting
+      if (reg.waiting) {
+        console.log('[SW Lifecycle] Waiting worker detected. Sending SKIP_WAITING signal...');
+        reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
+      }
+
+      // Listen for updatefound and force activation as soon as installed
+      reg.addEventListener('updatefound', () => {
+        const installingWorker = reg.installing;
+        if (installingWorker) {
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed') {
+              console.log('[SW Lifecycle] New service worker installed. Forcing immediate skipWaiting...');
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
+              }
+            }
+          });
+        }
+      });
       
       // Setup PWA Update detection and auto-update flow
       setupPwaUpdateDetection(reg);
@@ -5845,12 +5905,38 @@ if ('serviceWorker' in navigator) {
 async function requestFCMToken(showSuccessAlert = false) {
   showDiagnosticError(null);
   try {
-    console.log("FCM: Requesting permission...");
-    const permission = await Notification.requestPermission();
+    if (typeof Notification === 'undefined') {
+      showDiagnosticError("Push notifications are not supported by this browser.");
+      return;
+    }
+
+    console.log("FCM: Checking notification permission. Current state:", Notification.permission);
+    
+    // Explicit handling of 'denied' state - do not call requestPermission() as browsers will silently reject
+    if (Notification.permission === 'denied') {
+      const blockedMsg = "Notifications are blocked in your browser settings. Tap the lock icon 🔒 in your browser address bar → Site Settings → Notifications → Allow, then refresh the page.";
+      console.warn("FCM: Permission is blocked at browser level.");
+      showDiagnosticError(blockedMsg);
+      if (showSuccessAlert) {
+        alert("⚠️ Notifications are blocked in your browser settings.\n\nTo enable them:\n1. Click the Lock/Tune icon (🔒) in your address bar.\n2. Open 'Site Settings' (or Permissions).\n3. Set 'Notifications' to 'Allow'.\n4. Refresh this page.");
+      }
+      updateDiagnosticUI();
+      return;
+    }
+
+    let permission = Notification.permission;
+    if (permission === 'default') {
+      console.log("FCM: Prompting user for permission...");
+      permission = await Notification.requestPermission();
+    }
     updateDiagnosticUI();
     
     if (permission !== 'granted') {
-      showDiagnosticError("Failed to retrieve token: Permission denied by browser settings. Please allow notifications.");
+      const deniedMsg = "Notification permission was denied. Tap the lock icon 🔒 in your address bar → Site Settings → Notifications → Allow, then refresh.";
+      showDiagnosticError(deniedMsg);
+      if (showSuccessAlert) {
+        alert("⚠️ " + deniedMsg);
+      }
       return;
     }
     
@@ -5869,9 +5955,12 @@ async function requestFCMToken(showSuccessAlert = false) {
     const swPath = basePath + 'firebase-messaging-sw.js';
     let reg;
     try {
-      reg = await navigator.serviceWorker.register(swPath);
+      reg = await navigator.serviceWorker.register(swPath, { scope: basePath });
     } catch (swErr) {
-      reg = await navigator.serviceWorker.register(basePath + 'sw.js');
+      reg = await navigator.serviceWorker.register(basePath + 'sw.js', { scope: basePath });
+    }
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
     }
     await navigator.serviceWorker.ready;
     
@@ -13926,7 +14015,20 @@ $('btnNotifAllow').addEventListener('click', async () => {
   
   if (window.Notification) {
     try {
-      const permission = await Notification.requestPermission();
+      if (Notification.permission === 'denied') {
+        alert("⚠️ Notifications are currently blocked in your browser settings.\n\nTo enable them:\n1. Click the Lock/Tune icon (🔒) in your browser address bar.\n2. Tap 'Site settings' or 'Permissions'.\n3. Set 'Notifications' to 'Allow'.\n4. Refresh this page.");
+        localStorage.setItem('notifAsked', Date.now().toString());
+        if (typeof window.checkAndPromptTutorial === 'function') {
+          window.checkAndPromptTutorial();
+        }
+        return;
+      }
+
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+
       if (permission === 'granted') {
         // Save FCM/permission status to Firestore under user profile
         if (userProfile && userProfile.uid) {
@@ -13951,13 +14053,18 @@ $('btnNotifAllow').addEventListener('click', async () => {
         showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
         
         // Trigger a real browser notification to let the user see it's active
-        new Notification("ArenaX Notifications Active!", {
-          body: "You've successfully enabled real-time esports notifications!",
-          icon: "/favicon.ico"
-        });
+        try {
+          new Notification("ArenaX Notifications Active!", {
+            body: "You've successfully enabled real-time esports notifications!",
+            icon: (typeof window.getAppBasePath === 'function' ? window.getAppBasePath() : './') + 'favicon.ico'
+          });
+        } catch (notifErr) {
+          console.warn("Could not display initial test notification:", notifErr);
+        }
       } else {
-        // If they denied, treat it like "Not Now" / record cooldown so we don't spam
+        // If they denied, record cooldown and guide them
         localStorage.setItem('notifAsked', Date.now().toString());
+        alert("⚠️ Notification permission was blocked. You can enable it anytime by clicking the Lock icon (🔒) next to the URL in your address bar.");
       }
     } catch (e) {
       console.error("Error requesting notification permission:", e);
