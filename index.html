@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<base href="/"/>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="description" content="ArenaX – The ultimate esports tournament hub. Register, compete in elite matches, earn AX coins, chat live, and dominate the gaming leaderboard!"/>
 <meta name="keywords" content="esports, gaming, tournament, match, arena, coins, live chat, leaderboard, play, win, gamer, ArenaX"/>
 <meta property="og:title" content="ArenaX — Play & Dominate"/>
 <meta property="og:description" content="Register, compete in elite matches, earn AX coins, chat live, and dominate the gaming leaderboard!"/>
-<meta property="og:image" content="arenax_logo.jpg"/>
+<meta property="og:image" content="/arenax_logo.jpg"/>
 <!-- PWA (Progressive Web App) Meta Tags & Manifest -->
 <meta name="theme-color" content="#f0c040"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
-<link rel="manifest" href="manifest.json" id="staticManifestLink" />
-<link rel="icon" type="image/x-icon" href="favicon.ico" id="staticFaviconLink" />
-<link rel="apple-touch-icon" href="icon-192.png" id="staticAppleIconLink" />
+<link rel="canonical" href="https://arenax.cyou/"/>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
+<link rel="manifest" href="/manifest.json" id="staticManifestLink" />
+<link rel="icon" type="image/x-icon" href="/favicon.ico" id="staticFaviconLink" />
+<link rel="apple-touch-icon" href="/icon-192.png" id="staticAppleIconLink" />
 
 <script>
 window.getAppBasePath = function() {
-  const path = window.location.pathname;
-  if (path.length > 1 && !path.endsWith('/') && !path.endsWith('.html')) {
-    return path + '/';
-  }
-  const match = path.match(/^(\/[^\/]+\/)/);
-  if (match && match[1] !== '/' && !match[1].startsWith('/index.')) {
-    return match[1];
-  }
-  return './';
+  return '/';
 };
 
-// Dynamically adjust manifest, icon, and favicon links based on host environment
+// Dynamically ensure manifest, icon, and favicon links point to root domain
 (function() {
   const basePath = window.getAppBasePath();
   
@@ -46,21 +41,21 @@ window.getAppBasePath = function() {
 
 // Global Asset & Lottie Path Resolver
 document.addEventListener('DOMContentLoaded', () => {
-  const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
+  const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
   
   // Resolve lottie-player src attributes to ensure instant loading
   document.querySelectorAll('lottie-player').forEach(player => {
     let src = player.getAttribute('src');
-    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
-      player.setAttribute('src', basePath + src);
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
+      player.setAttribute('src', (basePath.endsWith('/') ? basePath : basePath + '/') + src.replace(/^\.\//, ''));
     }
   });
 
   // Ensure img elements resolve local paths properly
   document.querySelectorAll('img').forEach(img => {
     let src = img.getAttribute('src');
-    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
-      img.setAttribute('src', basePath + src);
+    if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
+      img.setAttribute('src', (basePath.endsWith('/') ? basePath : basePath + '/') + src.replace(/^\.\//, ''));
     }
   });
 });
@@ -9546,6 +9541,18 @@ window.sendPopularityGiftItem = async function(type) {
         popGain: popGain,
         timestamp: serverTimestamp()
       });
+
+      // Dispatch client push notification to the recipient
+      if (typeof window.sendPersonalNotification === 'function') {
+        const giftLabel = typeof window.formatGiftDisplayName === 'function' ? window.formatGiftDisplayName(type) : (type || 'Gift');
+        window.sendPersonalNotification(recipientId, {
+          title: "New Gift! 🎁",
+          body: `${sName} sent you a ${giftLabel}`,
+          icon: 'rose.png',
+          url: './#profile',
+          data: { type: 'gift', senderUid: currentSender.uid, giftType: type }
+        }).catch(console.warn);
+      }
     } catch (e) {
       console.warn("Could not log popularity history:", e);
     }
@@ -10803,6 +10810,18 @@ async function acceptFriendRequest(data) {
     });
     // Delete request log
     await deleteDoc(doc(db, 'users', profile.uid, 'friendRequests', data.uid));
+
+    // Send push notification to the original requester that their request was accepted
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(data.uid, {
+        title: "Friend Request Accepted ✅",
+        body: `${profile.name || 'Someone'} accepted your friend request`,
+        icon: profile.av || 'arenax_logo.jpg',
+        url: './#friends',
+        data: { type: 'friend_accepted', friendUid: profile.uid }
+      }).catch(console.warn);
+    }
+
     alert(`Friendship accepted with ${data.name}! ✓`);
   } catch (err) {
     alert(err.message);
@@ -11739,6 +11758,18 @@ $('bSendFriendReq').addEventListener('click', async () => {
       av: userProfile.av,
       sentAt: serverTimestamp()
     });
+
+    // Send push notification to target receiver
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(searchFriendTarget.uid, {
+        title: "New Friend Request 👥",
+        body: `${userProfile.name || 'Someone'} wants to be your friend`,
+        icon: userProfile.av || 'arenax_logo.jpg',
+        url: './#friends',
+        data: { type: 'friend_request', senderUid: userProfile.uid }
+      }).catch(console.warn);
+    }
+
     $('mAddFriend').classList.add('hidden');
     alert(`Friend request sent successfully to ${searchFriendTarget.name}!`);
   } catch (err) {
@@ -12784,6 +12815,17 @@ async function sendDirectMessage() {
       senderName: userProfile.name,
       createdAt: serverTimestamp()
     });
+
+    // Send push notification to the active DM friend
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(activeDMFriendUid, {
+        title: userProfile.name || 'ArenaX Player',
+        body: txt.length > 100 ? txt.slice(0, 97) + '...' : txt,
+        icon: userProfile.av || 'arenax_logo.jpg',
+        url: './#chat',
+        data: { type: 'dm', chatId: roomId, senderUid: userProfile.uid }
+      }).catch(console.warn);
+    }
   } catch (err) {
     console.error('Error sending DM: ', err);
   }
