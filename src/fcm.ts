@@ -58,12 +58,42 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(jsonStr);
 }
 
+export async function cleanupStaleServiceWorkers(expectedScript: string, targetScope?: string): Promise<void> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      const activeUrl = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || '';
+      const isExpectedScript = activeUrl.includes(expectedScript);
+      const isExpectedScope = targetScope ? reg.scope === targetScope : true;
+
+      if (!isExpectedScript || !isExpectedScope) {
+        console.warn(`[SW Cleanup] Unregistering stale/duplicate worker: ${activeUrl} (scope: ${reg.scope})`);
+        await reg.unregister();
+      }
+    }
+  } catch (err) {
+    console.warn('[SW Cleanup] Error during service worker cleanup:', err);
+  }
+}
+
 export async function autoRequestPermission(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
 
   if (!('Notification' in window)) {
     console.warn("This browser does not support notifications.");
     return null;
+  }
+
+  // If already denied, do not attempt requestPermission to avoid silent failure
+  if (Notification.permission === 'denied') {
+    console.warn("FCM: Notification permission is blocked in browser settings.");
+    return 'denied';
+  }
+
+  // If already granted, return directly
+  if (Notification.permission === 'granted') {
+    return 'granted';
   }
 
   try {
@@ -81,22 +111,36 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
 
   if (!('Notification' in window)) {
     console.warn("This browser does not support notifications.");
-    return null;
+    throw new Error("This browser does not support web push notifications.");
   }
 
   if (!('serviceWorker' in navigator)) {
     console.warn("This browser does not support Service Workers.");
-    return null;
+    throw new Error("Service Workers are not supported in this browser.");
+  }
+
+  // Explicit check for browser-level block
+  if (Notification.permission === 'denied') {
+    console.warn("Notification permission is currently blocked in browser settings.");
+    throw new Error("Notifications are blocked in your browser settings. Please click the lock/settings icon in your address bar, change Notifications to 'Allow', and refresh the page.");
   }
 
   try {
     const supported = await isSupported();
     if (!supported) {
       console.warn("Firebase Messaging is not supported in this browser.");
-      return null;
+      throw new Error("Firebase Cloud Messaging is not supported in this browser environment.");
     }
 
-    const permission = await Notification.requestPermission();
+    let permission: NotificationPermission = Notification.permission;
+    if (permission === 'default') {
+      permission = await Notification.requestPermission();
+    }
+
+    if (permission === 'denied') {
+      throw new Error("Notification permission was denied. Please allow notifications from your browser address bar settings and reload.");
+    }
+
     if (permission === 'granted') {
       const messaging = getMessaging(app);
       
@@ -107,15 +151,25 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
           return win.getAppBasePath();
         }
         const isGitHubPages = win.location.hostname.includes('github.io') || win.location.pathname.startsWith('/arenaX');
-        return isGitHubPages ? '/arenaX/' : '/';
+        return isGitHubPages ? '/arenaX/' : './';
       };
-      const swPath = getAppBasePath() + 'firebase-messaging-sw.js';
+      const basePath = getAppBasePath();
+      const swPath = basePath + 'firebase-messaging-sw.js';
+      const targetScope = new URL(basePath, window.location.href).href;
+
+      // Clean up stale / obsolete workers first
+      await cleanupStaleServiceWorkers('firebase-messaging-sw.js', targetScope);
       
-      console.log("Registering Service Worker from path:", swPath);
-      const reg = await navigator.serviceWorker.register(swPath);
-      console.log("Service Worker registered successfully:", reg);
-      
-      // Explicitly wait until the service worker registration is active
+      console.log("[FCM Client] Registering Service Worker at path:", swPath, "scope:", basePath);
+      const reg = await navigator.serviceWorker.register(swPath, { scope: basePath });
+      console.log("[FCM Client] Service Worker registered successfully:", reg.scope);
+
+      // Force skipWaiting if a waiting worker exists
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
+      }
+
+      // Explicitly wait until the service worker is active and ready
       await navigator.serviceWorker.ready;
       
       const token = await getToken(messaging, { 
@@ -124,7 +178,7 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
       });
 
       if (token) {
-        console.log("FCM Token obtained:", token);
+        console.log("FCM Token obtained successfully:", token);
         const pathForWrite = `users/${uid}`;
         try {
           await setDoc(doc(db, 'users', uid), { 
@@ -140,13 +194,13 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
         }
         return token;
       } else {
-        console.warn("No registration token available. Request permission to generate one.");
+        console.warn("No registration token returned from FCM.");
+        throw new Error("No token returned from Firebase Cloud Messaging.");
       }
-    } else {
-      console.warn("Notification permission was denied.");
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("An error occurred while getting the FCM token:", error);
+    throw error;
   }
   return null;
 }
