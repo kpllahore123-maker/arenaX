@@ -9549,7 +9549,7 @@ window.sendPopularityGiftItem = async function(type) {
           title: "New Gift! 🎁",
           body: `${sName} sent you a ${giftLabel}`,
           icon: 'rose.png',
-          url: './#profile',
+          url: 'https://arenax.cyou/#profile',
           data: { type: 'gift', senderUid: currentSender.uid, giftType: type }
         }).catch(console.warn);
       }
@@ -10817,7 +10817,7 @@ async function acceptFriendRequest(data) {
         title: "Friend Request Accepted ✅",
         body: `${profile.name || 'Someone'} accepted your friend request`,
         icon: profile.av || 'arenax_logo.jpg',
-        url: './#friends',
+        url: 'https://arenax.cyou/#friends',
         data: { type: 'friend_accepted', friendUid: profile.uid }
       }).catch(console.warn);
     }
@@ -11765,7 +11765,7 @@ $('bSendFriendReq').addEventListener('click', async () => {
         title: "New Friend Request 👥",
         body: `${userProfile.name || 'Someone'} wants to be your friend`,
         icon: userProfile.av || 'arenax_logo.jpg',
-        url: './#friends',
+        url: 'https://arenax.cyou/#friends',
         data: { type: 'friend_request', senderUid: userProfile.uid }
       }).catch(console.warn);
     }
@@ -12822,7 +12822,7 @@ async function sendDirectMessage() {
         title: userProfile.name || 'ArenaX Player',
         body: txt.length > 100 ? txt.slice(0, 97) + '...' : txt,
         icon: userProfile.av || 'arenax_logo.jpg',
-        url: './#chat',
+        url: 'https://arenax.cyou/#chat',
         data: { type: 'dm', chatId: roomId, senderUid: userProfile.uid }
       }).catch(console.warn);
     }
@@ -19344,6 +19344,18 @@ function initVoiceRoomsSystem() {
         amount: giftConfig.pop,
         timestamp: serverTimestamp()
       });
+
+      // Dispatch push notification to recipient
+      if (typeof window.sendPersonalNotification === 'function') {
+        const giftLabel = typeof window.formatGiftDisplayName === 'function' ? window.formatGiftDisplayName(giftConfig.name) : (giftConfig.name || 'Gift');
+        window.sendPersonalNotification(selectedVrRecipientUid, {
+          title: "New Gift! 🎁",
+          body: `${userProfile.name || 'Player'} sent you a ${giftLabel}`,
+          icon: 'rose.png',
+          url: 'https://arenax.cyou/#profile',
+          data: { type: 'gift', senderUid: userProfile.uid, giftType: giftConfig.name }
+        }).catch(console.warn);
+      }
 
       // 4. Send chat message announcement in Voice Room
       await addDoc(collection(db, 'voice_rooms', currentVoiceRoomId, 'chats'), {
