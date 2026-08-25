@@ -144,17 +144,16 @@ export async function requestNotificationPermissionAndGetToken(uid: string): Pro
     if (permission === 'granted') {
       const messaging = getMessaging(app);
       
-      // Register service worker dynamically based on the current location to support custom subdirectories (like /arenaX on GitHub Pages)
+      // Register service worker dynamically based on the current location (defaults to root /)
       const getAppBasePath = () => {
         const win = window as any;
         if (typeof win.getAppBasePath === 'function') {
           return win.getAppBasePath();
         }
-        const isGitHubPages = win.location.hostname.includes('github.io') || win.location.pathname.startsWith('/arenaX');
-        return isGitHubPages ? '/arenaX/' : './';
+        return '/';
       };
       const basePath = getAppBasePath();
-      const swPath = basePath + 'firebase-messaging-sw.js';
+      const swPath = (basePath.endsWith('/') ? basePath : basePath + '/') + 'firebase-messaging-sw.js';
       const targetScope = new URL(basePath, window.location.href).href;
 
       // Clean up stale / obsolete workers first
