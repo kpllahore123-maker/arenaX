@@ -2806,6 +2806,14 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   const handleRequestFcmToken = async () => {
     if (!currentUser) return;
     setFcmError(null);
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'denied') {
+        alert("⚠️ Notifications are blocked in your browser settings.\n\nTo allow notifications:\n1. Click the Lock/Tune icon (🔒) in your address bar.\n2. Open 'Site Settings' or 'Permissions'.\n3. Change Notifications to 'Allow'.\n4. Refresh the page.");
+        setFcmError("Notifications are blocked in browser settings. Please click the lock icon 🔒 in the address bar to allow them.");
+        setNotifPermission('denied');
+        return;
+      }
+    }
     try {
       console.log("FCM: Manually requesting permission and token...");
       const token = await requestNotificationPermissionAndGetToken(currentUser.uid);
@@ -2820,6 +2828,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
     } catch (err: any) {
       console.error("FCM manual request failed:", err);
       setFcmError(err?.message || String(err));
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setNotifPermission(Notification.permission);
+      }
     }
   };
 
@@ -7209,13 +7220,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
                 {notifPermission !== 'granted' && (
                   <div className="bg-red/5 border border-red/20 rounded p-2.5 space-y-1.5">
                     <p className="text-[10px] text-red leading-snug">
-                      ⚠️ **Notifications are blocked/not allowed.** Please click the lock icon next to the browser URL and allow notifications.
+                      {notifPermission === 'denied' ? (
+                        <>🔒 <strong>Notifications Blocked:</strong> Please click the lock icon in your browser address bar, set Notifications to 'Allow', and reload.</>
+                      ) : (
+                        <>⚠️ <strong>Notifications Not Enabled:</strong> Tap below to enable tournament and match alerts.</>
+                      )}
                     </p>
                     <button
                       onClick={handleRequestFcmToken}
                       className="w-full py-1 bg-red text-white text-[10px] font-bold rounded hover:bg-red/90 transition flex items-center justify-center gap-1"
                     >
-                      <i className="fas fa-bell"></i> Allow & Request Token
+                      <i className="fas fa-bell"></i> {notifPermission === 'denied' ? 'Unblock Instructions' : 'Allow & Request Token'}
                     </button>
                   </div>
                 )}
