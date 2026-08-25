@@ -1,10 +1,10 @@
 {
-  "id": "./",
+  "id": "/",
   "name": "ArenaX Esports",
   "short_name": "ArenaX",
   "description": "The ultimate esports tournament hub. Register, compete in elite matches, earn AX coins, chat live, and dominate the gaming leaderboard!",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0a0c12",
@@ -12,28 +12,34 @@
   "categories": ["games", "sports", "entertainment"],
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/arenax_logo.jpg",
+      "sizes": "1000x1000",
+      "type": "image/jpeg",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -41,27 +47,27 @@
       "name": "Tournaments",
       "short_name": "Matches",
       "description": "View active esports tournaments",
-      "url": "./#tournaments",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "url": "/#tournaments",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Live Chat",
       "short_name": "Chat",
       "description": "Open live community chat",
-      "url": "./#chat",
-      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "url": "/#chat",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "screenshots": [
     {
-      "src": "./arenax_logo.jpg",
+      "src": "/arenax_logo.jpg",
       "sizes": "1000x1000",
       "type": "image/jpeg",
       "form_factor": "wide",
       "label": "ArenaX Esports Tournament Hub"
     },
     {
-      "src": "./event_banner_1783187383925.jpg",
+      "src": "/event_banner_1783187383925.jpg",
       "sizes": "1200x630",
       "type": "image/jpeg",
       "form_factor": "narrow",
