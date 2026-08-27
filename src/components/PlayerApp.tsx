@@ -1890,17 +1890,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
           });
 
           // Send push notification to the recipient
-          sendPersonalNotification(recipientUid, {
-            title: "New Gift! 🎁",
-            body: `${currentUser.name || 'Player'} sent you a ${formatGiftDisplayName(giftType)}`,
-            icon: 'rose.png',
-            url: 'https://arenax.cyou/#profile',
-            data: {
-              type: 'gift',
-              senderUid: currentUser.uid,
-              giftType: giftType
+          try {
+            const userDocRef = doc(db, 'users', recipientUid);
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+              const userData = userSnap.data() || {};
+              const receiverFcmToken = userData.fcmToken;
+              if (receiverFcmToken) {
+                console.log('Attempting to send push notification to:', receiverFcmToken);
+                const giftDisplayName = formatGiftDisplayName(giftType);
+                const senderName = currentUser.name || 'Someone';
+                await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    token: receiverFcmToken,
+                    title: 'New Gift! 🎁',
+                    body: `${senderName} sent you a ${giftDisplayName}`,
+                    icon: 'https://arenax.cyou/arenax_logo.jpg',
+                    url: 'https://arenax.cyou/#profile'
+                  })
+                });
+              } else {
+                console.log('Receiver has no fcmToken registered in users/' + recipientUid);
+              }
             }
-          }).catch(console.warn);
+          } catch (notifErr) {
+            console.error('Failed to send push notification:', notifErr);
+          }
         } catch(e){}
       }
 
@@ -2319,7 +2336,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
   // User Profile Inspection & Gift Modal
   const [viewingUserProfile, setViewingUserProfile] = useState<any | null>(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
-  const [selectedGiftType, setSelectedGiftType] = useState<'rose' | 'rocket'>('rose');
+  const [selectedGiftType, setSelectedGiftType] = useState<'rose' | 'rocket' | 'trophy'>('rose');
   const [sendingGift, setSendingGift] = useState(false);
   const [giftSuccessMsg, setGiftSuccessMsg] = useState('');
 
@@ -2463,18 +2480,35 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
             timestamp: serverTimestamp()
           });
 
-          // Send push notification to profile owner
-          sendPersonalNotification(targetUid, {
-            title: "New Gift! 🎁",
-            body: `${currentUser.name || 'Player'} sent you a ${formatGiftDisplayName(selectedGiftType)}`,
-            icon: 'rose.png',
-            url: 'https://arenax.cyou/#profile',
-            data: {
-              type: 'gift',
-              senderUid: currentUser.uid,
-              giftType: selectedGiftType
+          // Send push notification to target receiver
+          try {
+            const userDocRef = doc(db, 'users', targetUid);
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+              const userData = userSnap.data() || {};
+              const receiverFcmToken = userData.fcmToken;
+              if (receiverFcmToken) {
+                console.log('Attempting to send push notification to:', receiverFcmToken);
+                const giftName = formatGiftDisplayName(selectedGiftType);
+                const senderName = currentUser.name || 'Someone';
+                await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    token: receiverFcmToken,
+                    title: 'New Gift! 🎁',
+                    body: `${senderName} sent you a ${giftName}`,
+                    icon: 'https://arenax.cyou/arenax_logo.jpg',
+                    url: 'https://arenax.cyou/#profile'
+                  })
+                });
+              } else {
+                console.log('Receiver has no fcmToken registered in users/' + targetUid);
+              }
             }
-          }).catch(console.warn);
+          } catch (notifErr) {
+            console.error('Failed to send push notification:', notifErr);
+          }
         } catch (e) {
           console.warn("Could not log popularity history in React app:", e);
         }
@@ -3700,18 +3734,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         createdAt: serverTimestamp()
       });
 
-      // Send push notification to the other participant
-      sendPersonalNotification(activeFriend.uid, {
-        title: currentUser.name || 'ArenaX Player',
-        body: txt.length > 100 ? txt.slice(0, 97) + '...' : txt,
-        icon: currentUser.av || 'arenax_logo.jpg',
-        url: 'https://arenax.cyou/#chat',
-        data: {
-          type: 'dm',
-          chatId: chatId,
-          senderUid: currentUser.uid
+      // Send push notification to the active DM friend
+      try {
+        const userDocRef = doc(db, 'users', activeFriend.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data() || {};
+          const receiverFcmToken = userData.fcmToken;
+          if (receiverFcmToken) {
+            console.log('Attempting to send push notification to:', receiverFcmToken);
+            const senderName = currentUser.name || currentUser.userName || 'ArenaX Player';
+            await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: receiverFcmToken,
+                title: senderName,
+                body: txt,
+                icon: 'https://arenax.cyou/arenax_logo.jpg',
+                url: 'https://arenax.cyou/#chat'
+              })
+            });
+          } else {
+            console.log('DM receiver has no fcmToken registered in users/' + activeFriend.uid);
+          }
         }
-      }).catch(console.warn);
+      } catch (notifErr) {
+        console.error('Failed to send push notification:', notifErr);
+      }
     } catch (e: any) {
       console.error('Error sending DM: ', e);
     }
@@ -3960,17 +4010,34 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
         sentAt: serverTimestamp()
       });
 
-      // Send push notification to the receiver of the friend request
-      sendPersonalNotification(searchResult.uid, {
-        title: "New Friend Request 👥",
-        body: `${currentUser.name || 'Someone'} wants to be your friend`,
-        icon: currentUser.av || 'arenax_logo.jpg',
-        url: 'https://arenax.cyou/#friends',
-        data: {
-          type: 'friend_request',
-          senderUid: currentUser.uid
+      // Send push notification to target receiver
+      try {
+        const userDocRef = doc(db, 'users', searchResult.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data() || {};
+          const receiverFcmToken = userData.fcmToken;
+          if (receiverFcmToken) {
+            console.log('Attempting to send push notification to:', receiverFcmToken);
+            const senderName = currentUser.name || currentUser.userName || 'Someone';
+            await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: receiverFcmToken,
+                title: 'New Friend Request 👥',
+                body: `${senderName} wants to be your friend`,
+                icon: 'https://arenax.cyou/arenax_logo.jpg',
+                url: 'https://arenax.cyou/#friends'
+              })
+            });
+          } else {
+            console.log('Receiver has no fcmToken registered in users/' + searchResult.uid);
+          }
         }
-      }).catch(console.warn);
+      } catch (notifErr) {
+        console.error('Failed to send push notification:', notifErr);
+      }
 
       setShowAddFriendModal(false);
       setSearchHandle('');
@@ -4004,16 +4071,33 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin, isAdminUI
       await deleteDoc(doc(db, 'users', currentUser.uid, 'friendRequests', req.uid));
 
       // Send push notification to the original requester that their request was accepted
-      sendPersonalNotification(req.uid, {
-        title: "Friend Request Accepted ✅",
-        body: `${currentUser.name || 'Someone'} accepted your friend request`,
-        icon: currentUser.av || 'arenax_logo.jpg',
-        url: 'https://arenax.cyou/#friends',
-        data: {
-          type: 'friend_accepted',
-          friendUid: currentUser.uid
+      try {
+        const userDocRef = doc(db, 'users', req.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data() || {};
+          const receiverFcmToken = userData.fcmToken;
+          if (receiverFcmToken) {
+            console.log('Attempting to send push notification to:', receiverFcmToken);
+            const accepterName = currentUser.name || currentUser.userName || 'Someone';
+            await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: receiverFcmToken,
+                title: 'Friend Request Accepted ✅',
+                body: `${accepterName} accepted your friend request`,
+                icon: 'https://arenax.cyou/arenax_logo.jpg',
+                url: 'https://arenax.cyou/#friends'
+              })
+            });
+          } else {
+            console.log('Requester has no fcmToken registered in users/' + req.uid);
+          }
         }
-      }).catch(console.warn);
+      } catch (notifErr) {
+        console.error('Failed to send push notification:', notifErr);
+      }
 
       alert(`Friendship accepted with ${req.name}!`);
     } catch (error: any) {
