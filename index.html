@@ -5604,6 +5604,32 @@ window.getDoc = getDoc;
 window.runTransaction = runTransaction;
 window.serverTimestamp = serverTimestamp;
 window.collection = collection;
+	async function sendPersonalNotification(recipientUid, payload) {
+  try {
+    const recipientDoc = await getDoc(doc(db, 'users', recipientUid));
+    if (!recipientDoc.exists()) return false;
+    const fcmToken = recipientDoc.data().fcmToken;
+    if (!fcmToken) return false;
+
+    await fetch('https://arena-x-beta.vercel.app/api/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: fcmToken,
+        title: payload.title,
+        body: payload.body,
+        icon: payload.icon || 'https://arenax.cyou/arenax_logo.jpg',
+        url: payload.url || 'https://arenax.cyou/',
+        data: payload.data || {}
+      })
+    });
+    return true;
+  } catch (err) {
+    console.error('sendPersonalNotification error:', err);
+    return false;
+  }
+}
+window.sendPersonalNotification = sendPersonalNotification;
 
 function getNumericPlayerId(uid, currentHandle) {
   if (currentHandle) {
