@@ -684,11 +684,10 @@ if (typeof tailwind !== 'undefined') {
 
   .track{width:min(45vw,190px);height:4px;border-radius:999px;background:#1C2233;overflow:hidden;position:relative}
   .fill{
-  height:100%;width:0%;border-radius:999px;
-  background:linear-gradient(90deg,#7C4DFF,#FF2E9E,#00C8FF);
-  transform-origin:left center;
-  transition: width 0.3s ease-out;
-}
+    height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg,#7C4DFF,#FF2E9E,#00C8FF);
+    transform-origin:left center;
+    animation:fillProgress 2.2s cubic-bezier(.3,0,.2,1) 1.0s both;
   }
   @keyframes fillProgress{
     0%{transform:scaleX(0)}
@@ -767,12 +766,14 @@ if (typeof tailwind !== 'undefined') {
 </div>
 
 <script>
-  /* ── ArenaX Splash Controller API ── */
+  /* ── ArenaX Splash Controller API (asset-aware) ── */
   var ArenaSplash = {
     startTime: Date.now(),
     minDuration: 2800,
     isFinished: false,
     appReady: false,
+    assetsReady: false,
+    _assetsPromise: null,
     status: function(text){
       var el = document.getElementById('splashStatus');
       if (el) {
@@ -785,41 +786,76 @@ if (typeof tailwind !== 'undefined') {
         }
       }
     },
-    finish: function(force){
-      this.appReady = true;
+    _setProgress: function(pct){
+      var fill = document.querySelector && document.querySelector('#sSplash .fill');
+      if (!fill) return;
+      fill.style.animation = 'none';
+      fill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, pct)) + ')';
+    },
+    preloadAssets: function(assetUrls){
+      var self = this;
+      assetUrls = assetUrls || [
+        'arenaX.png', 'AX.png', 'event.png', 'heart.png',
+        'rose.png', 'rocket.png', 'poptrophy.png', 'moment.png'
+      ];
+      var total = assetUrls.length;
+      var done = 0;
+      self.status('Loading assets');
+
+      var loaders = assetUrls.map(function(url){
+        return new Promise(function(resolve){
+          var img = new Image();
+          img.onload  = function(){ done++; self._setProgress(done / total); resolve(); };
+          img.onerror = function(){ done++; self._setProgress(done / total); resolve(); };
+          img.src = url;
+        });
+      });
+
+      self._assetsPromise = Promise.all(loaders).then(function(){
+        self.assetsReady = true;
+        self._setProgress(1);
+        self._tryFinish();
+      });
+      return self._assetsPromise;
+    },
+    _tryFinish: function(){
       if (this.isFinished) return;
+      if (!this.assetsReady || !this.appReady) return;
       var elapsed = Date.now() - this.startTime;
       var remaining = Math.max(0, this.minDuration - elapsed);
-
-      if (force || remaining <= 0) {
-        this.isFinished = true;
-        this.status('Ready');
+      var self = this;
+      setTimeout(function(){ self._doFinish(); }, remaining);
+    },
+    _doFinish: function(){
+      if (this.isFinished) return;
+      this.isFinished = true;
+      this.status('Ready');
+      var self = this;
+      setTimeout(function(){
+        document.body.classList.add('done');
         setTimeout(function(){
-          document.body.classList.add('done');
-          setTimeout(function(){
-            var splash = document.getElementById('sSplash');
-            if (splash) {
-              splash.style.pointerEvents = 'none';
-              splash.style.display = 'none';
-            }
-          }, 650);
-        }, 350);
-      } else {
-        var self = this;
-        setTimeout(function(){
-          self.finish(true);
-        }, remaining);
-      }
+          var splash = document.getElementById('sSplash');
+          if (splash) { splash.style.pointerEvents = 'none'; splash.style.display = 'none'; }
+        }, 650);
+      }, 350);
+    },
+    finish: function(force){
+      this.appReady = true;
+      if (force) { this.assetsReady = true; }
+      this._tryFinish();
     }
   };
   window.ArenaSplash = ArenaSplash;
 
-  // Auto safety trigger: ensure splash transitions cleanly once full intro animation completes
+  // Kick off asset preloading immediately
+  ArenaSplash.preloadAssets();
+
+  // Auto safety trigger: only if something silently failed to call finish()
   setTimeout(function(){
     if (window.ArenaSplash && !window.ArenaSplash.isFinished) {
       window.ArenaSplash.finish(true);
     }
-  }, 4500);
+  }, 8000);
 </script>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
@@ -6411,36 +6447,6 @@ if (typeof window !== 'undefined') {
     initArenaX3DBackgroundPreload();
   }, 50);
 }
-	// Real asset preloading with progress tracking for splash bar
-window.ArenaXSplashProgress = { loaded: 0, total: 1, update: function(){} };
-(function preloadSplashAssets() {
-  var criticalAssets = [
-    'arenax_logo.jpg',
-    'bluetick.png',
-    'rose.png',
-    'rocket.png'
-  ];
-  var total = criticalAssets.length;
-  var loaded = 0;
-  window.ArenaXSplashProgress.total = total;
-
-  function updateFill(pct) {
-    var fillEl = document.querySelector('.fill');
-    if (fillEl) fillEl.style.width = pct + '%';
-  }
-
-  if (total === 0) { updateFill(100); return; }
-
-  criticalAssets.forEach(function(src) {
-    var img = new Image();
-    img.onload = img.onerror = function() {
-      loaded++;
-      var pct = Math.round((loaded / total) * 100);
-      updateFill(pct);
-    };
-    img.src = src;
-  });
-})();
 function goTo(screenId) {
   document.querySelectorAll('.scr, #sLogin, #sDash').forEach(s => s.classList.add('hidden'));
   const target = $(screenId);
@@ -6762,22 +6768,14 @@ function boot() {
   }
   loadLiveNotifications();
   initGlobalChat();
-  var fillEl = document.querySelector('.fill');
-  if (fillEl) fillEl.style.width = '100%';
-
+  
   if (window.ArenaSplash) {
     window.ArenaSplash.status('Ready');
+    window.ArenaSplash.finish();
   }
 
   goTo('sDash');
 
-  requestAnimationFrame(function() {
-    requestAnimationFrame(function() {
-      if (window.ArenaSplash) {
-        window.ArenaSplash.finish();
-      }
-    });
-  });
   if (!devPopupShownThisSession) {
     $('mUnderDevPopup').classList.remove('hidden');
     devPopupShownThisSession = true;
