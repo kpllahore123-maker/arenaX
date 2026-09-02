@@ -993,6 +993,9 @@ function boot() {
   if (typeof window.updateDiscordSecurityUI === 'function') {
     window.updateDiscordSecurityUI();
   }
+  if (typeof window.checkDiscordJustLinked === 'function') {
+    window.checkDiscordJustLinked();
+  }
   if (typeof window.checkAndProcessDiscordCallback === 'function') {
     window.checkAndProcessDiscordCallback();
   }
@@ -6551,6 +6554,63 @@ function cleanupDiscordUrlParams() {
     } catch (e2) {}
   }
 }
+
+/**
+ * Checks if Discord account was just linked in discord-callback.html and triggers notifications/UI refresh
+ */
+window.checkDiscordJustLinked = function() {
+  try {
+    const raw = sessionStorage.getItem('ax_discord_just_linked');
+    if (!raw) return;
+    sessionStorage.removeItem('ax_discord_just_linked');
+
+    const discordData = JSON.parse(raw);
+    if (!discordData || !discordData.username) return;
+
+    // Update local profile object immediately
+    if (userProfile) {
+      userProfile.discordUserId = discordData.id;
+      userProfile.discordUsername = discordData.username;
+      userProfile.discordAvatar = discordData.avatar;
+      userProfile.discordGlobalName = discordData.globalName || '';
+      userProfile.discordVerified = true;
+    }
+
+    if (typeof window.renderDiscordAuthWidget === 'function') {
+      window.renderDiscordAuthWidget();
+    }
+    if (typeof window.updateDiscordSecurityUI === 'function') {
+      window.updateDiscordSecurityUI();
+    }
+    if (typeof window.closeDiscordVerificationGate === 'function') {
+      window.closeDiscordVerificationGate();
+    }
+
+    // Success toast notification
+    const toastMsg = document.createElement('div');
+    toastMsg.id = 'discordJustLinkedToast';
+    toastMsg.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-emerald-400 animate-fade-in';
+    toastMsg.innerHTML = `<i class="fas fa-check-circle text-base text-emerald-200"></i> Discord Connected: <span class="underline text-white">@${discordData.username}</span> is now linked!`;
+    document.body.appendChild(toastMsg);
+
+    setTimeout(() => {
+      if (toastMsg.parentNode) toastMsg.parentNode.removeChild(toastMsg);
+    }, 5000);
+
+    // Context-sensitive reopening
+    if (discordData.source === 'settings' && typeof window.openAxSecurityModal === 'function') {
+      window.openAxSecurityModal();
+    } else if (typeof pendingTournamentForVerification !== 'undefined' && pendingTournamentForVerification) {
+      const tour = pendingTournamentForVerification;
+      pendingTournamentForVerification = null;
+      if (typeof openTournamentRegister === 'function') {
+        openTournamentRegister(tour);
+      }
+    }
+  } catch (err) {
+    console.warn('Error evaluating checkDiscordJustLinked:', err);
+  }
+};
 
 /**
  * Disconnects / Unlinks Discord from user's account
