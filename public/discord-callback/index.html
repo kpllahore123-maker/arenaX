@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/discord-callback.html">
+  <title>ArenaX — Discord Callback</title>
+  <script>
+    // Forward full search query and hash to discord-callback.html
+    const search = window.location.search;
+    const hash = window.location.hash;
+    window.location.replace('/discord-callback.html' + search + hash);
+  </script>
+</head>
+<body style="background-color: #0c0d12; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+  <p>Processing Discord Verification...</p>
+</body>
+</html>
