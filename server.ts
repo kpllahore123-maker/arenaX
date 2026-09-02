@@ -1,63 +1,57 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import { 
-  initializeDiscordBot, 
-  botLogs, 
-  botStats, 
-  getBotConfig, 
-  saveBotConfig 
-} from "./discord-bot.ts";
+import { initializeDiscordBot, botLogs, botStats, getBotConfig, saveBotConfig } from "./discord-bot.ts";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  const PORT = 3000;
 
-  // Initialize Discord Bot
+  // Initialize Discord Bot safely in background
   initializeDiscordBot().catch((err) => {
     console.error("Failed to initialize Discord Bot on startup:", err);
   });
 
   app.use(express.json());
 
-  // Support Chat API endpoint utilizing Gemini
+  // Support Chat API with Gemini AI
   app.post("/api/support-chat", async (req, res) => {
     try {
       const { message, history, userProfile, tournaments } = req.body;
-      
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ 
-          error: "GEMINI_API_KEY is not configured in the environment. Please add it in Settings > Secrets." 
+        return res.status(500).json({
+          error: "GEMINI_API_KEY is not configured in the environment. Please add it in Settings > Secrets."
         });
       }
 
-      // Initialize Gemini client with proper User-Agent telemetry
       const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
+        apiKey,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
 
-      // Construct system instruction with live app context
       const sysInstruction = `You are 'ArenaX Support AI', a professional, friendly customer support chatbot for ArenaX, the premier mobile gaming tournaments platform.
 Your primary role is to answer player questions about ArenaX. Use the live context below to personalize your response.
 
 Player Profile:
-- Name: ${userProfile?.name || 'Anonymous'}
-- Handle: @${userProfile?.handle || 'anonymous'}
-- Wallet Balance: ${userProfile?.balance !== undefined ? userProfile.balance.toLocaleString() : 0} AX Coins
-- Account Type: ${userProfile?.premium ? 'Premium VIP' : 'Regular Player'}
+- Name: ${userProfile?.name || "Anonymous"}
+- Handle: @${userProfile?.handle || "anonymous"}
+- Wallet Balance: ${userProfile?.balance !== void 0 ? userProfile.balance.toLocaleString() : 0} AX Coins
+- Account Type: ${userProfile?.premium ? "Premium VIP" : "Regular Player"}
 
 Available Tournaments:
-${(tournaments || []).slice(0, 5).map((t: any) => `- "${t.name}" (${t.game || 'Grand RP'}), Entry Fee: ${t.entryFee || 'Free'}, Prize: ${t.prize || 'N/A'}, Status: ${t.status}, Registered: ${t.registered || 0}/${t.maxPlayers || 100}`).join('\n')}
+${(tournaments || [])
+  .slice(0, 5)
+  .map(
+    (t: any) =>
+      `- "${t.name}" (${t.game || "Grand RP"}), Entry Fee: ${t.entryFee || "Free"}, Prize: ${t.prize || "N/A"}, Status: ${t.status}, Registered: ${t.registered || 0}/${t.maxPlayers || 100}`
+  )
+  .join("\n")}
 
 Rules and Guidance:
 1. Deposits:
@@ -67,60 +61,44 @@ Rules and Guidance:
 2. Withdrawals:
    - Go to Wallet -> Withdraw, enter amount of AX Coins. Transfers process within 24-48 hours.
 3. Cheater Reporting:
-   - Click the "Report Hack/Cheat" button below the tournament card, enter hacker details and proof links (screen records).
+   - Click the "Report Hack/Cheat" button below the tournament card, enter hacker details and proof links.
 4. Premium VIP plans:
-   - Costs 150 AX. Upgrades grant exclusive premium badge, custom banner themes, name color options, and priority support.
+   - Costs 150 AX. Upgrades grant exclusive premium badge, custom banner themes, and priority support.
 5. Tournaments:
    - Choose a tournament and join. Admins will verify your slot and approve it.
 
 CRITICAL INSTRUCTIONS:
-- Answer friendly, politely, and concisey (under 3-4 sentences max).
-- Speak in Roman Urdu/Hindi (written in English script) or English, depending on how the user speaks. For example: "Aapka balance abhi 150 AX Coins hai" or "JazzCash deposit details ke liye Wallet tab check karein."
-- **ESCALATION RULE**: If the user has a major/complex issue (like a transaction failed/stuck, account suspended, refund missing, clear signs of distress/errors, or if they explicitly ask for a human, admin, or moderator - e.g., 'agent', 'human', 'admin', 'mod', 'fuzool bot', 'connect me', 'call admin'), you MUST reply with a comforting message saying you are connecting them to a human moderator/administrator, AND you MUST include the exact uppercase word '[ESCALATE]' somewhere in your reply. This is crucial for the frontend to transfer the chat to a human admin.
+- Answer friendly, politely, and concisely (under 3-4 sentences max).
+- Speak in Roman Urdu/Hindi (written in English script) or English, depending on how the user speaks.
+- ESCALATION RULE: If the user has a major issue or asks for an admin/human, reply with a comforting message and include the uppercase word '[ESCALATE]'.`;
 
-Be human-like, supportive, and extremely clear.`;
-
-      // Map history to Gemini format
       const rawContents: any[] = [];
       if (Array.isArray(history)) {
         history.slice(-10).forEach((h: any) => {
           rawContents.push({
-            role: h.role === 'user' ? 'user' : 'model',
+            role: h.role === "user" ? "user" : "model",
             parts: [{ text: h.text }]
           });
         });
       }
+      rawContents.push({ role: "user", parts: [{ text: message }] });
 
-      // Add the latest message
-      rawContents.push({
-        role: "user",
-        parts: [{ text: message }]
-      });
-
-      // Merge consecutive turns with the same role and ensure first turn is user
       const contents: any[] = [];
       rawContents.forEach((turn) => {
         if (contents.length > 0 && contents[contents.length - 1].role === turn.role) {
-          // Merge text with the previous turn
           contents[contents.length - 1].parts[0].text += "\n" + turn.parts[0].text;
         } else {
           contents.push(turn);
         }
       });
-
-      // Ensure the first turn is 'user'
-      while (contents.length > 0 && contents[0].role === 'model') {
+      while (contents.length > 0 && contents[0].role === "model") {
         contents.shift();
       }
 
-      // Query Gemini
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: contents,
-        config: {
-          systemInstruction: sysInstruction,
-          temperature: 0.7,
-        }
+        model: "gemini-2.5-flash",
+        contents,
+        config: { systemInstruction: sysInstruction, temperature: 0.7 }
       });
 
       const replyText = response.text || "Aapki query mil gayi hai. Kya aapko kisi human moderator se baat karni hai?";
@@ -131,12 +109,9 @@ Be human-like, supportive, and extremely clear.`;
     }
   });
 
-  // --- DISCORD BOT API ENDPOINTS ---
+  // Discord Bot APIs
   app.get("/api/discord-bot/status", (req, res) => {
-    res.json({
-      stats: botStats,
-      config: getBotConfig()
-    });
+    res.json({ stats: botStats, config: getBotConfig() });
   });
 
   app.get("/api/discord-bot/logs", (req, res) => {
@@ -146,11 +121,7 @@ Be human-like, supportive, and extremely clear.`;
   app.post("/api/discord-bot/config", (req, res) => {
     try {
       const { prefix, systemInstruction, temperature } = req.body;
-      const updated = saveBotConfig({
-        prefix,
-        systemInstruction,
-        temperature: Number(temperature)
-      });
+      const updated = saveBotConfig({ prefix, systemInstruction, temperature: Number(temperature) });
       res.json({ success: true, config: updated });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -160,14 +131,8 @@ Be human-like, supportive, and extremely clear.`;
   app.post("/api/discord-bot/restart", async (req, res) => {
     try {
       const { token, geminiKey } = req.body;
-      if (token) {
-        process.env.DISCORD_TOKEN = token;
-      }
-      if (geminiKey) {
-        process.env.GEMINI_API_KEY = geminiKey;
-      }
-      
-      // Re-initialize the bot
+      if (token) process.env.DISCORD_TOKEN = token;
+      if (geminiKey) process.env.GEMINI_API_KEY = geminiKey;
       await initializeDiscordBot();
       res.json({ success: true, stats: botStats });
     } catch (error: any) {
@@ -175,47 +140,119 @@ Be human-like, supportive, and extremely clear.`;
     }
   });
 
-  // Middleware to handle subpath rewrites (like /arenax/ or /arenaX/)
+  // FCM Push Notifications Relay
+  app.post("/api/send-fcm-push", async (req, res) => {
+    try {
+      const { token, title, body, icon, url, data } = req.body;
+      if (!token) {
+        return res.status(400).json({ error: "Missing recipient FCM token." });
+      }
+
+      const serverKey = process.env.FCM_SERVER_KEY;
+      if (!serverKey) {
+        console.log("[FCM Server Relay] FCM_SERVER_KEY not set in environment. Skipping external push.");
+        return res.json({
+          success: true,
+          status: "simulated",
+          message: "FCM_SERVER_KEY not configured. In-app notification was stored."
+        });
+      }
+
+      const fcmResponse = await fetch("https://fcm.googleapis.com/fcm/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `key=${serverKey}`
+        },
+        body: JSON.stringify({
+          to: token,
+          notification: {
+            title: title || "ArenaX Alert",
+            body: body || "",
+            icon: icon || "arenax_logo.jpg",
+            click_action: url || "./"
+          },
+          data: {
+            title: title || "ArenaX Alert",
+            body: body || "",
+            url: url || "./",
+            ...(data || {})
+          }
+        })
+      });
+
+      const fcmResult = await fcmResponse.json();
+      res.json({ success: true, result: fcmResult });
+    } catch (err: any) {
+      console.error("[FCM Server Relay] Error sending push:", err);
+      res.status(500).json({ error: err.message || "Failed to send FCM push" });
+    }
+  });
+
+  // Rewrite subpath requests (e.g. /arenax/...)
   app.use((req, res, next) => {
     const subpathRegex = /^\/(arenax|arenaX)(\/|$)/i;
     if (subpathRegex.test(req.url)) {
       const originalUrl = req.url;
-      req.url = req.url.replace(subpathRegex, '/');
+      req.url = req.url.replace(subpathRegex, "/");
       req.originalUrl = req.url;
       console.log(`Rewrote subpath request from ${originalUrl} to ${req.url}`);
     }
     next();
   });
 
-  // Explicit route handlers for Admin Panel
+  // Dedicated HTML routes
   app.get(["/admin", "/admin.html"], (req, res) => {
-    if (process.env.NODE_ENV !== "production") {
-      res.sendFile(path.join(process.cwd(), "admin.html"));
+    const adminFile = fs.existsSync(path.join(process.cwd(), "admin.html"))
+      ? path.join(process.cwd(), "admin.html")
+      : path.join(process.cwd(), "dist", "admin.html");
+    if (fs.existsSync(adminFile)) {
+      res.sendFile(adminFile);
     } else {
-      res.sendFile(path.join(process.cwd(), "dist", "admin.html"));
+      res.sendFile(path.join(process.cwd(), "index.html"));
     }
   });
 
-  // Serve static files and support Vite in Dev
+  app.get(["/moments", "/moments.html"], (req, res) => {
+    const momentsFile = fs.existsSync(path.join(process.cwd(), "moments.html"))
+      ? path.join(process.cwd(), "moments.html")
+      : path.join(process.cwd(), "dist", "moments.html");
+    if (fs.existsSync(momentsFile)) {
+      res.sendFile(momentsFile);
+    } else {
+      res.sendFile(path.join(process.cwd(), "index.html"));
+    }
+  });
+
+  app.get(["/discord-callback", "/discord-callback.html"], (req, res) => {
+    const callbackFile = fs.existsSync(path.join(process.cwd(), "discord-callback.html"))
+      ? path.join(process.cwd(), "discord-callback.html")
+      : path.join(process.cwd(), "dist", "discord-callback.html");
+    if (fs.existsSync(callbackFile)) {
+      res.sendFile(callbackFile);
+    } else {
+      res.sendFile(path.join(process.cwd(), "index.html"));
+    }
+  });
+
+  // Development vs Production static / vite serving
   if (process.env.NODE_ENV !== "production") {
-    // Serve compiled assets as fallback in development to support cached production pages
-    app.use('/assets', express.static(path.join(process.cwd(), 'dist/assets')));
-    
+    app.use("/assets", express.static(path.join(process.cwd(), "dist/assets")));
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "spa"
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
