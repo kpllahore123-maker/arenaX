@@ -6356,7 +6356,7 @@ window.toggleAccordion = function(id) { const el = window.$(id); if (el) el.clas
 // ── ARENAX DISCORD OAUTH2 VERIFICATION & SECURITY GATE SYSTEM ───────────
 // =========================================================================
 
-const DISCORD_CLIENT_ID = '1347897210168344586'; // Configured Discord Client ID or fallback
+const DISCORD_CLIENT_ID = '1524144298289791127'; // Discord Developer App Client ID
 const DISCORD_REDIRECT_URI = 'https://arenax.cyou/discord-callback';
 const VERCEL_API_ENDPOINT = 'https://arena-x-beta.vercel.app/api/discord-callback';
 
@@ -6499,23 +6499,35 @@ window.checkAndProcessDiscordCallback = async function() {
       userProfile.discordVerified = true;
     }
 
-    // Refresh UI components
+    // Refresh UI components immediately across all active screens and modals
     window.renderDiscordAuthWidget();
     window.updateDiscordSecurityUI();
 
-    toastMsg.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-emerald-400';
-    toastMsg.innerHTML = `<i class="fas fa-check-circle text-base"></i> Discord verified: <span class="underline">${discordData.username}</span>`;
+    // Close verification gate modal if open
+    window.closeDiscordVerificationGate();
+
+    // Display clear success confirmation toast
+    toastMsg.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-emerald-400 animate-fade-in';
+    toastMsg.innerHTML = `<i class="fas fa-check-circle text-base"></i> Discord Connected: <span class="underline text-emerald-200">@${discordData.username}</span> is now verified!`;
 
     setTimeout(() => {
       if (toastMsg.parentNode) toastMsg.parentNode.removeChild(toastMsg);
-    }, 4500);
+    }, 5000);
 
-    // If there was a pending tournament registration, auto-open it
-    if (pendingTournamentForVerification) {
+    // Context-aware UI navigation back to user location
+    const sourceContext = storedState ? storedState.source : 'general';
+    if (sourceContext === 'settings' && typeof window.openAxSecurityModal === 'function') {
+      window.openAxSecurityModal();
+    } else if (pendingTournamentForVerification) {
       const tour = pendingTournamentForVerification;
       pendingTournamentForVerification = null;
       if (typeof openTournamentRegister === 'function') {
         openTournamentRegister(tour);
+      }
+    } else {
+      // Default to returning to current tab (e.g. sDash or sTournaments) smoothly
+      if (typeof goTo === 'function' && typeof currentScreen !== 'undefined' && !currentScreen) {
+        goTo('sDash');
       }
     }
 
@@ -6531,9 +6543,13 @@ window.checkAndProcessDiscordCallback = async function() {
 
 function cleanupDiscordUrlParams() {
   try {
-    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/discord-callback$/, '');
-    window.history.replaceState({}, document.title, cleanUrl || '/');
-  } catch (e) {}
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/discord-callback$/, '') || '/';
+    window.history.replaceState({}, document.title, cleanUrl);
+  } catch (e) {
+    try {
+      window.location.replace('/');
+    } catch (e2) {}
+  }
 }
 
 /**
