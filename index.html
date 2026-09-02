@@ -876,6 +876,12 @@ if (typeof tailwind !== 'undefined') {
       var self = this;
       setTimeout(function(){
         document.body.classList.add('done');
+        // Ensure at least one main screen is revealed (prevent black screen)
+        var sLogin = document.getElementById('sLogin');
+        var sDash = document.getElementById('sDash');
+        if (sLogin && sDash && sLogin.classList.contains('hidden') && sDash.classList.contains('hidden')) {
+          sLogin.classList.remove('hidden');
+        }
         setTimeout(function(){
           var splash = document.getElementById('sSplash');
           if (splash) { splash.style.pointerEvents = 'none'; splash.style.display = 'none'; }
@@ -893,12 +899,12 @@ if (typeof tailwind !== 'undefined') {
   // Kick off asset preloading immediately
   ArenaSplash.preloadAssets();
 
-  // Auto safety trigger: only if something silently failed to call finish()
+  // Auto safety trigger: ensures splash exits cleanly even if auth or network takes time
   setTimeout(function(){
     if (window.ArenaSplash && !window.ArenaSplash.isFinished) {
       window.ArenaSplash.finish(true);
     }
-  }, 8000);
+  }, 3200);
 </script>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
@@ -5765,15 +5771,15 @@ if (typeof tailwind !== 'undefined') {
 
 <!-- Firebase Modular SDK Scripts via CDN -->
   <!-- Modularized Application Scripts -->
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/notifications.js"></script>
-  <script type="module" src="js/playershow.js"></script>
-  <script type="module" src="js/gifts.js"></script>
-  <script type="module" src="js/chat.js"></script>
-  <script type="module" src="js/teams.js"></script>
-  <script type="module" src="js/voiceroom.js"></script>
-  <script type="module" src="js/moments.js"></script>
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="./js/firebase-config.js"></script>
+  <script type="module" src="./js/notifications.js"></script>
+  <script type="module" src="./js/playershow.js"></script>
+  <script type="module" src="./js/gifts.js"></script>
+  <script type="module" src="./js/chat.js"></script>
+  <script type="module" src="./js/teams.js"></script>
+  <script type="module" src="./js/voiceroom.js"></script>
+  <script type="module" src="./js/moments.js"></script>
+  <script type="module" src="./js/main.js"></script>
 
 <!-- PWA Update Modal Overlay -->
 <div id="pwaUpdateModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden transition-all duration-300">
