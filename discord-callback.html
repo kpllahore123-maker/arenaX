@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArenaX — Discord Verification</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; background-color: #0c0d12; color: #f1f5f9; }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+      50% { box-shadow: 0 0 35px rgba(99, 102, 241, 0.6); }
+    }
+    .animate-glow { animation: pulse-glow 2.5s infinite; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-indigo-500 selection:text-white">
+  
+  <div class="max-w-md w-full bg-[#13151f] border border-indigo-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden animate-glow">
+    <!-- Ambient background glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full filter blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600/15 rounded-full filter blur-3xl pointer-events-none"></div>
+
+    <!-- Header & Logo -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-black font-black text-lg shadow-md">
+          AX
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white leading-tight">ArenaX Esports</h1>
+          <p class="text-[11px] text-slate-400">Identity & Safety Verification</p>
+        </div>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#5865F2] flex items-center justify-center text-lg">
+        <i class="fab fa-discord"></i>
+      </div>
+    </div>
+
+    <!-- Live Status Stage -->
+    <div id="statusContainer" class="space-y-4 py-2">
+      <!-- Icon Indicator -->
+      <div class="flex justify-center">
+        <div id="iconBox" class="w-16 h-16 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 flex items-center justify-center text-2xl text-indigo-400 shadow-inner">
+          <i id="statusIcon" class="fas fa-circle-notch fa-spin text-indigo-400"></i>
+        </div>
+      </div>
+
+      <!-- Text Status -->
+      <div class="text-center space-y-1">
+        <h2 id="statusTitle" class="text-lg font-bold text-white">Connecting with Discord...</h2>
+        <p id="statusSubtitle" class="text-xs text-slate-400 leading-relaxed px-2">Validating security state and exchanging authorization token...</p>
+      </div>
+
+      <!-- User Card (hidden by default until fetched) -->
+      <div id="discordUserCard" class="hidden p-3.5 bg-slate-900/80 border border-indigo-500/30 rounded-2xl flex items-center gap-3.5">
+        <img id="discordAvatar" src="" alt="Discord Avatar" class="w-12 h-12 rounded-full border-2 border-indigo-400 object-cover bg-slate-800 shadow">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span id="discordUsername" class="font-bold text-sm text-white truncate">User</span>
+            <span class="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold rounded uppercase">Verified</span>
+          </div>
+          <p id="discordUserId" class="text-[11px] text-slate-400 font-mono truncate">ID: ...</p>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
+        <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-amber-400 h-1.5 rounded-full transition-all duration-500 w-1/3"></div>
+      </div>
+    </div>
+
+    <!-- Action Buttons (Shown on failure or manual return) -->
+    <div id="actionContainer" class="pt-2">
+      <a id="btnReturn" href="/" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow">
+        <i class="fas fa-arrow-left"></i> Return to ArenaX
+      </a>
+    </div>
+  </div>
+
+  <!-- Firebase & OAuth Process Script -->
+  <script type="module">
+    import { auth, db, doc, updateDoc, serverTimestamp, onAuthStateChanged } from './js/firebase-config.js';
+
+    const VERCEL_API_ENDPOINT = 'https://arena-x-beta.vercel.app/api/discord-callback';
+
+    const $ = (id) => document.getElementById(id);
+    const statusTitle = $('statusTitle');
+    const statusSubtitle = $('statusSubtitle');
+    const statusIcon = $('statusIcon');
+    const iconBox = $('iconBox');
+    const progressBar = $('progressBar');
+    const discordUserCard = $('discordUserCard');
+    const discordAvatar = $('discordAvatar');
+    const discordUsername = $('discordUsername');
+    const discordUserId = $('discordUserId');
+    const btnReturn = $('btnReturn');
+
+    function setStage(stage, title, subtitle, isError = false, isSuccess = false) {
+      statusTitle.textContent = title;
+      statusSubtitle.textContent = subtitle;
+
+      if (isError) {
+        iconBox.className = 'w-16 h-16 rounded-2xl bg-red-950/60 border border-red-500/50 flex items-center justify-center text-2xl text-red-400 shadow-inner';
+        statusIcon.className = 'fas fa-exclamation-triangle text-red-400';
+        progressBar.className = 'bg-red-500 h-1.5 rounded-full w-full';
+        btnReturn.className = 'w-full py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-500/20';
+        return;
+      }
+
+      if (isSuccess) {
+        iconBox.className = 'w-16 h-16 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 flex items-center justify-center text-2xl text-emerald-400 shadow-inner';
+        statusIcon.className = 'fas fa-check-circle text-emerald-400';
+        progressBar.className = 'bg-emerald-500 h-1.5 rounded-full w-full transition-all duration-300';
+        btnReturn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20';
+        btnReturn.innerHTML = '<i class="fas fa-check"></i> Continue to ArenaX';
+        return;
+      }
+
+      // Progressing
+      if (stage === 1) progressBar.style.width = '30%';
+      if (stage === 2) progressBar.style.width = '60%';
+      if (stage === 3) progressBar.style.width = '90%';
+    }
+
+    async function processOAuthCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
+      const errorDesc = urlParams.get('error_description');
+
+      // 1. Check for Discord user cancellation or rejection
+      if (error) {
+        setStage(0, 'Verification Cancelled', errorDesc || 'Discord authorization was cancelled or denied by user.', true);
+        return;
+      }
+
+      if (!code) {
+        setStage(0, 'Missing Authorization Code', 'No valid OAuth2 authorization code was received in the callback URL.', true);
+        return;
+      }
+
+      // 2. Validate CSRF State Token
+      setStage(1, 'Validating Security State...', 'Verifying session token to protect your ArenaX account from CSRF attacks.');
+      
+      let storedState = null;
+      try {
+        const raw = sessionStorage.getItem('ax_discord_oauth_state');
+        if (raw) storedState = JSON.parse(raw);
+      } catch (e) {
+        console.warn('Could not read state from sessionStorage:', e);
+      }
+
+      if (!storedState || !storedState.token || !state || storedState.token !== state) {
+        setStage(0, 'Security State Mismatch', 'State validation failed. To prevent account hijacking, authorization has been aborted. Please retry connecting Discord.', true);
+        return;
+      }
+
+      // Check state expiration (15 minutes limit)
+      if (storedState.timestamp && (Date.now() - storedState.timestamp > 15 * 60 * 1000)) {
+        setStage(0, 'Session Expired', 'The Discord authorization session has expired. Please initiate verification again.', true);
+        sessionStorage.removeItem('ax_discord_oauth_state');
+        return;
+      }
+
+      // 3. Perform Backend Token Exchange via Vercel Serverless API
+      setStage(2, 'Exchanging OAuth Token...', 'Securely communicating with ArenaX serverless verification gateway...');
+
+      let discordData;
+      try {
+        const response = await fetch(VERCEL_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success || !result.discord) {
+          throw new Error(result.error || 'Server rejected token exchange with Discord');
+        }
+
+        discordData = result.discord;
+      } catch (exchangeErr) {
+        console.error('Backend exchange error:', exchangeErr);
+        setStage(0, 'Verification Failed', exchangeErr.message || 'Could not exchange Discord authorization code.', true);
+        return;
+      }
+
+      // Display fetched user card
+      discordAvatar.src = discordData.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+      discordUsername.textContent = '@' + discordData.username;
+      discordUserId.textContent = 'ID: ' + discordData.id;
+      discordUserCard.classList.remove('hidden');
+
+      // 4. Resolve Authenticated ArenaX User & Persist to Firestore
+      setStage(3, 'Linking to ArenaX Account...', 'Saving verified Discord identity to your player profile...');
+
+      // Determine target UID from stored session state or active Firebase Auth session
+      let targetUid = storedState.uid;
+
+      // Wait briefly for Firebase Auth state to resolve
+      const authUser = await new Promise((resolve) => {
+        if (auth.currentUser) return resolve(auth.currentUser);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          unsubscribe();
+          resolve(user);
+        });
+        setTimeout(() => resolve(auth.currentUser), 2500);
+      });
+
+      if (authUser && authUser.uid) {
+        targetUid = authUser.uid;
+      }
+
+      if (!targetUid) {
+        setStage(0, 'Player Session Not Found', 'Could not locate your active ArenaX player account. Please log in first.', true);
+        return;
+      }
+
+      try {
+        const userDocRef = doc(db, 'users', targetUid);
+        await updateDoc(userDocRef, {
+          discordUserId: discordData.id,
+          discordUsername: discordData.username,
+          discordAvatar: discordData.avatar,
+          discordGlobalName: discordData.globalName || '',
+          discordVerified: true,
+          discordLinkedAt: serverTimestamp()
+        });
+
+        // Save confirmation flag for main app
+        sessionStorage.setItem('ax_discord_just_linked', JSON.stringify({
+          ...discordData,
+          source: storedState.source || 'general',
+          timestamp: Date.now()
+        }));
+
+        // Clean up consumed state
+        sessionStorage.removeItem('ax_discord_oauth_state');
+
+        setStage(4, 'Discord Connected ✓', `Successfully linked @${discordData.username} to your ArenaX account!`, false, true);
+
+        // Auto redirect after 1.5 seconds back to main app
+        const returnUrl = '/' + (storedState.source === 'settings' ? '#settings' : '');
+        btnReturn.href = returnUrl;
+
+        setTimeout(() => {
+          window.location.replace(returnUrl);
+        }, 1500);
+
+      } catch (dbErr) {
+        console.error('Firestore update error:', dbErr);
+        // Even if client write encounters permission issue, store in sessionStorage so main app's authenticated session can sync
+        sessionStorage.setItem('ax_discord_just_linked', JSON.stringify(discordData));
+        setStage(4, 'Discord Verified ✓', `Verified @${discordData.username}. Redirecting to complete synchronization...`, false, true);
+        setTimeout(() => window.location.replace('/'), 1800);
+      }
+    }
+
+    // Execute on page load
+    processOAuthCallback();
+  </script>
+</body>
+</html>
