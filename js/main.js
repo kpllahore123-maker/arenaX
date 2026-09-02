@@ -553,15 +553,24 @@ const createDummyProxy = () => {
   dummyFn.textContent = '';
   dummyFn.innerHTML = '';
   dummyFn.className = '';
+  dummyFn.addEventListener = () => {};
+  dummyFn.removeEventListener = () => {};
+  dummyFn.setAttribute = () => {};
+  dummyFn.getAttribute = () => null;
+  dummyFn.removeAttribute = () => {};
+  dummyFn.focus = () => {};
+  dummyFn.blur = () => {};
+  dummyFn.click = () => {};
+  dummyFn.scrollTo = () => {};
+  dummyFn.scrollIntoView = () => {};
+  dummyFn.appendChild = () => {};
+  dummyFn.removeChild = () => {};
+  dummyFn.querySelector = () => null;
+  dummyFn.querySelectorAll = () => [];
   return new Proxy(dummyFn, {
     get(target, prop) {
-      if (prop === 'classList') return target.classList;
-      if (prop === 'style') return target.style;
-      if (prop === 'dataset') return target.dataset;
-      if (prop === 'children') return [];
-      if (prop === 'files') return [];
-      if (prop === Symbol.toPrimitive || prop === 'toString' || prop === 'valueOf') return () => '';
       if (prop in target) return target[prop];
+      if (prop === Symbol.toPrimitive || prop === 'toString' || prop === 'valueOf') return () => '';
       return dummyFn;
     },
     set(target, prop, value) {
@@ -616,7 +625,9 @@ let splashDismissed = false;
 
 if (typeof window !== 'undefined') {
   setTimeout(() => {
-    initArenaX3DBackgroundPreload();
+    if (typeof window.initArenaX3DBackgroundPreload === 'function') {
+      window.initArenaX3DBackgroundPreload();
+    }
   }, 50);
 }
 function goTo(screenId) {
