@@ -968,7 +968,9 @@ function boot() {
     }, 3000);
   }
   loadLiveNotifications();
-  initGlobalChat();
+  if (typeof window.initGlobalChat === 'function') {
+    window.initGlobalChat();
+  }
   
   if (window.ArenaSplash) {
     window.ArenaSplash.status('Ready');
