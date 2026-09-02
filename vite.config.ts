@@ -10,7 +10,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
-        admin: path.resolve(__dirname, "admin.html")
+        admin: path.resolve(__dirname, "admin.html"),
+        discordCallback: path.resolve(__dirname, "discord-callback.html")
       }
     }
   },
