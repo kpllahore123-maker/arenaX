@@ -990,6 +990,12 @@ function boot() {
     renderProfileMomentsSection();
   }
   syncPremiumModalState();
+  if (typeof window.updateDiscordSecurityUI === 'function') {
+    window.updateDiscordSecurityUI();
+  }
+  if (typeof window.checkAndProcessDiscordCallback === 'function') {
+    window.checkAndProcessDiscordCallback();
+  }
 }
 
 function syncPremiumModalState() {
@@ -2193,6 +2199,12 @@ function handleTourCardClick(tour) {
     return;
   }
 
+  // 3. DISCORD VERIFICATION GATE: Tournament Participation Gate Check
+  if (profile && !profile.discordVerified) {
+    window.openDiscordVerificationGate(tour);
+    return;
+  }
+
   // Otherwise, if rejected or not registered, allow registration flow
   openTournamentRegister(tour);
 }
@@ -2202,6 +2214,12 @@ let activeRegisterTour = null;
 function openTournamentRegister(tour) {
   if (guestProfile) {
     alert('Guest accounts are restricted from registering for tournaments. Please register a real profile!');
+    return;
+  }
+
+  const profile = userProfile || guestProfile;
+  if (profile && !profile.discordVerified) {
+    window.openDiscordVerificationGate(tour);
     return;
   }
 
@@ -6333,4 +6351,356 @@ window.closeDepositModal = function() { const el = window.$("mDeposit"); if (el)
 window.openWithdrawModal = function() { const el = window.$("mWithdraw"); if (el) el.classList.remove("hidden"); };
 window.closeWithdrawModal = function() { const el = window.$("mWithdraw"); if (el) el.classList.add("hidden"); };
 window.toggleAccordion = function(id) { const el = window.$(id); if (el) el.classList.toggle("hidden"); };
+
+// =========================================================================
+// ── ARENAX DISCORD OAUTH2 VERIFICATION & SECURITY GATE SYSTEM ───────────
+// =========================================================================
+
+const DISCORD_CLIENT_ID = '1347897210168344586'; // Configured Discord Client ID or fallback
+const DISCORD_REDIRECT_URI = 'https://arenax.cyou/discord-callback';
+const VERCEL_API_ENDPOINT = 'https://arena-x-beta.vercel.app/api/discord-callback';
+
+// Cached pending tournament to resume after verification
+let pendingTournamentForVerification = null;
+
+/**
+ * Initiates the Discord OAuth2 authorization flow with CSRF state protection
+ */
+window.initiateDiscordOAuthFlow = function(source = 'general') {
+  if (guestProfile) {
+    alert('Guest accounts cannot link a Discord profile. Please create or log in to a permanent ArenaX account first!');
+    return;
+  }
+  const profile = userProfile || window.userProfile;
+  if (!profile || !profile.uid) {
+    alert('Please log in before connecting Discord.');
+    return;
+  }
+
+  // 1. Generate random CSRF state token
+  const randomState = 'ax_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+  const statePayload = {
+    token: randomState,
+    uid: profile.uid,
+    source: source,
+    timestamp: Date.now()
+  };
+
+  try {
+    sessionStorage.setItem('ax_discord_oauth_state', JSON.stringify(statePayload));
+  } catch (e) {
+    console.warn('SessionStorage unavailable for OAuth state, continuing anyway', e);
+  }
+
+  // 2. Construct Discord OAuth2 URL with scope=identify only
+  const clientId = window.DISCORD_CLIENT_ID || DISCORD_CLIENT_ID;
+  const redirectUri = encodeURIComponent(DISCORD_REDIRECT_URI);
+  const stateParam = encodeURIComponent(randomState);
+
+  const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify&state=${stateParam}`;
+
+  // 3. Redirect user to Discord Auth
+  window.location.href = discordAuthUrl;
+};
+
+/**
+ * Check if the current page load is a Discord OAuth callback
+ */
+window.checkAndProcessDiscordCallback = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const pathname = window.location.pathname;
+
+  const isDiscordCallbackRoute = pathname.includes('discord-callback') || urlParams.has('code');
+  if (!isDiscordCallbackRoute) return;
+
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  const error = urlParams.get('error');
+  const errorDescription = urlParams.get('error_description');
+
+  if (error) {
+    alert(`Discord Verification Cancelled: ${errorDescription || error}`);
+    cleanupDiscordUrlParams();
+    return;
+  }
+
+  if (!code) return;
+
+  // Retrieve and verify CSRF state
+  let storedState = null;
+  try {
+    const raw = sessionStorage.getItem('ax_discord_oauth_state');
+    if (raw) storedState = JSON.parse(raw);
+  } catch (e) {}
+
+  if (storedState && storedState.token && state && storedState.token !== state) {
+    console.warn('Discord OAuth state mismatch! Potential CSRF prevented.');
+    alert('Security Warning: Discord authentication state mismatch. Please retry verification.');
+    cleanupDiscordUrlParams();
+    return;
+  }
+
+  // Show status banner/toast
+  const toastMsg = document.createElement('div');
+  toastMsg.id = 'discordVerifyingToast';
+  toastMsg.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-indigo-400 animate-bounce';
+  toastMsg.innerHTML = '<i class="fab fa-discord text-base"></i> Verifying Discord identity with ArenaX...';
+  document.body.appendChild(toastMsg);
+
+  try {
+    // 1. Call serverless function on Vercel backend
+    let response;
+    try {
+      // First attempt relative /api route or primary Vercel function
+      response = await fetch(VERCEL_API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      });
+    } catch (netErr) {
+      // Fallback attempt to relative endpoint if hosted on same origin
+      response = await fetch('/api/discord-callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      });
+    }
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.discord) {
+      throw new Error(result.error || 'Failed to exchange Discord authorization code');
+    }
+
+    const discordData = result.discord;
+
+    // 2. Persist Discord identity to Firestore user document
+    const uid = (userProfile && userProfile.uid) || (storedState && storedState.uid) || (auth.currentUser && auth.currentUser.uid);
+    if (!uid) {
+      throw new Error('No active ArenaX player session found to link Discord profile.');
+    }
+
+    const userDocRef = doc(db, 'users', uid);
+    await updateDoc(userDocRef, {
+      discordUserId: discordData.id,
+      discordUsername: discordData.username,
+      discordAvatar: discordData.avatar,
+      discordGlobalName: discordData.globalName || '',
+      discordVerified: true,
+      discordLinkedAt: serverTimestamp()
+    });
+
+    // Update local profile object in-place
+    if (userProfile) {
+      userProfile.discordUserId = discordData.id;
+      userProfile.discordUsername = discordData.username;
+      userProfile.discordAvatar = discordData.avatar;
+      userProfile.discordGlobalName = discordData.globalName || '';
+      userProfile.discordVerified = true;
+    }
+
+    // Refresh UI components
+    window.renderDiscordAuthWidget();
+    window.updateDiscordSecurityUI();
+
+    toastMsg.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-emerald-400';
+    toastMsg.innerHTML = `<i class="fas fa-check-circle text-base"></i> Discord verified: <span class="underline">${discordData.username}</span>`;
+
+    setTimeout(() => {
+      if (toastMsg.parentNode) toastMsg.parentNode.removeChild(toastMsg);
+    }, 4500);
+
+    // If there was a pending tournament registration, auto-open it
+    if (pendingTournamentForVerification) {
+      const tour = pendingTournamentForVerification;
+      pendingTournamentForVerification = null;
+      if (typeof openTournamentRegister === 'function') {
+        openTournamentRegister(tour);
+      }
+    }
+
+  } catch (err) {
+    console.error('Discord Verification Error:', err);
+    alert('❌ Discord Verification Failed: ' + (err.message || err));
+    if (toastMsg.parentNode) toastMsg.parentNode.removeChild(toastMsg);
+  } finally {
+    sessionStorage.removeItem('ax_discord_oauth_state');
+    cleanupDiscordUrlParams();
+  }
+};
+
+function cleanupDiscordUrlParams() {
+  try {
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/discord-callback$/, '');
+    window.history.replaceState({}, document.title, cleanUrl || '/');
+  } catch (e) {}
+}
+
+/**
+ * Disconnects / Unlinks Discord from user's account
+ */
+window.unlinkDiscordAccount = async function() {
+  if (guestProfile || !userProfile) return;
+  const confirmUnlink = confirm('Are you sure you want to unlink your Discord account? You will need to reconnect it before registering for future tournaments.');
+  if (!confirmUnlink) return;
+
+  try {
+    const userDocRef = doc(db, 'users', userProfile.uid);
+    await updateDoc(userDocRef, {
+      discordUserId: null,
+      discordUsername: null,
+      discordAvatar: null,
+      discordGlobalName: null,
+      discordVerified: false,
+      discordUnlinkedAt: serverTimestamp()
+    });
+
+    userProfile.discordUserId = null;
+    userProfile.discordUsername = null;
+    userProfile.discordAvatar = null;
+    userProfile.discordVerified = false;
+
+    window.renderDiscordAuthWidget();
+    window.updateDiscordSecurityUI();
+
+    alert('✓ Discord account unlinked successfully.');
+  } catch (e) {
+    alert('Failed to unlink Discord: ' + e.message);
+  }
+};
+
+/**
+ * Generates and injects the reusable Discord Connect / Status widget
+ */
+window.renderDiscordAuthWidget = function() {
+  const profile = userProfile || guestProfile;
+  const isLinked = profile && profile.discordVerified === true;
+
+  const html = isLinked ? `
+    <div class="p-4 bg-gradient-to-r from-indigo-950/40 via-card to-card border border-indigo-500/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <img src="${profile.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="Discord Avatar" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500/60 bg-slate-900 shadow-md" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"/>
+          <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 flex items-center justify-center text-[8px] text-white font-bold" title="Verified">
+            ✓
+          </span>
+        </div>
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-white leading-tight font-display">${profile.discordUsername || 'Discord User'}</span>
+            <span class="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[8px] font-black uppercase rounded">Verified</span>
+          </div>
+          <p class="text-[10px] text-t3 font-mono">ID: ${profile.discordUserId || 'Connected'}</p>
+        </div>
+      </div>
+      <button onclick="window.unlinkDiscordAccount()" class="px-3 py-1.5 bg-red/10 border border-red/30 hover:bg-red/20 text-red text-[10px] font-bold uppercase rounded-lg transition active:scale-95 cursor-pointer">
+        Unlink
+      </button>
+    </div>
+  ` : `
+    <div class="space-y-3">
+      <div class="p-3.5 bg-bg/60 border border-bdr rounded-xl flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-slate-800 border border-bdr flex items-center justify-center text-t3 text-sm">
+            <i class="fab fa-discord"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-200">No Discord Linked</div>
+            <div class="text-[10px] text-t3">Required for tournament entry & verification</div>
+          </div>
+        </div>
+        <span class="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase">
+          Unlinked
+        </span>
+      </div>
+
+      <button onclick="window.initiateDiscordOAuthFlow()" class="w-full py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg shadow-indigo-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+        <i class="fab fa-discord text-base"></i> Connect Discord Account
+      </button>
+    </div>
+  `;
+
+  // Inject into gate modal and settings widget containers
+  if ($('discordGateWidget')) $('discordGateWidget').innerHTML = html;
+  if ($('discordSettingsWidget')) $('discordSettingsWidget').innerHTML = html;
+};
+
+/**
+ * Updates UI badges and state across the settings panel
+ */
+window.updateDiscordSecurityUI = function() {
+  const profile = userProfile || guestProfile;
+  const isLinked = profile && profile.discordVerified === true;
+
+  const badge = $('badgeAxSecurityStatus');
+  if (badge) {
+    if (isLinked) {
+      badge.textContent = 'Verified ✓';
+      badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+    } else {
+      badge.textContent = 'Unlinked';
+      badge.className = 'text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+    }
+  }
+
+  const sub = $('lblAxSecuritySubtitle');
+  if (sub) {
+    if (isLinked) {
+      sub.textContent = `Linked as @${profile.discordUsername || 'Verified'}`;
+    } else {
+      sub.textContent = 'Discord verification & safety status';
+    }
+  }
+};
+
+/**
+ * Opens the Tournament Discord Verification Gate Modal
+ */
+window.openDiscordVerificationGate = function(tour) {
+  pendingTournamentForVerification = tour;
+  window.renderDiscordAuthWidget();
+  const modal = $('mDiscordVerifyGate');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeDiscordVerificationGate = function() {
+  const modal = $('mDiscordVerifyGate');
+  if (modal) modal.classList.add('hidden');
+};
+
+/**
+ * Opens the AX Security Modal from Profile Settings
+ */
+window.openAxSecurityModal = function() {
+  window.renderDiscordAuthWidget();
+  window.updateDiscordSecurityUI();
+  const modal = $('mAxSecurityModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeAxSecurityModal = function() {
+  const modal = $('mAxSecurityModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+// Event Listeners for AX Security and Discord Modals
+document.addEventListener('DOMContentLoaded', () => {
+  // AX Security Modal Triggers
+  const btnAx = $('btnAxSecurity');
+  if (btnAx) btnAx.addEventListener('click', () => window.openAxSecurityModal());
+
+  const bCloseAx = $('bCloseAxSecurity');
+  if (bCloseAx) bCloseAx.addEventListener('click', () => window.closeAxSecurityModal());
+
+  const bCloseAxCross = $('bCloseAxSecurityCross');
+  if (bCloseAxCross) bCloseAxCross.addEventListener('click', () => window.closeAxSecurityModal());
+
+  // Discord Gate Triggers
+  const bCloseGate = $('bCloseDiscordGate');
+  if (bCloseGate) bCloseGate.addEventListener('click', () => window.closeDiscordVerificationGate());
+
+  const bCancelGate = $('bCancelDiscordGate');
+  if (bCancelGate) bCancelGate.addEventListener('click', () => window.closeDiscordVerificationGate());
+});
+
 
