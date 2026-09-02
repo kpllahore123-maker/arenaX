@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ArenaX — Redirecting...</title>
+  <script>
+    // GitHub Pages SPA router redirect for /discord-callback and deep routes
+    (function() {
+      var pathname = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      
+      // Preserve query params (code, state) and redirect to root with parameters
+      var targetUrl = '/' + (search ? search : '') + (hash ? hash : '');
+      
+      // Keep session storage intact and navigate to main app
+      window.location.replace(targetUrl);
+    })();
+  </script>
+</head>
+<body style="background-color: #0c0d12; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+  <p>Redirecting to ArenaX...</p>
+</body>
+</html>
