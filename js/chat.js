@@ -2695,3 +2695,23 @@ async function sendSupportMessage(customTxt) {
 
 
 // Global Window Attachments
+window.loadFriendSystem = loadFriendSystem;
+window.acceptFriendRequest = acceptFriendRequest;
+window.declineFriendRequest = declineFriendRequest;
+window.openTasksModal = openTasksModal;
+window.closeTasksModal = closeTasksModal;
+window.updateTasksFrameButtonState = updateTasksFrameButtonState;
+window.openRankingModal = openRankingModal;
+window.renderVanillaRankingList = renderVanillaRankingList;
+window.initGlobalChat = initGlobalChat;
+window.renderGlobalMessages = renderGlobalMessages;
+window.updateChatUnreadDot = updateChatUnreadDot;
+window.updateSubGlobalDot = updateSubGlobalDot;
+window.setGlobalTypingState = setGlobalTypingState;
+window.handleGlobalInputKeyPress = handleGlobalInputKeyPress;
+window.checkIfMuted = checkIfMuted;
+window.openFriendDM = openFriendDM;
+window.sendDirectMessage = sendDirectMessage;
+window.loadLiveSupportChat = loadLiveSupportChat;
+window.sendSupportMessage = sendSupportMessage;
+
