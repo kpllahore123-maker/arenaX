@@ -184,6 +184,7 @@ function initArenaX3DBackgroundPreload() {
 }
 
 // Kick off background preload immediately while splash screen is showing
+window.initArenaX3DBackgroundPreload = initArenaX3DBackgroundPreload;
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     initArenaX3DBackgroundPreload();
@@ -350,6 +351,64 @@ function getActive3DModelFileName(profile) {
   return 'character_boy_1_fbx.glb';
 }
 
+function renderModelCardHTML(m, selectedModel, profile, activeFileName) {
+  if (!m) return '';
+  const currentSelected = selectedModel || (CHARACTER_3D_MODELS_DATA.find(item => item.id === currentSelected3DModelId) || CHARACTER_3D_MODELS_DATA[0]);
+  const userProf = profile || window.userProfile || window.currentUser || (typeof window.getActiveUserProfile === 'function' ? window.getActiveUserProfile() : null);
+  const activeFile = activeFileName || getActive3DModelFileName(userProf);
+
+  const isSelected = m.id === currentSelected.id;
+  const isUnlocked = is3DModelUnlocked(userProf, m);
+  const isEquipped = isUnlocked && (activeFile === m.fileName || (m.id === 'classic_boy' && activeFile === 'character_boy_1_fbx.glb'));
+
+  let statusDisplay = '';
+  if (isEquipped) {
+    statusDisplay = '<span class="text-[10px] text-emerald-300 font-black flex items-center gap-0.5"><i class="fas fa-check-circle text-[9px]"></i> Active</span>';
+  } else if (isUnlocked) {
+    statusDisplay = '<span class="text-[10px] text-amber-300 font-black flex items-center gap-0.5"><i class="fas fa-unlock text-[9px]"></i> Owned</span>';
+  } else {
+    statusDisplay = `<span class="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1"><span>🪙</span> ${(m.price || 0).toLocaleString()}</span>`;
+  }
+
+  return `
+    <button
+      type="button"
+      onclick="window.selectPlayerShowModel('${m.id}')"
+      class="relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
+        isSelected
+          ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
+          : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
+      }"
+    >
+      <!-- Top Card Badges -->
+      <div class="flex items-center justify-between w-full">
+        <span class="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
+          ${m.isAnimated ? 'ANIM' : '3D'}
+        </span>
+        <span class="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
+          S
+        </span>
+      </div>
+
+      <!-- Center Icon Thumbnail -->
+      <div class="flex items-center justify-center my-auto text-2xl text-white/90">
+        <i class="fas ${m.icon || 'fa-user'}"></i>
+      </div>
+
+      <!-- Bottom Model Details -->
+      <div class="w-full pt-1">
+        <p class="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
+          ${m.name}
+        </p>
+        <div class="flex items-center gap-1 mt-0.5">
+          ${statusDisplay}
+        </div>
+      </div>
+    </button>
+  `;
+}
+window.renderModelCardHTML = renderModelCardHTML;
+
 function renderPlayerShowSelectorUI() {
   const profile = window.userProfile || window.currentUser || (typeof window.getActiveUserProfile === 'function' ? window.getActiveUserProfile() : null);
   const container = document.getElementById('pPlayerShowModelCardsList');
@@ -366,64 +425,12 @@ function renderPlayerShowSelectorUI() {
 
   // Render cards in two rows: Row 1 (first 3 models) and Row 2 (newly added models)
   if (container) {
-    function renderModelCardHTML(m) {
-      const isSelected = m.id === selectedModel.id;
-      const isUnlocked = is3DModelUnlocked(profile, m);
-      const isEquipped = isUnlocked && (activeFileName === m.fileName || (m.id === 'classic_boy' && activeFileName === 'character_boy_1_fbx.glb'));
-
-      let statusDisplay = '';
-      if (isEquipped) {
-        statusDisplay = '<span class="text-[10px] text-emerald-300 font-black flex items-center gap-0.5"><i class="fas fa-check-circle text-[9px]"></i> Active</span>';
-      } else if (isUnlocked) {
-        statusDisplay = '<span class="text-[10px] text-amber-300 font-black flex items-center gap-0.5"><i class="fas fa-unlock text-[9px]"></i> Owned</span>';
-      } else {
-        statusDisplay = `<span class="text-[10px] text-[#f7d154] font-black font-mono flex items-center gap-1"><span>🪙</span> ${m.price.toLocaleString()}</span>`;
-      }
-
-      return `
-        <button
-          type="button"
-          onclick="window.selectPlayerShowModel('${m.id}')"
-          class="relative p-3 rounded-2xl border-2 text-left flex flex-col justify-between transition-all duration-200 cursor-pointer overflow-hidden h-32 ${
-            isSelected
-              ? 'bg-gradient-to-br from-[#4d637f] to-[#36475d] border-[#24d9c8] shadow-[0_0_18px_rgba(36,217,200,0.45)] ring-2 ring-[#24d9c8]/50'
-              : 'bg-[#4b5e78]/80 hover:bg-[#576c88] border-white/15 hover:border-white/30'
-          }"
-        >
-          <!-- Top Card Badges -->
-          <div class="flex items-center justify-between w-full">
-            <span class="text-[10px] font-bold text-white/80 uppercase tracking-wider font-mono">
-              ${m.isAnimated ? 'ANIM' : '3D'}
-            </span>
-            <span class="px-1.5 py-0.5 rounded-md bg-[#f0c040] text-slate-950 text-[10px] font-black shadow-xs">
-              S
-            </span>
-          </div>
-
-          <!-- Center Icon Thumbnail -->
-          <div class="flex items-center justify-center my-auto text-2xl text-white/90">
-            <i class="fas ${m.icon || 'fa-user'}"></i>
-          </div>
-
-          <!-- Bottom Model Details -->
-          <div class="w-full pt-1">
-            <p class="text-xs font-black text-white truncate leading-tight drop-shadow-xs">
-              ${m.name}
-            </p>
-            <div class="flex items-center gap-1 mt-0.5">
-              ${statusDisplay}
-            </div>
-          </div>
-        </button>
-      `;
-    }
-
     const row1 = CHARACTER_3D_MODELS_DATA.slice(0, 3);
     const row2 = CHARACTER_3D_MODELS_DATA.slice(3);
 
-    let html = `<div class="grid grid-cols-3 gap-2 sm:gap-3">${row1.map(renderModelCardHTML).join('')}</div>`;
+    let html = `<div class="grid grid-cols-3 gap-2 sm:gap-3">${row1.map(m => renderModelCardHTML(m, selectedModel, profile, activeFileName)).join('')}</div>`;
     if (row2.length > 0) {
-      html += `<div class="grid grid-cols-3 gap-2 sm:gap-3 overflow-x-auto pb-0.5 no-scrollbar">${row2.map(renderModelCardHTML).join('')}</div>`;
+      html += `<div class="grid grid-cols-3 gap-2 sm:gap-3 overflow-x-auto pb-0.5 no-scrollbar">${row2.map(m => renderModelCardHTML(m, selectedModel, profile, activeFileName)).join('')}</div>`;
     }
     container.innerHTML = html;
   }
@@ -1051,21 +1058,3 @@ window.purchasePlayerShow = window.handlePurchasePlayerShow;
 
 
 // Global Window Attachments
-window.cloneArenaXGltf = cloneArenaXGltf;
-window.preloadArenaX3DModel = preloadArenaX3DModel;
-window.initArenaX3DBackgroundPreload = initArenaX3DBackgroundPreload;
-window.autoFramePlayerShowCamera = autoFramePlayerShowCamera;
-window.is3DModelUnlocked = is3DModelUnlocked;
-window.getActive3DModelFileName = getActive3DModelFileName;
-window.renderPlayerShowSelectorUI = renderPlayerShowSelectorUI;
-window.renderModelCardHTML = renderModelCardHTML;
-window.loadPlayerShowModelFile = loadPlayerShowModelFile;
-window.setupProceduralFallback = setupProceduralFallback;
-window.selectPlayerShowModel = selectPlayerShowModel;
-window.openPlayerShowViewer = openPlayerShowViewer;
-window.closePlayerShowViewer = closePlayerShowViewer;
-window.updatePlayerShowUI = updatePlayerShowUI;
-window.equipSelected3DModel = equipSelected3DModel;
-window.purchaseSelected3DModel = purchaseSelected3DModel;
-window.handlePurchasePlayerShow = handlePurchasePlayerShow;
-window.purchasePlayerShow = purchasePlayerShow;
