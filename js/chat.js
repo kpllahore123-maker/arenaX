@@ -1173,6 +1173,21 @@ $('btnSearchFriend').addEventListener('click', async () => {
 $('bSendFriendReq').addEventListener('click', async () => {
   if (!searchFriendTarget) return;
   try {
+    // Check if either user has blocked the other
+    const [theyBlockedMe, iBlockedThem] = await Promise.all([
+      getDoc(doc(db, 'users', searchFriendTarget.uid, 'blocked', userProfile.uid)),
+      getDoc(doc(db, 'users', userProfile.uid, 'blocked', searchFriendTarget.uid))
+    ]);
+
+    if (theyBlockedMe.exists()) {
+      alert("You cannot send friend requests to this player because they have blocked you.");
+      return;
+    }
+    if (iBlockedThem.exists()) {
+      alert("You have blocked this player. Unblock them first to send a friend request.");
+      return;
+    }
+
     await setDoc(doc(db, 'users', searchFriendTarget.uid, 'friendRequests', userProfile.uid), {
       uid: userProfile.uid,
       name: userProfile.name,
@@ -1628,9 +1643,66 @@ window.openPlayerProfileCard = async function(targetUid) {
 
     const u = snap.data();
     currentViewedUser = { uid: targetUid, ...u };
+    window.currentViewedUser = currentViewedUser;
     window.currentViewingPlayerId = targetUid;
     window.currentViewingPlayerName = u.name || u.userName || 'ArenaX Player';
     window.currentViewingPlayerAvatar = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+
+    // Reset 3-dots more menu state & perform block/mute status checks
+    $('vppMoreMenuDropdown')?.classList.add('hidden');
+
+    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    const isOwnProfile = myUid && (myUid === targetUid);
+
+    if (isOwnProfile) {
+      if ($('btnVppOptBlock')) $('btnVppOptBlock').classList.add('hidden');
+      if ($('btnVppOptReport')) $('btnVppOptReport').classList.add('hidden');
+      if ($('btnVppOptMute')) $('btnVppOptMute').classList.add('hidden');
+      if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
+      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
+    } else {
+      if ($('btnVppOptBlock')) $('btnVppOptBlock').classList.remove('hidden');
+      if ($('btnVppOptReport')) $('btnVppOptReport').classList.remove('hidden');
+      if ($('btnVppOptMute')) $('btnVppOptMute').classList.remove('hidden');
+      if ($('btnVppSendDM')) $('btnVppSendDM').classList.remove('hidden');
+      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.remove('hidden');
+
+      if (myUid) {
+        // 1. Check if target user blocked current user
+        try {
+          const theyBlockedMe = await getDoc(doc(db, 'users', targetUid, 'blocked', myUid));
+          if (theyBlockedMe.exists()) {
+            if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
+            if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
+            if ($('btnVppSendPopularity')) $('btnVppSendPopularity').classList.add('hidden');
+            if ($('vppMomentsContainer')) $('vppMomentsContainer').innerHTML = '<p class="text-xs text-slate-400 italic py-1">Profile details unavailable</p>';
+            if ($('vppBio')) $('vppBio').textContent = "This profile is unavailable.";
+          }
+        } catch(e) {
+          console.warn("Blocked me check notice:", e);
+        }
+
+        // 2. Check if current user blocked target user
+        try {
+          const iBlockedThem = await getDoc(doc(db, 'users', myUid, 'blocked', targetUid));
+          const isBlocked = iBlockedThem.exists();
+          if ($('vppOptBlockText')) $('vppOptBlockText').textContent = isBlocked ? "Unblock User" : "Block User";
+          if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = isBlocked ? '<i class="fas fa-user-check text-emerald-400"></i>' : '<i class="fas fa-ban text-rose-400"></i>';
+        } catch(e) {
+          console.warn("I blocked them check notice:", e);
+        }
+
+        // 3. Check if current user muted target user
+        try {
+          const iMutedThem = await getDoc(doc(db, 'users', myUid, 'muted', targetUid));
+          const isMuted = iMutedThem.exists();
+          if ($('vppOptMuteText')) $('vppOptMuteText').textContent = isMuted ? "Unmute Notifications" : "Mute Notifications";
+          if ($('vppOptMuteIcon')) $('vppOptMuteIcon').innerHTML = isMuted ? '<i class="fas fa-bell text-emerald-400"></i>' : '<i class="fas fa-bell-slash text-slate-300"></i>';
+        } catch(e) {
+          console.warn("I muted them check notice:", e);
+        }
+      }
+    }
 
     // Fill Top Section
     if ($('vppName')) {
@@ -1808,6 +1880,351 @@ if ($('btnVppSendDM')) {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
     if (typeof openFriendDM === 'function') {
       openFriendDM(currentViewedUser);
+    }
+  });
+}
+
+// ── 3-DOTS MORE OPTIONS MENU CONTROLLER ──
+window.toggleVppMoreMenu = function(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
+  const dropdown = document.getElementById('vppMoreMenuDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+};
+
+const vppMoreBtn = document.getElementById('btnVppMoreOpts');
+if (vppMoreBtn) {
+  vppMoreBtn.addEventListener('click', (e) => {
+    window.toggleVppMoreMenu(e);
+  });
+}
+
+// Close 3-dots dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('vppMoreMenuDropdown');
+  const btn = document.getElementById('btnVppMoreOpts');
+  if (dropdown && !dropdown.classList.contains('hidden')) {
+    if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  }
+});
+
+// 1. COPY PROFILE LINK OPTION
+if ($('btnVppOptCopyLink')) {
+  $('btnVppOptCopyLink').addEventListener('click', () => {
+    $('vppMoreMenuDropdown')?.classList.add('hidden');
+    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+    if (!targetUid) return;
+
+    const profileUrl = `https://arenax.cyou/profile?uid=${targetUid}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(profileUrl).then(() => {
+        if (typeof showToastNotification === 'function') {
+          showToastNotification("Profile Link Copied! 📋", profileUrl);
+        } else {
+          alert(`Profile link copied:\n${profileUrl}`);
+        }
+      }).catch(() => {
+        prompt("Copy profile link:", profileUrl);
+      });
+    } else {
+      prompt("Copy profile link:", profileUrl);
+    }
+  });
+}
+
+// 2. BLOCK / UNBLOCK USER OPTION
+let pendingBlockTarget = null;
+
+if ($('btnVppOptBlock')) {
+  $('btnVppOptBlock').addEventListener('click', async () => {
+    $('vppMoreMenuDropdown')?.classList.add('hidden');
+    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+    const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'this user';
+    
+    if (!myUid || !targetUid) {
+      alert("Please sign in to manage blocked users.");
+      return;
+    }
+
+    try {
+      const blockedDocRef = doc(db, 'users', myUid, 'blocked', targetUid);
+      const snap = await getDoc(blockedDocRef);
+
+      if (snap.exists()) {
+        // User is currently blocked -> prompt or unblock immediately
+        if (confirm(`Unblock ${targetName}? They will be able to message you and send gifts again.`)) {
+          await deleteDoc(blockedDocRef);
+          if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Block User";
+          if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-ban text-rose-400"></i>';
+          if (typeof showToastNotification === 'function') {
+            showToastNotification("User Unblocked", `${targetName} has been unblocked.`);
+          } else {
+            alert(`${targetName} has been unblocked.`);
+          }
+        }
+      } else {
+        // Show Block Confirmation Modal
+        pendingBlockTarget = { uid: targetUid, name: targetName };
+        if ($('lblBlockConfirmTitle')) $('lblBlockConfirmTitle').textContent = `Block ${targetName}?`;
+        if ($('lblBlockConfirmDesc')) {
+          $('lblBlockConfirmDesc').textContent = `Block ${targetName}? They won't be able to message you, send gifts, or view your full profile.`;
+        }
+        $('mBlockUserConfirmModal')?.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error("Block check error:", err);
+      alert("Error checking block status: " + err.message);
+    }
+  });
+}
+
+if ($('btnCancelBlockUser')) {
+  $('btnCancelBlockUser').addEventListener('click', () => {
+    $('mBlockUserConfirmModal')?.classList.add('hidden');
+    pendingBlockTarget = null;
+  });
+}
+
+if ($('btnConfirmBlockUser')) {
+  $('btnConfirmBlockUser').addEventListener('click', async () => {
+    if (!pendingBlockTarget) return;
+    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    if (!myUid) return;
+
+    const btn = $('btnConfirmBlockUser');
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Blocking...`;
+
+    try {
+      const blockedDocRef = doc(db, 'users', myUid, 'blocked', pendingBlockTarget.uid);
+      await setDoc(blockedDocRef, {
+        blockedAt: serverTimestamp(),
+        blockedUid: pendingBlockTarget.uid,
+        blockedName: pendingBlockTarget.name
+      });
+
+      $('mBlockUserConfirmModal')?.classList.add('hidden');
+      if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Unblock User";
+      if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-user-check text-emerald-400"></i>';
+
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("User Blocked 🚫", `${pendingBlockTarget.name} has been blocked.`);
+      } else {
+        alert(`${pendingBlockTarget.name} has been blocked.`);
+      }
+    } catch (err) {
+      console.error("Block error:", err);
+      alert("Failed to block user: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      pendingBlockTarget = null;
+    }
+  });
+}
+
+// 3. MUTE / UNMUTE NOTIFICATIONS OPTION
+if ($('btnVppOptMute')) {
+  $('btnVppOptMute').addEventListener('click', async () => {
+    $('vppMoreMenuDropdown')?.classList.add('hidden');
+    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+    const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'this user';
+
+    if (!myUid || !targetUid) {
+      alert("Please sign in to manage notifications.");
+      return;
+    }
+
+    try {
+      const mutedDocRef = doc(db, 'users', myUid, 'muted', targetUid);
+      const snap = await getDoc(mutedDocRef);
+
+      if (snap.exists()) {
+        // Unmute notifications
+        await deleteDoc(mutedDocRef);
+        if ($('vppOptMuteText')) $('vppOptMuteText').textContent = "Mute Notifications";
+        if ($('vppOptMuteIcon')) $('vppOptMuteIcon').innerHTML = '<i class="fas fa-bell-slash text-slate-300"></i>';
+        if (typeof showToastNotification === 'function') {
+          showToastNotification("Notifications Unmuted 🔔", `You will receive notifications from ${targetName}.`);
+        } else {
+          alert(`Notifications unmuted for ${targetName}.`);
+        }
+      } else {
+        // Mute notifications
+        await setDoc(mutedDocRef, {
+          mutedAt: serverTimestamp(),
+          mutedUid: targetUid,
+          mutedName: targetName
+        });
+        if ($('vppOptMuteText')) $('vppOptMuteText').textContent = "Unmute Notifications";
+        if ($('vppOptMuteIcon')) $('vppOptMuteIcon').innerHTML = '<i class="fas fa-bell text-emerald-400"></i>';
+        if (typeof showToastNotification === 'function') {
+          showToastNotification("Notifications Muted 🔕", `Notifications from ${targetName} have been silenced.`);
+        } else {
+          alert(`Notifications muted for ${targetName}.`);
+        }
+      }
+    } catch (err) {
+      console.error("Mute error:", err);
+      alert("Failed to update notification settings: " + err.message);
+    }
+  });
+}
+
+// 4. REPORT USER MODAL CONTROLLER
+const REPORT_CATEGORIES = [
+  { id: 'harassment', label: 'Harassment/Bullying', icon: 'fa-user-slash', desc: 'Threats, intimidation, or persistent harassment' },
+  { id: 'abusive', label: 'Abusive Language/Hate Speech', icon: 'fa-comment-slash', desc: 'Slurs, insults, or hateful content' },
+  { id: 'inappropriate', label: 'Inappropriate Username/Profile Picture', icon: 'fa-image', desc: 'Explicit, vulgar, or offensive photos/names' },
+  { id: 'fake', label: 'Fake Account/Impersonation', icon: 'fa-user-secret', desc: 'Pretending to be someone else or another player' },
+  { id: 'hacking', label: 'Hacking', icon: 'fa-shield-virus', desc: 'Cheats, scripts, or exploiting' },
+  { id: 'spam', label: 'Spam', icon: 'fa-envelope-open-text', desc: 'Phishing links or repeated spam' },
+  { id: 'underage', label: 'Underage User', icon: 'fa-child', desc: 'Account suspected to belong to a minor' },
+  { id: 'other', label: 'Other', icon: 'fa-ellipsis-h', desc: 'Any other safety or fair-play violation' }
+];
+
+let selectedReportCategory = 'Harassment/Bullying';
+
+function renderReportCategoryList() {
+  const container = $('reportCategoryContainer');
+  if (!container) return;
+
+  container.innerHTML = REPORT_CATEGORIES.map((cat) => {
+    const isSelected = selectedReportCategory === cat.label;
+    return `
+      <div 
+        onclick="window.selectReportCategory('${cat.label}')"
+        class="p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2.5 ${isSelected ? 'bg-amber-500/15 border-amber-500/60 shadow-sm' : 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-700/60'}"
+      >
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-7 h-7 rounded-lg ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'} flex items-center justify-center text-xs flex-shrink-0 transition">
+            <i class="fas ${cat.icon}"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold ${isSelected ? 'text-amber-300' : 'text-white'} truncate">${cat.label}</div>
+            <div class="text-[10px] text-slate-400 truncate">${cat.desc}</div>
+          </div>
+        </div>
+
+        <div class="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-amber-400 bg-amber-400' : 'border-slate-500'}">
+          ${isSelected ? '<i class="fas fa-check text-[9px] text-slate-950 font-black"></i>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Toggle Other input
+  const otherWrap = $('reportOtherCategoryWrap');
+  if (otherWrap) {
+    if (selectedReportCategory === 'Other') {
+      otherWrap.classList.remove('hidden');
+    } else {
+      otherWrap.classList.add('hidden');
+    }
+  }
+}
+
+window.selectReportCategory = function(catLabel) {
+  selectedReportCategory = catLabel;
+  renderReportCategoryList();
+};
+
+if ($('btnVppOptReport')) {
+  $('btnVppOptReport').addEventListener('click', () => {
+    $('vppMoreMenuDropdown')?.classList.add('hidden');
+    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+    const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
+    const targetHandle = currentViewedUser?.handle ? `@${currentViewedUser.handle}` : (targetUid ? `UID: ${targetUid.slice(0, 10)}...` : '');
+    const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+
+    if ($('reportTargetName')) $('reportTargetName').textContent = targetName;
+    if ($('reportTargetHandle')) $('reportTargetHandle').textContent = targetHandle;
+    if ($('reportTargetAv')) $('reportTargetAv').src = targetAv;
+    if ($('reportDetailsInp')) $('reportDetailsInp').value = '';
+    if ($('reportOtherCategoryInp')) $('reportOtherCategoryInp').value = '';
+
+    selectedReportCategory = 'Harassment/Bullying';
+    renderReportCategoryList();
+
+    $('mReportUserModal')?.classList.remove('hidden');
+  });
+}
+
+if ($('btnCloseReportUserModal')) {
+  $('btnCloseReportUserModal').addEventListener('click', () => {
+    $('mReportUserModal')?.classList.add('hidden');
+  });
+}
+
+if ($('btnSubmitProfileReport')) {
+  $('btnSubmitProfileReport').addEventListener('click', async () => {
+    const myProfile = userProfile || window.userProfile || window.currentUser;
+    if (!myProfile || !myProfile.uid) {
+      alert("Please sign in to submit a report.");
+      return;
+    }
+
+    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+    if (!targetUid) {
+      alert("Target user is not specified.");
+      return;
+    }
+
+    let category = selectedReportCategory;
+    if (category === 'Other') {
+      const otherInp = $('reportOtherCategoryInp')?.value.trim();
+      if (!otherInp) {
+        alert("Please specify the reason in the text box.");
+        $('reportOtherCategoryInp')?.focus();
+        return;
+      }
+      category = `Other: ${otherInp}`;
+    }
+
+    const details = $('reportDetailsInp')?.value.trim() || '';
+    const btn = $('btnSubmitProfileReport');
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Submitting...`;
+
+    try {
+      const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
+      const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || '';
+
+      await addDoc(collection(db, 'profile_reports'), {
+        reportedUid: targetUid,
+        reportedName: targetName,
+        reportedAvatar: targetAv,
+        reporterUid: myProfile.uid,
+        reporterName: myProfile.name || myProfile.userName || 'ArenaX Player',
+        reporterAvatar: myProfile.av || myProfile.avatar || '',
+        category: category,
+        details: details,
+        status: 'pending',
+        timestamp: serverTimestamp()
+      });
+
+      $('mReportUserModal')?.classList.add('hidden');
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("Report Submitted ✅", "Thank you for helping keep ArenaX safe. Our moderation team will review this report.");
+      } else {
+        alert("Report submitted successfully. Thank you for keeping ArenaX safe!");
+      }
+    } catch (err) {
+      console.error("Report submit error:", err);
+      alert("Failed to submit report: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
     }
   });
 }
@@ -2227,6 +2644,34 @@ async function sendDirectMessage() {
   }
   const txt = $('dmInp').value.trim();
   if (!txt || !activeDMFriendUid) return;
+
+  // Check if either user has blocked the other
+  try {
+    const [theyBlockedMe, iBlockedThem] = await Promise.all([
+      getDoc(doc(db, 'users', activeDMFriendUid, 'blocked', userProfile.uid)),
+      getDoc(doc(db, 'users', userProfile.uid, 'blocked', activeDMFriendUid))
+    ]);
+
+    if (theyBlockedMe.exists()) {
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("Message Blocked 🚫", "You cannot send messages to this user because they have blocked you.");
+      } else {
+        alert("You cannot send messages to this user because they have blocked you.");
+      }
+      return;
+    }
+    if (iBlockedThem.exists()) {
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("User Blocked 🚫", "You have blocked this player. Unblock them first to send a message.");
+      } else {
+        alert("You have blocked this player. Unblock them first to send a message.");
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn("Block check in DM error:", err);
+  }
+
   $('dmInp').value = '';
 
   const roomId = [userProfile.uid, activeDMFriendUid].sort().join('_');
