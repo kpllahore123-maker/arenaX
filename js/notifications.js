@@ -10,10 +10,34 @@ export async function sendPersonalNotification(recipientUid, payload) {
     const collection = window.collection;
     const addDoc = window.addDoc;
     const serverTimestamp = window.serverTimestamp;
+    const doc = window.doc;
+    const getDoc = window.getDoc;
     
     if (!db || !collection || !addDoc) {
       console.warn('Firestore not ready for sendPersonalNotification');
       return;
+    }
+
+    // Check if recipient has muted or blocked the sender
+    const senderUid = payload.data?.senderUid || payload.senderUid;
+    if (senderUid && doc && getDoc) {
+      try {
+        const [mutedSnap, blockedSnap] = await Promise.all([
+          getDoc(doc(db, 'users', recipientUid, 'muted', senderUid)),
+          getDoc(doc(db, 'users', recipientUid, 'blocked', senderUid))
+        ]);
+
+        if (mutedSnap.exists()) {
+          console.log(`Notification silenced: recipient ${recipientUid} has muted sender ${senderUid}`);
+          return;
+        }
+        if (blockedSnap.exists()) {
+          console.log(`Notification suppressed: recipient ${recipientUid} has blocked sender ${senderUid}`);
+          return;
+        }
+      } catch (checkErr) {
+        console.warn('Mute/block notification check notice:', checkErr);
+      }
     }
 
     const notificationDoc = {
