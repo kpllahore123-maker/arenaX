@@ -1617,8 +1617,108 @@ window.renderNonInteractive3DCharacter = function(containerId, activeModelFileNa
 // ── CUSTOM PLAYER PROFILE CARD CONTROLLER ──
 let currentViewedUser = null;
 
+function getActiveUserUid() {
+  const prof = window.userProfile || (typeof userProfile !== 'undefined' ? userProfile : null) || window.currentUser || window.guestProfile || (typeof guestProfile !== 'undefined' ? guestProfile : null);
+  if (prof?.uid) return prof.uid;
+  if (prof?.id) return prof.id;
+  if (window.auth?.currentUser?.uid) return window.auth.currentUser.uid;
+  try {
+    const raw = localStorage.getItem('arenaX_guest_profile');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.uid) return parsed.uid;
+      if (parsed?.id) return parsed.id;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function isLocallyBlockedByMe(myUid, targetUid) {
+  if (!targetUid) return false;
+  try {
+    if (myUid) {
+      const raw = localStorage.getItem(`arenax_blocked_${myUid}`);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.includes(targetUid)) return true;
+      }
+    }
+    const globalRaw = localStorage.getItem('arenax_global_blocked_users');
+    if (globalRaw) {
+      const gList = JSON.parse(globalRaw);
+      if (Array.isArray(gList) && gList.includes(targetUid)) return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function saveLocallyBlockedUser(myUid, targetUid) {
+  if (!targetUid) return;
+  try {
+    if (myUid) {
+      const key = `arenax_blocked_${myUid}`;
+      const raw = localStorage.getItem(key);
+      let list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+      if (!list.includes(targetUid)) {
+        list.push(targetUid);
+        localStorage.setItem(key, JSON.stringify(list));
+      }
+    }
+    const gKey = 'arenax_global_blocked_users';
+    const gRaw = localStorage.getItem(gKey);
+    let gList = gRaw ? JSON.parse(gRaw) : [];
+    if (!Array.isArray(gList)) gList = [];
+    if (!gList.includes(targetUid)) {
+      gList.push(targetUid);
+      localStorage.setItem(gKey, JSON.stringify(gList));
+    }
+  } catch(e) {}
+}
+
+function removeLocallyBlockedUser(myUid, targetUid) {
+  if (!targetUid) return;
+  try {
+    if (myUid) {
+      const key = `arenax_blocked_${myUid}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        let list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          list = list.filter(id => id !== targetUid);
+          localStorage.setItem(key, JSON.stringify(list));
+        }
+      }
+    }
+    const gKey = 'arenax_global_blocked_users';
+    const gRaw = localStorage.getItem(gKey);
+    if (gRaw) {
+      let gList = JSON.parse(gRaw);
+      if (Array.isArray(gList)) {
+        gList = gList.filter(id => id !== targetUid);
+        localStorage.setItem(gKey, JSON.stringify(gList));
+      }
+    }
+  } catch(e) {}
+}
+
 window.openPlayerProfileCard = async function(targetUid) {
   if (!targetUid) return;
+
+  // Reset all conditional sections to visible state initially
+  $('vppUidContainer')?.classList.remove('hidden');
+  $('vppScoreBadge')?.classList.remove('hidden');
+  $('vppCountryRow')?.classList.remove('hidden');
+  $('vppPopularitySection')?.classList.remove('hidden');
+  $('vppTeamSection')?.classList.remove('hidden');
+  $('vppMomentsSection')?.classList.remove('hidden');
+  $('vppGuardSection')?.classList.remove('hidden');
+  $('vppStatsOverviewSection')?.classList.remove('hidden');
+  $('vppBottomActionBar')?.classList.remove('hidden');
+  if (window.vppCarouselTimer) {
+    clearInterval(window.vppCarouselTimer);
+    window.vppCarouselTimer = null;
+  }
 
   // Reset UI to loading state
   if ($('vppName')) $('vppName').textContent = "Loading Profile...";
@@ -1655,51 +1755,66 @@ window.openPlayerProfileCard = async function(targetUid) {
       vppDropdownInit.style.display = 'none';
     }
 
-    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
-    const isOwnProfile = myUid && (myUid === targetUid);
+    const myUid = getActiveUserUid();
+    const isOwnProfile = !!(myUid && (myUid === targetUid));
 
+    let iBlockedThem = false;
+    let theyBlockedMe = false;
+
+    if (!isOwnProfile) {
+      // 1. Check if current user blocked target user (local cache first, then Firestore)
+      if (isLocallyBlockedByMe(myUid, targetUid)) {
+        iBlockedThem = true;
+      }
+      if (!iBlockedThem && myUid) {
+        try {
+          const iBlockedThemSnap = await getDoc(doc(db, 'users', myUid, 'blocked', targetUid));
+          if (iBlockedThemSnap && iBlockedThemSnap.exists()) {
+            iBlockedThem = true;
+            saveLocallyBlockedUser(myUid, targetUid);
+          }
+        } catch(e) {
+          console.warn("I blocked them check notice:", e);
+        }
+      }
+
+      // 2. Check if target user blocked current user
+      if (myUid) {
+        if (Array.isArray(u.blockedUserIds) && u.blockedUserIds.includes(myUid)) {
+          theyBlockedMe = true;
+        } else {
+          try {
+            const theyBlockedMeSnap = await getDoc(doc(db, 'users', targetUid, 'blocked', myUid));
+            if (theyBlockedMeSnap && theyBlockedMeSnap.exists()) {
+              theyBlockedMe = true;
+            }
+          } catch(e) {
+            // Silent catch
+          }
+        }
+      }
+    }
+
+    // Configure 3-dots menu actions
     if (isOwnProfile) {
       if ($('btnVppOptBlock')) $('btnVppOptBlock').classList.add('hidden');
       if ($('btnVppOptReport')) $('btnVppOptReport').classList.add('hidden');
       if ($('btnVppOptMute')) $('btnVppOptMute').classList.add('hidden');
+      if ($('vppBottomActionBar')) $('vppBottomActionBar').classList.add('hidden');
       if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
       if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
     } else {
       if ($('btnVppOptBlock')) $('btnVppOptBlock').classList.remove('hidden');
       if ($('btnVppOptReport')) $('btnVppOptReport').classList.remove('hidden');
       if ($('btnVppOptMute')) $('btnVppOptMute').classList.remove('hidden');
-      if ($('btnVppSendDM')) $('btnVppSendDM').classList.remove('hidden');
-      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.remove('hidden');
+
+      if ($('vppOptBlockText')) $('vppOptBlockText').textContent = iBlockedThem ? "Unblock User" : "Block User";
+      if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = iBlockedThem ? '<i class="fas fa-user-check text-emerald-400"></i>' : '<i class="fas fa-ban text-rose-400"></i>';
 
       if (myUid) {
-        // 1. Check if target user blocked current user (handled gracefully if rules restrict)
-        try {
-          const theyBlockedMe = await getDoc(doc(db, 'users', targetUid, 'blocked', myUid));
-          if (theyBlockedMe && theyBlockedMe.exists()) {
-            if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
-            if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
-            if ($('btnVppSendPopularity')) $('btnVppSendPopularity').classList.add('hidden');
-            if ($('vppMomentsContainer')) $('vppMomentsContainer').innerHTML = '<p class="text-xs text-slate-400 italic py-1">Profile details unavailable</p>';
-            if ($('vppBio')) $('vppBio').textContent = "This profile is unavailable.";
-          }
-        } catch(e) {
-          // Silent catch: if Firestore rules restrict checking or not yet deployed
-        }
-
-        // 2. Check if current user blocked target user
-        try {
-          const iBlockedThem = await getDoc(doc(db, 'users', myUid, 'blocked', targetUid));
-          const isBlocked = iBlockedThem.exists();
-          if ($('vppOptBlockText')) $('vppOptBlockText').textContent = isBlocked ? "Unblock User" : "Block User";
-          if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = isBlocked ? '<i class="fas fa-user-check text-emerald-400"></i>' : '<i class="fas fa-ban text-rose-400"></i>';
-        } catch(e) {
-          console.warn("I blocked them check notice:", e);
-        }
-
-        // 3. Check if current user muted target user
         try {
           const iMutedThem = await getDoc(doc(db, 'users', myUid, 'muted', targetUid));
-          const isMuted = iMutedThem.exists();
+          const isMuted = iMutedThem && iMutedThem.exists();
           if ($('vppOptMuteText')) $('vppOptMuteText').textContent = isMuted ? "Unmute Notifications" : "Mute Notifications";
           if ($('vppOptMuteIcon')) $('vppOptMuteIcon').innerHTML = isMuted ? '<i class="fas fa-bell text-emerald-400"></i>' : '<i class="fas fa-bell-slash text-slate-300"></i>';
         } catch(e) {
@@ -1708,6 +1823,118 @@ window.openPlayerProfileCard = async function(targetUid) {
       }
     }
 
+    const headerBar = document.getElementById('vppTopHeaderBar');
+    const heroCanvas = document.getElementById('vppTopHero3DCanvas');
+    const blessingBadge = document.getElementById('vppBlessingBadge');
+
+    // ─────────────────────────────────────────────────────────────
+    // CASE 1: Current user has blocked the target user (iBlockedThem)
+    // - Name displayed as "Blocked User"
+    // - NO Popularity count
+    // - NO Team
+    // - NO 3D Model even if owned
+    // - NO Numeric ID, Country, Moments, or DM/Gift buttons
+    // ─────────────────────────────────────────────────────────────
+    if (iBlockedThem) {
+      if ($('vppName')) {
+        $('vppName').innerHTML = '<span class="text-rose-500 font-black tracking-tight flex items-center gap-1.5"><i class="fas fa-ban text-rose-500 text-sm"></i> Blocked User</span>';
+      }
+      window.currentViewingPlayerName = "Blocked User";
+      if ($('vppAv')) $('vppAv').src = "https://api.dicebear.com/7.x/bottts/svg?seed=blocked_user";
+
+      // Hide Country, Numeric ID, and Score badge
+      if ($('vppCountryRow')) $('vppCountryRow').classList.add('hidden');
+      if ($('vppUidContainer')) $('vppUidContainer').classList.add('hidden');
+      if ($('vppScoreBadge')) $('vppScoreBadge').classList.add('hidden');
+
+      // Compact Header & Disable 3D Model
+      if (headerBar) {
+        headerBar.className = "relative h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+      }
+      if (heroCanvas) {
+        heroCanvas.classList.add('hidden');
+        heroCanvas.innerHTML = '';
+      }
+      if (blessingBadge) blessingBadge.classList.add('hidden');
+      if ($('vpp3DCharacterSection')) $('vpp3DCharacterSection').classList.add('hidden');
+
+      // Hide Popularity and Team sections
+      if ($('vppPopularitySection')) $('vppPopularitySection').classList.add('hidden');
+      if ($('vppTeamSection')) $('vppTeamSection').classList.add('hidden');
+
+      // Hide Moments, Guard, and Stats
+      if ($('vppMomentsSection')) $('vppMomentsSection').classList.add('hidden');
+      if ($('vppGuardSection')) $('vppGuardSection').classList.add('hidden');
+      if ($('vppStatsOverviewSection')) $('vppStatsOverviewSection').classList.add('hidden');
+
+      // Signature / Bio
+      if ($('vppBio')) {
+        $('vppBio').textContent = "You have blocked this user. To view their full profile or allow messages and gifts, tap the 3 dots (⋮) above and choose 'Unblock User'.";
+      }
+
+      // Hide action buttons & footer
+      if ($('vppBottomActionBar')) $('vppBottomActionBar').classList.add('hidden');
+      if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
+      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
+      if ($('btnVppSendPopularity')) $('btnVppSendPopularity').classList.add('hidden');
+
+      return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CASE 2: Target user has blocked current user (theyBlockedMe)
+    // - Name shows real name of the blocker
+    // - Numeric ID is NOT visible
+    // - Updates / live profile details locked & hidden (NO 3D model, NO popularity, NO team, NO moments)
+    // ─────────────────────────────────────────────────────────────
+    if (theyBlockedMe) {
+      if ($('vppName')) {
+        $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
+      }
+      if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+      if ($('vppCountryRow')) $('vppCountryRow').classList.remove('hidden');
+
+      // Hide Numeric ID and Score badge
+      if ($('vppUidContainer')) $('vppUidContainer').classList.add('hidden');
+      if ($('vppScoreBadge')) $('vppScoreBadge').classList.add('hidden');
+
+      // Compact Header & Disable 3D Model
+      if (headerBar) {
+        headerBar.className = "relative h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+      }
+      if (heroCanvas) {
+        heroCanvas.classList.add('hidden');
+        heroCanvas.innerHTML = '';
+      }
+      if (blessingBadge) blessingBadge.classList.add('hidden');
+      if ($('vpp3DCharacterSection')) $('vpp3DCharacterSection').classList.add('hidden');
+
+      // Hide Popularity and Team sections
+      if ($('vppPopularitySection')) $('vppPopularitySection').classList.add('hidden');
+      if ($('vppTeamSection')) $('vppTeamSection').classList.add('hidden');
+
+      // Hide Moments, Guard, and Stats
+      if ($('vppMomentsSection')) $('vppMomentsSection').classList.add('hidden');
+      if ($('vppGuardSection')) $('vppGuardSection').classList.add('hidden');
+      if ($('vppStatsOverviewSection')) $('vppStatsOverviewSection').classList.add('hidden');
+
+      // Signature / Bio
+      if ($('vppBio')) {
+        $('vppBio').textContent = "This profile is unavailable.";
+      }
+
+      // Hide action buttons & footer
+      if ($('vppBottomActionBar')) $('vppBottomActionBar').classList.add('hidden');
+      if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
+      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
+      if ($('btnVppSendPopularity')) $('btnVppSendPopularity').classList.add('hidden');
+
+      return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CASE 3: Normal unblocked profile
+    // ─────────────────────────────────────────────────────────────
     // Fill Top Section
     if ($('vppName')) {
       $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
@@ -1795,9 +2022,6 @@ window.openPlayerProfileCard = async function(targetUid) {
     }
 
     // Render 3D Character Avatar in Top Stage ONLY IF the viewed user has unlocked Player Show / 3D Model
-    const headerBar = document.getElementById('vppTopHeaderBar');
-    const heroCanvas = document.getElementById('vppTopHero3DCanvas');
-    const blessingBadge = document.getElementById('vppBlessingBadge');
     const hasPlayerShow = !!(u.playerShowUnlocked || u.character3dUnlocked || (Array.isArray(u.unlocked3dModels) && u.unlocked3dModels.length > 0) || u.active3dModel);
 
     if (hasPlayerShow) {
@@ -1828,6 +2052,12 @@ window.openPlayerProfileCard = async function(targetUid) {
     }
 
     if ($('vpp3DCharacterSection')) $('vpp3DCharacterSection').classList.add('hidden');
+
+    // Show Action Buttons if not own profile
+    if (!isOwnProfile) {
+      if ($('btnVppSendDM')) $('btnVppSendDM').classList.remove('hidden');
+      if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.remove('hidden');
+    }
 
   } catch (err) {
     console.error("Error fetching target player details:", err);
@@ -1982,23 +2212,32 @@ let pendingBlockTarget = null;
 if ($('btnVppOptBlock')) {
   $('btnVppOptBlock').addEventListener('click', async () => {
     $('vppMoreMenuDropdown')?.classList.add('hidden');
-    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    const myUid = getActiveUserUid();
     const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
     const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'this user';
     
-    if (!myUid || !targetUid) {
-      alert("Please sign in to manage blocked users.");
-      return;
-    }
+    if (!targetUid) return;
 
     try {
-      const blockedDocRef = doc(db, 'users', myUid, 'blocked', targetUid);
-      const snap = await getDoc(blockedDocRef);
+      let isCurrentlyBlocked = isLocallyBlockedByMe(myUid, targetUid);
+      if (!isCurrentlyBlocked && myUid) {
+        try {
+          const blockedDocRef = doc(db, 'users', myUid, 'blocked', targetUid);
+          const snap = await getDoc(blockedDocRef);
+          if (snap && snap.exists()) isCurrentlyBlocked = true;
+        } catch(e) {
+          console.warn("Check block error:", e);
+        }
+      }
 
-      if (snap.exists()) {
+      if (isCurrentlyBlocked) {
         // User is currently blocked -> prompt or unblock immediately
         if (confirm(`Unblock ${targetName}? They will be able to message you and send gifts again.`)) {
-          await deleteDoc(blockedDocRef);
+          removeLocallyBlockedUser(myUid, targetUid);
+          if (myUid) {
+            try { await deleteDoc(doc(db, 'users', myUid, 'blocked', targetUid)); } catch(e){}
+            try { await updateDoc(doc(db, 'users', myUid), { blockedUserIds: arrayRemove(targetUid) }); } catch(e){}
+          }
           if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Block User";
           if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-ban text-rose-400"></i>';
           if (typeof showToastNotification === 'function') {
@@ -2006,6 +2245,8 @@ if ($('btnVppOptBlock')) {
           } else {
             alert(`${targetName} has been unblocked.`);
           }
+          // Immediately reload the profile card with unblocked data
+          window.openPlayerProfileCard(targetUid);
         }
       } else {
         // Show Block Confirmation Modal
@@ -2033,8 +2274,10 @@ if ($('btnCancelBlockUser')) {
 if ($('btnConfirmBlockUser')) {
   $('btnConfirmBlockUser').addEventListener('click', async () => {
     if (!pendingBlockTarget) return;
-    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
-    if (!myUid) return;
+    const myUid = getActiveUserUid();
+
+    const blockedUid = pendingBlockTarget.uid;
+    const blockedName = pendingBlockTarget.name;
 
     const btn = $('btnConfirmBlockUser');
     const origHtml = btn.innerHTML;
@@ -2042,25 +2285,47 @@ if ($('btnConfirmBlockUser')) {
     btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Blocking...`;
 
     try {
-      const blockedDocRef = doc(db, 'users', myUid, 'blocked', pendingBlockTarget.uid);
-      await setDoc(blockedDocRef, {
-        blockedAt: serverTimestamp(),
-        blockedUid: pendingBlockTarget.uid,
-        blockedName: pendingBlockTarget.name
-      });
+      // 1. Immediately save to local persistent cache
+      saveLocallyBlockedUser(myUid, blockedUid);
+
+      // 2. Persist to Firestore if myUid exists
+      if (myUid) {
+        try {
+          const blockedDocRef = doc(db, 'users', myUid, 'blocked', blockedUid);
+          await setDoc(blockedDocRef, {
+            blockedAt: serverTimestamp(),
+            blockedUid: blockedUid,
+            blockedName: blockedName
+          });
+        } catch (subErr) {
+          console.warn("Firestore subcollection setDoc error:", subErr);
+        }
+
+        try {
+          await updateDoc(doc(db, 'users', myUid), {
+            blockedUserIds: arrayUnion(blockedUid)
+          });
+        } catch (arrErr) {
+          console.warn("Firestore blockedUserIds update error:", arrErr);
+        }
+      }
 
       $('mBlockUserConfirmModal')?.classList.add('hidden');
       if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Unblock User";
       if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-user-check text-emerald-400"></i>';
 
       if (typeof showToastNotification === 'function') {
-        showToastNotification("User Blocked 🚫", `${pendingBlockTarget.name} has been blocked.`);
+        showToastNotification("User Blocked 🚫", `${blockedName} has been blocked.`);
       } else {
-        alert(`${pendingBlockTarget.name} has been blocked.`);
+        alert(`${blockedName} has been blocked.`);
       }
+
+      // Immediately reload the profile card in blocked state
+      window.openPlayerProfileCard(blockedUid);
     } catch (err) {
       console.error("Block error:", err);
-      alert("Failed to block user: " + err.message);
+      $('mBlockUserConfirmModal')?.classList.add('hidden');
+      window.openPlayerProfileCard(blockedUid);
     } finally {
       btn.disabled = false;
       btn.innerHTML = origHtml;
@@ -2073,7 +2338,7 @@ if ($('btnConfirmBlockUser')) {
 if ($('btnVppOptMute')) {
   $('btnVppOptMute').addEventListener('click', async () => {
     $('vppMoreMenuDropdown')?.classList.add('hidden');
-    const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
+    const myUid = getActiveUserUid();
     const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
     const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'this user';
 
