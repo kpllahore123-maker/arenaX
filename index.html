@@ -4921,83 +4921,83 @@ if (typeof tailwind !== 'undefined') {
   <!-- Full Screen Container -->
   <div class="w-full max-w-md h-full max-h-full sm:max-h-[92vh] sm:rounded-[32px] bg-[#12101b] shadow-2xl overflow-hidden flex flex-col relative text-gray-900 animate-slide-up">
     
+    <!-- Floating Header Controls (Always on top, never clipped by hero stage) -->
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-40 pointer-events-auto">
+      <!-- Back button ← -->
+      <button id="bCloseViewPlayerProfile" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="Back">
+        <i class="fas fa-arrow-left text-base pointer-events-none"></i>
+      </button>
+
+      <!-- Top Right Controls: 3-Dots Menu & Cross Close Button -->
+      <div class="flex items-center gap-2 relative">
+        <div class="relative">
+          <button id="btnVppMoreOpts" type="button" onclick="window.toggleVppMoreMenu && window.toggleVppMoreMenu(event)" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="More Options">
+            <i class="fas fa-ellipsis-v text-base pointer-events-none"></i>
+          </button>
+
+          <!-- 3-Dots Dropdown Menu -->
+          <div id="vppMoreMenuDropdown" class="hidden absolute top-12 right-0 w-64 bg-[#14182b]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] py-1.5 z-50 animate-fade-in text-white divide-y divide-white/10">
+            <div class="py-1">
+              <!-- 1. Block / Unblock User -->
+              <button id="btnVppOptBlock" type="button" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                <div id="vppOptBlockIcon" class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                  <i class="fas fa-ban"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div id="vppOptBlockText" class="text-xs font-bold text-white group-hover:text-rose-300 transition">Block User</div>
+                  <div class="text-[10px] text-slate-400 truncate">Stop DMs, gifts & profile access</div>
+                </div>
+              </button>
+
+              <!-- 2. Report User -->
+              <button id="btnVppOptReport" type="button" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                  <i class="fas fa-flag"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Report User</div>
+                  <div class="text-[10px] text-slate-400 truncate">Submit moderation report</div>
+                </div>
+              </button>
+            </div>
+
+            <div class="py-1">
+              <!-- 3. Copy Profile Link -->
+              <button id="btnVppOptCopyLink" type="button" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                  <i class="fas fa-link"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-white group-hover:text-sky-300 transition">Copy Profile Link</div>
+                  <div class="text-[10px] text-slate-400 truncate">Shareable arenax.cyou link</div>
+                </div>
+              </button>
+
+              <!-- 4. Mute / Unmute Notifications -->
+              <button id="btnVppOptMute" type="button" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                <div id="vppOptMuteIcon" class="w-8 h-8 rounded-xl bg-slate-700/40 border border-slate-600/40 text-slate-300 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                  <i class="fas fa-bell-slash"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div id="vppOptMuteText" class="text-xs font-bold text-white group-hover:text-slate-200 transition">Mute Notifications</div>
+                  <div class="text-[10px] text-slate-400 truncate">Silence alerts from this user</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnCloseViewPlayerProfileX" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="Close Profile">
+          <i class="fas fa-times text-base pointer-events-none"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- Top Dark Header Bar / 3D Hero Stage -->
     <div id="vppTopHeaderBar" class="relative h-[330px] sm:h-[350px] bg-gradient-to-b from-[#120e24] via-[#1c1635] to-[#2a2046] overflow-hidden shrink-0 z-0 transition-all duration-300">
       <!-- Soft ambient background glow -->
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(168,85,247,0.25),transparent_70%)] pointer-events-none"></div>
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(59,130,246,0.15),transparent_60%)] pointer-events-none"></div>
-
-      <!-- Header Controls -->
-      <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-30">
-        <!-- Back button ← -->
-        <button id="bCloseViewPlayerProfile" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="Back">
-          <i class="fas fa-arrow-left text-base"></i>
-        </button>
-
-        <!-- Top Right Controls: 3-Dots Menu & Cross Close Button -->
-        <div class="flex items-center gap-2 relative">
-          <div class="relative">
-            <button id="btnVppMoreOpts" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="More Options">
-              <i class="fas fa-ellipsis-v text-base"></i>
-            </button>
-
-            <!-- 3-Dots Dropdown Menu -->
-            <div id="vppMoreMenuDropdown" class="hidden absolute top-12 right-0 w-64 bg-[#14182b]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] py-1.5 z-50 animate-fade-in text-white divide-y divide-white/10">
-              <div class="py-1">
-                <!-- 1. Block / Unblock User -->
-                <button id="btnVppOptBlock" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
-                  <div id="vppOptBlockIcon" class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
-                    <i class="fas fa-ban"></i>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div id="vppOptBlockText" class="text-xs font-bold text-white group-hover:text-rose-300 transition">Block User</div>
-                    <div class="text-[10px] text-slate-400 truncate">Stop DMs, gifts & profile access</div>
-                  </div>
-                </button>
-
-                <!-- 2. Report User -->
-                <button id="btnVppOptReport" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
-                  <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
-                    <i class="fas fa-flag"></i>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Report User</div>
-                    <div class="text-[10px] text-slate-400 truncate">Submit moderation report</div>
-                  </div>
-                </button>
-              </div>
-
-              <div class="py-1">
-                <!-- 3. Copy Profile Link -->
-                <button id="btnVppOptCopyLink" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
-                  <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
-                    <i class="fas fa-link"></i>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="text-xs font-bold text-white group-hover:text-sky-300 transition">Copy Profile Link</div>
-                    <div class="text-[10px] text-slate-400 truncate">Shareable arenax.cyou link</div>
-                  </div>
-                </button>
-
-                <!-- 4. Mute / Unmute Notifications -->
-                <button id="btnVppOptMute" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
-                  <div id="vppOptMuteIcon" class="w-8 h-8 rounded-xl bg-slate-700/40 border border-slate-600/40 text-slate-300 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
-                    <i class="fas fa-bell-slash"></i>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div id="vppOptMuteText" class="text-xs font-bold text-white group-hover:text-slate-200 transition">Mute Notifications</div>
-                    <div class="text-[10px] text-slate-400 truncate">Silence alerts from this user</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button id="btnCloseViewPlayerProfileX" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="Close Profile">
-            <i class="fas fa-times text-base"></i>
-          </button>
-        </div>
-      </div>
 
       <!-- 3D Canvas Hero Stage Container -->
       <div id="vppTopHero3DCanvas" class="w-full h-full absolute inset-0 z-0"></div>
