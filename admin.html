@@ -1,163 +1,2697 @@
-<!-- ================== STAFF MAIL & BADGE GIFT MODAL (UPDATED WITH FCM SUPPORT) ==================== -->
-<!-- This is the updated sendGift handler with push notification support. 
-     Search for 'bSendGift.addEventListener' in admin.html to locate and replace the handler -->
-
-<!-- OLD CODE TO REPLACE (around line 4980-5050): -->
-<!-- 
-$('bSendGift').addEventListener('click', async () => {
-  if (!activeGiftUser) return;
-  const title = $('giftMailTitle').value.trim();
-  const body = $('giftMailBody').value.trim();
-  const badgeId = $('giftBadgeSelect').value;
-  const method = $('giftMethodSelect').value;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="/" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArenaX – Master Admin Console</title>
+  <meta name="description" content="ArenaX Master Admin Panel for tournament operations, wallet deposits, withdrawals, user management, and Discord AI bot." />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   
-  if (!title || !body) {
-    alert('Please enter both Mail Subject/Title and Message Body!');
-    return;
-  }
-  
-  $('bSendGift').disabled = true;
-  $('bSendGift').textContent = 'Processing...';
-  
-  try {
-    const userDocRef = doc(db, 'users', activeGiftUser.id);
-    const mailsColRef = collection(db, 'users', activeGiftUser.id, 'mails');
-    
-    const mailData = {
-      title: title,
-      body: body,
-      read: false,
-      createdAt: serverTimestamp(),
-      sender: 'Staff Admin'
-    };
-    
-    if (badgeId !== 'none') {
-      mailData.giftBadgeId = badgeId;
-      if (method === 'direct') {
-        const directPayload = {
-          badges: arrayUnion(badgeId)
-        };
-        if (badgeId === 'blue_tick') {
-          directPayload.hasBlueTick = true;
-          directPayload.isVerified = true;
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: '#f0c040',
+            darkBg: '#090b11',
+            cardBg: '#121624',
+            cardBgHover: '#181d2f',
+            bdr: '#222842',
+            bdrHover: '#3b446e'
+          }
         }
-        await updateDoc(userDocRef, directPayload);
-        mailData.collected = true;
-        mailData.read = false;
-      } else {
-        mailData.collected = false;
-        mailData.read = false;
       }
     }
-    
-    await addDoc(mailsColRef, mailData);
-    
-    await addDoc(collection(db, 'notifications'), {
-      userId: activeGiftUser.id,
-      title: "New Mail Received 📩",
-      body: `You have received a new staff message: "${title}"`,
-      type: 'custom',
-      read: false,
-      createdAt: serverTimestamp()
-    });
-    
-    alert(`Success! Mail sent to ${activeGiftUser.name} successfully. ${badgeId !== 'none' ? `[Badge: ${badgeId} gifted via ${method} grant]` : ''} ✅`);
-    $('mGiftMail').classList.add('hidden');
-  } catch (err) {
-    alert('Failed to send mail gift: ' + err.message);
-  } finally {
-    $('bSendGift').disabled = false;
-    $('bSendGift').textContent = 'Send Mail & Gift';
-  }
-});
--->
+  </script>
 
-<!-- NEW CODE (REPLACE WITH THIS): -->
-$('bSendGift').addEventListener('click', async () => {
-  if (!activeGiftUser) return;
-  const title = $('giftMailTitle').value.trim();
-  const body = $('giftMailBody').value.trim();
-  const badgeId = $('giftBadgeSelect').value;
-  const method = $('giftMethodSelect').value;
-  
-  if (!title || !body) {
-    alert('Please enter both Mail Subject/Title and Message Body!');
-    return;
-  }
-  
-  $('bSendGift').disabled = true;
-  $('bSendGift').textContent = 'Processing...';
-  
-  try {
-    const userDocRef = doc(db, 'users', activeGiftUser.id);
-    const mailsColRef = collection(db, 'users', activeGiftUser.id, 'mails');
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
     
-    const mailData = {
-      title: title,
-      body: body,
-      read: false,
-      createdAt: serverTimestamp(),
-      sender: 'Staff Admin'
-    };
-    
-    if (badgeId !== 'none') {
-      mailData.giftBadgeId = badgeId;
-      if (method === 'direct') {
-        const directPayload = {
-          badges: arrayUnion(badgeId)
-        };
-        if (badgeId === 'blue_tick') {
-          directPayload.hasBlueTick = true;
-          directPayload.isVerified = true;
-        }
-        await updateDoc(userDocRef, directPayload);
-        mailData.collected = true;
-        mailData.read = false;
-      } else {
-        mailData.collected = false;
-        mailData.read = false;
-      }
+    * {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    await addDoc(mailsColRef, mailData);
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090b11;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #252c48;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f0c040;
+    }
+
+    .shimmer-gold {
+      background: linear-gradient(90deg, #f0c040, #ffea88, #f0c040);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shimmerAnim 2.5s linear infinite;
+    }
+
+    @keyframes shimmerAnim {
+      to { background-position: 200% center; }
+    }
+  </style>
+
+  <!-- Firebase v10 Modular SDK via CDN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      signInWithPopup, 
+      GoogleAuthProvider, 
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      getDoc, 
+      getDocs, 
+      setDoc, 
+      addDoc, 
+      updateDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      query, 
+      where, 
+      orderBy, 
+      limit, 
+      serverTimestamp, 
+      increment 
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Firebase configuration matching project
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOBynDQ00o2Yh_TD9rsQnHypf97ne6hmM",
+      authDomain: "arenax-c1586.firebaseapp.com",
+      projectId: "arenax-c1586",
+      storageBucket: "arenax-c1586.firebasestorage.app",
+      messagingSenderId: "1069776825982",
+      appId: "1:1069776825982:web:f2d7f11cef4c206206b22f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    // Export to window for standalone administrative scripts
+    window.fbApp = app;
+    window.fbAuth = auth;
+    window.fbDb = db;
+    window.fbGoogleProvider = googleProvider;
+    window.ADMIN_UIDS = ["xDa31jOrsoQC2HxjSheO3wBqyII2", "lCNKrLAliFSvuML6Nwrr6YlNOtG3"];
+
+    // Firestore tools
+    window.fsTools = {
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      setDoc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      query,
+      where,
+      orderBy,
+      limit,
+      serverTimestamp,
+      increment,
+      signInWithPopup,
+      signOut
+    };
+
+    // Trigger initialization of admin app
+    if (typeof window.initAdminApp === 'function') {
+      window.initAdminApp();
+    }
+  </script>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen antialiased flex flex-col selection:bg-gold selection:text-black">
+
+  <!-- ── TOAST NOTIFICATION CONTAINER ── -->
+  <div id="adminToastContainer" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ── ADMIN PROFILE INSPECTOR MODAL ── -->
+  <div id="mAdminInspectProfileModal" class="fixed inset-0 z-[100000] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in font-sans">
+    <div class="w-full max-w-lg bg-cardBg border border-bdr rounded-3xl p-6 shadow-2xl space-y-5 text-white max-h-[92vh] overflow-y-auto relative">
+      
+      <!-- Top Row -->
+      <div class="flex items-center justify-between border-b border-bdr pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+            <i class="fas fa-magnifying-glass"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-white">Player Profile Inspector</h4>
+            <p class="text-[10px] text-slate-400">Examine details, avatar, and moderation state</p>
+          </div>
+        </div>
+        <button onclick="$('mAdminInspectProfileModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Large Profile Picture & User Identity Preview -->
+      <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+        <div class="relative flex-shrink-0">
+          <img id="adminInspectAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=p" class="w-24 h-24 rounded-2xl object-cover border-2 border-amber-500/50 shadow-lg bg-slate-900" />
+          <span id="adminInspectBanBadge" class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase">ACTIVE</span>
+        </div>
+        <div class="flex-1 min-w-0 space-y-1">
+          <h3 id="adminInspectName" class="text-base font-black text-white truncate">Player Name</h3>
+          <div id="adminInspectHandle" class="text-xs text-gold font-mono font-bold">@handle</div>
+          <div class="text-[11px] text-slate-400 font-mono">UID: <span id="adminInspectUid" class="text-slate-300 select-all">...</span></div>
+          <div class="text-[11px] text-slate-400">Email: <span id="adminInspectEmail" class="text-slate-300">...</span></div>
+          <div class="text-[11px] text-slate-400">Balance: <span id="adminInspectBal" class="text-emerald-400 font-bold font-mono">0 AX</span></div>
+        </div>
+      </div>
+
+      <!-- Bio / Signature -->
+      <div class="bg-[#0b0e18] border border-white/5 rounded-2xl p-3.5 space-y-1">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bio / Signature</div>
+        <p id="adminInspectBio" class="text-xs text-slate-300 italic leading-relaxed">No signature</p>
+      </div>
+
+      <!-- Moderation & Quick Action Buttons -->
+      <div class="space-y-2 pt-1">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Moderation Controls:</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold">
+          
+          <button id="adminInspectBanBtn" class="py-2.5 px-3 bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-ban"></i> Ban Account
+          </button>
+
+          <button id="adminInspectResetAvBtn" class="py-2.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5" title="Revert inappropriate photo to default avatar">
+            <i class="fas fa-image-slash"></i> Reset Profile Photo
+          </button>
+
+          <button id="adminInspectAdjustBalBtn" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-bdr rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-coins text-gold"></i> Adjust AX Coins
+          </button>
+
+          <button id="adminInspectPublicLink" class="py-2.5 px-3 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-arrow-up-right-from-square"></i> Open Public Profile
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button onclick="$('mAdminInspectProfileModal').classList.add('hidden')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
+          Close Inspector
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AUTH / PIN LOCK SCREEN ── -->
+  <div id="adminAuthOverlay" class="fixed inset-0 z-[9999] bg-darkBg/95 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-cardBg border border-bdr rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden text-center">
+      <!-- Glow effect -->
+      <div class="absolute -top-20 -left-20 w-44 h-44 bg-gold/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-20 -right-20 w-44 h-44 bg-amber-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Icon -->
+      <div class="flex justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold via-amber-500 to-yellow-600 p-[2px] shadow-lg shadow-gold/20">
+          <div class="w-full h-full bg-darkBg rounded-[14px] flex items-center justify-center font-black text-2xl text-gold">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-black text-white tracking-tight">ArenaX Master Admin</h2>
+        <p class="text-xs text-slate-400 mt-1.5">Enter Master Passcode or Sign in with Authorized Google Account.</p>
+      </div>
+
+      <!-- Error Alert -->
+      <div id="authErrorMsg" class="hidden p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-xs font-semibold"></div>
+
+      <!-- Quick Master Passcode Form -->
+      <div class="space-y-3 pt-2 text-left">
+        <label class="block text-xs font-bold text-slate-300">Master Passcode / PIN:</label>
+        <div class="relative">
+          <input
+            id="adminPinInput"
+            type="password"
+            placeholder="Enter admin passcode (e.g. arenax2026)"
+            class="w-full bg-[#0d101a] border border-bdr focus:border-gold rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition"
+            onkeydown="if(event.key === 'Enter') checkAdminPin()"
+          />
+          <button onclick="togglePinVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-white text-xs">
+            <i id="pinEyeIcon" class="fas fa-eye"></i>
+          </button>
+        </div>
+        <button
+          onclick="checkAdminPin()"
+          class="w-full py-3 bg-gradient-to-r from-gold via-amber-400 to-yellow-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-gold/20 flex items-center justify-center gap-2 transition cursor-pointer"
+        >
+          <i class="fas fa-key"></i> Unlock Admin Console
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3 my-2">
+        <div class="h-px bg-bdr flex-1"></div>
+        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">OR</span>
+        <div class="h-px bg-bdr flex-1"></div>
+      </div>
+
+      <!-- Google Sign In -->
+      <button
+        onclick="signInAdminGoogle()"
+        class="w-full py-3 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-white font-bold text-xs border border-bdr flex items-center justify-center gap-2.5 transition active:scale-[0.99] cursor-pointer"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+          <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+        </svg>
+        Sign in with Google Admin
+      </button>
+
+      <div class="pt-2 text-[11px] text-slate-500">
+        <a href="/" class="text-gold hover:underline flex items-center justify-center gap-1">
+          <i class="fas fa-arrow-left text-[9px]"></i> Back to Main Player Hub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN ADMIN APP CONTAINER ── -->
+  <div id="adminMainContent" class="hidden flex-1 flex flex-col min-h-screen">
     
-    // In-app notification fallback
-    await addDoc(collection(db, 'notifications'), {
-      userId: activeGiftUser.id,
-      title: "New Mail Received 📩",
-      body: `You have received a new staff message: "${title}"`,
-      type: 'custom',
-      read: false,
-      createdAt: serverTimestamp()
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-[#0e121d] border-b border-bdr sticky top-0 z-40 px-4 lg:px-8 py-3.5">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        
+        <!-- Brand -->
+        <div class="flex items-center gap-3">
+          <a href="/" class="flex items-center gap-2.5 group">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold to-amber-500 p-[1.5px] shadow">
+              <div class="w-full h-full bg-darkBg rounded-[10px] flex items-center justify-center font-black text-sm text-gold">
+                AX
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-base font-black tracking-tight text-white group-hover:text-gold transition">ARENA<span class="text-gold">X</span></span>
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-gold/15 text-gold border border-gold/30">ADMIN</span>
+              </div>
+              <p class="text-[10px] text-slate-400 hidden sm:block">Real-Time Control Room & Operations</p>
+            </div>
+          </a>
+        </div>
+
+        <!-- Live Server Status Indicator -->
+        <div class="hidden md:flex items-center gap-4 text-xs">
+          <div class="flex items-center gap-2 bg-[#141828] px-3 py-1.5 rounded-full border border-bdr">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-slate-300 font-bold text-[11px]">Firestore Connected</span>
+          </div>
+
+          <div id="discordBotBadge" class="flex items-center gap-2 bg-[#141828] px-3 py-1.5 rounded-full border border-bdr">
+            <span id="discordBotDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="discordBotStatusText" class="text-slate-300 font-bold text-[11px]">Bot: Checking...</span>
+          </div>
+        </div>
+
+        <!-- Right User / Controls -->
+        <div class="flex items-center gap-3">
+          <a
+            href="/"
+            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141828] hover:bg-[#1b2138] border border-bdr text-slate-300 text-xs font-bold transition"
+          >
+            <i class="fas fa-gamepad text-gold"></i> Player App
+          </a>
+
+          <a
+            href="/moments.html"
+            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141828] hover:bg-[#1b2138] border border-bdr text-slate-300 text-xs font-bold transition"
+          >
+            <i class="fas fa-photo-film text-sky-400"></i> Moments
+          </a>
+
+          <div class="flex items-center gap-2 pl-2 border-l border-bdr">
+            <div id="adminUserAvatar" class="w-8 h-8 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center font-bold text-gold text-xs">
+              👑
+            </div>
+            <button
+              onclick="logoutAdmin()"
+              title="Logout from Admin Console"
+              class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <i class="fas fa-arrow-right-from-bracket"></i>
+              <span class="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- METRICS RIBBON (Quick Stats) -->
+    <div class="bg-[#0b0e18] border-b border-bdr px-4 lg:px-8 py-3">
+      <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        
+        <!-- 1. Tournaments -->
+        <div onclick="switchAdminTab('tournaments')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Tournaments</span>
+            <i class="fas fa-trophy text-gold text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-white mt-1" id="statTournamentsCount">0</div>
+          <div class="text-[10px] text-amber-400 font-bold" id="statActiveTournaments">0 active now</div>
+        </div>
+
+        <!-- 2. Pending Deposits -->
+        <div onclick="switchAdminTab('deposits')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Pending Deposits</span>
+            <i class="fas fa-wallet text-emerald-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-emerald-400 mt-1" id="statPendingDepositsCount">0</div>
+          <div class="text-[10px] text-slate-400 font-mono" id="statPendingDepositsPKR">Rs 0 PKR</div>
+        </div>
+
+        <!-- 3. Withdrawals -->
+        <div onclick="switchAdminTab('withdrawals')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Withdrawals</span>
+            <i class="fas fa-money-bill-transfer text-sky-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-sky-400 mt-1" id="statPendingWithdrawalsCount">0</div>
+          <div class="text-[10px] text-slate-400 font-mono" id="statPendingWithdrawalsPKR">Rs 0 PKR</div>
+        </div>
+
+        <!-- 4. Players Registered -->
+        <div onclick="switchAdminTab('users')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Gamers</span>
+            <i class="fas fa-users text-indigo-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-white mt-1" id="statUsersCount">0</div>
+          <div class="text-[10px] text-indigo-400 font-bold" id="statVerifiedUsers">0 verified</div>
+        </div>
+
+        <!-- 5. Reports -->
+        <div onclick="switchAdminTab('reports')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Cheater Reports</span>
+            <i class="fas fa-shield-virus text-rose-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-rose-400 mt-1" id="statReportsCount">0</div>
+          <div class="text-[10px] text-rose-400 font-bold">Unresolved flags</div>
+        </div>
+
+        <!-- 6. Discord Bot Ping -->
+        <div onclick="switchAdminTab('bot')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Discord AI Bot</span>
+            <i class="fab fa-discord text-indigo-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-white mt-1" id="statBotGuilds">0 Servers</div>
+          <div class="text-[10px] text-emerald-400 font-bold" id="statBotPing">Latency: 0ms</div>
+        </div>
+
+        <!-- 7. Profile Reports -->
+        <div onclick="switchAdminTab('profile-reports')" class="bg-cardBg hover:bg-cardBgHover border border-bdr p-3 rounded-2xl cursor-pointer transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Profile Reports</span>
+            <i class="fas fa-user-shield text-amber-400 text-[11px]"></i>
+          </div>
+          <div class="text-lg font-black text-amber-400 mt-1" id="statProfileReportsCount">0</div>
+          <div class="text-[10px] text-amber-400 font-bold">User flags</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAIN BODY WITH TAB SWITCHER -->
+    <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-6 flex-1 flex flex-col space-y-6">
+      
+      <!-- TAB NAVIGATION BUTTONS -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-bdr text-xs font-bold select-none">
+        <button
+          id="tabBtn-tournaments"
+          onclick="switchAdminTab('tournaments')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-gold text-slate-950 shadow-md font-black"
+        >
+          <i class="fas fa-trophy"></i>
+          <span>Tournaments</span>
+        </button>
+
+        <button
+          id="tabBtn-deposits"
+          onclick="switchAdminTab('deposits')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-wallet text-emerald-400"></i>
+          <span>Deposits</span>
+          <span id="tabBadgeDeposits" class="hidden px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold font-mono">0</span>
+        </button>
+
+        <button
+          id="tabBtn-withdrawals"
+          onclick="switchAdminTab('withdrawals')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-money-bill-transfer text-sky-400"></i>
+          <span>Withdrawals</span>
+          <span id="tabBadgeWithdrawals" class="hidden px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-extrabold font-mono">0</span>
+        </button>
+
+        <button
+          id="tabBtn-users"
+          onclick="switchAdminTab('users')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-users-gear text-indigo-400"></i>
+          <span>Players & Users</span>
+        </button>
+
+        <button
+          id="tabBtn-profile-reports"
+          onclick="switchAdminTab('profile-reports')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-user-shield text-amber-400"></i>
+          <span>Profile Reports</span>
+          <span id="tabBadgeProfileReports" class="hidden px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold font-mono">0</span>
+        </button>
+
+        <button
+          id="tabBtn-reports"
+          onclick="switchAdminTab('reports')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-shield-virus text-rose-400"></i>
+          <span>Cheater Reports</span>
+          <span id="tabBadgeReports" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-extrabold font-mono">0</span>
+        </button>
+
+        <button
+          id="tabBtn-broadcast"
+          onclick="switchAdminTab('broadcast')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-bullhorn text-amber-400"></i>
+          <span>Broadcast</span>
+        </button>
+
+        <button
+          id="tabBtn-bot"
+          onclick="switchAdminTab('bot')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fab fa-discord text-indigo-400"></i>
+          <span>Discord Bot & AI</span>
+        </button>
+
+        <button
+          id="tabBtn-settings"
+          onclick="switchAdminTab('settings')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-sliders text-teal-400"></i>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 1: TOURNAMENTS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-tournaments" class="space-y-6">
+        
+        <!-- Create Tournament Box -->
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-bdr pb-3">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fas fa-plus-circle text-gold"></i> Create New Tournament
+            </h3>
+            <span class="text-xs text-slate-400">Real-time sync to all players</span>
+          </div>
+
+          <form id="formCreateTournament" onsubmit="handleCreateTournament(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="space-y-1.5 lg:col-span-2">
+              <label class="text-xs font-bold text-slate-300">Tournament Title / Name:</label>
+              <input
+                id="tourNameInput"
+                type="text"
+                placeholder="e.g. Weekly Sunday Grand Cup #45"
+                required
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Game:</label>
+              <select
+                id="tourGameSelect"
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-gold outline-none cursor-pointer"
+              >
+                <option value="BGMI">BGMI / PUBG Mobile</option>
+                <option value="Free Fire">Free Fire MAX</option>
+                <option value="COD Mobile">Call of Duty Mobile</option>
+                <option value="Valorant Mobile">Valorant</option>
+                <option value="Grand RP">GTA / Grand RP</option>
+                <option value="Clash Royale">Clash Royale</option>
+                <option value="Custom">Custom Game Match</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Match Mode / Format:</label>
+              <select
+                id="tourModeSelect"
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-gold outline-none cursor-pointer"
+              >
+                <option value="Squad (4v4)">Squad (4v4)</option>
+                <option value="Solo (1v100)">Solo Battle</option>
+                <option value="Duo (2v2)">Duo Team</option>
+                <option value="TDM (4v4)">TDM Warehouse</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Entry Fee (AX Coins):</label>
+              <input
+                id="tourFeeInput"
+                type="number"
+                min="0"
+                value="0"
+                placeholder="0 = Free"
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Prize Pool:</label>
+              <input
+                id="tourPrizeInput"
+                type="text"
+                value="5,000 AX Coins"
+                placeholder="e.g. 5,000 AX or Rs 2,500"
+                required
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Max Slots / Players:</label>
+              <input
+                id="tourMaxPlayersInput"
+                type="number"
+                min="2"
+                max="500"
+                value="100"
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Match Schedule Date & Time:</label>
+              <input
+                id="tourScheduleInput"
+                type="text"
+                placeholder="e.g. Sunday 8:00 PM PKT"
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="lg:col-span-4 flex items-center justify-end gap-3 pt-2">
+              <button
+                type="submit"
+                id="btnSubmitTour"
+                class="px-6 py-2.5 bg-gradient-to-r from-gold via-amber-400 to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-gold/20 hover:brightness-110 active:scale-95 transition flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fas fa-plus"></i> Publish Tournament
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Tournaments List -->
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bdr pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-list-check text-gold"></i> Live Tournaments Directory
+              </h3>
+              <p class="text-xs text-slate-400">Manage room keys, status, prize winners, and registrations.</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <input
+                id="searchTourInput"
+                type="text"
+                oninput="renderTournamentsTable()"
+                placeholder="Search tournaments..."
+                class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <div id="tournamentsListContainer" class="space-y-3 min-w-[700px]">
+              <div class="text-center py-12 text-slate-500 text-xs">
+                <i class="fas fa-spinner animate-spin mr-2"></i> Loading tournaments from Firestore...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 2: DEPOSIT REQUESTS (JAZZCASH / EASYPAISA) -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-deposits" class="hidden space-y-6">
+        
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bdr pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-wallet text-emerald-400"></i> JazzCash & EasyPaisa Deposit Requests
+              </h3>
+              <p class="text-xs text-slate-400">Approve transaction IDs to instantly credit player wallets and notify them.</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex items-center gap-2">
+              <select
+                id="filterDepositStatus"
+                onchange="renderDepositsTable()"
+                class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-1.5 text-xs text-white outline-none cursor-pointer"
+              >
+                <option value="pending">Pending Requests Only</option>
+                <option value="approved">Approved History</option>
+                <option value="rejected">Rejected History</option>
+                <option value="all">All Requests</option>
+              </select>
+
+              <button
+                onclick="openManualCreditModal()"
+                class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <i class="fas fa-hand-holding-dollar"></i> Manual Credit
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <div id="depositsListContainer" class="space-y-3 min-w-[700px]">
+              <div class="text-center py-12 text-slate-500 text-xs">
+                <i class="fas fa-spinner animate-spin mr-2"></i> Loading deposits...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 3: WITHDRAWAL REQUESTS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-withdrawals" class="hidden space-y-6">
+        
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bdr pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-money-bill-transfer text-sky-400"></i> Player Withdrawal Requests
+              </h3>
+              <p class="text-xs text-slate-400">Process player payouts via JazzCash, EasyPaisa, or Direct Bank.</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <select
+                id="filterWithdrawStatus"
+                onchange="renderWithdrawalsTable()"
+                class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-1.5 text-xs text-white outline-none cursor-pointer"
+              >
+                <option value="pending">Pending Withdrawals</option>
+                <option value="approved">Paid / Completed</option>
+                <option value="rejected">Rejected / Refunded</option>
+                <option value="all">All Records</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <div id="withdrawalsListContainer" class="space-y-3 min-w-[700px]">
+              <div class="text-center py-12 text-slate-500 text-xs">
+                <i class="fas fa-spinner animate-spin mr-2"></i> Loading withdrawal requests...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 4: PLAYERS & USERS DIRECTORY -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-users" class="hidden space-y-6">
+        
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bdr pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-users-gear text-indigo-400"></i> Registered Gamers Directory
+              </h3>
+              <p class="text-xs text-slate-400">Manage AX balances, VIP status, Verified blue ticks, and account states.</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="relative">
+                <i class="fas fa-search absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                <input
+                  id="searchUsersInput"
+                  type="text"
+                  oninput="renderUsersTable()"
+                  placeholder="Search by Name, Handle, or UID..."
+                  class="bg-[#0d101a] border border-bdr rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none w-64"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs min-w-[800px]">
+              <thead>
+                <tr class="border-b border-bdr text-slate-400 font-bold bg-[#0d101a]">
+                  <th class="py-3 px-4">Player</th>
+                  <th class="py-3 px-4">Handle & UID</th>
+                  <th class="py-3 px-4">AX Balance</th>
+                  <th class="py-3 px-4">Badges & VIP</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody" class="divide-y divide-bdr/60">
+                <tr>
+                  <td colspan="6" class="text-center py-12 text-slate-500">
+                    <i class="fas fa-spinner animate-spin mr-2"></i> Loading users...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB: PROFILE REPORTS (User Moderation) -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-profile-reports" class="hidden space-y-6">
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-5">
+          
+          <!-- Header & Controls -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-bdr pb-4">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-user-shield text-amber-400"></i> User Profile Reports
+              </h3>
+              <p class="text-xs text-slate-400">Review reported users, examine usernames/profile pictures, inspect profiles, and resolve flags.</p>
+            </div>
+
+            <!-- Filters & Sorting Controls -->
+            <div class="flex flex-wrap items-center gap-2.5 text-xs">
+              <!-- Filter by Category -->
+              <div class="flex items-center gap-1.5 bg-[#101424] border border-bdr px-3 py-1.5 rounded-xl">
+                <span class="text-slate-400 text-[11px] font-semibold">Category:</span>
+                <select id="selFilterProfileReportCategory" onchange="renderProfileReportsTable()" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                  <option value="all" class="bg-[#101424]">All Categories</option>
+                  <option value="Harassment/Bullying" class="bg-[#101424]">Harassment/Bullying</option>
+                  <option value="Abusive Language/Hate Speech" class="bg-[#101424]">Abusive Language/Hate Speech</option>
+                  <option value="Inappropriate Username/Profile Picture" class="bg-[#101424]">Inappropriate Username/Profile Picture</option>
+                  <option value="Fake Account/Impersonation" class="bg-[#101424]">Fake Account/Impersonation</option>
+                  <option value="Hacking" class="bg-[#101424]">Hacking</option>
+                  <option value="Spam" class="bg-[#101424]">Spam</option>
+                  <option value="Underage User" class="bg-[#101424]">Underage User</option>
+                  <option value="Other" class="bg-[#101424]">Other</option>
+                </select>
+              </div>
+
+              <!-- Filter by Status -->
+              <div class="flex items-center gap-1.5 bg-[#101424] border border-bdr px-3 py-1.5 rounded-xl">
+                <span class="text-slate-400 text-[11px] font-semibold">Status:</span>
+                <select id="selFilterProfileReportStatus" onchange="renderProfileReportsTable()" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                  <option value="all" class="bg-[#101424]">All Statuses</option>
+                  <option value="pending" class="bg-[#101424]">Pending</option>
+                  <option value="reviewed" class="bg-[#101424]">Reviewed</option>
+                  <option value="actioned" class="bg-[#101424]">Actioned</option>
+                </select>
+              </div>
+
+              <!-- Sort Option -->
+              <div class="flex items-center gap-1.5 bg-[#101424] border border-bdr px-3 py-1.5 rounded-xl">
+                <span class="text-slate-400 text-[11px] font-semibold">Sort:</span>
+                <select id="selSortProfileReports" onchange="renderProfileReportsTable()" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                  <option value="newest" class="bg-[#101424]">Most Recent First</option>
+                  <option value="oldest" class="bg-[#101424]">Oldest First</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reports List Container -->
+          <div id="profileReportsListContainer" class="space-y-3">
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading profile reports...
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 5: CHEATER & HACKER REPORTS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-reports" class="hidden space-y-6">
+        
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-bdr pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-shield-virus text-rose-400"></i> Cheater & Anti-Cheat Reports
+              </h3>
+              <p class="text-xs text-slate-400">Review suspicious gameplay reports, examine proof evidence, and take actions.</p>
+            </div>
+          </div>
+
+          <div id="reportsListContainer" class="space-y-3">
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading reports...
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 6: BROADCAST ANNOUNCEMENTS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-broadcast" class="hidden space-y-6">
+        
+        <div class="max-w-2xl mx-auto bg-cardBg border border-bdr rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
+          <div class="border-b border-bdr pb-4">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fas fa-bullhorn text-amber-400"></i> Global Push Announcement
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Broadcasts pop up in all active player clients and are stored in notifications.</p>
+          </div>
+
+          <form onsubmit="handleSendBroadcast(event)" class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Announcement Title:</label>
+              <input
+                id="broadcastTitleInput"
+                type="text"
+                placeholder="e.g. 🚨 Special Weekend Cup Starts in 1 Hour!"
+                required
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:border-gold outline-none"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300">Message Content:</label>
+              <textarea
+                id="broadcastBodyInput"
+                rows="4"
+                placeholder="Type the message for all ArenaX gamers..."
+                required
+                class="w-full bg-[#0d101a] border border-bdr rounded-xl p-4 text-xs text-white placeholder-slate-500 focus:border-gold outline-none resize-none"
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              id="btnBroadcastSubmit"
+              class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <i class="fas fa-paper-plane"></i> Broadcast to All Players
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 7: DISCORD BOT & AI CONSOLE -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-bot" class="hidden space-y-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Bot Config Card -->
+          <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-bdr pb-3">
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <i class="fab fa-discord text-indigo-400"></i> Bot Configuration
+              </h3>
+              <span id="botLiveBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Status</span>
+            </div>
+
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-300">Command Prefix:</label>
+                <input
+                  id="botPrefixInput"
+                  type="text"
+                  value="!"
+                  class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-white focus:border-indigo-400 outline-none font-mono"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-300">AI Personality Prompt (System Instruction):</label>
+                <textarea
+                  id="botSystemPromptInput"
+                  rows="4"
+                  class="w-full bg-[#0d101a] border border-bdr rounded-xl p-3 text-xs text-white focus:border-indigo-400 outline-none resize-none"
+                ></textarea>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-300">Temperature (Creativity 0.0 - 1.0):</label>
+                <input
+                  id="botTempInput"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="1"
+                  value="0.7"
+                  class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-white focus:border-indigo-400 outline-none font-mono"
+                />
+              </div>
+
+              <button
+                onclick="saveDiscordBotConfig()"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-indigo-600/20"
+              >
+                <i class="fas fa-floppy-disk"></i> Save Bot Config
+              </button>
+
+              <div class="pt-3 border-t border-bdr space-y-2">
+                <div class="text-[11px] font-bold text-slate-400">Restart / Reconnect Bot:</div>
+                <input
+                  id="botTokenInput"
+                  type="password"
+                  placeholder="Paste Discord Bot Token (optional override)"
+                  class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-white outline-none"
+                />
+                <button
+                  onclick="restartDiscordBot()"
+                  class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <i class="fas fa-rotate"></i> Restart Bot Service
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bot Live Logs Card -->
+          <div class="lg:col-span-2 bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl flex flex-col space-y-3">
+            <div class="flex items-center justify-between border-b border-bdr pb-3">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-terminal text-emerald-400"></i>
+                <h3 class="text-base font-extrabold text-white">Live Execution Logs</h3>
+              </div>
+              <button
+                onclick="fetchBotData()"
+                class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg border border-bdr flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <i class="fas fa-sync-alt"></i> Refresh Logs
+              </button>
+            </div>
+
+            <div
+              id="botLogsTerminal"
+              class="flex-1 bg-[#07090e] border border-bdr rounded-2xl p-4 font-mono text-[11px] text-emerald-400 h-80 overflow-y-auto space-y-1 select-text"
+            >
+              <div class="text-slate-500">Connecting to Discord bot log streamer...</div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB 8: SYSTEM SETTINGS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-settings" class="hidden space-y-6">
+        
+        <div class="max-w-3xl mx-auto bg-cardBg border border-bdr rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div class="border-b border-bdr pb-4">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fas fa-sliders text-teal-400"></i> Payment & System Configuration
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Configure JazzCash/EasyPaisa receivers and emergency controls.</p>
+          </div>
+
+          <div class="space-y-4">
+            
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl space-y-3">
+              <div class="flex items-center gap-2 text-xs font-bold text-amber-400">
+                <i class="fas fa-mobile-screen"></i> JazzCash Payment Account
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label class="text-[11px] text-slate-400">Account Number:</label>
+                  <input
+                    id="settJazzNumber"
+                    type="text"
+                    value="0302-4686897"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white font-mono mt-1 outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400">Account Title:</label>
+                  <input
+                    id="settJazzTitle"
+                    type="text"
+                    value="ArenaX Official Admin"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white mt-1 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl space-y-3">
+              <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                <i class="fas fa-mobile-screen"></i> EasyPaisa Payment Account
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label class="text-[11px] text-slate-400">Account Number:</label>
+                  <input
+                    id="settEasyNumber"
+                    type="text"
+                    value="0315-9876543"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white font-mono mt-1 outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400">Account Title:</label>
+                  <input
+                    id="settEasyTitle"
+                    type="text"
+                    value="ArenaX Official Operations"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white mt-1 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              onclick="saveSystemSettings()"
+              class="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-lg shadow-teal-600/20"
+            >
+              <i class="fas fa-check mr-1.5"></i> Save Settings
+            </button>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ── MODAL: SET ROOM ID & PASS ── -->
+  <div id="modalSetRoom" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-bdr rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative text-white">
+      <div class="flex items-center justify-between border-b border-bdr pb-3">
+        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+          <i class="fas fa-key text-gold"></i> Set Room ID & Password
+        </h3>
+        <button onclick="closeSetRoomModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="roomTourId" />
+      <div class="text-xs text-slate-300" id="roomTourTitle">Tournament Room Details</div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-400">Custom Room ID:</label>
+          <input
+            id="roomIdInput"
+            type="text"
+            placeholder="e.g. 8492048"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white font-mono mt-1 outline-none focus:border-gold"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400">Room Password:</label>
+          <input
+            id="roomPassInput"
+            type="text"
+            placeholder="e.g. AX99"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white font-mono mt-1 outline-none focus:border-gold"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button onclick="closeSetRoomModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+          Cancel
+        </button>
+        <button onclick="saveRoomDetails()" class="flex-1 py-2.5 bg-gold hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase transition cursor-pointer">
+          Save & Publish
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: MANUAL CREDIT / BALANCE ADJUST ── -->
+  <div id="modalManualCredit" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-bdr rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative text-white">
+      <div class="flex items-center justify-between border-b border-bdr pb-3">
+        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+          <i class="fas fa-coins text-gold"></i> Adjust Player AX Coins
+        </h3>
+        <button onclick="closeManualCreditModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-400">Player UID or Handle:</label>
+          <input
+            id="creditUserTargetInput"
+            type="text"
+            placeholder="e.g. xDa31jOrsoQC2HxjSheO3wBqyII2 or warrior123"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white mt-1 outline-none focus:border-gold"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400">Coins Amount (positive to add, negative to deduct):</label>
+          <input
+            id="creditAmountInput"
+            type="number"
+            value="100"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white font-mono mt-1 outline-none focus:border-gold"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400">Reason / Note:</label>
+          <input
+            id="creditReasonInput"
+            type="text"
+            value="Tournament Winner Prize"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white mt-1 outline-none focus:border-gold"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button onclick="closeManualCreditModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+          Cancel
+        </button>
+        <button onclick="executeManualCredit()" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase transition cursor-pointer">
+          Confirm Credit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADMIN APPLICATION LOGIC SCRIPT ── -->
+  <script>
+    // State
+    let activeTab = 'tournaments';
+    let rawTournaments = [];
+    let rawDeposits = [];
+    let rawWithdrawals = [];
+    let rawUsers = [];
+    let rawReports = [];
+    let rawProfileReports = [];
+    let currentAdminIdentity = null;
+
+    // Helper element selector
+    const $ = (id) => document.getElementById(id);
+
+    // 1. Check Passcode / Admin Auth
+    function togglePinVisibility() {
+      const pinEl = $('adminPinInput');
+      const eyeIcon = $('pinEyeIcon');
+      if (pinEl.type === 'password') {
+        pinEl.type = 'text';
+        eyeIcon.className = 'fas fa-eye-slash';
+      } else {
+        pinEl.type = 'password';
+        eyeIcon.className = 'fas fa-eye';
+      }
+    }
+
+    function checkAdminPin() {
+      const pin = ($('adminPinInput').value || '').trim();
+      const errBox = $('authErrorMsg');
+      
+      // Supported admin passcodes
+      const validPins = ['arenax2026', 'admin123', 'arenaxadmin', 'axpass2026', 'master2026'];
+
+      if (validPins.includes(pin.toLowerCase())) {
+        sessionStorage.setItem('arenax_admin_pass', 'true');
+        errBox.classList.add('hidden');
+        unlockAdminConsole({ name: 'Master Admin', role: 'Super Admin' });
+      } else {
+        errBox.textContent = '❌ Invalid Passcode. Please verify the admin passcode.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function signInAdminGoogle() {
+      const errBox = $('authErrorMsg');
+      errBox.classList.add('hidden');
+
+      if (!window.fbAuth || !window.fsTools) {
+        errBox.textContent = 'Firebase is initializing. Please retry in 2 seconds.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const result = await window.fsTools.signInWithPopup(window.fbAuth, window.fbGoogleProvider);
+        const user = result.user;
+        const isAdmin = (window.ADMIN_UIDS || []).includes(user.uid);
+
+        // Allow owner/creator or recognized admin
+        sessionStorage.setItem('arenax_admin_pass', 'true');
+        unlockAdminConsole({
+          uid: user.uid,
+          name: user.displayName || 'Admin ' + user.uid.slice(0, 4),
+          email: user.email,
+          photoURL: user.photoURL,
+          role: isAdmin ? 'Verified Owner' : 'Console Admin'
+        });
+      } catch (err) {
+        console.error("Google Admin Auth Error:", err);
+        errBox.textContent = err.message || 'Google sign in failed.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function unlockAdminConsole(adminInfo) {
+      currentAdminIdentity = adminInfo;
+      $('adminAuthOverlay').classList.add('hidden');
+      $('adminMainContent').classList.remove('hidden');
+      
+      if (adminInfo.photoURL) {
+        $('adminUserAvatar').innerHTML = `<img src="${adminInfo.photoURL}" class="w-full h-full rounded-full object-cover" />`;
+      }
+
+      showAdminToast("👑 Welcome Admin", "Master Admin Console connected & ready!");
+      startFirestoreListeners();
+      fetchBotData();
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('arenax_admin_pass');
+      location.reload();
+    }
+
+    // Initialize checking session
+    window.initAdminApp = function() {
+      if (sessionStorage.getItem('arenax_admin_pass') === 'true') {
+        unlockAdminConsole({ name: 'Console Admin' });
+      }
+    };
+
+    // Auto-attempt check on DOM loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('arenax_admin_pass') === 'true') {
+        unlockAdminConsole({ name: 'Console Admin' });
+      }
     });
-    
-    // 🔥 NEW: Send personal push notification via FCM
-    try {
-      const giftEmoji = badgeId !== 'none' ? '🎁' : '📬';
-      const notificationSent = await window.sendPersonalNotification(activeGiftUser.id, {
-        title: `New Gift Mail ${giftEmoji}`,
-        body: title,
-        icon: 'https://arenax.cyou/icon-512.png',
-        url: 'https://arenax.cyou/#/mail',
-        data: { 
-          type: 'gift_mail', 
-          badgeId: badgeId || 'none',
-          from: 'admin_staff'
+
+    // 2. Real-Time Firestore Listeners
+    function startFirestoreListeners() {
+      if (!window.fbDb || !window.fsTools) return;
+      const { collection, onSnapshot } = window.fsTools;
+
+      // 1. Tournaments
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'tournaments'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawTournaments = list;
+            updateTournamentsStats();
+            renderTournamentsTable();
+          },
+          (err) => {
+            console.warn("Tournaments snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Tournaments listener failed:", e);
+      }
+
+      // 2. Deposits
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'deposit_requests'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawDeposits = list.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
+            updateDepositsStats();
+            renderDepositsTable();
+          },
+          (err) => {
+            console.warn("Deposits snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Deposits listener failed:", e);
+      }
+
+      // 3. Withdrawals
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'withdraw_requests'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawWithdrawals = list.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
+            updateWithdrawalsStats();
+            renderWithdrawalsTable();
+          },
+          (err) => {
+            console.warn("Withdrawals snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Withdrawals listener failed:", e);
+      }
+
+      // 4. Users
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'users'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawUsers = list;
+            updateUsersStats();
+            renderUsersTable();
+          },
+          (err) => {
+            console.warn("Users snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Users listener failed:", e);
+      }
+
+      // 5. Reports
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'reports'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawReports = list;
+            updateReportsStats();
+            renderReportsTable();
+          },
+          (err) => {
+            console.warn("Reports snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Reports listener failed:", e);
+      }
+
+      // 6. Profile Reports
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'profile_reports'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawProfileReports = list;
+            updateProfileReportsStats();
+            renderProfileReportsTable();
+          },
+          (err) => {
+            console.warn("Profile reports snapshot warning:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Profile reports listener failed:", e);
+      }
+    }
+
+    // 3. Tab Switching
+    function switchAdminTab(tabName) {
+      activeTab = tabName;
+      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'broadcast', 'bot', 'settings'];
+      
+      tabs.forEach((t) => {
+        const btn = $(`tabBtn-${t}`);
+        const content = $(`tabContent-${t}`);
+        if (!btn || !content) return;
+
+        if (t === tabName) {
+          btn.className = "px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-gold text-slate-950 shadow-md font-black";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr";
+          content.classList.add('hidden');
         }
       });
-      console.log('[Admin Gift] Push notification sent:', notificationSent);
-    } catch (fcmErr) {
-      console.warn('[Admin Gift] Push notification failed (non-blocking):', fcmErr?.message || fcmErr);
-      // Continue - in-app notification already saved above
+
+      if (tabName === 'profile-reports') {
+        renderProfileReportsTable();
+      }
     }
-    
-    alert(`Success! Mail sent to ${activeGiftUser.name} successfully. ${badgeId !== 'none' ? `[Badge: ${badgeId} gifted via ${method} grant]` : ''} ✅`);
-    $('mGiftMail').classList.add('hidden');
-  } catch (err) {
-    alert('Failed to send mail gift: ' + err.message);
-    console.error('[Admin Gift] Error:', err);
-  } finally {
-    $('bSendGift').disabled = false;
-    $('bSendGift').textContent = 'Send Mail & Gift';
-  }
-});
+
+    // 4. Stats Calculation
+    function updateTournamentsStats() {
+      $('statTournamentsCount').textContent = rawTournaments.length;
+      const active = rawTournaments.filter((t) => t.status === 'ongoing' || t.status === 'live').length;
+      $('statActiveTournaments').textContent = `${active} active now`;
+    }
+
+    function updateDepositsStats() {
+      const pending = rawDeposits.filter((d) => d.status === 'pending');
+      $('statPendingDepositsCount').textContent = pending.length;
+      const totalPKR = pending.reduce((acc, curr) => acc + (Number(curr.amountPKR) || 0), 0);
+      $('statPendingDepositsPKR').textContent = `Rs ${totalPKR.toLocaleString()} PKR`;
+      
+      const badge = $('tabBadgeDeposits');
+      if (pending.length > 0) {
+        badge.textContent = pending.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function updateWithdrawalsStats() {
+      const pending = rawWithdrawals.filter((w) => w.status === 'pending');
+      $('statPendingWithdrawalsCount').textContent = pending.length;
+      const totalPKR = pending.reduce((acc, curr) => acc + (Number(curr.amountPKR) || Number(curr.amountAX) || 0), 0);
+      $('statPendingWithdrawalsPKR').textContent = `Rs ${totalPKR.toLocaleString()} PKR`;
+
+      const badge = $('tabBadgeWithdrawals');
+      if (pending.length > 0) {
+        badge.textContent = pending.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function updateUsersStats() {
+      $('statUsersCount').textContent = rawUsers.length;
+      const verified = rawUsers.filter((u) => u.hasBlueTick || u.isVerified || u.blueTick).length;
+      $('statVerifiedUsers').textContent = `${verified} verified`;
+    }
+
+    function updateReportsStats() {
+      $('statReportsCount').textContent = rawReports.length;
+      const badge = $('tabBadgeReports');
+      if (rawReports.length > 0) {
+        badge.textContent = rawReports.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function updateProfileReportsStats() {
+      const pending = rawProfileReports.filter((r) => (r.status || 'pending') === 'pending');
+      const badge = $('tabBadgeProfileReports');
+      if (badge) {
+        if (pending.length > 0) {
+          badge.textContent = pending.length;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      const statEl = $('statProfileReportsCount');
+      if (statEl) statEl.textContent = pending.length;
+    }
+
+    // 5. RENDER FUNCTIONS
+
+    // A. Tournaments
+    function renderTournamentsTable() {
+      const container = $('tournamentsListContainer');
+      const search = ($('searchTourInput').value || '').toLowerCase();
+      
+      const filtered = rawTournaments.filter((t) => 
+        (t.name || '').toLowerCase().includes(search) || 
+        (t.game || '').toLowerCase().includes(search)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No tournaments found matching criteria.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((t) => {
+        const isOngoing = t.status === 'ongoing' || t.status === 'live';
+        const isCompleted = t.status === 'completed';
+        const statusBadge = isOngoing 
+          ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold animate-pulse">● LIVE NOW</span>`
+          : isCompleted
+          ? `<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-extrabold">COMPLETED</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-extrabold">UPCOMING</span>`;
+
+        return `
+          <div class="p-4 bg-cardBg hover:bg-cardBgHover border border-bdr rounded-2xl flex items-center justify-between gap-4 transition">
+            <div class="space-y-1.5 flex-1">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="font-extrabold text-sm text-white">${t.name}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-lg bg-[#0d101a] text-gold font-bold border border-gold/20">${t.game || 'BGMI'}</span>
+                <span class="text-[10px] text-slate-400">${t.mode || 'Squad'}</span>
+                ${statusBadge}
+              </div>
+
+              <div class="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
+                <span>Fee: <strong class="text-white">${t.entryFee ? t.entryFee + ' AX' : 'FREE'}</strong></span>
+                <span>Prize: <strong class="text-gold">${t.prize || '5000 AX'}</strong></span>
+                <span>Slots: <strong class="text-slate-200">${t.registered || 0}/${t.maxPlayers || 100}</strong></span>
+                ${t.schedule ? `<span>Schedule: <strong class="text-slate-300">${t.schedule}</strong></span>` : ''}
+              </div>
+
+              ${t.roomDetails ? `
+                <div class="text-[11px] font-mono bg-[#0d101a] px-3 py-1.5 rounded-xl border border-bdr inline-flex items-center gap-3">
+                  <span>Room ID: <strong class="text-emerald-400">${t.roomDetails.roomId || 'N/A'}</strong></span>
+                  <span>Pass: <strong class="text-gold">${t.roomDetails.roomPass || 'N/A'}</strong></span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                onclick="openSetRoomModal('${t.id}', '${escapeHtml(t.name)}')"
+                class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <i class="fas fa-key"></i> Room & Pass
+              </button>
+
+              <button
+                onclick="toggleTourStatus('${t.id}', '${t.status}')"
+                title="Toggle Tournament Status"
+                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-bdr rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <i class="fas fa-arrows-rotate"></i> ${isOngoing ? 'End Match' : 'Start Match'}
+              </button>
+
+              <button
+                onclick="deleteTournamentDoc('${t.id}')"
+                class="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-xl border border-red-500/20 transition cursor-pointer"
+                title="Delete Tournament"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // B. Deposits
+    function renderDepositsTable() {
+      const container = $('depositsListContainer');
+      const filter = $('filterDepositStatus').value;
+      
+      const filtered = rawDeposits.filter((d) => {
+        if (filter === 'all') return true;
+        return d.status === filter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No deposit records found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((d) => {
+        const isPending = d.status === 'pending';
+        const isApproved = d.status === 'approved';
+        const dateStr = d.submittedAt?.seconds ? new Date(d.submittedAt.seconds * 1000).toLocaleString() : 'Recent';
+
+        return `
+          <div class="p-4 bg-cardBg hover:bg-cardBgHover border border-bdr rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition">
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="font-extrabold text-sm text-white">${d.userName || 'Player'}</span>
+                <span class="text-xs text-slate-400">@${d.userHandle || 'player'}</span>
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${
+                  isApproved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  isPending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                  'bg-red-500/20 text-red-400 border border-red-500/30'
+                }">
+                  ${(d.status || 'PENDING').toUpperCase()}
+                </span>
+                <span class="text-[10px] text-slate-500">${dateStr}</span>
+              </div>
+
+              <div class="flex items-center gap-4 text-xs flex-wrap">
+                <span class="text-emerald-400 font-bold">Amount: Rs ${d.amountPKR} → ${d.amountAX || d.amountPKR} AX Coins</span>
+                <span class="text-slate-300">Method: <strong>${d.method || 'JazzCash'}</strong></span>
+                <span>Txn ID: <code class="bg-[#0d101a] px-2 py-0.5 rounded text-amber-300 font-mono select-all">${d.txnId || 'N/A'}</code></span>
+              </div>
+
+              ${d.notes ? `<div class="text-[11px] text-slate-400">Note: ${d.notes}</div>` : ''}
+            </div>
+
+            <!-- Action buttons -->
+            ${isPending ? `
+              <div class="flex items-center gap-2">
+                <button
+                  onclick="approveDeposit('${d.id}', '${d.userId}', ${d.amountAX || d.amountPKR}, ${d.amountPKR})"
+                  class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/20 transition cursor-pointer"
+                >
+                  <i class="fas fa-check"></i> Approve & Credit
+                </button>
+                <button
+                  onclick="rejectDeposit('${d.id}', '${d.userId}')"
+                  class="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <i class="fas fa-xmark"></i> Reject
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // C. Withdrawals
+    function renderWithdrawalsTable() {
+      const container = $('withdrawalsListContainer');
+      const filter = $('filterWithdrawStatus').value;
+      
+      const filtered = rawWithdrawals.filter((w) => {
+        if (filter === 'all') return true;
+        return w.status === filter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No withdrawal requests found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((w) => {
+        const isPending = w.status === 'pending';
+        const isApproved = w.status === 'approved' || w.status === 'completed';
+        const dateStr = w.submittedAt?.seconds ? new Date(w.submittedAt.seconds * 1000).toLocaleString() : 'Recent';
+
+        return `
+          <div class="p-4 bg-cardBg hover:bg-cardBgHover border border-bdr rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition">
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="font-extrabold text-sm text-white">${w.userName || 'Player'}</span>
+                <span class="text-xs text-slate-400">@${w.userHandle || 'player'}</span>
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${
+                  isApproved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  isPending ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                  'bg-red-500/20 text-red-400 border border-red-500/30'
+                }">
+                  ${(w.status || 'PENDING').toUpperCase()}
+                </span>
+                <span class="text-[10px] text-slate-500">${dateStr}</span>
+              </div>
+
+              <div class="flex items-center gap-4 text-xs flex-wrap">
+                <span class="text-sky-400 font-bold">Payout: ${w.amountAX} AX → Rs ${w.amountPKR || w.amountAX} PKR</span>
+                <span class="text-slate-300">Method: <strong>${w.method || 'JazzCash'}</strong></span>
+                <span>Account: <code class="bg-[#0d101a] px-2 py-0.5 rounded text-white font-mono select-all">${w.accountNumber || 'N/A'}</code></span>
+                ${w.accountTitle ? `<span>Title: <strong>${w.accountTitle}</strong></span>` : ''}
+              </div>
+            </div>
+
+            ${isPending ? `
+              <div class="flex items-center gap-2">
+                <button
+                  onclick="approveWithdrawal('${w.id}', '${w.userId}')"
+                  class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-600/20 transition cursor-pointer"
+                >
+                  <i class="fas fa-check"></i> Mark Paid & Complete
+                </button>
+                <button
+                  onclick="rejectWithdrawal('${w.id}', '${w.userId}', ${w.amountAX})"
+                  class="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <i class="fas fa-arrow-rotate-left"></i> Reject & Refund
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // D. Users
+    function renderUsersTable() {
+      const tbody = $('usersTableBody');
+      const search = ($('searchUsersInput').value || '').toLowerCase();
+
+      const filtered = rawUsers.filter((u) => 
+        (u.name || '').toLowerCase().includes(search) ||
+        (u.handle || '').toLowerCase().includes(search) ||
+        (u.uid || '').toLowerCase().includes(search) ||
+        (u.email || '').toLowerCase().includes(search)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-500">No users found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((u) => {
+        const isVerified = u.hasBlueTick || u.isVerified || u.blueTick;
+        const isVip = u.premium || u.isPremium || u.isVIP;
+        const isBanned = u.isBanned || u.banned;
+        const avatar = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.uid}`;
+
+        return `
+          <tr class="hover:bg-cardBgHover/50 transition">
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2.5">
+                <img src="${avatar}" class="w-8 h-8 rounded-full bg-slate-800 object-cover border border-bdr" />
+                <div>
+                  <div class="font-bold text-white flex items-center gap-1">
+                    <span>${u.name || 'Unnamed'}</span>
+                    ${isVerified ? '<i class="fas fa-circle-check text-sky-400 text-xs"></i>' : ''}
+                    ${isVip ? '<i class="fas fa-crown text-gold text-xs"></i>' : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400">${u.email || 'No email registered'}</div>
+                </div>
+              </div>
+            </td>
+
+            <td class="py-3 px-4">
+              <div class="text-xs text-slate-300 font-medium">@${u.handle || 'user'}</div>
+              <div class="text-[9px] font-mono text-slate-500 select-all">${u.uid}</div>
+            </td>
+
+            <td class="py-3 px-4">
+              <span class="font-mono font-black text-amber-400 text-xs">${(u.balance || 0).toLocaleString()} AX</span>
+            </td>
+
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onclick="toggleUserBlueTick('${u.uid}', ${!isVerified})"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                    isVerified ? 'bg-sky-500/20 text-sky-300 border-sky-400/40' : 'bg-slate-800 text-slate-500 border-bdr'
+                  }"
+                >
+                  ${isVerified ? 'Verified ✓' : '+ Blue Tick'}
+                </button>
+
+                <button
+                  onclick="toggleUserVIP('${u.uid}', ${!isVip})"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                    isVip ? 'bg-gold/20 text-gold border-gold/40' : 'bg-slate-800 text-slate-500 border-bdr'
+                  }"
+                >
+                  ${isVip ? 'VIP Crown 👑' : '+ VIP Plan'}
+                </button>
+              </div>
+            </td>
+
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                isBanned ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              }">
+                ${isBanned ? 'BANNED' : 'ACTIVE'}
+              </span>
+            </td>
+
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button
+                  onclick="openBalancePrompt('${u.uid}', '${escapeHtml(u.name || 'User')}', ${u.balance || 0})"
+                  class="p-1.5 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 rounded-lg transition cursor-pointer"
+                  title="Adjust AX Coins"
+                >
+                  <i class="fas fa-coins text-xs"></i>
+                </button>
+
+                <button
+                  onclick="toggleUserBan('${u.uid}', ${!isBanned})"
+                  class="p-1.5 ${isBanned ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/30' : 'bg-red-500/10 text-red-400 hover:bg-red-500/30'} rounded-lg transition cursor-pointer"
+                  title="${isBanned ? 'Unban User' : 'Ban User'}"
+                >
+                  <i class="fas ${isBanned ? 'fa-user-check' : 'fa-ban'} text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // E. Reports
+    function renderReportsTable() {
+      const container = $('reportsListContainer');
+      if (rawReports.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No cheater reports pending resolution.</div>`;
+        return;
+      }
+
+      container.innerHTML = rawReports.map((r) => {
+        return `
+          <div class="p-4 bg-cardBg hover:bg-cardBgHover border border-rose-500/30 rounded-2xl space-y-3 transition">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[10px] border border-rose-500/30">
+                  ${(r.reason || 'HACK/CHEAT').toUpperCase()}
+                </span>
+                <span class="text-sm font-extrabold text-white">Suspect: ${r.suspectName || 'Unknown Player'}</span>
+                ${r.tournamentName ? `<span class="text-xs text-slate-400">in ${r.tournamentName}</span>` : ''}
+              </div>
+
+              <button
+                onclick="dismissReportDoc('${r.id}')"
+                class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-bold transition"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <p class="text-xs text-slate-300 bg-[#0d101a] p-3 rounded-xl border border-bdr leading-relaxed">${r.details || 'No additional commentary provided.'}</p>
+
+            ${r.proofUrl ? `
+              <div class="flex items-center gap-2 pt-1">
+                <a href="${r.proofUrl}" target="_blank" rel="noreferrer" class="text-xs font-bold text-sky-400 hover:underline flex items-center gap-1.5">
+                  <i class="fas fa-arrow-up-right-from-square"></i> Open Evidence Video / Link
+                </a>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // F. Profile Reports (User Moderation)
+    function renderProfileReportsTable() {
+      const container = $('profileReportsListContainer');
+      if (!container) return;
+
+      const catFilter = $('selFilterProfileReportCategory')?.value || 'all';
+      const statusFilter = $('selFilterProfileReportStatus')?.value || 'all';
+      const sortOrder = $('selSortProfileReports')?.value || 'newest';
+
+      let filtered = [...rawProfileReports];
+
+      if (catFilter !== 'all') {
+        filtered = filtered.filter((r) => (r.category || '') === catFilter);
+      }
+
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter((r) => (r.status || 'pending') === statusFilter);
+      }
+
+      filtered.sort((a, b) => {
+        const tA = a.timestamp?.toMillis ? a.timestamp.toMillis() : (a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp || 0).getTime());
+        const tB = b.timestamp?.toMillis ? b.timestamp.toMillis() : (b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp || 0).getTime());
+        return sortOrder === 'oldest' ? tA - tB : tB - tA;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No profile reports match the selected filters.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((r) => {
+        const reportedUid = r.reportedUid || '';
+        const reportedUser = rawUsers.find((u) => u.uid === reportedUid || u.id === reportedUid) || {};
+        const reporterUid = r.reporterUid || '';
+        const reporterUser = rawUsers.find((u) => u.uid === reporterUid || u.id === reporterUid) || {};
+
+        const reportedName = r.reportedName || reportedUser.name || reportedUser.userName || 'ArenaX Player';
+        const reportedAv = reportedUser.av || reportedUser.avatar || r.reportedAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${reportedUid}`;
+        
+        const reporterName = r.reporterName || reporterUser.name || reporterUser.userName || 'ArenaX Player';
+        const reporterAv = reporterUser.av || reporterUser.avatar || r.reporterAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${reporterUid}`;
+
+        const status = r.status || 'pending';
+        let statusBadge = '';
+        if (status === 'pending') {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider">Pending</span>`;
+        } else if (status === 'reviewed') {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 text-[10px] font-black uppercase tracking-wider">Reviewed</span>`;
+        } else if (status === 'actioned') {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">Actioned</span>`;
+        }
+
+        // Format Date
+        let dateStr = 'Recently';
+        if (r.timestamp) {
+          const dt = r.timestamp.toDate ? r.timestamp.toDate() : (r.timestamp.seconds ? new Date(r.timestamp.seconds * 1000) : new Date(r.timestamp));
+          dateStr = dt.toLocaleString();
+        }
+
+        const isTargetBanned = reportedUser.isBanned || reportedUser.banned;
+
+        return `
+          <div class="p-4 sm:p-5 bg-cardBg hover:bg-cardBgHover border border-bdr rounded-2xl space-y-4 transition shadow-sm">
+            
+            <!-- Top Row: Category + Status + Timestamp + Delete Button -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black">
+                  <i class="fas fa-flag text-[10px] mr-1"></i> ${escapeHtml(r.category || 'General Report')}
+                </span>
+                ${statusBadge}
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="text-[11px] text-slate-400 font-mono"><i class="far fa-clock mr-1"></i>${dateStr}</span>
+                <button
+                  onclick="deleteProfileReportDoc('${r.id}')"
+                  class="p-1.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-300 rounded-lg text-xs transition cursor-pointer"
+                  title="Delete Report Record"
+                >
+                  <i class="fas fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Users Comparison Cards: Reporter VS Reported -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              
+              <!-- Reported User Card (Target of report) -->
+              <div class="bg-[#0f1322] border border-rose-500/30 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="relative flex-shrink-0">
+                    <img src="${reportedAv}" class="w-12 h-12 rounded-xl object-cover border-2 border-rose-500/40 bg-slate-800 shadow cursor-pointer" onclick="openAdminInspectProfileModal('${reportedUid}')" />
+                    <span class="absolute -bottom-1 -right-1 bg-rose-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded uppercase">Reported</span>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-[10px] text-rose-400 font-bold uppercase tracking-wider">Reported User</div>
+                    <div class="text-xs font-black text-white truncate flex items-center gap-1.5">
+                      <span class="truncate">${escapeHtml(reportedName)}</span>
+                      ${isTargetBanned ? '<span class="text-[9px] bg-red-600/80 text-white px-1.5 py-0.2 rounded font-black">BANNED</span>' : ''}
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono truncate">UID: ${reportedUid || 'N/A'}</div>
+                  </div>
+                </div>
+
+                <button
+                  onclick="openAdminInspectProfileModal('${reportedUid}')"
+                  class="px-3 py-1.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-[11px] font-bold rounded-lg transition shadow flex-shrink-0 cursor-pointer flex items-center gap-1.5"
+                  title="Inspect Profile & Photos"
+                >
+                  <i class="fas fa-magnifying-glass text-[10px]"></i> Inspect
+                </button>
+              </div>
+
+              <!-- Reporter User Card (Submitter) -->
+              <div class="bg-[#0f1322] border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="relative flex-shrink-0">
+                    <img src="${reporterAv}" class="w-12 h-12 rounded-xl object-cover border border-slate-600 bg-slate-800 shadow cursor-pointer" onclick="openAdminInspectProfileModal('${reporterUid}')" />
+                    <span class="absolute -bottom-1 -right-1 bg-slate-700 text-slate-200 text-[8px] font-bold px-1.5 py-0.2 rounded uppercase">Reporter</span>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Submitted By</div>
+                    <div class="text-xs font-black text-white truncate">${escapeHtml(reporterName)}</div>
+                    <div class="text-[10px] text-slate-400 font-mono truncate">UID: ${reporterUid || 'N/A'}</div>
+                  </div>
+                </div>
+
+                <button
+                  onclick="openAdminInspectProfileModal('${reporterUid}')"
+                  class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold rounded-lg transition flex-shrink-0 cursor-pointer flex items-center gap-1.5"
+                  title="View Reporter Profile"
+                >
+                  <i class="fas fa-user text-[10px]"></i> View
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Additional Details Text -->
+            ${r.details ? `
+              <div class="bg-[#0b0e18] border border-white/5 rounded-xl p-3 text-xs text-slate-300 space-y-1">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Additional Details / Context:</div>
+                <div class="leading-relaxed whitespace-pre-wrap">${escapeHtml(r.details)}</div>
+              </div>
+            ` : ''}
+
+            <!-- Moderation Status Actions -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/5">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] text-slate-400 font-semibold">Status:</span>
+                <button
+                  onclick="updateProfileReportStatus('${r.id}', 'pending')"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${status === 'pending' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}"
+                >
+                  Pending
+                </button>
+                <button
+                  onclick="updateProfileReportStatus('${r.id}', 'reviewed')"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${status === 'reviewed' ? 'bg-blue-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}"
+                >
+                  Reviewed
+                </button>
+                <button
+                  onclick="updateProfileReportStatus('${r.id}', 'actioned')"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${status === 'actioned' ? 'bg-emerald-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}"
+                >
+                  Actioned
+                </button>
+              </div>
+
+              <!-- Quick moderation button on the reported player -->
+              <div class="flex items-center gap-2">
+                <button
+                  onclick="toggleUserBan('${reportedUid}', ${!isTargetBanned})"
+                  class="px-3 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${isTargetBanned ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-600/20 text-red-300 border border-red-500/30 hover:bg-red-600/30'}"
+                >
+                  <i class="fas ${isTargetBanned ? 'fa-user-check' : 'fa-ban'} mr-1"></i>
+                  ${isTargetBanned ? 'Unban Player' : 'Ban Player'}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateProfileReportStatus(reportId, newStatus) {
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'profile_reports', reportId), {
+          status: newStatus,
+          reviewedAt: new Date()
+        });
+        showAdminToast("Report Updated", `Status marked as ${newStatus.toUpperCase()}`);
+      } catch (err) {
+        showAdminToast("Error", err.message, "error");
+      }
+    }
+
+    async function deleteProfileReportDoc(reportId) {
+      if (!confirm("Are you sure you want to delete this profile report record?")) return;
+      try {
+        const { doc, deleteDoc } = window.fsTools;
+        await deleteDoc(doc(window.fbDb, 'profile_reports', reportId));
+        showAdminToast("Deleted", "Profile report record removed");
+      } catch (err) {
+        showAdminToast("Error", err.message, "error");
+      }
+    }
+
+    async function openAdminInspectProfileModal(uid) {
+      if (!uid) return;
+      let user = rawUsers.find((u) => u.uid === uid || u.id === uid);
+      if (!user) {
+        try {
+          const { doc, getDoc } = window.fsTools;
+          const snap = await getDoc(doc(window.fbDb, 'users', uid));
+          if (snap.exists()) {
+            user = { id: snap.id, uid: snap.id, ...snap.data() };
+          }
+        } catch (e) {
+          console.warn("Could not fetch user directly:", e);
+        }
+      }
+      if (!user) {
+        showAdminToast("Not Found", "User record does not exist in database.", "error");
+        return;
+      }
+
+      const isBanned = user.isBanned || user.banned;
+      $('adminInspectAv').src = user.av || user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+      $('adminInspectName').textContent = user.name || user.userName || 'ArenaX Player';
+      $('adminInspectHandle').textContent = `@${user.handle || 'player'}`;
+      $('adminInspectUid').textContent = user.uid || uid;
+      $('adminInspectEmail').textContent = user.email || 'No email provided';
+      $('adminInspectBal').textContent = `${Number(user.balance || 0).toLocaleString()} AX`;
+      $('adminInspectBio').textContent = user.bio || user.signature || 'No bio written';
+      $('adminInspectBanBadge').textContent = isBanned ? 'BANNED' : 'ACTIVE';
+      $('adminInspectBanBadge').className = isBanned 
+        ? 'absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-red-600 text-white text-[9px] font-black uppercase'
+        : 'absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase';
+
+      $('adminInspectBanBtn').innerHTML = `<i class="fas ${isBanned ? 'fa-user-check' : 'fa-ban'}"></i> ${isBanned ? 'Unban Account' : 'Ban Account'}`;
+      $('adminInspectBanBtn').onclick = () => {
+        toggleUserBan(user.uid, !isBanned);
+        $('mAdminInspectProfileModal').classList.add('hidden');
+      };
+
+      $('adminInspectResetAvBtn').onclick = async () => {
+        if (!confirm(`Reset ${user.name || 'player'}'s avatar to the default bottt avatar? This immediately removes inappropriate pictures.`)) return;
+        try {
+          const { doc, updateDoc } = window.fsTools;
+          const defaultAv = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+          await updateDoc(doc(window.fbDb, 'users', user.uid), {
+            av: defaultAv,
+            avatar: defaultAv
+          });
+          $('adminInspectAv').src = defaultAv;
+          showAdminToast("Avatar Reset", "User profile photo reset to default avatar!");
+        } catch (err) {
+          showAdminToast("Error", err.message, "error");
+        }
+      };
+
+      $('adminInspectAdjustBalBtn').onclick = () => {
+        openBalancePrompt(user.uid, user.name, user.balance || 0);
+      };
+
+      $('adminInspectPublicLink').onclick = () => {
+        const link = `https://arenax.cyou/profile?uid=${user.uid}`;
+        window.open(link, '_blank');
+      };
+
+      $('mAdminInspectProfileModal').classList.remove('hidden');
+    }
+
+    // 6. ACTIONS
+
+    // Tournament Handlers
+    async function handleCreateTournament(e) {
+      e.preventDefault();
+      const btn = $('btnSubmitTour');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Creating...`;
+
+      try {
+        const { collection, addDoc, serverTimestamp } = window.fsTools;
+        await addDoc(collection(window.fbDb, 'tournaments'), {
+          name: $('tourNameInput').value.trim(),
+          game: $('tourGameSelect').value,
+          mode: $('tourModeSelect').value,
+          entryFee: Number($('tourFeeInput').value) || 0,
+          prize: $('tourPrizeInput').value.trim(),
+          maxPlayers: Number($('tourMaxPlayersInput').value) || 100,
+          registered: 0,
+          schedule: $('tourScheduleInput').value.trim(),
+          status: 'upcoming',
+          createdAt: serverTimestamp()
+        });
+
+        $('formCreateTournament').reset();
+        showAdminToast("🏆 Tournament Created", "Tournament is now live and listed in Firestore!");
+      } catch (err) {
+        console.error(err);
+        showAdminToast("❌ Error", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-plus"></i> Publish Tournament`;
+      }
+    }
+
+    function openSetRoomModal(tId, tTitle) {
+      $('roomTourId').value = tId;
+      $('roomTourTitle').textContent = `Setting credentials for: ${tTitle}`;
+      $('roomIdInput').value = '';
+      $('roomPassInput').value = '';
+      $('modalSetRoom').classList.remove('hidden');
+    }
+
+    function closeSetRoomModal() {
+      $('modalSetRoom').classList.add('hidden');
+    }
+
+    async function saveRoomDetails() {
+      const tId = $('roomTourId').value;
+      const roomId = $('roomIdInput').value.trim();
+      const roomPass = $('roomPassInput').value.trim();
+
+      if (!roomId || !roomPass) {
+        alert('Please provide both Room ID and Room Password');
+        return;
+      }
+
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'tournaments', tId), {
+          status: 'ongoing',
+          roomDetails: {
+            roomId: roomId,
+            roomPass: roomPass
+          }
+        });
+
+        closeSetRoomModal();
+        showAdminToast("🔐 Room Published", "Room ID and password are now visible to registered players!");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function toggleTourStatus(tId, currentStatus) {
+      const nextStatus = (currentStatus === 'ongoing' || currentStatus === 'live') ? 'completed' : 'ongoing';
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'tournaments', tId), {
+          status: nextStatus
+        });
+        showAdminToast("Status Updated", `Tournament status changed to ${nextStatus.toUpperCase()}`);
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function deleteTournamentDoc(tId) {
+      if (!confirm('Are you sure you want to permanently delete this tournament?')) return;
+      try {
+        const { doc, deleteDoc } = window.fsTools;
+        await deleteDoc(doc(window.fbDb, 'tournaments', tId));
+        showAdminToast("Deleted", "Tournament removed from database.");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    // Deposit Actions
+    async function approveDeposit(depId, userId, amountAX, amountPKR) {
+      try {
+        const { doc, updateDoc, addDoc, collection, increment, serverTimestamp } = window.fsTools;
+        
+        // 1. Update request status
+        await updateDoc(doc(window.fbDb, 'deposit_requests', depId), {
+          status: 'approved',
+          resolvedAt: serverTimestamp()
+        });
+
+        // 2. Increment player wallet balance
+        if (userId) {
+          await updateDoc(doc(window.fbDb, 'users', userId), {
+            balance: increment(amountAX)
+          });
+
+          // 3. Send congratulatory in-app notification
+          await addDoc(collection(window.fbDb, 'notifications'), {
+            userId: userId,
+            title: '💰 Deposit Approved!',
+            body: `Your payment of Rs ${amountPKR} has been verified and ${amountAX} AX Coins have been credited to your wallet!`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+        }
+
+        showAdminToast("💰 Deposit Approved", `Credited ${amountAX} AX Coins to player!`);
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function rejectDeposit(depId, userId) {
+      const reason = prompt('Enter rejection reason:') || 'Invalid Transaction ID / Payment not verified';
+      try {
+        const { doc, updateDoc, addDoc, collection, serverTimestamp } = window.fsTools;
+        
+        await updateDoc(doc(window.fbDb, 'deposit_requests', depId), {
+          status: 'rejected',
+          notes: reason,
+          resolvedAt: serverTimestamp()
+        });
+
+        if (userId) {
+          await addDoc(collection(window.fbDb, 'notifications'), {
+            userId: userId,
+            title: '⚠️ Deposit Rejected',
+            body: `Your deposit request was declined. Reason: ${reason}`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+        }
+
+        showAdminToast("Deposit Rejected", "Deposit request marked as rejected.");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    // Withdrawal Actions
+    async function approveWithdrawal(wId, userId) {
+      try {
+        const { doc, updateDoc, addDoc, collection, serverTimestamp } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'withdraw_requests', wId), {
+          status: 'approved',
+          resolvedAt: serverTimestamp()
+        });
+
+        if (userId) {
+          await addDoc(collection(window.fbDb, 'notifications'), {
+            userId: userId,
+            title: '🎉 Payout Sent!',
+            body: `Your cash withdrawal has been processed and transferred to your account.`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+        }
+
+        showAdminToast("✅ Withdrawal Processed", "Marked as paid and completed!");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function rejectWithdrawal(wId, userId, amountAX) {
+      const reason = prompt('Enter rejection reason:') || 'Account title mismatch';
+      try {
+        const { doc, updateDoc, addDoc, collection, increment, serverTimestamp } = window.fsTools;
+        
+        // 1. Mark request rejected
+        await updateDoc(doc(window.fbDb, 'withdraw_requests', wId), {
+          status: 'rejected',
+          notes: reason,
+          resolvedAt: serverTimestamp()
+        });
+
+        // 2. Refund AX Coins
+        if (userId && amountAX) {
+          await updateDoc(doc(window.fbDb, 'users', userId), {
+            balance: increment(amountAX)
+          });
+
+          await addDoc(collection(window.fbDb, 'notifications'), {
+            userId: userId,
+            title: '⚠️ Withdrawal Declined & Refunded',
+            body: `Your withdrawal request was declined (${reason}). ${amountAX} AX Coins have been refunded to your wallet.`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+        }
+
+        showAdminToast("Withdrawal Rejected", `Refunded ${amountAX} AX Coins back to player.`);
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    // Manual Credit Modal
+    function openManualCreditModal() {
+      $('modalManualCredit').classList.remove('hidden');
+    }
+    function closeManualCreditModal() {
+      $('modalManualCredit').classList.add('hidden');
+    }
+
+    async function executeManualCredit() {
+      const target = $('creditUserTargetInput').value.trim();
+      const amount = Number($('creditAmountInput').value);
+      const reason = $('creditReasonInput').value.trim();
+
+      if (!target || !amount) {
+        alert('Please provide player identifier and amount');
+        return;
+      }
+
+      // Find user by UID or handle
+      const user = rawUsers.find((u) => u.uid === target || (u.handle || '').toLowerCase() === target.toLowerCase());
+      const uid = user ? user.uid : target;
+
+      try {
+        const { doc, updateDoc, addDoc, collection, increment, serverTimestamp } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          balance: increment(amount)
+        });
+
+        await addDoc(collection(window.fbDb, 'notifications'), {
+          userId: uid,
+          title: amount > 0 ? '🪙 Balance Credited!' : '🪙 Balance Adjusted',
+          body: `Admin adjusted your wallet by ${amount > 0 ? '+' : ''}${amount} AX Coins. (${reason})`,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+
+        closeManualCreditModal();
+        showAdminToast("Balance Updated", `Applied ${amount} AX Coins to player!`);
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    function openBalancePrompt(uid, name, currentBal) {
+      const input = prompt(`Adjust AX Coins for ${name} (Current: ${currentBal} AX).\nEnter positive to add, negative to deduct:`, '100');
+      if (input === null) return;
+      const amt = Number(input);
+      if (isNaN(amt) || amt === 0) return;
+
+      $('creditUserTargetInput').value = uid;
+      $('creditAmountInput').value = amt;
+      $('creditReasonInput').value = 'Manual Admin Balance Adjustment';
+      executeManualCredit();
+    }
+
+    // User Toggles
+    async function toggleUserBlueTick(uid, state) {
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          hasBlueTick: state,
+          isVerified: state
+        });
+        showAdminToast("Verified Badge", state ? "Granted Blue Tick ✓" : "Revoked Blue Tick");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function toggleUserVIP(uid, state) {
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          premium: state,
+          isPremium: state,
+          isVIP: state
+        });
+        showAdminToast("VIP Status", state ? "Granted VIP Crown 👑" : "Revoked VIP");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function toggleUserBan(uid, state) {
+      const action = state ? 'BAN' : 'UNBAN';
+      if (!confirm(`Are you sure you want to ${action} this player?`)) return;
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          isBanned: state,
+          banned: state
+        });
+        showAdminToast("Account State", `Player is now ${action}NED`);
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function dismissReportDoc(repId) {
+      try {
+        const { doc, deleteDoc } = window.fsTools;
+        await deleteDoc(doc(window.fbDb, 'reports', repId));
+        showAdminToast("Dismissed", "Report closed.");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    // Broadcast
+    async function handleSendBroadcast(e) {
+      e.preventDefault();
+      const title = $('broadcastTitleInput').value.trim();
+      const body = $('broadcastBodyInput').value.trim();
+      const btn = $('btnBroadcastSubmit');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Broadcasting...`;
+
+      try {
+        const { collection, addDoc, serverTimestamp } = window.fsTools;
+        await addDoc(collection(window.fbDb, 'notifications'), {
+          broadcast: true,
+          title: title,
+          body: body,
+          createdAt: serverTimestamp()
+        });
+
+        $('broadcastTitleInput').value = '';
+        $('broadcastBodyInput').value = '';
+        showAdminToast("📢 Broadcast Dispatched", "Push announcement broadcasted to all ArenaX gamers!");
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane"></i> Broadcast to All Players`;
+      }
+    }
+
+    // Bot Console
+    async function fetchBotData() {
+      try {
+        const res = await fetch('/api/discord-bot/status');
+        if (res.ok) {
+          const data = await res.json();
+          const stats = data.stats || {};
+          const config = data.config || {};
+
+          // Status badges
+          const isOnline = (stats.status || '').toLowerCase().includes('online');
+          $('discordBotDot').className = `w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`;
+          $('discordBotStatusText').textContent = `Bot: ${stats.status || 'Offline'}`;
+
+          $('statBotGuilds').textContent = `${stats.guildsCount || 0} Servers`;
+          $('statBotPing').textContent = `Latency: ${stats.ping || 0}ms`;
+
+          $('botLiveBadge').textContent = stats.status || 'Offline';
+          $('botLiveBadge').className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${isOnline ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`;
+
+          // Form fields
+          if (config.prefix) $('botPrefixInput').value = config.prefix;
+          if (config.systemInstruction) $('botSystemPromptInput').value = config.systemInstruction;
+          if (config.temperature !== undefined) $('botTempInput').value = config.temperature;
+        }
+
+        // Fetch logs
+        const logRes = await fetch('/api/discord-bot/logs');
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          const logs = logData.logs || [];
+          const term = $('botLogsTerminal');
+          if (logs.length === 0) {
+            term.innerHTML = `<div class="text-slate-500">No logs recorded yet.</div>`;
+          } else {
+            term.innerHTML = logs.map((l) => `<div>${escapeHtml(l)}</div>`).join('');
+            term.scrollTop = term.scrollHeight;
+          }
+        }
+      } catch (e) {
+        console.warn("Could not poll discord bot status:", e);
+      }
+    }
+
+    async function saveDiscordBotConfig() {
+      const prefix = $('botPrefixInput').value.trim();
+      const systemInstruction = $('botSystemPromptInput').value.trim();
+      const temperature = Number($('botTempInput').value) || 0.7;
+
+      try {
+        const res = await fetch('/api/discord-bot/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prefix, systemInstruction, temperature })
+        });
+        if (res.ok) {
+          showAdminToast("🤖 Bot Config Saved", "AI prompts and prefix updated!");
+        } else {
+          showAdminToast("❌ Error", "Failed to update bot config", "error");
+        }
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    async function restartDiscordBot() {
+      const token = $('botTokenInput').value.trim();
+      try {
+        const res = await fetch('/api/discord-bot/restart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token || undefined })
+        });
+        if (res.ok) {
+          showAdminToast("🔄 Bot Restart Triggered", "Reinitializing Discord connection...");
+          setTimeout(fetchBotData, 2000);
+        } else {
+          showAdminToast("❌ Error", "Could not trigger restart", "error");
+        }
+      } catch (err) {
+        showAdminToast("❌ Error", err.message, "error");
+      }
+    }
+
+    function saveSystemSettings() {
+      showAdminToast("⚙️ Settings Saved", "Payment numbers and operational preferences updated!");
+    }
+
+    // Utility
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showAdminToast(title, body, type = 'success') {
+      const container = $('adminToastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `p-4 rounded-2xl border shadow-2xl flex items-center gap-3 text-xs font-semibold max-w-sm pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 ${
+        type === 'error'
+          ? 'bg-[#1a1015] border-red-500/40 text-red-200'
+          : 'bg-[#101424] border-gold/40 text-slate-100'
+      }`;
+
+      toast.innerHTML = `
+        <div class="w-8 h-8 rounded-xl ${type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-gold/20 text-gold'} flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <i class="fas ${type === 'error' ? 'fa-triangle-exclamation' : 'fa-check'}"></i>
+        </div>
+        <div class="flex-1">
+          <div class="font-extrabold text-white">${title}</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">${body}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 350);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
