@@ -5041,7 +5041,7 @@ if (typeof tailwind !== 'undefined') {
         <span class="bg-purple-100 text-purple-600 px-2.5 py-0.5 rounded-full font-extrabold" id="vppScoreBadge">
           33
         </span>
-        <div class="flex items-center gap-1 text-gray-500 font-mono font-bold bg-gray-100 px-2.5 py-0.5 rounded-lg ml-1">
+        <div id="vppUidContainer" class="flex items-center gap-1 text-gray-500 font-mono font-bold bg-gray-100 px-2.5 py-0.5 rounded-lg ml-1">
           <span id="vppGameUID">ID: 199813769</span>
           <button id="btnVppCopyUID" class="text-gray-400 hover:text-gray-700 transition cursor-pointer p-0.5 ml-0.5" title="Copy ID">
             <i class="far fa-copy text-xs"></i>
@@ -5086,7 +5086,7 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <!-- Popularity -->
-      <div class="space-y-2">
+      <div id="vppPopularitySection" class="space-y-2">
         <div class="flex items-center justify-between cursor-pointer" onclick="window.openPopularityHistoryModal()">
           <span class="font-bold text-gray-900 text-sm">Popularity</span>
           <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
@@ -5158,7 +5158,7 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <!-- Guard -->
-      <div class="flex items-center justify-between pt-1">
+      <div id="vppGuardSection" class="flex items-center justify-between pt-1">
         <span class="font-bold text-gray-900 text-sm">Guard</span>
         <div class="flex items-center gap-2">
           <div class="flex -space-x-2 overflow-hidden">
@@ -5173,7 +5173,7 @@ if (typeof tailwind !== 'undefined') {
       </div>
 
       <!-- Stats -->
-      <div class="flex items-center justify-between pt-1 pb-4">
+      <div id="vppStatsOverviewSection" class="flex items-center justify-between pt-1 pb-4">
         <span class="font-bold text-gray-900 text-sm">Stats</span>
         <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
       </div>
@@ -5181,7 +5181,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
 
     <!-- Sticky Bottom Action Buttons -->
-    <div class="absolute bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-gray-100 z-30 flex items-center gap-3">
+    <div id="vppBottomActionBar" class="absolute bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-gray-100 z-30 flex items-center gap-3">
       <button id="btnVppSendGiftBottom" onclick="window.openGiftBottomSheet()" class="flex-1 py-3 px-4 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold rounded-full text-sm flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 active:scale-95 transition cursor-pointer">
         <span class="text-base">🎁</span> Send Gift
       </button>
