@@ -4018,8 +4018,8 @@ if (typeof tailwind !== 'undefined') {
           <!-- AX Security (Discord OAuth2 & Security Gate) -->
           <button id="btnAxSecurity" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0">
-                <i class="fab fa-discord"></i>
+              <div class="w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center p-1.5 overflow-hidden flex-shrink-0 shadow-sm">
+                <img src="/arenax-mark.svg" alt="AX Security" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='./arenax-mark.svg'">
               </div>
               <div>
                 <span class="font-medium text-white group-hover:text-indigo-300 transition block">AX Security</span>
@@ -4935,10 +4935,64 @@ if (typeof tailwind !== 'undefined') {
         </button>
 
         <!-- Top Right Controls: 3-Dots Menu & Cross Close Button -->
-        <div class="flex items-center gap-2">
-          <button id="btnVppMoreOpts" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="More Options">
-            <i class="fas fa-ellipsis-h text-base"></i>
-          </button>
+        <div class="flex items-center gap-2 relative">
+          <div class="relative">
+            <button id="btnVppMoreOpts" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="More Options">
+              <i class="fas fa-ellipsis-v text-base"></i>
+            </button>
+
+            <!-- 3-Dots Dropdown Menu -->
+            <div id="vppMoreMenuDropdown" class="hidden absolute top-12 right-0 w-64 bg-[#14182b]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] py-1.5 z-50 animate-fade-in text-white divide-y divide-white/10">
+              <div class="py-1">
+                <!-- 1. Block / Unblock User -->
+                <button id="btnVppOptBlock" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                  <div id="vppOptBlockIcon" class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                    <i class="fas fa-ban"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div id="vppOptBlockText" class="text-xs font-bold text-white group-hover:text-rose-300 transition">Block User</div>
+                    <div class="text-[10px] text-slate-400 truncate">Stop DMs, gifts & profile access</div>
+                  </div>
+                </button>
+
+                <!-- 2. Report User -->
+                <button id="btnVppOptReport" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                  <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                    <i class="fas fa-flag"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Report User</div>
+                    <div class="text-[10px] text-slate-400 truncate">Submit moderation report</div>
+                  </div>
+                </button>
+              </div>
+
+              <div class="py-1">
+                <!-- 3. Copy Profile Link -->
+                <button id="btnVppOptCopyLink" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                  <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                    <i class="fas fa-link"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-bold text-white group-hover:text-sky-300 transition">Copy Profile Link</div>
+                    <div class="text-[10px] text-slate-400 truncate">Shareable arenax.cyou link</div>
+                  </div>
+                </button>
+
+                <!-- 4. Mute / Unmute Notifications -->
+                <button id="btnVppOptMute" class="w-full px-3.5 py-2.5 hover:bg-white/10 flex items-center gap-3 text-left transition cursor-pointer group">
+                  <div id="vppOptMuteIcon" class="w-8 h-8 rounded-xl bg-slate-700/40 border border-slate-600/40 text-slate-300 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition">
+                    <i class="fas fa-bell-slash"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div id="vppOptMuteText" class="text-xs font-bold text-white group-hover:text-slate-200 transition">Mute Notifications</div>
+                    <div class="text-[10px] text-slate-400 truncate">Silence alerts from this user</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button id="btnCloseViewPlayerProfileX" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg border border-white/20" title="Close Profile">
             <i class="fas fa-times text-base"></i>
           </button>
@@ -5137,6 +5191,94 @@ if (typeof tailwind !== 'undefined') {
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- ==================== BLOCK USER CONFIRMATION MODAL ==================== -->
+<div id="mBlockUserConfirmModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100005] flex items-center justify-center p-4 hidden animate-fade-in font-sans">
+  <div class="bg-[#121526] border border-rose-500/30 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-white">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl flex-shrink-0">
+        <i class="fas fa-ban"></i>
+      </div>
+      <div>
+        <h3 id="lblBlockConfirmTitle" class="text-base font-black text-white">Block User?</h3>
+        <p class="text-xs text-slate-400">Safety & Privacy</p>
+      </div>
+    </div>
+
+    <p id="lblBlockConfirmDesc" class="text-xs text-slate-300 leading-relaxed">
+      Block this player? They won't be able to message you, send gifts, or view your full profile.
+    </p>
+
+    <div class="flex items-center gap-3 pt-2">
+      <button id="btnCancelBlockUser" class="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer">
+        Cancel
+      </button>
+      <button id="btnConfirmBlockUser" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/30 transition cursor-pointer flex items-center justify-center gap-2">
+        <i class="fas fa-ban text-xs"></i> Block
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REPORT USER MODAL ==================== -->
+<div id="mReportUserModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100005] flex items-center justify-center p-4 hidden animate-fade-in font-sans">
+  <div class="bg-[#121526] border border-amber-500/30 rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl text-white max-h-[92vh] overflow-y-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-base flex-shrink-0">
+          <i class="fas fa-flag"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-black text-white">Report User</h3>
+          <p class="text-[11px] text-slate-400">Help keep ArenaX safe & fair</p>
+        </div>
+      </div>
+      <button id="btnCloseReportUserModal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+        <i class="fas fa-times text-xs"></i>
+      </button>
+    </div>
+
+    <!-- Reported User Target Preview -->
+    <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-3 flex items-center gap-3">
+      <img id="reportTargetAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="w-10 h-10 rounded-full object-cover border border-amber-500/40 bg-slate-800" />
+      <div class="flex-1 min-w-0">
+        <div id="reportTargetName" class="text-xs font-black text-white truncate">Player Name</div>
+        <div id="reportTargetHandle" class="text-[10px] text-slate-400 font-mono truncate">@handle</div>
+      </div>
+      <span class="text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-bold uppercase">Report Target</span>
+    </div>
+
+    <!-- Category Selection (Single-Select) -->
+    <div class="space-y-2">
+      <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+        Category / Reason <span class="text-rose-400">*</span>
+      </label>
+      <div id="reportCategoryContainer" class="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+        <!-- Categories dynamically rendered and interactive -->
+      </div>
+    </div>
+
+    <!-- Other Text Input (visible only when 'Other' selected) -->
+    <div id="reportOtherCategoryWrap" class="space-y-1 hidden">
+      <label class="text-[11px] font-bold text-slate-300 block">Specify Reason <span class="text-rose-400">*</span></label>
+      <input type="text" id="reportOtherCategoryInp" placeholder="Enter specific reason..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500" />
+    </div>
+
+    <!-- Additional Details Optional Textarea -->
+    <div class="space-y-1">
+      <label class="text-[11px] font-bold text-slate-300 block">Additional Details (Optional)</label>
+      <textarea id="reportDetailsInp" rows="2" placeholder="Provide extra context, match info, or details..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="pt-2">
+      <button id="btnSubmitProfileReport" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98">
+        <i class="fas fa-paper-plane text-xs"></i> Submit Report
+      </button>
+    </div>
   </div>
 </div>
 
