@@ -193,6 +193,29 @@ window.sendPopularityGiftItem = async function(type) {
     return;
   }
 
+  // Check if either user has blocked the other
+  try {
+    const _getDoc = typeof getDoc !== 'undefined' ? getDoc : window.getDoc;
+    const _doc = typeof doc !== 'undefined' ? doc : window.doc;
+    const _db = typeof db !== 'undefined' ? db : window.db;
+    if (_getDoc && _doc && _db) {
+      const [theyBlockedMe, iBlockedThem] = await Promise.all([
+        _getDoc(_doc(_db, 'users', recipientId, 'blocked', currentSender.uid)),
+        _getDoc(_doc(_db, 'users', currentSender.uid, 'blocked', recipientId))
+      ]);
+      if (theyBlockedMe.exists()) {
+        alert("You cannot send gifts to this user because they have blocked you. ❌");
+        return;
+      }
+      if (iBlockedThem.exists()) {
+        alert("You have blocked this user. Unblock them first to send gifts. ❌");
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("Blocked check in gifts warning:", err);
+  }
+
   const isRose = (type === 'rose');
   const isRocket = (type === 'rocket');
   const isTrophy = (type === 'trophy');
