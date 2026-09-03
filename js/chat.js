@@ -1649,7 +1649,11 @@ window.openPlayerProfileCard = async function(targetUid) {
     window.currentViewingPlayerAvatar = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
 
     // Reset 3-dots more menu state & perform block/mute status checks
-    $('vppMoreMenuDropdown')?.classList.add('hidden');
+    const vppDropdownInit = document.getElementById('vppMoreMenuDropdown');
+    if (vppDropdownInit) {
+      vppDropdownInit.classList.add('hidden');
+      vppDropdownInit.style.display = 'none';
+    }
 
     const myUid = (userProfile || window.userProfile || window.currentUser)?.uid;
     const isOwnProfile = myUid && (myUid === targetUid);
@@ -1668,10 +1672,10 @@ window.openPlayerProfileCard = async function(targetUid) {
       if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.remove('hidden');
 
       if (myUid) {
-        // 1. Check if target user blocked current user
+        // 1. Check if target user blocked current user (handled gracefully if rules restrict)
         try {
           const theyBlockedMe = await getDoc(doc(db, 'users', targetUid, 'blocked', myUid));
-          if (theyBlockedMe.exists()) {
+          if (theyBlockedMe && theyBlockedMe.exists()) {
             if ($('btnVppSendDM')) $('btnVppSendDM').classList.add('hidden');
             if ($('btnVppSendGiftBottom')) $('btnVppSendGiftBottom').classList.add('hidden');
             if ($('btnVppSendPopularity')) $('btnVppSendPopularity').classList.add('hidden');
@@ -1679,7 +1683,7 @@ window.openPlayerProfileCard = async function(targetUid) {
             if ($('vppBio')) $('vppBio').textContent = "This profile is unavailable.";
           }
         } catch(e) {
-          console.warn("Blocked me check notice:", e);
+          // Silent catch: if Firestore rules restrict checking or not yet deployed
         }
 
         // 2. Check if current user blocked target user
@@ -1885,32 +1889,66 @@ if ($('btnVppSendDM')) {
 }
 
 // ── 3-DOTS MORE OPTIONS MENU CONTROLLER ──
+let lastVppToggleTime = 0;
+
 window.toggleVppMoreMenu = function(e) {
+  console.log('3 dots clicked', e);
+  const now = Date.now();
+  // Prevent duplicate execution if both inline onclick and addEventListener fire in the same user tap
+  if (now - lastVppToggleTime < 250) {
+    console.log('[ArenaX Debug] 3-dots toggle debounced (duplicate event suppressed)');
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    }
+    return;
+  }
+  lastVppToggleTime = now;
+
   if (e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
     if (typeof e.preventDefault === 'function') e.preventDefault();
   }
+
   const dropdown = document.getElementById('vppMoreMenuDropdown');
+  console.log('[ArenaX Debug] 3-dots dropdown element:', dropdown);
   if (dropdown) {
-    dropdown.classList.toggle('hidden');
+    const isCurrentlyHidden = dropdown.classList.contains('hidden') || dropdown.style.display === 'none';
+    console.log('[ArenaX Debug] Dropdown was hidden:', isCurrentlyHidden, '-> toggling to:', !isCurrentlyHidden);
+    if (isCurrentlyHidden) {
+      dropdown.classList.remove('hidden');
+      dropdown.style.display = 'block';
+      dropdown.style.visibility = 'visible';
+    } else {
+      dropdown.classList.add('hidden');
+      dropdown.style.display = 'none';
+      dropdown.style.visibility = 'hidden';
+    }
+  } else {
+    console.error('[ArenaX Debug] Dropdown element #vppMoreMenuDropdown was not found in DOM!');
   }
 };
 
 const vppMoreBtn = document.getElementById('btnVppMoreOpts');
 if (vppMoreBtn) {
-  vppMoreBtn.addEventListener('click', (e) => {
+  vppMoreBtn.onclick = function(e) {
     window.toggleVppMoreMenu(e);
-  });
+  };
 }
 
 // Close 3-dots dropdown when clicking outside
 document.addEventListener('click', (e) => {
   const dropdown = document.getElementById('vppMoreMenuDropdown');
   const btn = document.getElementById('btnVppMoreOpts');
-  if (dropdown && !dropdown.classList.contains('hidden')) {
-    if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
-      dropdown.classList.add('hidden');
+  if (dropdown && !dropdown.classList.contains('hidden') && dropdown.style.display !== 'none') {
+    if (dropdown.contains(e.target) || (btn && btn.contains(e.target))) {
+      return;
     }
+    console.log('[ArenaX Debug] Clicked outside 3-dots dropdown, closing');
+    dropdown.classList.add('hidden');
+    dropdown.style.display = 'none';
+    dropdown.style.visibility = 'hidden';
   }
 });
 
