@@ -6,8 +6,37 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { initializeDiscordBot, botLogs, botStats, getBotConfig, saveBotConfig } from "./discord-bot.ts";
+import { initializeApp as initAdminApp, cert as adminCert, getApps as getAdminApps } from "firebase-admin/app";
+import { getFirestore as getAdminFirestore, FieldValue } from "firebase-admin/firestore";
 
 dotenv.config();
+
+// Initialize Firebase Admin SDK
+let adminDb: FirebaseFirestore.Firestore | null = null;
+try {
+  const projectId = process.env.FIREBASE_PROJECT_ID || "arenax-c1586";
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const rawKey = process.env.FIREBASE_PRIVATE_KEY || "";
+  const privateKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
+
+  if (clientEmail && privateKey) {
+    const adminApp = getAdminApps().length === 0
+      ? initAdminApp({
+          credential: adminCert({
+            projectId,
+            clientEmail,
+            privateKey
+          })
+        })
+      : getAdminApps()[0];
+    adminDb = getAdminFirestore(adminApp);
+    console.log("[Firebase Admin] Firestore initialized successfully for project:", projectId);
+  } else {
+    console.warn("[Firebase Admin] Missing clientEmail or privateKey in environment.");
+  }
+} catch (e) {
+  console.error("[Firebase Admin] Initialization error:", e);
+}
 
 async function startServer() {
   const app = express();
@@ -370,6 +399,284 @@ CRITICAL INSTRUCTIONS:
   // 3. Fetch Audit Logs for Admin Inspection
   app.get("/api/admin/sensitive-audit-logs", (req, res) => {
     res.json({ logs: auditLogs.slice(0, 100) });
+  });
+
+  // 4. Secure Admin Moderation Action Execution (Warning, Suspend, Ban, Unban)
+  app.post("/api/admin/apply-moderation-action", async (req, res) => {
+    try {
+      const {
+        targetUid,
+        actionType,
+        durationDays,
+        reason,
+        sendOfficialMsg,
+        customMessage,
+        messageTitle,
+        reportId,
+        adminUid,
+        adminName,
+        adminEmail,
+        isAdminConsoleSession
+      } = req.body;
+
+      if (!targetUid) {
+        return res.status(400).json({ error: "Missing targetUid for moderation action." });
+      }
+      if (!actionType) {
+        return res.status(400).json({ error: "Missing actionType." });
+      }
+      if (!reason && actionType !== "unblock") {
+        return res.status(400).json({ error: "Disciplinary reason is required." });
+      }
+
+      if (!isAuthorizedAdmin(adminUid, adminEmail, isAdminConsoleSession)) {
+        return res.status(403).json({ error: "Unauthorized. Admin privileges required." });
+      }
+
+      if (!adminDb) {
+        return res.status(500).json({ error: "Firebase Admin database is not available." });
+      }
+
+      const userDocRef = adminDb.collection("users").doc(targetUid);
+      const userSnap = await userDocRef.get();
+      if (!userSnap.exists) {
+        return res.status(404).json({ error: "Target user not found in database." });
+      }
+
+      const userData = userSnap.data() || {};
+      const prevAccountStatus = userData.accountStatus || (userData.banned ? "banned" : userData.restricted ? "restricted" : "active");
+      const targetName = userData.name || "Player";
+      const targetHandle = userData.handle || "player";
+      const actualAdminName = adminName || "ArenaX Administrator";
+      const actualAdminUid = adminUid || "admin";
+
+      const now = new Date();
+      const nowIso = now.toISOString();
+
+      let durationStr = "Notice";
+      let endsAt: Date | null = null;
+      let endsAtIso: string | null = null;
+
+      const numDays = Number(durationDays) || 1;
+      if (actionType === "restriction" || actionType === "temporary_block") {
+        durationStr = `${numDays} Day${numDays > 1 ? "s" : ""}`;
+        endsAt = new Date(Date.now() + numDays * 24 * 60 * 60 * 1000);
+        endsAtIso = endsAt.toISOString();
+      } else if (actionType === "permanent_block") {
+        durationStr = "Permanent";
+      } else if (actionType === "unblock") {
+        durationStr = "Restored";
+      }
+
+      // 1. Prepare User Updates in Firestore
+      let newAccountStatus = "active";
+      const userUpdates: Record<string, any> = {
+        lastModeratedBy: actualAdminName,
+        lastModerationAt: FieldValue.serverTimestamp(),
+        lastModerationAction: actionType,
+        lastModerationReason: reason || ""
+      };
+
+      if (actionType === "warning") {
+        newAccountStatus = "warned";
+        userUpdates.accountStatus = "warned";
+        userUpdates.warningCount = (userData.warningCount || 0) + 1;
+        userUpdates.lastWarning = reason || "Administrative warning issued";
+        userUpdates.lastWarningAt = FieldValue.serverTimestamp();
+      } else if (actionType === "restriction") {
+        newAccountStatus = "restricted";
+        userUpdates.accountStatus = "restricted";
+        userUpdates.restricted = true;
+        userUpdates.isRestricted = true;
+        userUpdates.restrictedUntil = endsAtIso;
+        userUpdates.restrictionReason = reason;
+        userUpdates.restrictedAt = FieldValue.serverTimestamp();
+        userUpdates.restrictedBy = actualAdminName;
+        userUpdates.banned = false;
+        userUpdates.isBanned = false;
+      } else if (actionType === "temporary_block") {
+        newAccountStatus = "temporarily_blocked";
+        userUpdates.accountStatus = "temporarily_blocked";
+        userUpdates.banned = true;
+        userUpdates.isBanned = true;
+        userUpdates.banType = "temporary";
+        userUpdates.banUntil = endsAtIso;
+        userUpdates.blockedUntil = endsAtIso;
+        userUpdates.banReason = reason;
+        userUpdates.bannedAt = FieldValue.serverTimestamp();
+        userUpdates.bannedBy = actualAdminName;
+      } else if (actionType === "permanent_block") {
+        newAccountStatus = "permanently_blocked";
+        userUpdates.accountStatus = "permanently_blocked";
+        userUpdates.banned = true;
+        userUpdates.isBanned = true;
+        userUpdates.banType = "full";
+        userUpdates.banUntil = null;
+        userUpdates.blockedUntil = null;
+        userUpdates.banReason = reason;
+        userUpdates.banRule = reason;
+        userUpdates.bannedAt = FieldValue.serverTimestamp();
+        userUpdates.bannedBy = actualAdminName;
+      } else if (actionType === "unblock") {
+        newAccountStatus = "active";
+        userUpdates.accountStatus = "active";
+        userUpdates.banned = false;
+        userUpdates.isBanned = false;
+        userUpdates.banType = "none";
+        userUpdates.restricted = false;
+        userUpdates.isRestricted = false;
+        userUpdates.blockedUntil = null;
+        userUpdates.restrictedUntil = null;
+        userUpdates.banUntil = null;
+        userUpdates.banReason = "";
+        userUpdates.restrictionReason = "";
+        userUpdates.unblockedAt = FieldValue.serverTimestamp();
+        userUpdates.unblockedBy = actualAdminName;
+        userUpdates.restoredAt = FieldValue.serverTimestamp();
+      }
+
+      await userDocRef.update(userUpdates);
+
+      // 2. Save to moderation_history Root Collection
+      const moderationRecord = {
+        targetUid,
+        targetName,
+        targetHandle,
+        actionType,
+        reason: reason || "",
+        adminUid: actualAdminUid,
+        adminName: actualAdminName,
+        dateTime: nowIso,
+        timestamp: FieldValue.serverTimestamp(),
+        duration: durationStr,
+        startsAt: nowIso,
+        endsAt: endsAtIso,
+        previousStatus: prevAccountStatus,
+        currentStatus: newAccountStatus,
+        officialDmSent: Boolean(sendOfficialMsg),
+        officialMessage: sendOfficialMsg ? (customMessage || reason || "") : null,
+        reportId: reportId || null
+      };
+      const historyRef = await adminDb.collection("moderation_history").add(moderationRecord);
+
+      // 3. Save to users/{uid}/punishments subcollection
+      try {
+        await userDocRef.collection("punishments").add({
+          actionType,
+          reason: reason || "",
+          duration: durationStr,
+          adminUid: actualAdminUid,
+          adminName: actualAdminName,
+          dateTime: nowIso,
+          timestamp: FieldValue.serverTimestamp(),
+          startsAt: nowIso,
+          endsAt: endsAtIso,
+          officialDmSent: Boolean(sendOfficialMsg)
+        });
+      } catch (err) {
+        console.warn("Could not write to punishments subcollection:", err);
+      }
+
+      // 4. Official ArenaX Moderator DM (OPTIONAL - ONLY IF sendOfficialMsg is true)
+      let dmSentResult = false;
+      if (sendOfficialMsg) {
+        const msgBody = (customMessage || "").trim() || reason || "Administrative action notice from ArenaX Moderation Team.";
+        const title = (messageTitle || "").trim() || "Official Moderation Notice";
+
+        try {
+          // A. Add/update friend item in users/{uid}/friends/arenax_moderators
+          // NOTE: Uses Moderator.png as PFP!
+          await userDocRef.collection("friends").doc("arenax_moderators").set({
+            uid: "arenax_moderators",
+            name: "ArenaX Moderators",
+            handle: "moderators",
+            av: "Moderator.png",
+            hasBlueTick: true,
+            isOfficial: true,
+            badgeNum: "M",
+            lastMsg: msgBody.length > 80 ? msgBody.slice(0, 77) + "..." : msgBody,
+            lastMsgDate: "Just now",
+            unreadCount: 1,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          // B. Add message in dms/{roomId}/messages
+          const roomId = [targetUid, "arenax_moderators"].sort().join("_");
+          await adminDb.collection("dms").doc(roomId).collection("messages").add({
+            text: msgBody,
+            sender: "arenax_moderators",
+            senderName: "ArenaX Moderators",
+            senderAv: "Moderator.png",
+            hasBlueTick: true,
+            isOfficial: true,
+            noticeType: actionType,
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          // C. Add in users/{uid}/mails
+          await userDocRef.collection("mails").add({
+            sender: "ArenaX Moderators",
+            senderUid: "arenax_moderators",
+            senderAv: "Moderator.png",
+            hasBlueTick: true,
+            badge: "bluetick.png",
+            type: "moderation_notice",
+            actionType,
+            title,
+            body: msgBody,
+            reason: reason || "",
+            duration: durationStr,
+            moderatorRole: "ArenaX Moderation Team",
+            read: false,
+            createdAt: FieldValue.serverTimestamp()
+          });
+
+          dmSentResult = true;
+        } catch (dmErr) {
+          console.error("Failed to send official moderator DM:", dmErr);
+        }
+      }
+
+      // 5. Update Profile Report status if this was initiated from a report
+      if (reportId) {
+        try {
+          await adminDb.collection("profile_reports").doc(reportId).update({
+            status: "actioned",
+            actionTaken: actionType,
+            actionReason: reason || "",
+            actionedBy: actualAdminName,
+            actionedAt: FieldValue.serverTimestamp()
+          });
+        } catch (repErr) {
+          console.warn("Could not update profile report:", repErr);
+        }
+      }
+
+      // Record Audit Log
+      recordAuditLog({
+        adminUid: actualAdminUid,
+        adminEmail: adminEmail || "",
+        adminName: actualAdminName,
+        action: `moderation_${actionType}`,
+        targetUid,
+        status: "AUTHORIZED_SUCCESS",
+        ip: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown",
+        details: `Applied ${actionType} on ${targetName} (@${targetHandle}). Reason: ${reason || "N/A"}. Duration: ${durationStr}. Official DM Sent: ${Boolean(sendOfficialMsg)}`
+      });
+
+      return res.json({
+        success: true,
+        actionType,
+        targetUid,
+        newAccountStatus,
+        durationStr,
+        historyId: historyRef.id,
+        officialDmSent: dmSentResult
+      });
+    } catch (error: any) {
+      console.error("[Moderation Action Error]", error);
+      res.status(500).json({ error: error.message || "Failed to execute moderation action." });
+    }
   });
 
   // Rewrite subpath requests (e.g. /arenax/...)
