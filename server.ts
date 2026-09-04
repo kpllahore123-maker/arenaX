@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
@@ -187,6 +188,188 @@ CRITICAL INSTRUCTIONS:
       console.error("[FCM Server Relay] Error sending push:", err);
       res.status(500).json({ error: err.message || "Failed to send FCM push" });
     }
+  });
+
+  // ── EXTRA SECURITY LAYER FOR HIGHLY SENSITIVE ADMIN ACTIONS ──
+  interface AuditLogEntry {
+    id: string;
+    timestamp: string;
+    adminUid: string;
+    adminEmail?: string;
+    adminName?: string;
+    action: string;
+    targetUid?: string;
+    status: 'AUTHORIZED_SUCCESS' | 'FAILED_INVALID_PASSWORD' | 'LOCKED_RATE_LIMITED' | 'UNAUTHORIZED_FORBIDDEN';
+    ip: string;
+    details?: string;
+  }
+
+  const AUDIT_LOG_FILE = path.join(process.cwd(), "admin-sensitive-audit.json");
+  let auditLogs: AuditLogEntry[] = [];
+  try {
+    if (fs.existsSync(AUDIT_LOG_FILE)) {
+      auditLogs = JSON.parse(fs.readFileSync(AUDIT_LOG_FILE, "utf-8"));
+    }
+  } catch (e) {
+    auditLogs = [];
+  }
+
+  function recordAuditLog(entry: Omit<AuditLogEntry, "id" | "timestamp">) {
+    const log: AuditLogEntry = {
+      id: "audit_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+      timestamp: new Date().toISOString(),
+      ...entry
+    };
+    auditLogs.unshift(log);
+    if (auditLogs.length > 500) auditLogs.pop();
+    try {
+      fs.writeFileSync(AUDIT_LOG_FILE, JSON.stringify(auditLogs.slice(0, 200), null, 2));
+    } catch (e) {
+      console.warn("Failed to write audit log to file:", e);
+    }
+    return log;
+  }
+
+  const sensitiveRateLimits = new Map<string, { failedAttempts: number; lockedUntil: number }>();
+  const activeSensitiveTokens = new Map<string, { adminUid: string; action: string; targetUid?: string; expiresAt: number }>();
+
+  // Known admin list
+  const AUTHORIZED_ADMIN_EMAILS = ["kpllahore123@gmail.com"];
+  const AUTHORIZED_ADMIN_UIDS = ["xDa31jOrsoQC2HxjSheO3wBqyII2", "lCNKrLAliFSvuML6Nwrr6YlNOtG3"];
+
+  function isAuthorizedAdmin(adminUid?: string, adminEmail?: string, isAdminConsoleSession?: boolean): boolean {
+    if (isAdminConsoleSession) return true;
+    if (adminEmail && AUTHORIZED_ADMIN_EMAILS.includes(adminEmail.toLowerCase().trim())) return true;
+    if (adminUid && AUTHORIZED_ADMIN_UIDS.includes(adminUid.trim())) return true;
+    return false;
+  }
+
+  // 1. Verify Sensitive Action Security Passcode
+  app.post("/api/admin/verify-sensitive-access", (req, res) => {
+    try {
+      const { adminUid, adminEmail, adminName, action, targetUid, password, isAdminConsoleSession } = req.body;
+      const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const rateLimitKey = `${clientIp}_${adminUid || adminEmail || "admin"}`;
+
+      // Check admin privileges
+      if (!isAuthorizedAdmin(adminUid, adminEmail, isAdminConsoleSession)) {
+        recordAuditLog({
+          adminUid: adminUid || "unknown",
+          adminEmail: adminEmail || "",
+          adminName: adminName || "Anonymous User",
+          action: action || "sensitive_access",
+          targetUid: targetUid || "",
+          status: "UNAUTHORIZED_FORBIDDEN",
+          ip: clientIp,
+          details: "Attempted sensitive access without admin authorization"
+        });
+        return res.status(403).json({ error: "Access denied. Only authorized administrators can access this data." });
+      }
+
+      // Check Rate Limit (5 failed attempts -> 15 min lock)
+      const now = Date.now();
+      const currentLimit = sensitiveRateLimits.get(rateLimitKey) || { failedAttempts: 0, lockedUntil: 0 };
+      if (currentLimit.lockedUntil > now) {
+        const remainingMs = currentLimit.lockedUntil - now;
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        recordAuditLog({
+          adminUid: adminUid || "admin",
+          adminEmail,
+          adminName,
+          action: action || "sensitive_access",
+          targetUid,
+          status: "LOCKED_RATE_LIMITED",
+          ip: clientIp,
+          details: `Attempt blocked by rate limiter. Locked for ${remainingMin} more minutes.`
+        });
+        return res.status(429).json({
+          error: `Too many failed password attempts. Access is locked for ${remainingMin} minute(s). Please try again later.`,
+          locked: true,
+          remainingMinutes: remainingMin
+        });
+      }
+
+      // Compare password securely on backend
+      const expectedPin = (process.env.ADMIN_SENSITIVE_PIN || "9229").trim();
+      const submittedPin = (password || "").toString().trim();
+
+      const expectedBuf = Buffer.from(expectedPin);
+      const submittedBuf = Buffer.from(submittedPin);
+      const isMatch = expectedBuf.length === submittedBuf.length && crypto.timingSafeEqual(expectedBuf, submittedBuf);
+
+      if (!isMatch) {
+        currentLimit.failedAttempts = (currentLimit.failedAttempts || 0) + 1;
+        const attemptsRemaining = Math.max(0, 5 - currentLimit.failedAttempts);
+        if (currentLimit.failedAttempts >= 5) {
+          currentLimit.lockedUntil = now + 15 * 60 * 1000;
+        }
+        sensitiveRateLimits.set(rateLimitKey, currentLimit);
+
+        recordAuditLog({
+          adminUid: adminUid || "admin",
+          adminEmail,
+          adminName,
+          action: action || "view_dms",
+          targetUid,
+          status: "FAILED_INVALID_PASSWORD",
+          ip: clientIp,
+          details: `Invalid security passcode entered. ${attemptsRemaining} attempt(s) remaining.`
+        });
+
+        return res.status(401).json({
+          error: "Incorrect sensitive action security passcode.",
+          attemptsRemaining,
+          locked: currentLimit.failedAttempts >= 5
+        });
+      }
+
+      // Successful verification
+      sensitiveRateLimits.delete(rateLimitKey); // reset failures
+      const sessionToken = "sec_" + crypto.randomBytes(32).toString("hex");
+      activeSensitiveTokens.set(sessionToken, {
+        adminUid: adminUid || "admin",
+        action: action || "view_dms",
+        targetUid,
+        expiresAt: now + 5 * 60 * 1000 // 5-minute validity
+      });
+
+      recordAuditLog({
+        adminUid: adminUid || "admin",
+        adminEmail,
+        adminName,
+        action: action || "view_dms",
+        targetUid,
+        status: "AUTHORIZED_SUCCESS",
+        ip: clientIp,
+        details: `Authorized sensitive access granted for ${action || "view_dms"}`
+      });
+
+      res.json({
+        success: true,
+        sensitiveToken: sessionToken,
+        expiresInMs: 300000
+      });
+    } catch (err: any) {
+      console.error("[Sensitive Access Error]", err);
+      res.status(500).json({ error: "Internal security verification error" });
+    }
+  });
+
+  // 2. Validate Sensitive Token
+  app.post("/api/admin/validate-sensitive-token", (req, res) => {
+    const { token, action } = req.body;
+    if (!token) return res.status(400).json({ valid: false });
+    const stored = activeSensitiveTokens.get(token);
+    if (!stored || stored.expiresAt < Date.now() || (action && stored.action !== action)) {
+      if (stored) activeSensitiveTokens.delete(token);
+      return res.json({ valid: false });
+    }
+    res.json({ valid: true, expiresAt: stored.expiresAt });
+  });
+
+  // 3. Fetch Audit Logs for Admin Inspection
+  app.get("/api/admin/sensitive-audit-logs", (req, res) => {
+    res.json({ logs: auditLogs.slice(0, 100) });
   });
 
   // Rewrite subpath requests (e.g. /arenax/...)
