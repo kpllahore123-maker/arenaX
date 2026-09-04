@@ -79,6 +79,7 @@
       getAuth, 
       onAuthStateChanged, 
       signInWithPopup, 
+      signInAnonymously,
       GoogleAuthProvider, 
       signOut 
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -141,8 +142,17 @@
       serverTimestamp,
       increment,
       signInWithPopup,
+      signInAnonymously,
       signOut
     };
+
+    // Monitor Firebase Auth state
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.currentAuthUser = user;
+        console.log("Admin Firebase Auth active:", user.email || user.uid);
+      }
+    });
 
     // Trigger initialization of admin app
     if (typeof window.initAdminApp === 'function') {
@@ -219,11 +229,496 @@
         </div>
       </div>
 
-      <div class="pt-2">
-        <button onclick="$('mAdminInspectProfileModal').classList.add('hidden')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
-          Close Inspector
+      <div class="pt-2 flex items-center gap-2">
+        <button id="adminInspectOpenModBtn" class="flex-1 py-2.5 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-red-600/20">
+          <i class="fas fa-shield-halved"></i> Open Moderation Dossier
+        </button>
+        <button onclick="$('mAdminInspectProfileModal').classList.add('hidden')" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
+          Close
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── FULL ADMIN MODERATION & DISCIPLINARY DOSSIER MODAL ── -->
+  <div id="mAdminModerationModal" class="fixed inset-0 z-[100001] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 animate-fade-in font-sans">
+    <div class="w-full max-w-3xl bg-cardBg border border-bdr rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 text-white max-h-[94vh] flex flex-col relative overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-bdr pb-3 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center text-base shadow-lg shadow-red-500/20 flex-shrink-0">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-black text-white">ArenaX Moderation & Punishment Dossier</h3>
+              <span id="modDossierStatusBadge" class="text-[9px] font-black px-2 py-0.5 rounded uppercase bg-emerald-600 text-white">ACTIVE</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Complete user telemetry, safety history, evidence review & disciplinary actions</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAdminAuditLogsModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5" title="Audit Logs">
+            <i class="fas fa-clipboard-list text-gold"></i> <span class="hidden sm:inline">Audit Logs</span>
+          </button>
+          <button onclick="closeAdminModerationModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs inside Moderation Dossier -->
+      <div class="flex items-center gap-2 border-b border-white/5 pb-2 flex-shrink-0 overflow-x-auto">
+        <button id="modTabBtn-dossier" onclick="switchModDossierTab('dossier')" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-sm whitespace-nowrap">
+          <i class="fas fa-id-card"></i> <span>Player Dossier</span>
+        </button>
+        <button id="modTabBtn-history" onclick="switchModDossierTab('history')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap">
+          <i class="fas fa-clock-rotate-left"></i> <span>Reports & Safety History</span>
+          <span id="modTabReportsCountBadge" class="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-mono font-bold">0</span>
+        </button>
+        <button id="modTabBtn-sensitive" onclick="switchModDossierTab('sensitive')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap">
+          <i class="fas fa-lock text-amber-400"></i> <span>Private DMs Evidence</span>
+          <span id="modSensitiveBadge" class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold uppercase">Locked</span>
+        </button>
+        <button id="modTabBtn-actions" onclick="switchModDossierTab('actions')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap">
+          <i class="fas fa-gavel text-red-400"></i> <span>Disciplinary Action</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Scrollable Container -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-4 text-xs">
+        
+        <!-- ── TAB 1: PLAYER DOSSIER ── -->
+        <div id="modTabContent-dossier" class="space-y-4">
+          
+          <!-- Identity Card -->
+          <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <div class="relative flex-shrink-0">
+              <img id="modDossierAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=u" class="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500/40 bg-slate-900 shadow-md" />
+              <button onclick="resetInspectedUserAvatar()" class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-slate-800 hover:bg-amber-500 text-slate-300 hover:text-slate-950 flex items-center justify-center text-[10px] shadow border border-slate-700 transition" title="Reset to default avatar">
+                <i class="fas fa-image-slash"></i>
+              </button>
+            </div>
+            <div class="flex-1 min-w-0 space-y-1 text-center sm:text-left">
+              <div class="flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
+                <h4 id="modDossierName" class="text-base font-black text-white truncate">Player Name</h4>
+                <img id="modDossierBlueTick" src="bluetick.png" class="w-4 h-4 object-contain inline-block hidden" title="Verified Player" />
+                <span id="modDossierPremiumBadge" class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-black uppercase hidden">VIP</span>
+              </div>
+              <div class="text-xs text-gold font-mono font-bold" id="modDossierHandle">@handle</div>
+              <div class="text-[11px] text-slate-400 font-mono flex items-center justify-center sm:justify-start gap-1">
+                <span>UID:</span>
+                <span id="modDossierUid" class="text-slate-300 select-all">...</span>
+                <button onclick="copyToClipboard($('modDossierUid').textContent)" class="text-slate-400 hover:text-white p-0.5 ml-1" title="Copy UID">
+                  <i class="far fa-copy text-[10px]"></i>
+                </button>
+              </div>
+              <div class="text-[11px] text-slate-400">Email: <span id="modDossierEmail" class="text-slate-300">...</span></div>
+              <div class="text-[11px] text-slate-400">Account Created: <span id="modDossierCreatedAt" class="text-slate-300">...</span></div>
+            </div>
+            <div class="bg-[#121628] border border-white/5 rounded-xl p-3 flex flex-col items-center justify-center min-w-[130px] flex-shrink-0">
+              <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">AX Coins Balance</span>
+              <span id="modDossierBalance" class="text-base font-black text-emerald-400 font-mono mt-0.5">0 AX</span>
+              <button onclick="openBalancePrompt(currentModeratingUid, $('modDossierName').textContent, currentModeratingUser?.balance || 0)" class="mt-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+                <i class="fas fa-coins text-gold"></i> Adjust
+              </button>
+            </div>
+          </div>
+
+          <!-- Bio / Signature -->
+          <div class="bg-[#0b0e18] border border-white/5 rounded-2xl p-3.5 space-y-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bio / Profile Information:</span>
+            <p id="modDossierBio" class="text-xs text-slate-300 italic leading-relaxed whitespace-pre-wrap">No bio entered.</p>
+          </div>
+
+          <!-- Telemetry Grid: Team, Tournaments, Moments, Badges -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            
+            <!-- Team Info Card -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3.5 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Team</span>
+                <i class="fas fa-shield-alt text-amber-400 text-xs"></i>
+              </div>
+              <div id="modDossierTeamName" class="text-xs font-black text-white truncate">None</div>
+              <div id="modDossierTeamRole" class="text-[10px] text-slate-400">No team affiliation</div>
+            </div>
+
+            <!-- Tournaments History -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3.5 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tournaments</span>
+                <i class="fas fa-trophy text-yellow-400 text-xs"></i>
+              </div>
+              <div id="modDossierTournamentsCount" class="text-xs font-black text-white">0 Registered</div>
+              <div id="modDossierTournamentsInfo" class="text-[10px] text-slate-400 truncate">No registrations</div>
+            </div>
+
+            <!-- Moments & Posts -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3.5 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Moments</span>
+                <i class="fas fa-photo-film text-sky-400 text-xs"></i>
+              </div>
+              <div id="modDossierMomentsCount" class="text-xs font-black text-white">0 Moments</div>
+              <div id="modDossierMomentsInfo" class="text-[10px] text-slate-400 truncate">Published posts</div>
+            </div>
+
+            <!-- Achievements & Badges -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3.5 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Achievements</span>
+                <i class="fas fa-medal text-purple-400 text-xs"></i>
+              </div>
+              <div id="modDossierBadgesCount" class="text-xs font-black text-white">0 Badges</div>
+              <div id="modDossierBadgesList" class="text-[10px] text-slate-400 truncate">Standard Player</div>
+            </div>
+          </div>
+
+          <!-- Current Account Moderation State Overview -->
+          <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4 space-y-2">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Moderation State & Standing:</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div class="p-2.5 bg-[#0b0e18] rounded-xl border border-white/5">
+                <div class="text-[10px] text-slate-400">Account Status:</div>
+                <div id="modDossierAccountStatusText" class="font-bold text-emerald-400 mt-0.5">Active & In Good Standing</div>
+              </div>
+              <div class="p-2.5 bg-[#0b0e18] rounded-xl border border-white/5">
+                <div class="text-[10px] text-slate-400">Warnings Issued:</div>
+                <div id="modDossierWarningCountText" class="font-bold text-slate-200 mt-0.5">0 Warnings</div>
+              </div>
+              <div class="p-2.5 bg-[#0b0e18] rounded-xl border border-white/5">
+                <div class="text-[10px] text-slate-400">Active Restriction/Block:</div>
+                <div id="modDossierActiveBlockText" class="font-bold text-slate-200 mt-0.5">None</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 2: REPORTS & SAFETY HISTORY ── -->
+        <div id="modTabContent-history" class="space-y-4 hidden">
+          
+          <!-- Selected/Active Report Details Card (If opened from a specific report) -->
+          <div id="modActiveReportDetailsCard" class="bg-gradient-to-br from-rose-950/40 via-[#0e1220] to-[#0e1220] border border-rose-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-lg bg-rose-600 text-white font-extrabold text-[10px] uppercase">Selected Report</span>
+                <span id="modActiveReportCategoryBadge" class="text-xs font-bold text-rose-300">Category</span>
+              </div>
+              <span id="modActiveReportDate" class="text-[10px] text-slate-400 font-mono">Date</span>
+            </div>
+
+            <!-- Reporter Info Row -->
+            <div class="flex items-center justify-between gap-3 bg-[#0a0d16] p-2.5 rounded-xl border border-white/5">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <img id="modActiveReporterAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=r" class="w-8 h-8 rounded-xl object-cover bg-slate-800" />
+                <div class="min-w-0">
+                  <div class="text-[10px] text-slate-400 uppercase font-bold">Submitted By (Reporter):</div>
+                  <div id="modActiveReporterName" class="text-xs font-bold text-white truncate">Reporter Name</div>
+                </div>
+              </div>
+              <span id="modActiveReporterUid" class="text-[10px] font-mono text-slate-400 select-all hidden sm:inline">UID</span>
+            </div>
+
+            <!-- Reported Reason & Evidence Details -->
+            <div class="space-y-1.5">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Report Details & Evidence:</div>
+              <div id="modActiveReportDetailsText" class="p-3 bg-[#0a0d16] border border-white/5 rounded-xl text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">No details submitted.</div>
+            </div>
+
+            <!-- Clickable Evidence Link if submitted -->
+            <div id="modActiveReportEvidenceUrlWrap" class="hidden">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attached Proof / Link:</div>
+              <a id="modActiveReportEvidenceLink" href="#" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-bold transition">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open Evidence Link
+              </a>
+            </div>
+          </div>
+
+          <!-- All Previous Reports Against this User -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h5 class="text-xs font-extrabold text-white flex items-center gap-1.5">
+                <i class="fas fa-flag text-rose-400"></i> All Reports Received Against This User
+              </h5>
+              <span id="modUserAllReportsCount" class="text-[10px] text-slate-400 font-mono">0 total</span>
+            </div>
+            <div id="modUserAllReportsList" class="space-y-2">
+              <div class="p-3 bg-[#0e1220] rounded-xl border border-bdr text-center text-slate-400 text-xs">Loading reports...</div>
+            </div>
+          </div>
+
+          <!-- Previous Punishments & Moderation History Log -->
+          <div class="space-y-2 pt-2 border-t border-white/5">
+            <div class="flex items-center justify-between">
+              <h5 class="text-xs font-extrabold text-white flex items-center gap-1.5">
+                <i class="fas fa-gavel text-amber-400"></i> Past Disciplinary Actions & Warnings History
+              </h5>
+              <span id="modUserPunishmentsCount" class="text-[10px] text-slate-400 font-mono">0 actions</span>
+            </div>
+            <div id="modUserPunishmentsList" class="space-y-2">
+              <div class="p-3 bg-[#0e1220] rounded-xl border border-bdr text-center text-slate-400 text-xs">Loading disciplinary history...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 3: PRIVATE DMS EVIDENCE (HIGH SENSITIVITY) ── -->
+        <div id="modTabContent-sensitive" class="space-y-3 hidden">
+          
+          <!-- Sensitive Access Warning & Lock State -->
+          <div id="modSensitiveLockedBanner" class="p-5 bg-gradient-to-br from-amber-950/30 to-[#0e1220] border border-amber-500/40 rounded-2xl text-center space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl mx-auto shadow-inner">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-sm font-black text-white">Protected User Communications</h4>
+              <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                Private direct messages are strictly confidential. In accordance with safety policies, viewing message evidence requires a verified secondary administrator passcode. All view access events are logged and audited.
+              </p>
+            </div>
+            <div class="pt-2">
+              <button onclick="requestSensitiveAccessUnlock('view_dms')" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 mx-auto active:scale-98">
+                <i class="fas fa-key"></i> Unlock Private DMs Evidence
+              </button>
+            </div>
+          </div>
+
+          <!-- Unlocked DM Viewer (Rendered only after backend validation) -->
+          <div id="modSensitiveUnlockedViewer" class="space-y-3 hidden">
+            <div class="flex items-center justify-between bg-[#0b0e18] p-3 rounded-xl border border-emerald-500/30">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs font-bold text-emerald-400">Sensitive Investigation Session Active</span>
+                <span class="text-[10px] text-slate-400 font-mono" id="modSensitiveSessionTimer">Valid for 5 mins</span>
+              </div>
+              <button onclick="lockSensitiveViewer()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-lock text-xs"></i> Lock Viewer
+              </button>
+            </div>
+
+            <!-- Conversations List & Message Inspect Container -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 min-h-[300px]">
+              <!-- Rooms / Threads list -->
+              <div class="bg-[#0e1220] border border-bdr rounded-xl p-2 space-y-1 overflow-y-auto max-h-[360px]" id="modDmThreadsList">
+                <div class="p-3 text-center text-slate-400 text-xs">Loading conversations...</div>
+              </div>
+
+              <!-- Message Stream View -->
+              <div class="sm:col-span-2 bg-[#0a0d16] border border-bdr rounded-xl p-3 flex flex-col justify-between max-h-[360px]">
+                <div class="border-b border-white/5 pb-2 mb-2 flex items-center justify-between">
+                  <span id="modDmMessagesHeader" class="text-xs font-bold text-white">Select a conversation</span>
+                  <span class="text-[10px] text-slate-400 font-mono">Evidence Inspector</span>
+                </div>
+                <div id="modDmMessagesStream" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                  <div class="text-center py-12 text-slate-500 text-xs">Select a chat thread on the left to inspect exchanged messages.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 4: DISCIPLINARY ACTIONS CONTROLS ── -->
+        <div id="modTabContent-actions" class="space-y-4 hidden">
+          
+          <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4 space-y-4">
+            <div>
+              <label class="text-xs font-black text-white uppercase tracking-wider block mb-2">
+                1. Select Disciplinary Action <span class="text-rose-400">*</span>
+              </label>
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <button type="button" onclick="selectModAction('warning')" id="btnModAction-warning" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300">
+                  <i class="fas fa-triangle-exclamation text-amber-400 text-base"></i>
+                  <span class="text-xs font-bold">Warning</span>
+                </button>
+                <button type="button" onclick="selectModAction('restriction')" id="btnModAction-restriction" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300">
+                  <i class="fas fa-hourglass-half text-sky-400 text-base"></i>
+                  <span class="text-xs font-bold">Suspension</span>
+                </button>
+                <button type="button" onclick="selectModAction('temporary_block')" id="btnModAction-temporary_block" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300">
+                  <i class="fas fa-hand text-orange-400 text-base"></i>
+                  <span class="text-xs font-bold">Temp Block</span>
+                </button>
+                <button type="button" onclick="selectModAction('permanent_block')" id="btnModAction-permanent_block" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300">
+                  <i class="fas fa-ban text-red-500 text-base"></i>
+                  <span class="text-xs font-bold">Perm Block</span>
+                </button>
+                <button type="button" onclick="selectModAction('unblock')" id="btnModAction-unblock" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300">
+                  <i class="fas fa-user-check text-emerald-400 text-base"></i>
+                  <span class="text-xs font-bold">Unblock</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Duration Options (Visible for Temporary Suspension & Temporary Block) -->
+            <div id="modDurationWrap" class="space-y-1.5 hidden">
+              <label class="text-xs font-black text-white uppercase tracking-wider block">
+                2. Set Punishment Duration <span class="text-rose-400">*</span>
+              </label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="setModDurationDays(1)" class="modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition" data-days="1">1 Day</button>
+                <button type="button" onclick="setModDurationDays(3)" class="modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition" data-days="3">3 Days</button>
+                <button type="button" onclick="setModDurationDays(7)" class="modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition" data-days="7">7 Days</button>
+                <button type="button" onclick="setModDurationDays(14)" class="modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition" data-days="14">14 Days</button>
+                <button type="button" onclick="setModDurationDays(30)" class="modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition" data-days="30">30 Days</button>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="modCustomDurationDaysInp" min="1" max="365" placeholder="Custom" class="w-20 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono" />
+                  <span class="text-slate-400 text-xs">Days</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reason Field -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-black text-white uppercase tracking-wider block">
+                3. Reason for Disciplinary Action <span class="text-rose-400">*</span>
+              </label>
+              <input type="text" id="modActionReasonInp" placeholder="e.g., Harassment & abusive language in global chat / Cheating in tournament #12" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-medium" />
+            </div>
+
+            <!-- Send Official ArenaX Moderator Message Option -->
+            <div class="p-3.5 bg-[#0a0d16] border border-blue-500/30 rounded-2xl space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="modSendOfficialMsgCheckbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer" />
+                  <span class="text-xs font-bold text-white">Send Official Verified ArenaX Moderator Message</span>
+                </label>
+                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold text-[10px]">
+                  <img src="bluetick.png" class="w-3.5 h-3.5 object-contain" /> Verified Channel
+                </div>
+              </div>
+
+              <!-- Message Customization & Preview -->
+              <div id="modOfficialMsgCustomWrap" class="space-y-2">
+                <label class="text-[11px] font-bold text-slate-300 block">Custom Message Body (User receives this in Inbox & DM):</label>
+                <textarea id="modOfficialMsgBodyInp" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 resize-none font-sans leading-relaxed"></textarea>
+                
+                <!-- Live Official Message Preview -->
+                <div class="space-y-1">
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Inbox Live Preview:</div>
+                  <div class="p-3 bg-[#111524] border border-blue-500/30 rounded-xl space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-blue-400 flex items-center gap-1">
+                        <img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline-block" />
+                        From: ArenaX Moderators
+                      </span>
+                      <span class="text-[9px] text-slate-500 font-mono">Just now</span>
+                    </div>
+                    <div id="modMsgPreviewTitle" class="text-xs font-bold text-white">Official Moderation Notice</div>
+                    <p id="modMsgPreviewBody" class="text-[11px] text-slate-300 italic leading-relaxed whitespace-pre-wrap">Your message content will appear here.</p>
+                    <div class="pt-1 text-[9px] text-blue-300 font-semibold flex items-center gap-1">
+                      <i class="fas fa-lock text-[8px]"></i> One-way official moderation channel. Replies disabled.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Execute Button -->
+            <div class="pt-2">
+              <button type="button" id="btnExecuteModerationAction" onclick="executeModerationActionSubmit()" class="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-xl shadow-red-600/25 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98">
+                <i class="fas fa-gavel"></i> Apply Disciplinary Action & Notify User
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer Close -->
+      <div class="flex items-center justify-between border-t border-bdr pt-3 flex-shrink-0">
+        <div class="text-[10px] text-slate-400 font-mono">Moderator: <span id="modDossierAdminName" class="text-slate-200">Admin</span></div>
+        <button onclick="closeAdminModerationModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer">
+          Close Dossier
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SENSITIVE ACTION SECURITY PIN CHALLENGE MODAL ── -->
+  <div id="mAdminSensitivePinModal" class="fixed inset-0 z-[100002] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in font-sans">
+    <div class="w-full max-w-md bg-cardBg border border-amber-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white relative overflow-hidden">
+      
+      <!-- Ambient Glow -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-white">Sensitive Data Authorization</h4>
+            <p class="text-[10px] text-slate-400">Secondary verification for protected records</p>
+          </div>
+        </div>
+        <button onclick="$('mAdminSensitivePinModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="p-3 bg-[#0a0d16] border border-amber-500/30 rounded-xl text-xs text-amber-200/90 leading-relaxed flex items-start gap-2.5">
+          <i class="fas fa-lock text-amber-400 mt-0.5 flex-shrink-0"></i>
+          <span>You are attempting to access private user communication evidence. Enter the protected administrative passcode to proceed.</span>
+        </div>
+
+        <div class="space-y-1.5 pt-1">
+          <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Security Passcode</label>
+          <div class="relative">
+            <input type="password" id="adminSensitivePinInput" placeholder="••••" maxlength="10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-center text-white tracking-widest font-mono focus:outline-none focus:border-amber-500" autocomplete="off" />
+            <button type="button" onclick="toggleSensitivePinVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 text-xs">
+              <i id="iconToggleSensitivePin" class="far fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="sensitivePinErrorMsg" class="text-xs text-rose-400 font-semibold text-center hidden min-h-[16px]"></div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button id="btnSubmitSensitivePin" onclick="submitSensitivePinVerification()" class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98">
+          <i class="fas fa-unlock"></i> Verify & Unlock
+        </button>
+        <button onclick="$('mAdminSensitivePinModal').classList.add('hidden')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
+          Cancel
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SENSITIVE ACTION AUDIT LOGS MODAL ── -->
+  <div id="mAdminAuditLogsModal" class="fixed inset-0 z-[100003] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in font-sans">
+    <div class="w-full max-w-2xl bg-cardBg border border-bdr rounded-3xl p-6 shadow-2xl space-y-4 text-white max-h-[90vh] flex flex-col relative">
+      
+      <div class="flex items-center justify-between border-b border-bdr pb-3 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gold/20 text-gold flex items-center justify-center text-sm">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-white">Sensitive Access Audit Logs</h4>
+            <p class="text-[10px] text-slate-400">Server-side logged access attempts & security events</p>
+          </div>
+        </div>
+        <button onclick="$('mAdminAuditLogsModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <div id="adminAuditLogsListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+        <div class="text-center py-10 text-slate-400 text-xs">Loading audit events...</div>
+      </div>
+
+      <div class="pt-2 flex justify-end border-t border-white/5 flex-shrink-0">
+        <button onclick="$('mAdminAuditLogsModal').classList.add('hidden')" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
+          Close Logs
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -1336,6 +1831,13 @@
         $('adminUserAvatar').innerHTML = `<img src="${adminInfo.photoURL}" class="w-full h-full rounded-full object-cover" />`;
       }
 
+      // Ensure Firebase Auth session exists so rules requiring authenticated sessions pass
+      if (window.fbAuth && !window.fbAuth.currentUser && window.fsTools && window.fsTools.signInAnonymously) {
+        window.fsTools.signInAnonymously(window.fbAuth).catch((e) => {
+          console.log("Admin auth session note:", e.message);
+        });
+      }
+
       showAdminToast("👑 Welcome Admin", "Master Admin Console connected & ready!");
       startFirestoreListeners();
       fetchBotData();
@@ -1471,8 +1973,21 @@
             updateProfileReportsStats();
             renderProfileReportsTable();
           },
-          (err) => {
+          async (err) => {
             console.warn("Profile reports snapshot warning:", err);
+            // Resilient fallback query if real-time snapshot is momentarily unavailable
+            try {
+              if (window.fsTools?.getDocs && window.fbDb) {
+                const snap = await window.fsTools.getDocs(collection(window.fbDb, 'profile_reports'));
+                const list = [];
+                snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+                rawProfileReports = list;
+                updateProfileReportsStats();
+                renderProfileReportsTable();
+              }
+            } catch (fallbackErr) {
+              console.warn("Profile reports fallback error:", fallbackErr);
+            }
           }
         );
       } catch (e) {
@@ -1875,6 +2390,22 @@
                 </button>
 
                 <button
+                  onclick="openAdminModerationModal('${u.uid}')"
+                  class="p-1.5 bg-rose-500/10 hover:bg-rose-500/30 text-rose-400 rounded-lg transition cursor-pointer"
+                  title="Open Moderation Dossier & Disciplinary Actions"
+                >
+                  <i class="fas fa-shield-halved text-xs"></i>
+                </button>
+
+                <button
+                  onclick="openAdminInspectProfileModal('${u.uid}')"
+                  class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition cursor-pointer"
+                  title="Inspect Profile"
+                >
+                  <i class="fas fa-magnifying-glass text-xs"></i>
+                </button>
+
+                <button
                   onclick="toggleUserBan('${u.uid}', ${!isBanned})"
                   class="p-1.5 ${isBanned ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/30' : 'bg-red-500/10 text-red-400 hover:bg-red-500/30'} rounded-lg transition cursor-pointer"
                   title="${isBanned ? 'Unban User' : 'Ban User'}"
@@ -2035,13 +2566,22 @@
                   </div>
                 </div>
 
-                <button
-                  onclick="openAdminInspectProfileModal('${reportedUid}')"
-                  class="px-3 py-1.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-[11px] font-bold rounded-lg transition shadow flex-shrink-0 cursor-pointer flex items-center gap-1.5"
-                  title="Inspect Profile & Photos"
-                >
-                  <i class="fas fa-magnifying-glass text-[10px]"></i> Inspect
-                </button>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onclick="openAdminModerationModal('${reportedUid}', '${r.id}')"
+                    class="px-3 py-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-[11px] font-black rounded-lg transition shadow flex-shrink-0 cursor-pointer flex items-center gap-1.5"
+                    title="Open Full Moderation Dossier & Disciplinary Actions"
+                  >
+                    <i class="fas fa-shield-halved text-[10px]"></i> Moderate
+                  </button>
+                  <button
+                    onclick="openAdminInspectProfileModal('${reportedUid}')"
+                    class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg transition flex-shrink-0 cursor-pointer flex items-center gap-1"
+                    title="Inspect Profile & Photos"
+                  >
+                    <i class="fas fa-magnifying-glass text-[10px]"></i> Inspect
+                  </button>
+                </div>
               </div>
 
               <!-- Reporter User Card (Submitter) -->
@@ -2204,6 +2744,13 @@
         const link = `https://arenax.cyou/profile?uid=${user.uid}`;
         window.open(link, '_blank');
       };
+
+      if ($('adminInspectOpenModBtn')) {
+        $('adminInspectOpenModBtn').onclick = () => {
+          $('mAdminInspectProfileModal').classList.add('hidden');
+          openAdminModerationModal(user.uid);
+        };
+      }
 
       $('mAdminInspectProfileModal').classList.remove('hidden');
     }
@@ -2648,6 +3195,881 @@
 
     function saveSystemSettings() {
       showAdminToast("⚙️ Settings Saved", "Payment numbers and operational preferences updated!");
+    }
+
+    // ── ARENAX ADMIN MODERATION & PUNISHMENT DOSSIER ENGINE ──
+    let currentModeratingUid = null;
+    let currentModeratingUser = null;
+    let currentModeratingReportId = null;
+    let currentModAction = 'warning';
+    let currentModDurationDays = 7;
+    let sensitiveSessionToken = null;
+    let sensitiveSessionTimerInterval = null;
+    let sensitiveActionPending = 'view_dms';
+
+    function switchModDossierTab(tabName) {
+      const tabs = ['dossier', 'history', 'sensitive', 'actions'];
+      tabs.forEach((t) => {
+        const btn = $(`modTabBtn-${t}`);
+        const content = $(`modTabContent-${t}`);
+        if (!btn || !content) return;
+
+        if (t === tabName) {
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-sm whitespace-nowrap';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap';
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    async function openAdminModerationModal(uid, reportId = null) {
+      if (!uid) return;
+      currentModeratingUid = uid;
+      currentModeratingReportId = reportId;
+
+      // Close other inspector modal if open
+      if ($('mAdminInspectProfileModal')) {
+        $('mAdminInspectProfileModal').classList.add('hidden');
+      }
+
+      // Reset sensitive viewer state (require passcode on each modal session)
+      lockSensitiveViewer(true);
+
+      // Find user in rawUsers or fetch directly
+      let user = rawUsers.find((u) => u.uid === uid || u.id === uid);
+      if (!user) {
+        try {
+          const { doc, getDoc } = window.fsTools;
+          const snap = await getDoc(doc(window.fbDb, 'users', uid));
+          if (snap.exists()) {
+            user = { id: snap.id, uid: snap.id, ...snap.data() };
+          }
+        } catch (e) {
+          console.warn("Could not fetch user directly:", e);
+        }
+      }
+
+      if (!user) {
+        showAdminToast("Not Found", "User record does not exist in database.", "error");
+        return;
+      }
+      currentModeratingUser = user;
+
+      // Moderator identity
+      const adminName = (window.currentAdmin && window.currentAdmin.name) || 'ArenaX Administrator';
+      $('modDossierAdminName').textContent = adminName;
+
+      // Populate Tab 1: Dossier
+      const avatar = user.av || user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+      $('modDossierAv').src = avatar;
+      $('modDossierName').textContent = user.name || user.userName || 'ArenaX Player';
+      $('modDossierHandle').textContent = `@${user.handle || 'player'}`;
+      $('modDossierUid').textContent = user.uid || uid;
+      $('modDossierEmail').textContent = user.email || 'No email provided';
+      $('modDossierBalance').textContent = `${Number(user.balance || 0).toLocaleString()} AX`;
+      $('modDossierBio').textContent = user.bio || user.signature || 'No bio entered.';
+
+      // Badges & Blue Tick
+      const isVerified = !!(user.hasBlueTick || user.isVerified || user.blueTick);
+      const isVip = !!(user.premium || user.isPremium || user.isVIP);
+      $('modDossierBlueTick').classList.toggle('hidden', !isVerified);
+      $('modDossierPremiumBadge').classList.toggle('hidden', !isVip);
+
+      // Created at
+      let createdStr = 'Unknown';
+      if (user.createdAt) {
+        createdStr = user.createdAt.toDate ? user.createdAt.toDate().toLocaleDateString() : new Date(user.createdAt).toLocaleDateString();
+      }
+      $('modDossierCreatedAt').textContent = createdStr;
+
+      // Status Badge
+      const isBanned = !!(user.isBanned || user.banned);
+      const isRestricted = !!user.restricted;
+      let statusText = 'ACTIVE';
+      let statusClass = 'text-[9px] font-black px-2 py-0.5 rounded uppercase bg-emerald-600 text-white';
+      if (user.accountStatus === 'permanently_blocked' || (isBanned && user.banType === 'full')) {
+        statusText = 'PERMANENTLY BLOCKED';
+        statusClass = 'text-[9px] font-black px-2 py-0.5 rounded uppercase bg-red-600 text-white';
+      } else if (user.accountStatus === 'temporarily_blocked' || (isBanned && user.banType === 'temporary')) {
+        statusText = 'TEMPORARILY BLOCKED';
+        statusClass = 'text-[9px] font-black px-2 py-0.5 rounded uppercase bg-orange-600 text-white';
+      } else if (user.accountStatus === 'restricted' || isRestricted) {
+        statusText = 'RESTRICTED / SUSPENDED';
+        statusClass = 'text-[9px] font-black px-2 py-0.5 rounded uppercase bg-sky-600 text-white';
+      } else if (user.accountStatus === 'warned') {
+        statusText = 'WARNED';
+        statusClass = 'text-[9px] font-black px-2 py-0.5 rounded uppercase bg-amber-500 text-slate-950';
+      }
+      $('modDossierStatusBadge').textContent = statusText;
+      $('modDossierStatusBadge').className = statusClass;
+      $('modDossierAccountStatusText').textContent = statusText;
+      $('modDossierAccountStatusText').className = `font-bold mt-0.5 ${statusText === 'ACTIVE' ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      // Standing & Warnings
+      const warningsCount = user.warningCount || (user.warnings && user.warnings.length) || 0;
+      $('modDossierWarningCountText').textContent = `${warningsCount} Warning${warningsCount === 1 ? '' : 's'}`;
+      let activeBlockInfo = 'None';
+      if (user.blockedUntil) {
+        const dt = user.blockedUntil.toDate ? user.blockedUntil.toDate() : new Date(user.blockedUntil);
+        activeBlockInfo = `Blocked until ${dt.toLocaleDateString()}`;
+      } else if (user.restrictedUntil) {
+        const dt = user.restrictedUntil.toDate ? user.restrictedUntil.toDate() : new Date(user.restrictedUntil);
+        activeBlockInfo = `Suspended until ${dt.toLocaleDateString()}`;
+      } else if (user.accountStatus === 'permanently_blocked') {
+        activeBlockInfo = 'Permanent Block';
+      }
+      $('modDossierActiveBlockText').textContent = activeBlockInfo;
+
+      // Telemetry: Team
+      $('modDossierTeamName').textContent = user.teamName || 'No Team';
+      $('modDossierTeamRole').textContent = user.teamRole ? `Role: ${user.teamRole}` : (user.teamName ? 'Member' : 'No team affiliation');
+
+      // Telemetry: Tournaments (from rawTournaments)
+      let registeredCount = 0;
+      rawTournaments.forEach((t) => {
+        if (t.participants && Array.isArray(t.participants) && t.participants.includes(uid)) registeredCount++;
+      });
+      $('modDossierTournamentsCount').textContent = `${registeredCount} Tournaments`;
+      $('modDossierTournamentsInfo').textContent = registeredCount > 0 ? `${registeredCount} matches joined` : 'No registrations';
+
+      // Telemetry: Moments count
+      loadUserMomentsCount(uid);
+
+      // Telemetry: Badges
+      const badgesCount = (user.badges && user.badges.length) || (user.badgeId ? 1 : 0);
+      $('modDossierBadgesCount').textContent = `${badgesCount} Badges`;
+      $('modDossierBadgesList').textContent = badgesCount > 0 ? (user.badges ? user.badges.join(', ') : 'Standard Badge') : 'Standard Player';
+
+      // Populate Tab 2: Safety History & Reports
+      populateModSafetyHistory(uid, reportId);
+
+      // Pre-select Action
+      selectModAction('warning');
+
+      // Show Modal
+      switchModDossierTab('dossier');
+      $('mAdminModerationModal').classList.remove('hidden');
+    }
+
+    function closeAdminModerationModal() {
+      $('mAdminModerationModal').classList.add('hidden');
+      lockSensitiveViewer(true);
+    }
+
+    async function loadUserMomentsCount(uid) {
+      try {
+        const { collection, query, where, getDocs } = window.fsTools;
+        const q = query(collection(window.fbDb, 'moments'), where('userId', '==', uid));
+        const snap = await getDocs(q);
+        const count = snap.size;
+        $('modDossierMomentsCount').textContent = `${count} Moment${count === 1 ? '' : 's'}`;
+        $('modDossierMomentsInfo').textContent = count > 0 ? `${count} published posts` : 'No moments posted';
+      } catch (err) {
+        console.warn("Could not load moments count:", err);
+      }
+    }
+
+    async function populateModSafetyHistory(targetUid, activeReportId) {
+      // 1. Check if active report is selected
+      const activeCard = $('modActiveReportDetailsCard');
+      if (activeReportId) {
+        const rep = rawProfileReports.find((r) => r.id === activeReportId);
+        if (rep) {
+          activeCard.classList.remove('hidden');
+          $('modActiveReportCategoryBadge').textContent = (rep.category || rep.reason || 'General Report').toUpperCase();
+          $('modActiveReportDate').textContent = rep.createdAt?.seconds ? new Date(rep.createdAt.seconds * 1000).toLocaleString() : 'Recent';
+          
+          $('modActiveReporterName').textContent = rep.reporterName || 'Anonymous Player';
+          $('modActiveReporterUid').textContent = rep.reporterUid ? `UID: ${rep.reporterUid}` : '';
+          $('modActiveReporterAv').src = rep.reporterAv || `https://api.dicebear.com/7.x/bottts/svg?seed=${rep.reporterUid || 'r'}`;
+          
+          $('modActiveReportDetailsText').textContent = rep.details || rep.reason || 'No additional details provided with this report.';
+          
+          if (rep.evidenceUrl) {
+            $('modActiveReportEvidenceUrlWrap').classList.remove('hidden');
+            $('modActiveReportEvidenceLink').href = rep.evidenceUrl;
+          } else {
+            $('modActiveReportEvidenceUrlWrap').classList.add('hidden');
+          }
+        } else {
+          activeCard.classList.add('hidden');
+        }
+      } else {
+        activeCard.classList.add('hidden');
+      }
+
+      // 2. Load all reports against this user
+      const userReports = rawProfileReports.filter((r) => r.reportedUid === targetUid || r.targetUserId === targetUid);
+      $('modUserAllReportsCount').textContent = `${userReports.length} total`;
+      $('modTabReportsCountBadge').textContent = userReports.length;
+
+      const reportsList = $('modUserAllReportsList');
+      if (userReports.length === 0) {
+        reportsList.innerHTML = `<div class="p-3 bg-[#0e1220] rounded-xl border border-bdr text-center text-slate-400 text-xs">No prior reports filed against this user.</div>`;
+      } else {
+        reportsList.innerHTML = userReports.map((r) => {
+          const dateStr = r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString() : 'Recent';
+          return `
+            <div class="p-3 bg-[#0e1220] border border-white/5 rounded-xl flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-rose-400">${escapeHtml(r.category || r.reason || 'Report')}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${r.status === 'actioned' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${r.status || 'pending'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 truncate mt-0.5">By: ${escapeHtml(r.reporterName || 'Player')} • ${dateStr}</div>
+                ${r.details ? `<div class="text-[10px] text-slate-300 italic truncate mt-0.5">${escapeHtml(r.details)}</div>` : ''}
+              </div>
+              <div class="text-[10px] font-mono text-slate-400 flex-shrink-0">${r.id.slice(0, 8)}...</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 3. Load disciplinary history from moderation_history and users/{uid}/punishments
+      const punishmentsList = $('modUserPunishmentsList');
+      try {
+        const { collection, query, where, getDocs, orderBy } = window.fsTools;
+        const q = query(collection(window.fbDb, 'moderation_history'), where('targetUid', '==', targetUid));
+        const snap = await getDocs(q);
+        const historyRecords = [];
+        snap.forEach((d) => historyRecords.push({ id: d.id, ...d.data() }));
+
+        // Also check users/{uid}/punishments
+        try {
+          const snapP = await getDocs(collection(window.fbDb, 'users', targetUid, 'punishments'));
+          snapP.forEach((d) => {
+            if (!historyRecords.some((hr) => hr.id === d.id)) {
+              historyRecords.push({ id: d.id, ...d.data() });
+            }
+          });
+        } catch (pe) {
+          console.warn("Punishments subcollection query info:", pe);
+        }
+
+        historyRecords.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        $('modUserPunishmentsCount').textContent = `${historyRecords.length} actions`;
+
+        if (historyRecords.length === 0) {
+          punishmentsList.innerHTML = `<div class="p-3 bg-[#0e1220] rounded-xl border border-bdr text-center text-slate-400 text-xs">No previous punishments or official warnings recorded.</div>`;
+        } else {
+          punishmentsList.innerHTML = historyRecords.map((h) => {
+            const dateStr = h.timestamp?.seconds ? new Date(h.timestamp.seconds * 1000).toLocaleString() : 'Past action';
+            const actionBadgeColor = 
+              h.actionType === 'permanent_block' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+              h.actionType === 'temporary_block' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+              h.actionType === 'restriction' ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' :
+              h.actionType === 'unblock' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+              'bg-amber-500/20 text-amber-300 border-amber-500/30';
+
+            return `
+              <div class="p-3 bg-[#0a0d16] border border-white/5 rounded-xl space-y-1">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase border ${actionBadgeColor}">
+                      ${h.actionType ? h.actionType.replace('_', ' ') : 'PUNISHMENT'}
+                    </span>
+                    <span class="text-xs font-bold text-white">${escapeHtml(h.reason || 'Safety Policy Violation')}</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center gap-3">
+                  <span>Duration: <strong class="text-slate-200">${h.duration || 'N/A'}</strong></span>
+                  <span>Moderator: <strong class="text-slate-200">${escapeHtml(h.adminName || 'Admin')}</strong></span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        console.warn("Error fetching moderation history:", err);
+        punishmentsList.innerHTML = `<div class="p-3 bg-[#0e1220] rounded-xl border border-bdr text-center text-slate-400 text-xs">Could not load historical punishments.</div>`;
+      }
+    }
+
+    function selectModAction(actionType) {
+      currentModAction = actionType;
+      const actions = ['warning', 'restriction', 'temporary_block', 'permanent_block', 'unblock'];
+
+      actions.forEach((a) => {
+        const btn = $(`btnModAction-${a}`);
+        if (!btn) return;
+        if (a === actionType) {
+          btn.className = 'p-2.5 rounded-xl border border-amber-500 bg-amber-500/20 text-center transition cursor-pointer flex flex-col items-center gap-1 text-white shadow-md shadow-amber-500/10 scale-102';
+        } else {
+          btn.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300';
+        }
+      });
+
+      // Show duration selector only for restriction & temporary_block
+      const durationWrap = $('modDurationWrap');
+      if (actionType === 'restriction' || actionType === 'temporary_block') {
+        durationWrap.classList.remove('hidden');
+      } else {
+        durationWrap.classList.add('hidden');
+      }
+
+      // Generate suggested official message body
+      updateSuggestedModMessage();
+    }
+
+    function setModDurationDays(days) {
+      currentModDurationDays = days;
+      document.querySelectorAll('.modDurBtn').forEach((btn) => {
+        const bDays = Number(btn.getAttribute('data-days'));
+        if (bDays === days) {
+          btn.className = 'modDurBtn px-3 py-1.5 rounded-xl bg-amber-500 border border-amber-400 text-slate-950 font-black text-xs shadow transition';
+        } else {
+          btn.className = 'modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-700 transition';
+        }
+      });
+      if ($('modCustomDurationDaysInp')) {
+        $('modCustomDurationDaysInp').value = '';
+      }
+      updateSuggestedModMessage();
+    }
+
+    // Handle custom duration change
+    if ($('modCustomDurationDaysInp')) {
+      $('modCustomDurationDaysInp').addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        if (val > 0) {
+          currentModDurationDays = val;
+          document.querySelectorAll('.modDurBtn').forEach((btn) => {
+            btn.className = 'modDurBtn px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-700 transition';
+          });
+          updateSuggestedModMessage();
+        }
+      });
+    }
+
+    function updateSuggestedModMessage() {
+      const userName = currentModeratingUser ? (currentModeratingUser.name || 'Player') : 'Player';
+      const reason = ($('modActionReasonInp') ? $('modActionReasonInp').value.trim() : '') || 'Violation of ArenaX Community Guidelines and Fair Play standards';
+      let msg = '';
+      let title = 'Official Moderation Notice';
+
+      if (currentModAction === 'warning') {
+        title = '⚠️ Official Warning from ArenaX Safety';
+        msg = `Dear ${userName},\n\nThis is an official administrative warning regarding your recent activity on ArenaX. You have received this warning for: "${reason}".\n\nPlease review our rules and ensure fair, respectful conduct. Further infractions will result in temporary suspension or permanent account ban.`;
+      } else if (currentModAction === 'restriction') {
+        title = `⏳ Account Suspension Notice (${currentModDurationDays} Days)`;
+        msg = `Dear ${userName},\n\nYour ArenaX account has been suspended for ${currentModDurationDays} days due to: "${reason}".\n\nDuring this period, access to tournaments and interactive features is restricted. Your standing will automatically restore upon completion of the suspension duration.`;
+      } else if (currentModAction === 'temporary_block') {
+        title = `🛑 Temporary Account Block (${currentModDurationDays} Days)`;
+        msg = `Dear ${userName},\n\nYour ArenaX account has been temporarily blocked for ${currentModDurationDays} days due to: "${reason}".\n\nYou will not be able to participate in matches, send messages, or enter tournaments until the block duration expires.`;
+      } else if (currentModAction === 'permanent_block') {
+        title = '🚫 Permanent Account Block & Disqualification';
+        msg = `Dear ${userName},\n\nYour ArenaX account has been permanently blocked following confirmed severe rule violations: "${reason}".\n\nAll tournament registrations, multiplayer matchmaking, and interactive capabilities have been permanently revoked.`;
+      } else if (currentModAction === 'unblock') {
+        title = '♻️ Account Reinstatement & Restoration Notice';
+        msg = `Dear ${userName},\n\nYour ArenaX account standing has been reviewed and restored by the moderation team. Previous restrictions have been lifted: "${reason}".\n\nPlease continue to abide by ArenaX community standards.`;
+      }
+
+      if ($('modOfficialMsgBodyInp')) $('modOfficialMsgBodyInp').value = msg;
+      if ($('modMsgPreviewTitle')) $('modMsgPreviewTitle').textContent = title;
+      if ($('modMsgPreviewBody')) $('modMsgPreviewBody').textContent = msg;
+    }
+
+    if ($('modOfficialMsgBodyInp')) {
+      $('modOfficialMsgBodyInp').addEventListener('input', (e) => {
+        if ($('modMsgPreviewBody')) $('modMsgPreviewBody').textContent = e.target.value;
+      });
+    }
+
+    if ($('modActionReasonInp')) {
+      $('modActionReasonInp').addEventListener('input', () => {
+        updateSuggestedModMessage();
+      });
+    }
+
+    async function executeModerationActionSubmit() {
+      if (!currentModeratingUid || !currentModeratingUser) {
+        showAdminToast("Error", "No user selected for moderation.", "error");
+        return;
+      }
+
+      const reason = ($('modActionReasonInp') ? $('modActionReasonInp').value.trim() : '');
+      if (!reason) {
+        showAdminToast("Reason Required", "Please enter the reason for this disciplinary action.", "error");
+        if ($('modActionReasonInp')) $('modActionReasonInp').focus();
+        return;
+      }
+
+      const btn = $('btnExecuteModerationAction');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-1.5"></i> Applying Disciplinary Action...`;
+
+      try {
+        const { doc, updateDoc, collection, addDoc, serverTimestamp } = window.fsTools;
+        const adminName = (window.currentAdmin && window.currentAdmin.name) || 'ArenaX Administrator';
+        const adminUid = (window.currentAdmin && window.currentAdmin.uid) || 'admin';
+        const now = new Date();
+
+        let durationStr = 'Notice';
+        let endsAt = null;
+
+        if (currentModAction === 'restriction' || currentModAction === 'temporary_block') {
+          durationStr = `${currentModDurationDays} Days`;
+          endsAt = new Date(Date.now() + currentModDurationDays * 24 * 60 * 60 * 1000);
+        } else if (currentModAction === 'permanent_block') {
+          durationStr = 'Permanent';
+        } else if (currentModAction === 'unblock') {
+          durationStr = 'Restored';
+        }
+
+        // 1. Prepare User Update Payload
+        const userRef = doc(window.fbDb, 'users', currentModeratingUid);
+        const userUpdates = {};
+
+        if (currentModAction === 'warning') {
+          userUpdates.accountStatus = 'warned';
+          userUpdates.warningCount = (currentModeratingUser.warningCount || 0) + 1;
+          userUpdates.lastWarning = reason;
+          userUpdates.lastWarningAt = serverTimestamp();
+          userUpdates.lastModeratedBy = adminName;
+        } else if (currentModAction === 'restriction') {
+          userUpdates.accountStatus = 'restricted';
+          userUpdates.restricted = true;
+          userUpdates.restrictedUntil = endsAt;
+          userUpdates.restrictionReason = reason;
+          userUpdates.restrictedAt = serverTimestamp();
+          userUpdates.restrictedBy = adminName;
+          userUpdates.banned = false;
+          userUpdates.isBanned = false;
+        } else if (currentModAction === 'temporary_block') {
+          userUpdates.accountStatus = 'temporarily_blocked';
+          userUpdates.banned = true;
+          userUpdates.isBanned = true;
+          userUpdates.banType = 'temporary';
+          userUpdates.banUntil = endsAt;
+          userUpdates.blockedUntil = endsAt;
+          userUpdates.banReason = reason;
+          userUpdates.bannedAt = serverTimestamp();
+          userUpdates.bannedBy = adminName;
+        } else if (currentModAction === 'permanent_block') {
+          userUpdates.accountStatus = 'permanently_blocked';
+          userUpdates.banned = true;
+          userUpdates.isBanned = true;
+          userUpdates.banType = 'full';
+          userUpdates.banReason = reason;
+          userUpdates.bannedAt = serverTimestamp();
+          userUpdates.bannedBy = adminName;
+          userUpdates.banRule = reason;
+        } else if (currentModAction === 'unblock') {
+          userUpdates.accountStatus = 'active';
+          userUpdates.banned = false;
+          userUpdates.isBanned = false;
+          userUpdates.banType = 'none';
+          userUpdates.restricted = false;
+          userUpdates.blockedUntil = null;
+          userUpdates.restrictedUntil = null;
+          userUpdates.banReason = '';
+          userUpdates.unblockedAt = serverTimestamp();
+          userUpdates.unblockedBy = adminName;
+        }
+
+        await updateDoc(userRef, userUpdates);
+
+        // 2. Add to moderation_history root collection
+        await addDoc(collection(window.fbDb, 'moderation_history'), {
+          targetUid: currentModeratingUid,
+          targetName: currentModeratingUser.name || 'Player',
+          targetHandle: currentModeratingUser.handle || 'player',
+          actionType: currentModAction,
+          reason: reason,
+          duration: durationStr,
+          startsAt: now,
+          endsAt: endsAt,
+          adminUid: adminUid,
+          adminName: adminName,
+          reportId: currentModeratingReportId || null,
+          timestamp: serverTimestamp()
+        });
+
+        // 3. Add to users/{uid}/punishments subcollection
+        try {
+          await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'punishments'), {
+            actionType: currentModAction,
+            reason: reason,
+            duration: durationStr,
+            startsAt: now,
+            endsAt: endsAt,
+            adminUid: adminUid,
+            adminName: adminName,
+            timestamp: serverTimestamp()
+          });
+        } catch (pe) {
+          console.warn("Could not write to punishments subcollection:", pe);
+        }
+
+        // 4. Send Official Verified ArenaX Moderator Message (if selected)
+        const sendMsg = $('modSendOfficialMsgCheckbox') && $('modSendOfficialMsgCheckbox').checked;
+        if (sendMsg) {
+          const customBody = ($('modOfficialMsgBodyInp') ? $('modOfficialMsgBodyInp').value.trim() : '') || reason;
+          const msgTitle = $('modMsgPreviewTitle') ? $('modMsgPreviewTitle').textContent : 'Official Moderation Notice';
+
+          // A. Send in-game mail
+          try {
+            await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'mails'), {
+              sender: 'ArenaX Moderators',
+              senderUid: 'arenax_moderators',
+              hasBlueTick: true,
+              badge: 'bluetick.png',
+              type: 'moderation_notice',
+              actionType: currentModAction,
+              title: msgTitle,
+              body: customBody,
+              reason: reason,
+              duration: durationStr,
+              moderatorRole: 'ArenaX Moderation Team',
+              read: false,
+              createdAt: serverTimestamp()
+            });
+          } catch (me) {
+            console.warn("Could not write mail notice:", me);
+          }
+
+          // B. Send in DM room with 'arenax_moderators'
+          try {
+            const roomId = [currentModeratingUid, 'arenax_moderators'].sort().join('_');
+            await addDoc(collection(window.fbDb, 'dms', roomId, 'messages'), {
+              text: customBody,
+              sender: 'arenax_moderators',
+              senderName: 'ArenaX Moderators',
+              hasBlueTick: true,
+              badge: 'bluetick.png',
+              isOfficial: true,
+              noticeType: currentModAction,
+              createdAt: serverTimestamp()
+            });
+          } catch (de) {
+            console.warn("Could not write official DM notice:", de);
+          }
+        }
+
+        // 5. Update Profile Report status if this was triggered from a report
+        if (currentModeratingReportId) {
+          try {
+            const repRef = doc(window.fbDb, 'profile_reports', currentModeratingReportId);
+            await updateDoc(repRef, {
+              status: 'actioned',
+              actionTaken: currentModAction,
+              actionReason: reason,
+              actionedBy: adminName,
+              actionedAt: serverTimestamp()
+            });
+          } catch (re) {
+            console.warn("Could not update profile report:", re);
+          }
+        }
+
+        showAdminToast("Action Applied", `Successfully executed ${currentModAction.toUpperCase()} for ${currentModeratingUser.name || 'player'}`);
+
+        // Update local object
+        Object.assign(currentModeratingUser, userUpdates);
+        
+        // Refresh Standing Tab
+        openAdminModerationModal(currentModeratingUid, currentModeratingReportId);
+        switchModDossierTab('history');
+
+      } catch (err) {
+        console.error("Moderation action failed:", err);
+        showAdminToast("Execution Error", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-gavel"></i> Apply Disciplinary Action & Notify User`;
+      }
+    }
+
+    // ── HIGH SENSITIVITY DM EVIDENCE SECURITY ──
+    function requestSensitiveAccessUnlock(action) {
+      sensitiveActionPending = action;
+      $('sensitivePinErrorMsg').classList.add('hidden');
+      $('adminSensitivePinInput').value = '';
+      $('mAdminSensitivePinModal').classList.remove('hidden');
+      setTimeout(() => $('adminSensitivePinInput').focus(), 150);
+    }
+
+    function toggleSensitivePinVisibility() {
+      const inp = $('adminSensitivePinInput');
+      const icon = $('iconToggleSensitivePin');
+      if (!inp || !icon) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'far fa-eye-slash';
+      } else {
+        inp.type = 'password';
+        icon.className = 'far fa-eye';
+      }
+    }
+
+    async function submitSensitivePinVerification() {
+      const pin = $('adminSensitivePinInput').value.trim();
+      const errEl = $('sensitivePinErrorMsg');
+      if (!pin) {
+        errEl.textContent = "Please enter the administrative security passcode.";
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const btn = $('btnSubmitSensitivePin');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Verifying...`;
+
+      try {
+        const adminName = (window.currentAdmin && window.currentAdmin.name) || 'Console Admin';
+        const adminEmail = (window.currentAdmin && window.currentAdmin.email) || 'admin@arenax.gg';
+        const adminUid = (window.currentAdmin && window.currentAdmin.uid) || 'admin';
+
+        const res = await fetch('/api/admin/verify-sensitive-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adminUid: adminUid,
+            adminEmail: adminEmail,
+            adminName: adminName,
+            action: sensitiveActionPending || 'view_dms',
+            targetUid: currentModeratingUid,
+            password: pin
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          sensitiveSessionToken = data.token;
+          $('mAdminSensitivePinModal').classList.add('hidden');
+          showAdminToast("Authorized", "Sensitive investigation session unlocked!");
+          loadSensitiveDmsViewer(currentModeratingUid);
+        } else {
+          errEl.textContent = data.message || "Invalid administrative passcode. Attempt logged.";
+          errEl.classList.remove('hidden');
+          $('adminSensitivePinInput').value = '';
+          $('adminSensitivePinInput').focus();
+        }
+      } catch (err) {
+        errEl.textContent = "Verification service error: " + err.message;
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-unlock"></i> Verify & Unlock`;
+      }
+    }
+
+    async function loadSensitiveDmsViewer(targetUid) {
+      $('modSensitiveLockedBanner').classList.add('hidden');
+      $('modSensitiveUnlockedViewer').classList.remove('hidden');
+      $('modSensitiveBadge').textContent = 'UNLOCKED';
+      $('modSensitiveBadge').className = 'text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold uppercase';
+
+      // 5-minute countdown
+      let remainingSeconds = 300;
+      if (sensitiveSessionTimerInterval) clearInterval(sensitiveSessionTimerInterval);
+      sensitiveSessionTimerInterval = setInterval(() => {
+        remainingSeconds--;
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = String(remainingSeconds % 60).padStart(2, '0');
+        if ($('modSensitiveSessionTimer')) {
+          $('modSensitiveSessionTimer').textContent = `Session: ${mins}:${secs} remaining`;
+        }
+        if (remainingSeconds <= 0) {
+          clearInterval(sensitiveSessionTimerInterval);
+          lockSensitiveViewer();
+          showAdminToast("Session Expired", "Sensitive view session ended for security.", "error");
+        }
+      }, 1000);
+
+      const threadsList = $('modDmThreadsList');
+      threadsList.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs animate-pulse">Scanning conversations...</div>`;
+
+      try {
+        // Collect rooms involving targetUid
+        const { collection, getDocs, limit, query, orderBy } = window.fsTools;
+        
+        // Find users that might have conversations with this user
+        const otherUsers = rawUsers.filter((u) => u.uid !== targetUid).slice(0, 15);
+        const activeRooms = [];
+
+        // Check common rooms
+        for (const ou of otherUsers) {
+          const rId = [targetUid, ou.uid].sort().join('_');
+          try {
+            const snap = await getDocs(query(collection(window.fbDb, 'dms', rId, 'messages'), limit(1)));
+            if (!snap.empty) {
+              activeRooms.push({
+                roomId: rId,
+                otherUser: ou
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (activeRooms.length === 0) {
+          threadsList.innerHTML = `<div class="p-4 text-center text-slate-500 text-xs">No direct message conversations found for this user.</div>`;
+          $('modDmMessagesStream').innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No conversation history found.</div>`;
+          return;
+        }
+
+        threadsList.innerHTML = activeRooms.map((ar, idx) => {
+          const ou = ar.otherUser;
+          const av = ou.av || ou.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${ou.uid}`;
+          return `
+            <div onclick="inspectDmThreadMessages('${ar.roomId}', '${escapeHtml(ou.name || 'User')}', '${targetUid}')" class="p-2.5 bg-[#0a0d16] hover:bg-[#121626] border border-white/5 rounded-xl cursor-pointer transition flex items-center gap-2.5">
+              <img src="${av}" class="w-8 h-8 rounded-full object-cover bg-slate-800 flex-shrink-0" />
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-bold text-white truncate">${escapeHtml(ou.name || 'Player')}</div>
+                <div class="text-[10px] text-slate-400 font-mono truncate">@${escapeHtml(ou.handle || 'user')}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Automatically inspect first active room
+        if (activeRooms[0]) {
+          inspectDmThreadMessages(activeRooms[0].roomId, activeRooms[0].otherUser.name || 'Player', targetUid);
+        }
+
+      } catch (err) {
+        console.warn("Error loading DM viewer:", err);
+        threadsList.innerHTML = `<div class="p-4 text-center text-slate-500 text-xs">Could not query conversations.</div>`;
+      }
+    }
+
+    async function inspectDmThreadMessages(roomId, otherUserName, targetUid) {
+      $('modDmMessagesHeader').textContent = `Chat with ${otherUserName}`;
+      const stream = $('modDmMessagesStream');
+      stream.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs animate-pulse">Loading message records...</div>`;
+
+      try {
+        const { collection, getDocs, query, orderBy, limit } = window.fsTools;
+        const q = query(collection(window.fbDb, 'dms', roomId, 'messages'), orderBy('createdAt', 'asc'), limit(50));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          stream.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">No messages found in this conversation.</div>`;
+          return;
+        }
+
+        stream.innerHTML = '';
+        snap.forEach((d) => {
+          const m = d.data();
+          const isTarget = m.sender === targetUid;
+          const timeStr = m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time';
+          
+          const bubble = document.createElement('div');
+          bubble.className = isTarget ? 'flex flex-col items-end' : 'flex flex-col items-start';
+          bubble.innerHTML = `
+            <div class="flex items-center gap-1.5 text-[9px] text-slate-400 mb-0.5">
+              <span class="font-bold ${isTarget ? 'text-amber-400' : 'text-slate-300'}">${isTarget ? 'Reported User' : escapeHtml(otherUserName)}</span>
+              <span>• ${timeStr}</span>
+            </div>
+            <div class="px-3 py-2 rounded-2xl text-xs max-w-[85%] break-words leading-relaxed ${
+              isTarget
+                ? 'bg-amber-500/20 text-amber-100 border border-amber-500/30 rounded-tr-xs'
+                : 'bg-slate-800 text-slate-200 border border-white/5 rounded-tl-xs'
+            }">
+              ${escapeHtml(m.text || '')}
+            </div>
+          `;
+          stream.appendChild(bubble);
+        });
+
+        stream.scrollTop = stream.scrollHeight;
+      } catch (err) {
+        console.warn("Could not inspect messages:", err);
+        stream.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs">Could not fetch messages: ${err.message}</div>`;
+      }
+    }
+
+    function lockSensitiveViewer(silent = false) {
+      sensitiveSessionToken = null;
+      if (sensitiveSessionTimerInterval) {
+        clearInterval(sensitiveSessionTimerInterval);
+        sensitiveSessionTimerInterval = null;
+      }
+      $('modSensitiveLockedBanner').classList.remove('hidden');
+      $('modSensitiveUnlockedViewer').classList.add('hidden');
+      $('modSensitiveBadge').textContent = 'LOCKED';
+      $('modSensitiveBadge').className = 'text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold uppercase';
+      if (!silent) {
+        showAdminToast("Viewer Locked", "Private communications viewer has been locked.");
+      }
+    }
+
+    async function openAdminAuditLogsModal() {
+      $('mAdminAuditLogsModal').classList.remove('hidden');
+      const container = $('adminAuditLogsListContainer');
+      container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs animate-pulse">Loading security audit records...</div>`;
+
+      try {
+        const res = await fetch('/api/admin/sensitive-audit-logs');
+        const logs = await res.json();
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+          container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No sensitive access attempts logged yet.</div>`;
+          return;
+        }
+
+        container.innerHTML = logs.map((log) => {
+          const isSuccess = log.status === 'SUCCESS';
+          const isLocked = log.status === 'LOCKED_OUT';
+          const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Recent';
+
+          return `
+            <div class="p-3 bg-[#0a0d16] border border-white/5 rounded-xl flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                    isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                    isLocked ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                    'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }">
+                    ${log.status || 'EVENT'}
+                  </span>
+                  <span class="font-bold text-white text-xs">${escapeHtml(log.action || 'view_sensitive')}</span>
+                  <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                  <span>Admin: <strong class="text-slate-200">${escapeHtml(log.adminEmail || log.adminName || 'Admin')}</strong></span>
+                  ${log.targetUid ? `<span>Target UID: <code class="bg-[#121626] px-1.5 py-0.2 rounded text-slate-300 font-mono">${log.targetUid}</code></span>` : ''}
+                  ${log.ip ? `<span class="text-[10px] text-slate-500">IP: ${log.ip}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        container.innerHTML = `<div class="text-center py-10 text-rose-400 text-xs">Failed to load audit logs: ${err.message}</div>`;
+      }
+    }
+
+    async function resetInspectedUserAvatar() {
+      if (!currentModeratingUid || !currentModeratingUser) return;
+      if (!confirm(`Reset ${currentModeratingUser.name || 'player'}'s avatar to default? This immediately removes inappropriate pictures.`)) return;
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        const defaultAv = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentModeratingUid}`;
+        await updateDoc(doc(window.fbDb, 'users', currentModeratingUid), {
+          av: defaultAv,
+          avatar: defaultAv
+        });
+        $('modDossierAv').src = defaultAv;
+        currentModeratingUser.av = defaultAv;
+        currentModeratingUser.avatar = defaultAv;
+        showAdminToast("Avatar Reset", "User profile photo reset to default avatar!");
+      } catch (err) {
+        showAdminToast("Error", err.message, "error");
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showAdminToast("Copied", "UID copied to clipboard!");
+      }).catch(() => {});
     }
 
     // Utility
