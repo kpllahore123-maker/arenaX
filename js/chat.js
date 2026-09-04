@@ -2453,6 +2453,7 @@ if ($('btnVppOptReport')) {
     if ($('reportTargetHandle')) $('reportTargetHandle').textContent = targetHandle;
     if ($('reportTargetAv')) $('reportTargetAv').src = targetAv;
     if ($('reportDetailsInp')) $('reportDetailsInp').value = '';
+    if ($('reportEvidenceUrlInp')) $('reportEvidenceUrlInp').value = '';
     if ($('reportOtherCategoryInp')) $('reportOtherCategoryInp').value = '';
 
     selectedReportCategory = 'Harassment/Bullying';
@@ -2494,6 +2495,7 @@ if ($('btnSubmitProfileReport')) {
     }
 
     const details = $('reportDetailsInp')?.value.trim() || '';
+    const evidenceUrl = $('reportEvidenceUrlInp')?.value.trim() || '';
     const btn = $('btnSubmitProfileReport');
     const origHtml = btn.innerHTML;
     btn.disabled = true;
@@ -2501,17 +2503,22 @@ if ($('btnSubmitProfileReport')) {
 
     try {
       const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
+      const targetHandle = currentViewedUser?.handle || '';
       const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || '';
 
       await addDoc(collection(db, 'profile_reports'), {
         reportedUid: targetUid,
         reportedName: targetName,
+        reportedHandle: targetHandle,
         reportedAvatar: targetAv,
         reporterUid: myProfile.uid,
         reporterName: myProfile.name || myProfile.userName || 'ArenaX Player',
+        reporterHandle: myProfile.handle || '',
+        reporterEmail: myProfile.email || '',
         reporterAvatar: myProfile.av || myProfile.avatar || '',
         category: category,
         details: details,
+        evidenceUrl: evidenceUrl,
         status: 'pending',
         timestamp: serverTimestamp()
       });
