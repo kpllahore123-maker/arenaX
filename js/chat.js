@@ -128,15 +128,24 @@ function loadFriendSystem() {
         const item = document.createElement('div');
         item.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center gap-3.5 cursor-pointer transition relative group';
         
+        const isModChannel = f.uid === 'arenax_moderators';
+        if (isModChannel) {
+          f.name = 'ArenaX Moderators';
+          f.av = 'Moderator.png';
+          f.hasBlueTick = true;
+          f.isOfficial = true;
+        }
+
         const unreadCount = f.unreadCount || Math.floor(Math.random() * 3) + 1;
         const dateStr = f.lastMsgDate || '30/07/2026';
         const lastMsgText = f.lastMsg || 'Tap to start direct messaging...';
-        const isOfficial = f.isOfficial || f.name?.toLowerCase().includes('bot') || f.name?.toLowerCase().includes('official');
-        const displayHandle = 'ID: ' + getNumericPlayerId(f.uid, f.handle);
+        const isOfficial = isModChannel || f.isOfficial || f.name?.toLowerCase().includes('bot') || f.name?.toLowerCase().includes('official');
+        const displayHandle = isModChannel ? 'Official Verified' : ('ID: ' + getNumericPlayerId(f.uid, f.handle));
+        const avatarSrc = isModChannel ? 'Moderator.png' : (f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid);
 
         item.innerHTML = `
           <div class="relative shrink-0">
-            <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-11 h-11 rounded-full border border-bdr object-cover"/>
+            <img src="${avatarSrc}" class="w-11 h-11 rounded-full ${isModChannel ? 'border-2 border-blue-400' : 'border border-bdr'} object-cover"/>
             <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-card shadow-xs">
               ${unreadCount}
             </span>
@@ -145,8 +154,8 @@ function loadFriendSystem() {
             <div class="flex items-center justify-between gap-2">
               <div class="text-xs font-bold text-white truncate flex items-center gap-1">
                 <span>${f.name}</span>
-                ${isOfficial ? '<span class="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">Official</span>' : ''}
-                ${window.getBlueTickBadgeHtml ? window.getBlueTickBadgeHtml(f) : ''}
+                ${isModChannel ? '<img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline-block shrink-0" alt="Verified" /><span class="bg-blue-500/20 text-blue-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-blue-500/30">Official</span>' : (isOfficial ? '<span class="bg-cyan-400/20 text-cyan-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/30">Official</span>' : '')}
+                ${!isModChannel && window.getBlueTickBadgeHtml ? window.getBlueTickBadgeHtml(f) : ''}
               </div>
               <span class="text-[9px] text-t3 shrink-0 font-medium">${dateStr}</span>
             </div>
@@ -163,14 +172,17 @@ function loadFriendSystem() {
           mItem.className = 'p-3 bg-card border border-bdr hover:border-gold rounded-xl flex items-center justify-between gap-3 text-xs transition cursor-pointer';
           mItem.innerHTML = `
             <div class="flex items-center gap-3 min-w-0">
-              <img src="${f.av || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + f.uid}" class="w-10 h-10 rounded-full border border-bdr object-cover shrink-0"/>
+              <img src="${avatarSrc}" class="w-10 h-10 rounded-full ${isModChannel ? 'border-2 border-blue-400' : 'border border-bdr'} object-cover shrink-0"/>
               <div class="min-w-0">
-                <div class="font-bold text-white truncate">${f.name}</div>
+                <div class="font-bold text-white truncate flex items-center gap-1">
+                  <span>${f.name}</span>
+                  ${isModChannel ? '<img src="bluetick.png" class="w-3.5 h-3.5 object-contain shrink-0" alt="Verified" />' : ''}
+                </div>
                 <div class="text-[10px] text-t3 truncate font-mono">${displayHandle}</div>
               </div>
             </div>
             <button class="px-3 py-1.5 bg-gold hover:bg-[#e8b830] text-bg text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0">
-              <i class="fas fa-paper-plane"></i> Chat
+              <i class="fas fa-paper-plane"></i> View
             </button>
           `;
           mItem.addEventListener('click', () => {
@@ -992,6 +1004,36 @@ function checkIfMuted() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return false;
   
+  // Check ban status
+  if (profile.banned || profile.accountStatus === 'permanently_blocked' || profile.accountStatus === 'temporarily_blocked') {
+    alert(`❌ Account Blocked!\nReason: ${profile.banReason || 'Safety Violations'}`);
+    return true;
+  }
+
+  // Check restriction / suspension status
+  if (profile.restricted || profile.accountStatus === 'restricted') {
+    if (profile.restrictedUntil) {
+      const until = profile.restrictedUntil.toDate ? profile.restrictedUntil.toDate().getTime() : new Date(profile.restrictedUntil).getTime();
+      if (Date.now() > until) {
+        // Restriction has expired
+        updateDoc(doc(db, 'users', profile.uid), {
+          restricted: false,
+          accountStatus: 'active',
+          restrictedUntil: null
+        }).catch(console.warn);
+        profile.restricted = false;
+        profile.accountStatus = 'active';
+      } else {
+        const timeStr = new Date(until).toLocaleString();
+        alert(`⚠️ Your account features are suspended until ${timeStr}.\nReason: ${profile.restrictedReason || profile.banReason || 'Safety Violation'}`);
+        return true;
+      }
+    } else {
+      alert(`⚠️ Your account features are suspended.\nReason: ${profile.restrictedReason || profile.banReason || 'Safety Violation'}`);
+      return true;
+    }
+  }
+
   if (profile.muted) {
     if (profile.muteUntil) {
       const until = new Date(profile.muteUntil).getTime();
@@ -1147,7 +1189,7 @@ $('btnSearchFriend').addEventListener('click', async () => {
       });
     }
 
-    if (!found) {
+    if (!found || found.uid === 'arenax_moderators') {
       $('friendSearchResult').innerHTML = '<div class="text-xs text-red font-semibold">No player found matching ID "' + rawInput + '". Double check the ID!</div>';
       return;
     }
@@ -1223,33 +1265,52 @@ function openFriendDM(friend) {
   if (!profile) return;
 
   activeDMFriendUid = friend.uid;
+  const isModChannel = friend.uid === 'arenax_moderators';
 
   if (activeDMFriendUnsub) {
     activeDMFriendUnsub();
     activeDMFriendUnsub = null;
   }
 
-  // Listen live to target friend's profile to update avatar & name in real time
-  if (friend.uid) {
-    activeDMFriendUnsub = onSnapshot(doc(db, 'users', friend.uid), (docSnap) => {
-      if (docSnap.exists()) {
-        const uData = docSnap.data();
-        if (uData.av) friend.av = uData.av;
-        if (uData.name) friend.name = uData.name;
-        if (uData.isVerified !== undefined) friend.isVerified = uData.isVerified;
-        if (uData.hasBlueTick !== undefined) friend.hasBlueTick = uData.hasBlueTick;
-        if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
-        if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
-        document.querySelectorAll(`.dm-msg-av-${friend.uid}`).forEach(img => {
-          img.src = friend.av;
-        });
-      }
-    });
-  }
+  // Toggle one-way official moderation channel vs standard user chat bar
+  if (isModChannel) {
+    $('dmInputBar')?.classList.add('hidden');
+    $('dmModeratorChannelBanner')?.classList.remove('hidden');
+    friend.av = 'Moderator.png';
+    friend.name = 'ArenaX Moderators';
+    friend.hasBlueTick = true;
+    friend.isOfficial = true;
+    if ($('dmChatName')) {
+      $('dmChatName').innerHTML = `<span class="text-sm font-bold text-gray-900">ArenaX Moderators</span><img src="bluetick.png" class="w-4 h-4 inline-block align-middle ml-1 shrink-0 drop-shadow-[0_0_6px_rgba(29,155,240,0.5)]" alt="Verified" /><span class="bg-blue-500/20 text-blue-600 font-semibold text-[9px] px-1.5 py-0.5 rounded-full border border-blue-500/30 ml-1">Official</span>`;
+    }
+    if ($('dmChatAv')) $('dmChatAv').src = 'Moderator.png';
+    if ($('dmChatNum')) $('dmChatNum').textContent = 'M';
+  } else {
+    $('dmInputBar')?.classList.remove('hidden');
+    $('dmModeratorChannelBanner')?.classList.add('hidden');
 
-  if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
-  if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
-  if ($('dmChatNum')) $('dmChatNum').textContent = friend.badgeNum || '6';
+    // Listen live to target friend's profile to update avatar & name in real time
+    if (friend.uid) {
+      activeDMFriendUnsub = onSnapshot(doc(db, 'users', friend.uid), (docSnap) => {
+        if (docSnap.exists()) {
+          const uData = docSnap.data();
+          if (uData.av) friend.av = uData.av;
+          if (uData.name) friend.name = uData.name;
+          if (uData.isVerified !== undefined) friend.isVerified = uData.isVerified;
+          if (uData.hasBlueTick !== undefined) friend.hasBlueTick = uData.hasBlueTick;
+          if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
+          if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+          document.querySelectorAll(`.dm-msg-av-${friend.uid}`).forEach(img => {
+            img.src = friend.av;
+          });
+        }
+      });
+    }
+
+    if ($('dmChatName')) $('dmChatName').innerHTML = window.formatPlayerNameHtml(friend, 'text-sm font-bold text-gray-900');
+    if ($('dmChatAv')) $('dmChatAv').src = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+    if ($('dmChatNum')) $('dmChatNum').textContent = friend.badgeNum || '6';
+  }
 
   $('dmMsgs').innerHTML = '<div class="text-center text-xs text-gray-400 py-6 font-medium animate-pulse">Loading chat history...</div>';
   $('mDMChat').classList.remove('hidden');
@@ -1261,7 +1322,7 @@ function openFriendDM(friend) {
 
   const myUid = profile.uid || profile.id;
   const myAv = profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${myUid}`;
-  const friendAv = friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`;
+  const friendAv = isModChannel ? 'Moderator.png' : (friend.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${friend.uid}`);
 
   const roomId = [myUid, friend.uid].sort().join('_');
   const q = query(collection(db, 'dms', roomId, 'messages'), orderBy('createdAt', 'asc'));
@@ -1275,6 +1336,7 @@ function openFriendDM(friend) {
     snap.forEach((d) => {
       const m = d.data();
       const isMe = m.sender === myUid;
+      const isFromModerator = m.sender === 'arenax_moderators' || (!isMe && isModChannel);
 
       // Format timestamp for badge header (e.g. 29/07/2026 14:27)
       let timeStr = '';
@@ -1320,6 +1382,27 @@ function openFriendDM(friend) {
             <button class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition shadow cursor-pointer flex items-center justify-center gap-1" onclick="joinVoiceRoom('${m.voiceRoomId}').then(() => { goTo('sVoice'); $('mDMChat').classList.add('hidden'); })">
               <i class="fas fa-sign-in-alt"></i> Join Room
             </button>
+          </div>
+        `;
+      } else if (isFromModerator) {
+        // Official ArenaX Moderator Message Bubble
+        // PFP = Moderator.png
+        // Verification badge = bluetick.png next to text ArenaX Moderators
+        bubble.className = 'flex items-start justify-start gap-2.5 max-w-[92%]';
+        bubble.innerHTML = `
+          <img src="Moderator.png" class="w-8 h-8 rounded-full border border-blue-400 object-cover shrink-0 mt-0.5 shadow-sm" alt="ArenaX Moderators"/>
+          <div class="space-y-1 max-w-[88%]">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-900">ArenaX Moderators</span>
+              <img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline-block shrink-0" alt="Verified" />
+              <span class="bg-blue-500/20 text-blue-700 font-bold text-[8px] px-1.5 py-0.2 rounded-full border border-blue-400/40">Official Notice</span>
+            </div>
+            <div class="px-3.5 py-2.5 bg-[#0f172a] text-white rounded-2xl rounded-tl-xs text-xs font-normal shadow-md border border-blue-500/30 break-words leading-relaxed whitespace-pre-wrap">
+              ${m.text}
+            </div>
+            <div class="text-[9px] text-slate-400 flex items-center gap-1 pl-1">
+              <i class="fas fa-lock text-[8px]"></i> Official moderation channel • Replies disabled
+            </div>
           </div>
         `;
       } else {
@@ -2954,6 +3037,17 @@ async function sendDirectMessage() {
   }
   const txt = $('dmInp').value.trim();
   if (!txt || !activeDMFriendUid) return;
+
+  // Block replies to ArenaX Moderators official administrative channel
+  if (activeDMFriendUid === 'arenax_moderators') {
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Replies Disabled 🔒", "This is an official administrative channel from ArenaX Moderators. Direct replies are disabled.");
+    } else {
+      alert("This is an official administrative channel from ArenaX Moderators. Direct replies are disabled.");
+    }
+    $('dmInp').value = '';
+    return;
+  }
 
   // Check if either user has blocked the other
   try {
