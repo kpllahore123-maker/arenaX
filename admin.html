@@ -581,33 +581,39 @@
               <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" id="modSendOfficialMsgCheckbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer" />
-                  <span class="text-xs font-bold text-white">Send Official Verified ArenaX Moderator Message</span>
+                  <span class="text-xs font-bold text-white">Send official message to user</span>
                 </label>
-                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold text-[10px]">
-                  <img src="bluetick.png" class="w-3.5 h-3.5 object-contain" /> Verified Channel
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold text-[10px]">
+                  <img src="Moderator.png" class="w-3.5 h-3.5 rounded-full object-cover" />
+                  <span>Official Channel</span>
+                  <img src="bluetick.png" class="w-3.5 h-3.5 object-contain" />
                 </div>
               </div>
 
               <!-- Message Customization & Preview -->
               <div id="modOfficialMsgCustomWrap" class="space-y-2">
-                <label class="text-[11px] font-bold text-slate-300 block">Custom Message Body (User receives this in Inbox & DM):</label>
+                <label class="text-[11px] font-bold text-slate-300 block">Custom Message Body (Sent directly to User's DM & Inbox):</label>
                 <textarea id="modOfficialMsgBodyInp" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 resize-none font-sans leading-relaxed"></textarea>
                 
                 <!-- Live Official Message Preview -->
                 <div class="space-y-1">
-                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Inbox Live Preview:</div>
-                  <div class="p-3 bg-[#111524] border border-blue-500/30 rounded-xl space-y-1.5">
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Direct Message Live Preview:</div>
+                  <div class="p-3 bg-[#111524] border border-blue-500/30 rounded-xl space-y-2">
                     <div class="flex items-center justify-between">
-                      <span class="text-[10px] font-bold text-blue-400 flex items-center gap-1">
-                        <img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline-block" />
-                        From: ArenaX Moderators
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <img src="Moderator.png" class="w-6 h-6 rounded-full object-cover border border-blue-400/60 shrink-0" alt="Avatar" />
+                        <div class="flex items-center gap-1">
+                          <span class="text-xs font-bold text-white">ArenaX Moderators</span>
+                          <img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline-block" alt="Verified" />
+                          <span class="bg-blue-500/20 text-blue-400 font-semibold text-[8px] px-1.5 py-0.2 rounded-full border border-blue-500/30">Official</span>
+                        </div>
+                      </div>
                       <span class="text-[9px] text-slate-500 font-mono">Just now</span>
                     </div>
                     <div id="modMsgPreviewTitle" class="text-xs font-bold text-white">Official Moderation Notice</div>
                     <p id="modMsgPreviewBody" class="text-[11px] text-slate-300 italic leading-relaxed whitespace-pre-wrap">Your message content will appear here.</p>
                     <div class="pt-1 text-[9px] text-blue-300 font-semibold flex items-center gap-1">
-                      <i class="fas fa-lock text-[8px]"></i> One-way official moderation channel. Replies disabled.
+                      <i class="fas fa-lock text-[8px]"></i> Official moderation channel. Replies disabled.
                     </div>
                   </div>
                 </div>
@@ -3474,9 +3480,11 @@
                   </div>
                   <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
                 </div>
-                <div class="text-[11px] text-slate-400 flex items-center gap-3">
+                <div class="text-[11px] text-slate-400 flex items-center flex-wrap gap-3">
                   <span>Duration: <strong class="text-slate-200">${h.duration || 'N/A'}</strong></span>
                   <span>Moderator: <strong class="text-slate-200">${escapeHtml(h.adminName || 'Admin')}</strong></span>
+                  ${h.officialDmSent !== undefined ? (h.officialDmSent ? '<span class="text-blue-400 font-semibold flex items-center gap-1"><img src="bluetick.png" class="w-3 h-3 inline-block" /> Official DM Sent</span>' : '<span class="text-slate-500">No DM Sent</span>') : ''}
+                  ${h.previousStatus ? `<span>Status: <span class="text-slate-300 font-mono">${h.previousStatus}</span> ➔ <span class="text-amber-400 font-mono">${h.currentStatus || 'updated'}</span></span>` : ''}
                 </div>
               </div>
             `;
@@ -3584,6 +3592,16 @@
       });
     }
 
+    if ($('modSendOfficialMsgCheckbox')) {
+      $('modSendOfficialMsgCheckbox').addEventListener('change', (e) => {
+        const wrap = $('modOfficialMsgCustomWrap');
+        if (wrap) {
+          if (e.target.checked) wrap.classList.remove('hidden');
+          else wrap.classList.add('hidden');
+        }
+      });
+    }
+
     async function executeModerationActionSubmit() {
       if (!currentModeratingUid || !currentModeratingUser) {
         showAdminToast("Error", "No user selected for moderation.", "error");
@@ -3591,7 +3609,7 @@
       }
 
       const reason = ($('modActionReasonInp') ? $('modActionReasonInp').value.trim() : '');
-      if (!reason) {
+      if (!reason && currentModAction !== 'unblock') {
         showAdminToast("Reason Required", "Please enter the reason for this disciplinary action.", "error");
         if ($('modActionReasonInp')) $('modActionReasonInp').focus();
         return;
@@ -3602,176 +3620,272 @@
       btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-1.5"></i> Applying Disciplinary Action...`;
 
       try {
-        const { doc, updateDoc, collection, addDoc, serverTimestamp } = window.fsTools;
         const adminName = (window.currentAdmin && window.currentAdmin.name) || 'ArenaX Administrator';
-        const adminUid = (window.currentAdmin && window.currentAdmin.uid) || 'admin';
-        const now = new Date();
+      const adminUid = (window.currentAdmin && window.currentAdmin.uid) || 'admin';
+      const adminEmail = (window.currentAdmin && window.currentAdmin.email) || '';
+      const sendMsg = Boolean($('modSendOfficialMsgCheckbox') && $('modSendOfficialMsgCheckbox').checked);
+      const customBody = ($('modOfficialMsgBodyInp') ? $('modOfficialMsgBodyInp').value.trim() : '') || reason;
+      const msgTitle = $('modMsgPreviewTitle') ? $('modMsgPreviewTitle').textContent : 'Official Moderation Notice';
 
-        let durationStr = 'Notice';
-        let endsAt = null;
+      let durationStr = 'Notice';
+      let endsAt = null;
+      if (currentModAction === 'restriction' || currentModAction === 'temporary_block') {
+        durationStr = `${currentModDurationDays} Days`;
+        endsAt = new Date(Date.now() + currentModDurationDays * 24 * 60 * 60 * 1000);
+      } else if (currentModAction === 'permanent_block') {
+        durationStr = 'Permanent';
+      } else if (currentModAction === 'unblock') {
+        durationStr = 'Restored';
+      }
 
-        if (currentModAction === 'restriction' || currentModAction === 'temporary_block') {
-          durationStr = `${currentModDurationDays} Days`;
-          endsAt = new Date(Date.now() + currentModDurationDays * 24 * 60 * 60 * 1000);
-        } else if (currentModAction === 'permanent_block') {
-          durationStr = 'Permanent';
-        } else if (currentModAction === 'unblock') {
-          durationStr = 'Restored';
-        }
+      let backendSuccess = false;
 
-        // 1. Prepare User Update Payload
-        const userRef = doc(window.fbDb, 'users', currentModeratingUid);
-        const userUpdates = {};
-
-        if (currentModAction === 'warning') {
-          userUpdates.accountStatus = 'warned';
-          userUpdates.warningCount = (currentModeratingUser.warningCount || 0) + 1;
-          userUpdates.lastWarning = reason;
-          userUpdates.lastWarningAt = serverTimestamp();
-          userUpdates.lastModeratedBy = adminName;
-        } else if (currentModAction === 'restriction') {
-          userUpdates.accountStatus = 'restricted';
-          userUpdates.restricted = true;
-          userUpdates.restrictedUntil = endsAt;
-          userUpdates.restrictionReason = reason;
-          userUpdates.restrictedAt = serverTimestamp();
-          userUpdates.restrictedBy = adminName;
-          userUpdates.banned = false;
-          userUpdates.isBanned = false;
-        } else if (currentModAction === 'temporary_block') {
-          userUpdates.accountStatus = 'temporarily_blocked';
-          userUpdates.banned = true;
-          userUpdates.isBanned = true;
-          userUpdates.banType = 'temporary';
-          userUpdates.banUntil = endsAt;
-          userUpdates.blockedUntil = endsAt;
-          userUpdates.banReason = reason;
-          userUpdates.bannedAt = serverTimestamp();
-          userUpdates.bannedBy = adminName;
-        } else if (currentModAction === 'permanent_block') {
-          userUpdates.accountStatus = 'permanently_blocked';
-          userUpdates.banned = true;
-          userUpdates.isBanned = true;
-          userUpdates.banType = 'full';
-          userUpdates.banReason = reason;
-          userUpdates.bannedAt = serverTimestamp();
-          userUpdates.bannedBy = adminName;
-          userUpdates.banRule = reason;
-        } else if (currentModAction === 'unblock') {
-          userUpdates.accountStatus = 'active';
-          userUpdates.banned = false;
-          userUpdates.isBanned = false;
-          userUpdates.banType = 'none';
-          userUpdates.restricted = false;
-          userUpdates.blockedUntil = null;
-          userUpdates.restrictedUntil = null;
-          userUpdates.banReason = '';
-          userUpdates.unblockedAt = serverTimestamp();
-          userUpdates.unblockedBy = adminName;
-        }
-
-        await updateDoc(userRef, userUpdates);
-
-        // 2. Add to moderation_history root collection
-        await addDoc(collection(window.fbDb, 'moderation_history'), {
-          targetUid: currentModeratingUid,
-          targetName: currentModeratingUser.name || 'Player',
-          targetHandle: currentModeratingUser.handle || 'player',
-          actionType: currentModAction,
-          reason: reason,
-          duration: durationStr,
-          startsAt: now,
-          endsAt: endsAt,
-          adminUid: adminUid,
-          adminName: adminName,
-          reportId: currentModeratingReportId || null,
-          timestamp: serverTimestamp()
+      // 1. Try Backend API first (guaranteed admin authority & full audit log)
+      try {
+        const res = await fetch('/api/admin/apply-moderation-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetUid: currentModeratingUid,
+            actionType: currentModAction,
+            durationDays: currentModDurationDays,
+            reason: reason || 'Administrative action',
+            sendOfficialMsg: sendMsg,
+            customMessage: customBody,
+            messageTitle: msgTitle,
+            reportId: currentModeratingReportId || null,
+            adminUid,
+            adminName,
+            adminEmail,
+            isAdminConsoleSession: true
+          })
         });
 
-        // 3. Add to users/{uid}/punishments subcollection
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            backendSuccess = true;
+            console.log('[Moderation] Backend execution successful:', data);
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[Moderation] Backend API route unreachable, falling back to direct Firestore:', apiErr);
+      }
+
+      // 2. Direct Firestore fallback (if backend was not available)
+      if (!backendSuccess) {
         try {
-          await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'punishments'), {
+          const { doc, updateDoc, collection, addDoc, serverTimestamp } = window.fsTools;
+          const userRef = doc(window.fbDb, 'users', currentModeratingUid);
+          const userUpdates = {
+            lastModeratedBy: adminName,
+            lastModerationAt: serverTimestamp(),
+            lastModerationAction: currentModAction,
+            lastModerationReason: reason || ''
+          };
+
+          const prevAccountStatus = currentModeratingUser.accountStatus || (currentModeratingUser.banned ? 'banned' : currentModeratingUser.restricted ? 'restricted' : 'active');
+          let newStatus = 'active';
+
+          if (currentModAction === 'warning') {
+            newStatus = 'warned';
+            userUpdates.accountStatus = 'warned';
+            userUpdates.warningCount = (currentModeratingUser.warningCount || 0) + 1;
+            userUpdates.lastWarning = reason;
+            userUpdates.lastWarningAt = serverTimestamp();
+          } else if (currentModAction === 'restriction') {
+            newStatus = 'restricted';
+            userUpdates.accountStatus = 'restricted';
+            userUpdates.restricted = true;
+            userUpdates.isRestricted = true;
+            userUpdates.restrictedUntil = endsAt ? endsAt.toISOString() : null;
+            userUpdates.restrictionReason = reason;
+            userUpdates.restrictedAt = serverTimestamp();
+            userUpdates.restrictedBy = adminName;
+            userUpdates.banned = false;
+            userUpdates.isBanned = false;
+          } else if (currentModAction === 'temporary_block') {
+            newStatus = 'temporarily_blocked';
+            userUpdates.accountStatus = 'temporarily_blocked';
+            userUpdates.banned = true;
+            userUpdates.isBanned = true;
+            userUpdates.banType = 'temporary';
+            userUpdates.banUntil = endsAt ? endsAt.toISOString() : null;
+            userUpdates.blockedUntil = endsAt ? endsAt.toISOString() : null;
+            userUpdates.banReason = reason;
+            userUpdates.bannedAt = serverTimestamp();
+            userUpdates.bannedBy = adminName;
+          } else if (currentModAction === 'permanent_block') {
+            newStatus = 'permanently_blocked';
+            userUpdates.accountStatus = 'permanently_blocked';
+            userUpdates.banned = true;
+            userUpdates.isBanned = true;
+            userUpdates.banType = 'full';
+            userUpdates.banUntil = null;
+            userUpdates.blockedUntil = null;
+            userUpdates.banReason = reason;
+            userUpdates.banRule = reason;
+            userUpdates.bannedAt = serverTimestamp();
+            userUpdates.bannedBy = adminName;
+          } else if (currentModAction === 'unblock') {
+            newStatus = 'active';
+            userUpdates.accountStatus = 'active';
+            userUpdates.banned = false;
+            userUpdates.isBanned = false;
+            userUpdates.banType = 'none';
+            userUpdates.restricted = false;
+            userUpdates.isRestricted = false;
+            userUpdates.blockedUntil = null;
+            userUpdates.restrictedUntil = null;
+            userUpdates.banUntil = null;
+            userUpdates.banReason = '';
+            userUpdates.restrictionReason = '';
+            userUpdates.unblockedAt = serverTimestamp();
+            userUpdates.unblockedBy = adminName;
+            userUpdates.restoredAt = serverTimestamp();
+          }
+
+          await updateDoc(userRef, userUpdates);
+
+          // Save to root moderation_history with all 7 fields
+          await addDoc(collection(window.fbDb, 'moderation_history'), {
+            targetUid: currentModeratingUid,
+            targetName: currentModeratingUser.name || 'Player',
+            targetHandle: currentModeratingUser.handle || 'player',
             actionType: currentModAction,
-            reason: reason,
-            duration: durationStr,
-            startsAt: now,
-            endsAt: endsAt,
+            reason: reason || '',
             adminUid: adminUid,
             adminName: adminName,
+            dateTime: new Date().toISOString(),
+            duration: durationStr,
+            startsAt: new Date().toISOString(),
+            endsAt: endsAt ? endsAt.toISOString() : null,
+            previousStatus: prevAccountStatus,
+            currentStatus: newStatus,
+            officialDmSent: sendMsg,
+            officialMessage: sendMsg ? customBody : null,
+            reportId: currentModeratingReportId || null,
             timestamp: serverTimestamp()
           });
-        } catch (pe) {
-          console.warn("Could not write to punishments subcollection:", pe);
-        }
 
-        // 4. Send Official Verified ArenaX Moderator Message (if selected)
-        const sendMsg = $('modSendOfficialMsgCheckbox') && $('modSendOfficialMsgCheckbox').checked;
-        if (sendMsg) {
-          const customBody = ($('modOfficialMsgBodyInp') ? $('modOfficialMsgBodyInp').value.trim() : '') || reason;
-          const msgTitle = $('modMsgPreviewTitle') ? $('modMsgPreviewTitle').textContent : 'Official Moderation Notice';
-
-          // A. Send in-game mail
+          // Save to users/{uid}/punishments
           try {
-            await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'mails'), {
-              sender: 'ArenaX Moderators',
-              senderUid: 'arenax_moderators',
-              hasBlueTick: true,
-              badge: 'bluetick.png',
-              type: 'moderation_notice',
+            await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'punishments'), {
               actionType: currentModAction,
-              title: msgTitle,
-              body: customBody,
-              reason: reason,
+              reason: reason || '',
               duration: durationStr,
-              moderatorRole: 'ArenaX Moderation Team',
-              read: false,
-              createdAt: serverTimestamp()
+              adminUid: adminUid,
+              adminName: adminName,
+              dateTime: new Date().toISOString(),
+              officialDmSent: sendMsg,
+              timestamp: serverTimestamp()
             });
-          } catch (me) {
-            console.warn("Could not write mail notice:", me);
+          } catch (pe) {
+            console.warn("Could not write to punishments subcollection:", pe);
           }
 
-          // B. Send in DM room with 'arenax_moderators'
-          try {
-            const roomId = [currentModeratingUid, 'arenax_moderators'].sort().join('_');
-            await addDoc(collection(window.fbDb, 'dms', roomId, 'messages'), {
-              text: customBody,
-              sender: 'arenax_moderators',
-              senderName: 'ArenaX Moderators',
-              hasBlueTick: true,
-              badge: 'bluetick.png',
-              isOfficial: true,
-              noticeType: currentModAction,
-              createdAt: serverTimestamp()
-            });
-          } catch (de) {
-            console.warn("Could not write official DM notice:", de);
+          // If send official message is checked, send official DM
+          if (sendMsg) {
+            try {
+              // Set friend in user's friends list
+              const friendRef = doc(window.fbDb, 'users', currentModeratingUid, 'friends', 'arenax_moderators');
+              await window.fsTools.setDoc(friendRef, {
+                uid: 'arenax_moderators',
+                name: 'ArenaX Moderators',
+                handle: 'moderators',
+                av: 'Moderator.png',
+                hasBlueTick: true,
+                isOfficial: true,
+                badgeNum: 'M',
+                lastMsg: customBody.length > 80 ? customBody.slice(0, 77) + '...' : customBody,
+                lastMsgDate: 'Just now',
+                unreadCount: 1,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+
+              const roomId = [currentModeratingUid, 'arenax_moderators'].sort().join('_');
+              await addDoc(collection(window.fbDb, 'dms', roomId, 'messages'), {
+                text: customBody,
+                sender: 'arenax_moderators',
+                senderName: 'ArenaX Moderators',
+                senderAv: 'Moderator.png',
+                hasBlueTick: true,
+                isOfficial: true,
+                noticeType: currentModAction,
+                createdAt: serverTimestamp()
+              });
+
+              await addDoc(collection(window.fbDb, 'users', currentModeratingUid, 'mails'), {
+                sender: 'ArenaX Moderators',
+                senderUid: 'arenax_moderators',
+                senderAv: 'Moderator.png',
+                hasBlueTick: true,
+                badge: 'bluetick.png',
+                type: 'moderation_notice',
+                actionType: currentModAction,
+                title: msgTitle,
+                body: customBody,
+                reason: reason || '',
+                duration: durationStr,
+                moderatorRole: 'ArenaX Moderation Team',
+                read: false,
+                createdAt: serverTimestamp()
+              });
+            } catch (dmErr) {
+              console.warn("Fallback DM send error:", dmErr);
+            }
           }
+
+          // Update profile report if any
+          if (currentModeratingReportId) {
+            try {
+              const repRef = doc(window.fbDb, 'profile_reports', currentModeratingReportId);
+              await updateDoc(repRef, {
+                status: 'actioned',
+                actionTaken: currentModAction,
+                actionReason: reason || '',
+                actionedBy: adminName,
+                actionedAt: serverTimestamp()
+              });
+            } catch (re) {
+              console.warn("Could not update profile report:", re);
+            }
+          }
+        } catch (fbErr) {
+          console.error("Direct Firestore update failed:", fbErr);
+          showAdminToast("Action Failed", fbErr.message || "Failed to execute moderation action.", "error");
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fas fa-gavel"></i> Apply Disciplinary Action`;
+          return;
         }
+      }
 
-        // 5. Update Profile Report status if this was triggered from a report
-        if (currentModeratingReportId) {
-          try {
-            const repRef = doc(window.fbDb, 'profile_reports', currentModeratingReportId);
-            await updateDoc(repRef, {
-              status: 'actioned',
-              actionTaken: currentModAction,
-              actionReason: reason,
-              actionedBy: adminName,
-              actionedAt: serverTimestamp()
-            });
-          } catch (re) {
-            console.warn("Could not update profile report:", re);
-          }
-        }
+      showAdminToast("Action Applied", `Successfully executed ${currentModAction.toUpperCase()} for ${currentModeratingUser.name || 'player'}`);
 
-        showAdminToast("Action Applied", `Successfully executed ${currentModAction.toUpperCase()} for ${currentModeratingUser.name || 'player'}`);
+      // Update local object
+      if (currentModAction === 'warning') {
+        currentModeratingUser.accountStatus = 'warned';
+        currentModeratingUser.warningCount = (currentModeratingUser.warningCount || 0) + 1;
+      } else if (currentModAction === 'restriction') {
+        currentModeratingUser.accountStatus = 'restricted';
+        currentModeratingUser.restricted = true;
+        currentModeratingUser.isRestricted = true;
+      } else if (currentModAction === 'temporary_block') {
+        currentModeratingUser.accountStatus = 'temporarily_blocked';
+        currentModeratingUser.banned = true;
+      } else if (currentModAction === 'permanent_block') {
+        currentModeratingUser.accountStatus = 'permanently_blocked';
+        currentModeratingUser.banned = true;
+      } else if (currentModAction === 'unblock') {
+        currentModeratingUser.accountStatus = 'active';
+        currentModeratingUser.banned = false;
+        currentModeratingUser.restricted = false;
+      }
 
-        // Update local object
-        Object.assign(currentModeratingUser, userUpdates);
-        
-        // Refresh Standing Tab
-        openAdminModerationModal(currentModeratingUid, currentModeratingReportId);
+      // Refresh Standing Tab & reports list
+      openAdminModerationModal(currentModeratingUid, currentModeratingReportId);
+      if (typeof loadProfileReportsList === 'function') loadProfileReportsList();
+      if (typeof loadUsersList === 'function') loadUsersList();
         switchModDossierTab('history');
 
       } catch (err) {
