@@ -1285,14 +1285,58 @@ onAuthStateChanged(auth, async (fireUser) => {
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
         
-        // Full Ban checker block
-        if (userProfile.banned && userProfile.banType === 'full') {
+        // Comprehensive Account Moderation & Ban Checker
+        const isPermBanned = (userProfile.banned && userProfile.banType === 'full') || userProfile.accountStatus === 'permanently_blocked';
+        if (isPermBanned) {
           const ruleInfo = userProfile.banRule ? `\nViolation Reference: ${userProfile.banRule}` : '';
-          alert(`❌ Account Banned!\n\nReason: ${userProfile.banReason || 'Rule Violations'}${ruleInfo}\n\nContact support@arenax.com if you feel this is unfair.`);
+          alert(`❌ Account Permanently Banned!\n\nReason: ${userProfile.banReason || 'Severe Rule Violations'}${ruleInfo}\n\nThis account has been permanently suspended by ArenaX Moderation.`);
           signOut(auth);
           userProfile = null;
           goTo('sLogin');
           return;
+        }
+
+        const isTempBanned = (userProfile.banned && userProfile.banType === 'temporary') || userProfile.accountStatus === 'temporarily_blocked';
+        if (isTempBanned) {
+          const banUntilVal = userProfile.blockedUntil || userProfile.banUntil;
+          const untilDate = banUntilVal ? (banUntilVal.toDate ? banUntilVal.toDate() : new Date(banUntilVal)) : null;
+          
+          if (untilDate && Date.now() < untilDate.getTime()) {
+            const timeStr = untilDate.toLocaleString();
+            alert(`⏳ Account Temporarily Blocked!\n\nAccess blocked until: ${timeStr}\nReason: ${userProfile.banReason || 'Policy Violation'}\n\nYour account will be restored once the block duration expires.`);
+            signOut(auth);
+            userProfile = null;
+            goTo('sLogin');
+            return;
+          } else if (untilDate && Date.now() >= untilDate.getTime()) {
+            // Temporary ban expired, automatically unban in database
+            updateDoc(doc(db, 'users', fireUser.uid), {
+              banned: false,
+              banType: 'none',
+              accountStatus: 'active',
+              blockedUntil: null,
+              banUntil: null
+            }).catch(console.warn);
+            userProfile.banned = false;
+            userProfile.accountStatus = 'active';
+          }
+        }
+
+        // Suspension / Restriction Check
+        if (userProfile.restricted || userProfile.accountStatus === 'restricted') {
+          if (userProfile.restrictedUntil) {
+            const untilDate = userProfile.restrictedUntil.toDate ? userProfile.restrictedUntil.toDate() : new Date(userProfile.restrictedUntil);
+            if (Date.now() >= untilDate.getTime()) {
+              // Restriction expired
+              updateDoc(doc(db, 'users', fireUser.uid), {
+                restricted: false,
+                accountStatus: 'active',
+                restrictedUntil: null
+              }).catch(console.warn);
+              userProfile.restricted = false;
+              userProfile.accountStatus = 'active';
+            }
+          }
         }
 
         boot();
