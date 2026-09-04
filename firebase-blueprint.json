@@ -1,238 +1,101 @@
 {
   "entities": {
-    "User": {
-      "title": "User Profile",
-      "description": "User profile in ArenaX",
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "ArenaX player profile and account information",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "handle": { "type": "string" },
-        "balance": { "type": "number" },
-        "premium": { "type": "boolean" }
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Display name" },
+        "handle": { "type": "string", "description": "Unique username handle" },
+        "email": { "type": "string", "description": "User email address" },
+        "av": { "type": "string", "description": "Avatar image URL" },
+        "balance": { "type": "number", "description": "AX Coin balance" },
+        "hasBlueTick": { "type": "boolean", "description": "Verified badge" },
+        "premium": { "type": "boolean", "description": "VIP premium account status" },
+        "createdAt": { "type": "string", "description": "Account registration timestamp" }
       },
-      "required": ["uid", "name"]
+      "required": ["uid", "name", "handle", "balance"]
     },
-    "SupportRequest": {
-      "title": "Support Request",
-      "description": "A live support escalation request waiting for an admin",
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Mobile gaming tournament fixture",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "status": { "type": "string", "enum": ["waiting", "connected", "ended"] },
-        "adminId": { "type": "string" },
-        "adminName": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "endedAt": { "type": "string", "format": "date-time" }
+        "name": { "type": "string", "description": "Tournament title" },
+        "game": { "type": "string", "description": "Game title (BGMI, Free Fire, etc)" },
+        "entryFee": { "type": "number", "description": "Fee in AX Coins" },
+        "prize": { "type": "string", "description": "Prize pool description" },
+        "maxPlayers": { "type": "number", "description": "Max slot count" },
+        "registered": { "type": "number", "description": "Registered player count" },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed"], "description": "Tournament status" }
       },
-      "required": ["userId", "userName", "status", "createdAt"]
+      "required": ["name", "game", "entryFee", "maxPlayers", "status"]
     },
-    "SupportRating": {
-      "title": "Support Rating",
-      "description": "Feedback rating given by a user after ending a live admin session",
+    "DepositRequest": {
+      "title": "DepositRequest",
+      "description": "Fiat deposit transaction verification request",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "adminId": { "type": "string" },
-        "rating": { "type": "number" },
-        "feedback": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "userId": { "type": "string", "description": "Depositor UID" },
+        "userName": { "type": "string", "description": "Depositor Name" },
+        "amountPKR": { "type": "number", "description": "PKR amount deposited" },
+        "coins": { "type": "number", "description": "Coins to credit" },
+        "method": { "type": "string", "description": "JazzCash or EasyPaisa" },
+        "txnId": { "type": "string", "description": "Payment Transaction ID" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Approval status" }
       },
-      "required": ["userId", "rating", "createdAt"]
+      "required": ["userId", "amountPKR", "coins", "method", "txnId", "status"]
     },
-    "Mail": {
-      "title": "Player Mail",
-      "description": "An inbox mail message or gifted badge sent from administrative staff to a player",
+    "ProfileReport": {
+      "title": "ProfileReport",
+      "description": "Player safety and moderation reports",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "body": { "type": "string" },
-        "giftBadgeId": { "type": "string" },
-        "collected": { "type": "boolean" },
-        "read": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "sender": { "type": "string" }
+        "reportedUid": { "type": "string", "description": "Reported user UID" },
+        "reportedName": { "type": "string", "description": "Reported user name" },
+        "reporterUid": { "type": "string", "description": "Reporting user UID" },
+        "category": { "type": "string", "description": "Reason category" },
+        "details": { "type": "string", "description": "Evidence / description" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "actioned"], "description": "Moderation status" }
       },
-      "required": ["title", "body", "read", "createdAt", "sender"]
+      "required": ["reportedUid", "reporterUid", "category", "status"]
     },
-    "VoiceRoom": {
-      "title": "Voice Room",
-      "description": "Active voice communication room",
+    "ModerationHistory": {
+      "title": "ModerationHistory",
+      "description": "Admin actions, punishments, and warnings history log",
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
-        "hostId": { "type": "string" },
-        "hostName": { "type": "string" },
-        "hostAvatar": { "type": "string" },
-        "game": { "type": "string" },
-        "type": { "type": "string", "enum": ["public", "private", "friends"] },
-        "password": { "type": "string" },
-        "region": { "type": "string" },
-        "language": { "type": "string" },
-        "maxPlayers": { "type": "number" },
-        "memberCount": { "type": "number" },
-        "locked": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "targetUid": { "type": "string", "description": "Target player UID" },
+        "actionType": { "type": "string", "description": "warning, restriction, temporary_block, permanent_ban, unblock" },
+        "reason": { "type": "string", "description": "Reason for moderation action" },
+        "adminUid": { "type": "string", "description": "Admin UID who executed action" },
+        "adminName": { "type": "string", "description": "Admin display name" },
+        "duration": { "type": "string", "description": "Duration if applicable" }
       },
-      "required": ["name", "hostId", "hostName", "game", "type", "maxPlayers", "createdAt"]
-    },
-    "VoiceRoomMember": {
-      "title": "Voice Room Member",
-      "description": "Active participant in a voice room",
-      "type": "object",
-      "properties": {
-        "uid": { "type": "string" },
-        "name": { "type": "string" },
-        "handle": { "type": "string" },
-        "avatar": { "type": "string" },
-        "muted": { "type": "boolean" },
-        "deafened": { "type": "boolean" },
-        "speaking": { "type": "boolean" },
-        "handRaised": { "type": "boolean" },
-        "micStatus": { "type": "boolean" },
-        "joinedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["uid", "name", "handle", "avatar", "muted", "deafened", "joinedAt"]
-    },
-    "VoiceRoomChat": {
-      "title": "Voice Room Chat Message",
-      "description": "Message sent in a voice room text channel",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "userAvatar": { "type": "string" },
-        "message": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "userName", "message", "createdAt"]
-    },
-    "VoiceRoomSignal": {
-      "title": "Voice Room WebRTC Signal",
-      "description": "WebRTC SDP offer/answer or ICE candidate",
-      "type": "object",
-      "properties": {
-        "fromId": { "type": "string" },
-        "toId": { "type": "string" },
-        "type": { "type": "string", "enum": ["offer", "answer", "candidate"] },
-        "payload": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["fromId", "toId", "type", "payload", "createdAt"]
-    },
-    "VoiceRoomInvitation": {
-      "title": "Voice Room Invitation",
-      "description": "Invitation sent to a player to join a voice room",
-      "type": "object",
-      "properties": {
-        "roomId": { "type": "string" },
-        "roomName": { "type": "string" },
-        "hostName": { "type": "string" },
-        "invitedBy": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["roomId", "roomName", "invitedBy", "createdAt"]
-    },
-    "VideoSubmission": {
-      "title": "Video Submission",
-      "description": "Promo video submission by a player",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "username": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "platform": { "type": "string" },
-        "videoLink": { "type": "string" },
-        "status": { "type": "string" },
-        "submittedAt": { "type": "string", "format": "date-time" },
-        "reward": { "type": "string" },
-        "reviewedAt": { "type": "string", "format": "date-time" },
-        "rejectReason": { "type": "string" }
-      },
-      "required": ["userId", "platform", "videoLink", "status"]
-    },
-    "Moment": {
-      "title": "Community Moment",
-      "description": "Short video or image highlight shared by a player",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "userAv": { "type": "string" },
-        "mediaUrl": { "type": "string" },
-        "mediaType": { "type": "string", "enum": ["image", "video"] },
-        "caption": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "likes": { "type": "array", "items": { "type": "string" } },
-        "likeCount": { "type": "number" }
-      },
-      "required": ["userId", "userName", "mediaUrl", "mediaType"]
-    },
-    "MomentPremiumReaction": {
-      "title": "Moment Premium Reaction",
-      "description": "Animated GIF reaction by a Premium player on a Moment",
-      "type": "object",
-      "properties": {
-        "momentId": { "type": "string" },
-        "userId": { "type": "string" },
-        "username": { "type": "string" },
-        "profilePhoto": { "type": "string" },
-        "reactionType": { "type": "string", "enum": ["cat", "teasing"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["momentId", "userId", "username", "reactionType"]
+      "required": ["targetUid", "actionType", "reason", "adminUid"]
     }
   },
   "firestore": {
-    "/moments/{momentId}": {
-      "schema": "Moment",
-      "description": "Community moments feed entries"
-    },
-    "/moments/{momentId}/premiumReactions/{userId}": {
-      "schema": "MomentPremiumReaction",
-      "description": "Premium reactions associated with a specific moment"
-    },
-    "/video_submissions/{docId}": {
-      "schema": "VideoSubmission",
-      "description": "Promo video submissions submitted by players for reviews"
-    },
     "/users/{userId}": {
-      "schema": "User",
-      "description": "User profile documents"
+      "schema": "UserProfile",
+      "description": "User profiles collection"
     },
-    "/users/{userId}/mails/{mailId}": {
-      "schema": "Mail",
-      "description": "Sub-collection of emails and badge gifts assigned to a user"
+    "/tournaments/{tourId}": {
+      "schema": "Tournament",
+      "description": "Tournaments catalog"
     },
-    "/users/{userId}/invitations/{invitationId}": {
-      "schema": "VoiceRoomInvitation",
-      "description": "Voice room invitations received by this user"
+    "/deposit_requests/{reqId}": {
+      "schema": "DepositRequest",
+      "description": "Deposit requests submitted by players"
     },
-    "/support_requests/{requestId}": {
-      "schema": "SupportRequest",
-      "description": "Admin live support queue requests"
+    "/profile_reports/{reportId}": {
+      "schema": "ProfileReport",
+      "description": "Moderation profile reports"
     },
-    "/support_ratings/{ratingId}": {
-      "schema": "SupportRating",
-      "description": "Feedback and support session ratings"
-    },
-    "/voice_rooms/{roomId}": {
-      "schema": "VoiceRoom",
-      "description": "Esports voice room entries"
-    },
-    "/voice_rooms/{roomId}/members/{memberId}": {
-      "schema": "VoiceRoomMember",
-      "description": "Members connected to a specific voice room"
-    },
-    "/voice_rooms/{roomId}/chats/{chatId}": {
-      "schema": "VoiceRoomChat",
-      "description": "Room-specific chat messages"
-    },
-    "/voice_rooms/{roomId}/signaling/{signalId}": {
-      "schema": "VoiceRoomSignal",
-      "description": "WebRTC signaling messages for establishing meshes"
+    "/moderation_history/{historyId}": {
+      "schema": "ModerationHistory",
+      "description": "Moderation punishment actions log"
     }
   }
 }
