@@ -4810,7 +4810,7 @@ if (typeof tailwind !== 'undefined') {
     </div>
 
     <!-- Message send bar (Image 1 Style Full Width Input Bar) -->
-    <div class="w-full px-4 py-3 bg-white border-t border-gray-200/90 flex items-center gap-3 shadow-md shrink-0">
+    <div id="dmInputBar" class="w-full px-4 py-3 bg-white border-t border-gray-200/90 flex items-center gap-3 shadow-md shrink-0">
       <div class="w-1 h-6 bg-emerald-500 rounded-full shrink-0"></div>
       <input id="dmInp" type="text" placeholder="Type direct message..." class="flex-1 bg-[#f0f2f5] text-gray-900 text-xs rounded-full px-4 py-2.5 outline-none border border-transparent focus:border-sky-400 font-medium transition placeholder-gray-400"/>
       <div class="flex items-center gap-2.5 shrink-0 text-gray-500">
@@ -4824,6 +4824,12 @@ if (typeof tailwind !== 'undefined') {
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
+    </div>
+
+    <!-- Official Moderator Read-Only Notice Channel Banner -->
+    <div id="dmModeratorChannelBanner" class="w-full px-4 py-3.5 bg-slate-900 border-t border-blue-500/40 hidden flex items-center justify-center gap-2 text-xs text-blue-200 shadow-md shrink-0 font-medium">
+      <i class="fas fa-lock text-blue-400 text-sm"></i>
+      <span>Official ArenaX moderation channel. Replies are disabled.</span>
     </div>
   </div>
 </div>
