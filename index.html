@@ -4570,9 +4570,9 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- ==================== AX SECURITY (DISCORD & ACCOUNT SAFETY) MODAL ==================== -->
+<!-- ==================== AX SECURITY (ACCOUNT STANDING & SAFETY) MODAL ==================== -->
 <div id="mAxSecurityModal" class="fixed inset-0 bg-[#0c0d12]/95 backdrop-filter backdrop-blur-md z-[260] overflow-y-auto hidden animate-fade-in">
-  <div class="max-w-md w-full mx-auto min-h-screen p-4 space-y-5 pb-24 flex flex-col justify-between">
+  <div class="max-w-lg w-full mx-auto min-h-screen p-4 sm:p-5 space-y-5 pb-24 flex flex-col justify-between">
     <div class="space-y-5">
       
       <!-- Top Navigation Header -->
@@ -4581,28 +4581,201 @@ if (typeof tailwind !== 'undefined') {
           <button id="bCloseAxSecurityCross" class="w-9 h-9 rounded-full bg-card border border-bdr/80 flex items-center justify-center text-white hover:text-indigo-400 hover:bg-slate-800 transition cursor-pointer active:scale-95 shadow-sm">
             <i class="fas fa-chevron-left text-sm"></i>
           </button>
-          <span class="font-display text-lg font-bold text-white">AX Security Hub</span>
+          <div>
+            <span class="font-display text-lg font-bold text-white block leading-tight">AX Security</span>
+            <span class="text-[10px] text-t3 font-mono">Standing & Account Safety Hub</span>
+          </div>
         </div>
-        <button id="bCloseAxSecurity" class="text-xs text-t3 hover:text-indigo-400 font-medium px-2 py-1 rounded-lg transition cursor-pointer">
+        <button id="bCloseAxSecurity" class="text-xs text-t3 hover:text-indigo-400 font-medium px-2.5 py-1 rounded-lg transition cursor-pointer bg-slate-800/40 hover:bg-slate-800">
           Done
         </button>
       </div>
 
-      <!-- Header Banner -->
-      <div class="p-4 bg-gradient-to-br from-indigo-950/40 via-card to-card border border-indigo-500/30 rounded-2xl relative overflow-hidden shadow-lg space-y-2">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl flex-shrink-0">
-            <i class="fab fa-discord"></i>
+      <!-- ── SECTION 1: 3-STAGE ACCOUNT STANDING CARD (REFERENCE DESIGN) ── -->
+      <div id="axStandingOverviewCard" class="bg-[#151722] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 relative overflow-hidden">
+        <!-- Top Info Row -->
+        <div class="flex items-center gap-3.5 sm:gap-4">
+          <!-- Avatar Circle with dynamic ring -->
+          <div class="relative flex-shrink-0">
+            <img id="axStandingUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=u" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-500 bg-slate-900 shadow-md ring-4 ring-emerald-500/20" alt="Avatar" />
+            <div id="axStandingStatusBadgeDot" class="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#151722] flex items-center justify-center text-[8px] text-white">
+              <i class="fas fa-check"></i>
+            </div>
           </div>
-          <div>
-            <h3 class="font-display text-base font-bold text-white">Discord Identity Link</h3>
-            <p class="text-[11px] text-t2">Verify your player identity for tournaments and badges</p>
+          
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">
+              Your account is <span id="axStandingLevelLabel" class="text-emerald-400 font-extrabold capitalize">all good</span>
+            </h3>
+            <p id="axStandingContextMessage" class="text-xs text-slate-300 leading-relaxed mt-1">
+              Thank you for upholding ArenaX's Terms of Service and Community Guidelines. If you have a violation, it will appear here.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3-Stage Standing Horizontal Stepper Track -->
+        <div class="pt-2 pb-1">
+          <div class="relative flex items-center justify-between">
+            <!-- Background connecting line -->
+            <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-800 rounded-full z-0"></div>
+            <!-- Active progress line -->
+            <div id="axStandingProgressLine" class="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" style="width: 0%;"></div>
+
+            <!-- Stage 1: ALL GOOD -->
+            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('ALL_GOOD')">
+              <div id="axStageNode-1" class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-emerald-950/60 ring-4 ring-emerald-500/20 transition-all">
+                <i class="fas fa-check"></i>
+              </div>
+              <span id="axStageLabel-1" class="text-[11px] font-bold text-emerald-400 mt-2 whitespace-nowrap">All good!</span>
+            </div>
+
+            <!-- Stage 2: LIMITED -->
+            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('LIMITED')">
+              <div id="axStageNode-2" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
+                <i class="fas fa-exclamation text-[10px]"></i>
+              </div>
+              <span id="axStageLabel-2" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">Limited</span>
+            </div>
+
+            <!-- Stage 3: AT RISK -->
+            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('AT_RISK')">
+              <div id="axStageNode-3" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
+                <i class="fas fa-triangle-exclamation text-[10px]"></i>
+              </div>
+              <span id="axStageLabel-3" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">At risk</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Main Reusable Discord Status Component in AX Security -->
-      <div class="space-y-2">
+      <!-- ── SECTION 2: WHY IS MY ACCOUNT AT THIS LEVEL? ── -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
+            <i class="fas fa-shield-halved text-indigo-400"></i>
+            <span>Why is my account at this level?</span>
+          </div>
+          <span id="axStandingScoreBadge" class="text-[10px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">Score: 95/100</span>
+        </div>
+
+        <div class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
+          <p id="axStandingFactorSummary" class="text-xs text-slate-300 leading-relaxed">
+            Your standing is evaluated automatically from verified moderation records, security signals, and player fair-play integrity.
+          </p>
+
+          <!-- Factors List -->
+          <div class="grid grid-cols-1 gap-2.5">
+            <!-- Factor 1: Disciplinary Records & Warnings -->
+            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+              <div id="axFactorIconDisciplinary" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                <i class="fas fa-gavel"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-white">Disciplinary Actions & Warnings</span>
+                  <span id="axFactorValDisciplinary" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">0 Active Warnings</span>
+                </div>
+                <p id="axFactorDescDisciplinary" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                  No active warnings or disciplinary restrictions on record.
+                </p>
+              </div>
+            </div>
+
+            <!-- Factor 2: Community Reports & Evidence Verification -->
+            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+              <div id="axFactorIconReports" class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                <i class="fas fa-flag-checkered"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-white">Reports & Evidence Credibility</span>
+                  <span id="axFactorValReports" class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded">Evidence Protected</span>
+                </div>
+                <p id="axFactorDescReports" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                  Reports are verified for evidence before any action is taken. Unsubstantiated claims never lower your standing.
+                </p>
+              </div>
+            </div>
+
+            <!-- Factor 3: Security & Verification Health -->
+            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+              <div id="axFactorIconSecurity" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                <i class="fas fa-lock"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-white">Identity & Verification Health</span>
+                  <span id="axFactorValSecurity" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">Protected</span>
+                </div>
+                <p id="axFactorDescSecurity" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                  Discord identity and email authentication status strengthen your account trust resilience.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transparent Progression Rules Accordion -->
+          <div class="pt-2 border-t border-white/5">
+            <button onclick="window.toggleAxProgressionRules()" class="w-full text-left flex items-center justify-between text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
+              <span class="flex items-center gap-1.5"><i class="fas fa-scale-balanced"></i> How Automatic Progression Works</span>
+              <i id="axProgressionRulesIcon" class="fas fa-chevron-down text-[10px] transition-transform"></i>
+            </button>
+            <div id="axProgressionRulesWrap" class="mt-2.5 p-3 bg-[#0d101c] rounded-xl border border-white/5 space-y-2 text-[11px] text-slate-300 leading-relaxed hidden">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span><strong class="text-white">🟢 ALL GOOD (80–100 pts):</strong> Zero active warnings. Full access to tournaments, instant rewards, and verified matchmaking.</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+                <span><strong class="text-white">🟡 LIMITED (45–79 pts):</strong> Triggered by 1 active warning or temporary restriction. 14 days of sustained dispute-free play automatically restores ALL GOOD.</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+                <span><strong class="text-white">🔴 AT RISK (&lt;45 pts):</strong> Triggered by multiple warnings or serious disciplinary infraction. 30-day compliance period and clean behavior required to recover to LIMITED, then ALL GOOD.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: HOW CAN I IMPROVE? (AI-POWERED RECOMMENDATIONS) ── -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
+            <i class="fas fa-wand-magic-sparkles text-amber-400"></i>
+            <span>How can I improve?</span>
+          </div>
+          <button id="btnRefreshAxAiRecs" onclick="window.accountStanding?.fetchAiStandingRecommendations(true)" class="text-[10px] font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 px-2.5 py-1 rounded-lg transition flex items-center gap-1.5 cursor-pointer">
+            <i id="iconRefreshAi" class="fas fa-arrows-rotate"></i>
+            <span>Refresh AI</span>
+          </button>
+        </div>
+
+        <div class="bg-gradient-to-br from-indigo-950/30 via-card to-card border border-indigo-500/25 rounded-2xl p-4 shadow-md space-y-3">
+          <!-- AI Badge & Recovery Timeline Banner -->
+          <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                <i class="fas fa-brain"></i> AI Guardian Analysis
+              </span>
+              <span id="axAiSourceBadge" class="text-[9px] text-slate-400 font-mono">Live</span>
+            </div>
+            <span id="axAiRecoveryTimeline" class="text-[10px] text-amber-300/90 font-bold truncate">Calculating...</span>
+          </div>
+
+          <!-- Dynamic AI Recommendations Container -->
+          <div id="axAiRecsContainer" class="space-y-2.5">
+            <!-- Populated dynamically via fetchAiStandingRecommendations() -->
+            <div class="p-4 text-center text-slate-400 text-xs space-y-2">
+              <i class="fas fa-circle-notch animate-spin text-indigo-400 text-base"></i>
+              <p>Analyzing security, moderation, and activity signals...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: DISCORD IDENTITY & INTEGRATION WIDGET (RETAINED) ── -->
+      <div class="space-y-2 pt-1 border-t border-bdr/40">
         <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Discord Integration Status</div>
         <div id="discordSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-4">
           <!-- Injected dynamically via renderDiscordAuthWidget() -->
@@ -5390,7 +5563,7 @@ if (typeof tailwind !== 'undefined') {
         <!-- Confirmation Note (Matching Reference Image 2) -->
         <div class="mt-auto pt-8 px-2">
           <p class="text-xs text-slate-400 text-center leading-relaxed">
-            By submitting this report you confirm that it is truthful and made in good faith. Please follow our <span id="btnSummaryOpenGuidelines" class="text-sky-400 hover:underline cursor-pointer font-semibold">Community Guidelines</span> and do not submit false or duplicate reports. You will be notified if your report is reviewed and accepted for further action.
+            By submitting this report you confirm that it is truthful and made in good faith. Please follow our <span id="btnSummaryOpenGuidelines" class="text-sky-400 hover:underline cursor-pointer font-semibold">Community Guidelines</span> and do not submit false or duplicate reports.
           </p>
         </div>
       </div>
@@ -6230,6 +6403,7 @@ if (typeof tailwind !== 'undefined') {
   <script type="module" src="./js/teams.js"></script>
   <script type="module" src="./js/voiceroom.js"></script>
   <script type="module" src="./js/moments.js"></script>
+  <script src="./js/account-standing.js"></script>
   <script type="module" src="./js/main.js"></script>
 
 <!-- PWA Update Modal Overlay -->
