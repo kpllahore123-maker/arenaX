@@ -142,7 +142,247 @@ CRITICAL INSTRUCTIONS:
     }
   });
 
-  // Discord Bot APIs
+  // AI Account Standing Recommendations Endpoint
+  app.post("/api/account-standing/recommendations", async (req, res) => {
+    try {
+      const { standing, score, factors, userName } = req.body || {};
+      const currentStanding = standing || "ALL_GOOD";
+      const userScore = typeof score === 'number' ? score : (currentStanding === 'ALL_GOOD' ? 95 : currentStanding === 'LIMITED' ? 65 : 35);
+      const f = factors || {};
+      const warningsCount = f.activeWarnings || 0;
+      const isBanned = Boolean(f.isBanned);
+      const isRestricted = Boolean(f.isRestricted);
+      const isDiscordLinked = Boolean(f.discordVerified);
+      const isEmailVerified = Boolean(f.emailVerified !== false);
+      const rawReports = f.rawReportsCount || 0;
+      const verifiedReports = f.verifiedReportsCount || 0;
+      const cleanDays = f.cleanBehaviorDays || 14;
+
+      // Fallback personalized generator
+      const generatePersonalizedFallback = () => {
+        const recs: any[] = [];
+        let summary = "";
+        let recoveryTimeline = "";
+
+        if (currentStanding === "AT_RISK") {
+          summary = `Your account is currently AT RISK due to ${
+            isBanned ? "an active disciplinary suspension" :
+            warningsCount >= 2 ? `${warningsCount} active verified warnings` :
+            isRestricted ? "an active gameplay restriction" : "critical safety infractions"
+          }.`;
+          recoveryTimeline = "30-day compliance period required. Complete clean participation to automatically recover to LIMITED standing.";
+
+          if (warningsCount > 0) {
+            recs.push({
+              id: "rec-warning-cooldown",
+              title: "Active Disciplinary Cooldown",
+              category: "moderation",
+              severity: "high",
+              description: `You have ${warningsCount} active warning(s). Maintain 100% clean gameplay and zero chat infractions for 30 days to clear warnings and progress your standing to LIMITED.`,
+              actionLabel: "Review Guidelines",
+              actionTarget: "view_guidelines",
+              impact: "Progresses Standing to LIMITED"
+            });
+          }
+
+          if (isRestricted) {
+            recs.push({
+              id: "rec-restriction-appeal",
+              title: "Submit Disciplinary Appeal",
+              category: "moderation",
+              severity: "high",
+              description: "If you believe the restriction was applied in error or have mitigating evidence, submit an official dispute to the ArenaX Senior Moderation Council.",
+              actionLabel: "Contact Support",
+              actionTarget: "support_appeal",
+              impact: "Formal Case Review"
+            });
+          }
+
+          if (!isDiscordLinked) {
+            recs.push({
+              id: "rec-identity-link",
+              title: "Link Verified Discord Identity",
+              category: "verification",
+              severity: "medium",
+              description: "Link an authentic Discord account to verify player identity and demonstrate good-faith accountability to moderators.",
+              actionLabel: "Link Discord",
+              actionTarget: "link_discord",
+              impact: "+15 Resilience Points"
+            });
+          }
+        } else if (currentStanding === "LIMITED") {
+          summary = `Your account standing is LIMITED due to ${
+            warningsCount === 1 ? "1 active warning under review" :
+            isRestricted ? "temporary feature restriction" :
+            !isDiscordLinked ? "uncompleted identity verification" : "minor standing penalty"
+          }.`;
+          recoveryTimeline = "14 days of sustained dispute-free gameplay will automatically restore your ALL GOOD standing.";
+
+          if (warningsCount > 0) {
+            recs.push({
+              id: "rec-warning-clear",
+              title: "Complete 14-Day Clean Play",
+              category: "moderation",
+              severity: "medium",
+              description: "Avoid in-game disputes, unsportsmanlike behavior, or chat flags for 14 days. The system will automatically clear this warning upon completion.",
+              actionLabel: "View Fair Play Rules",
+              actionTarget: "view_guidelines",
+              impact: "Restores ALL GOOD Standing"
+            });
+          }
+
+          if (!isDiscordLinked) {
+            recs.push({
+              id: "rec-discord-link",
+              title: "Link Discord for Level-2 Trust",
+              category: "verification",
+              severity: "medium",
+              description: "Linking Discord verifies your player ID, unlocks official tournament registrations, and immediately restores +15 standing points.",
+              actionLabel: "Link Discord",
+              actionTarget: "link_discord",
+              impact: "+15 Score Points"
+            });
+          }
+
+          if (rawReports > 0) {
+            recs.push({
+              id: "rec-reports-eval",
+              title: "Credibility Evaluation Protected",
+              category: "fairplay",
+              severity: "low",
+              description: `${rawReports} unverified report(s) logged. Note that raw reports do NOT lower your standing without verified evidence. Keep submitting clean match logs.`,
+              actionLabel: "Match History",
+              actionTarget: "tournaments",
+              impact: "Protects Trust Rating"
+            });
+          }
+        } else {
+          // ALL GOOD
+          summary = "Your account is in excellent standing with zero active warnings and verified fair-play status.";
+          recoveryTimeline = "Standing is optimal (Score: " + userScore + "/100). Maintain regular activity to keep top-tier standing.";
+
+          if (!isDiscordLinked) {
+            recs.push({
+              id: "rec-boost-discord",
+              title: "Verify Discord Identity",
+              category: "security",
+              severity: "low",
+              description: "Complete your Discord link to solidify maximum account trust and qualify for official prize pool withdrawals.",
+              actionLabel: "Link Discord",
+              actionTarget: "link_discord",
+              impact: "+15 Security Points"
+            });
+          }
+
+          recs.push({
+            id: "rec-maintain-tourneys",
+            title: "Maintain Clean Match Streak",
+            category: "fairplay",
+            severity: "positive",
+            description: `You have maintained ${cleanDays} consecutive days of dispute-free matchmaking. Keep up positive sportsmanship in tournament lobbies.`,
+            actionLabel: "Explore Tournaments",
+            actionTarget: "tournaments",
+            impact: "Maximum Reputation"
+          });
+
+          recs.push({
+            id: "rec-security-hygiene",
+            title: "Security & Session Hygiene",
+            category: "security",
+            severity: "positive",
+            description: "Your authentication tokens and email credentials are up to date. No suspicious unauthorized sign-ins detected.",
+            actionLabel: "Check Security",
+            actionTarget: "view_guidelines",
+            impact: "Full Protection"
+          });
+        }
+
+        return {
+          standing: currentStanding,
+          score: userScore,
+          summary,
+          recoveryTimeline,
+          recommendations: recs,
+          source: "rules_engine"
+        };
+      };
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.json(generatePersonalizedFallback());
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { "User-Agent": "aistudio-build" } } });
+        const prompt = `Player Account Information:
+- User: ${userName || "Player"}
+- Current Standing: ${currentStanding} (Score: ${userScore}/100)
+- Active Warnings: ${warningsCount}
+- Active Restriction: ${isRestricted}
+- Disciplinary Suspension/Ban: ${isBanned}
+- Discord Verification: ${isDiscordLinked ? "Linked & Verified" : "Unlinked"}
+- Email Verification: ${isEmailVerified ? "Verified" : "Unverified"}
+- Raw Reports Logged: ${rawReports} (Note: ArenaX rules state unverified reports never directly penalize a player without substantiated evidence)
+- Verified Violations: ${verifiedReports}
+- Clean Behavior Streak: ${cleanDays} days
+
+Generate personalized real-time advice strictly as a JSON object matching this schema:
+{
+  "summary": "1-2 sentences explaining why the account is at its current standing based on these actual signals.",
+  "recoveryTimeline": "Clear explanation of how they can progress or maintain standing (e.g. 14 days clean play restores ALL GOOD)",
+  "recommendations": [
+    {
+      "id": "rec-1",
+      "title": "Action title",
+      "category": "security" | "moderation" | "fairplay" | "verification",
+      "severity": "high" | "medium" | "low" | "positive",
+      "description": "Specific non-generic guidance explaining the exact factor and how to resolve or improve it.",
+      "actionLabel": "Button text",
+      "actionTarget": "link_discord" | "view_guidelines" | "tournaments" | "support_appeal",
+      "impact": "Concrete positive impact (e.g. '+15 Security Points' or 'Restores ALL GOOD standing')"
+    }
+  ]
+}`;
+
+        const aiResponse = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          config: {
+            systemInstruction: "You are the ArenaX AI Security and Account Standing Advisor. Output ONLY valid, parseable JSON with no code fences, no extra text. Strictly adhere to ArenaX rules: never punish purely for raw reports without evidence, give transparent progression paths (AT RISK -> LIMITED -> ALL GOOD), and tailor all advice directly to the player's provided signals.",
+            temperature: 0.3
+          }
+        });
+
+        const rawText = aiResponse.text?.trim() || "";
+        let parsed = null;
+        try {
+          const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+          parsed = JSON.parse(cleaned);
+        } catch (pe) {
+          console.warn("Could not parse Gemini JSON response, using fallback:", pe);
+        }
+
+        if (parsed && Array.isArray(parsed.recommendations) && parsed.recommendations.length > 0) {
+          return res.json({
+            standing: currentStanding,
+            score: userScore,
+            summary: parsed.summary || "",
+            recoveryTimeline: parsed.recoveryTimeline || "",
+            recommendations: parsed.recommendations,
+            source: "gemini_ai"
+          });
+        }
+      } catch (geminiErr: any) {
+        console.warn("Gemini standing advice error, falling back to personalized rules:", geminiErr.message);
+      }
+
+      return res.json(generatePersonalizedFallback());
+    } catch (err: any) {
+      console.error("Account Standing Error:", err);
+      res.status(500).json({ error: err.message || "Failed to process standing" });
+    }
+  });
+
   app.get("/api/discord-bot/status", (req, res) => {
     res.json({ stats: botStats, config: getBotConfig() });
   });
