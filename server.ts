@@ -129,7 +129,7 @@ CRITICAL INSTRUCTIONS:
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.8-flash",
         contents,
         config: { systemInstruction: sysInstruction, temperature: 0.7 }
       });
@@ -145,18 +145,22 @@ CRITICAL INSTRUCTIONS:
   // AI Account Standing Recommendations Endpoint
   app.post("/api/account-standing/recommendations", async (req, res) => {
     try {
-      const { standing, score, factors, userName } = req.body || {};
-      const currentStanding = standing || "ALL_GOOD";
-      const userScore = typeof score === 'number' ? score : (currentStanding === 'ALL_GOOD' ? 95 : currentStanding === 'LIMITED' ? 65 : 35);
+      const { standing, standingLevel, score, standingScore, factors, userName, violations } = req.body || {};
+      const currentStanding = standing || standingLevel || (factors && factors.standing) || "ALL_GOOD";
+      const rawScore = typeof score === 'number' ? score : typeof standingScore === 'number' ? standingScore : null;
+      const userScore = rawScore !== null ? rawScore : (currentStanding === 'ALL_GOOD' ? 95 : currentStanding === 'LIMITED' ? 65 : 35);
       const f = factors || {};
-      const warningsCount = f.activeWarnings || 0;
+      const warningsCount = Number(f.activeWarnings) || 0;
       const isBanned = Boolean(f.isBanned);
       const isRestricted = Boolean(f.isRestricted);
       const isDiscordLinked = Boolean(f.discordVerified);
       const isEmailVerified = Boolean(f.emailVerified !== false);
-      const rawReports = f.rawReportsCount || 0;
-      const verifiedReports = f.verifiedReportsCount || 0;
-      const cleanDays = f.cleanBehaviorDays || 14;
+      const rawReports = Number(f.rawReportsCount) || 0;
+      const verifiedReports = Number(f.verifiedReportsCount) || 0;
+      const cleanDays = Number(f.cleanBehaviorDays || f.cleanStreakDays) || (currentStanding === 'ALL_GOOD' ? 30 : 14);
+      const violationsList: any[] = Array.isArray(violations) ? violations : Array.isArray(f.violations) ? f.violations : [];
+      const primaryViolation = violationsList[0] || null;
+      const violationReasonText = primaryViolation?.reason ? ` "${primaryViolation.reason}"` : '';
 
       // Fallback personalized generator
       const generatePersonalizedFallback = () => {
@@ -165,12 +169,13 @@ CRITICAL INSTRUCTIONS:
         let recoveryTimeline = "";
 
         if (currentStanding === "AT_RISK") {
-          summary = `Your account is currently AT RISK due to ${
-            isBanned ? "an active disciplinary suspension" :
-            warningsCount >= 2 ? `${warningsCount} active verified warnings` :
-            isRestricted ? "an active gameplay restriction" : "critical safety infractions"
-          }.`;
-          recoveryTimeline = "30-day compliance period required. Complete clean participation to automatically recover to LIMITED standing.";
+          summary = isBanned
+            ? `Your account is AT RISK due to an active disciplinary suspension${violationReasonText}. Immediate compliance is required.`
+            : warningsCount >= 2
+            ? `Your account is AT RISK due to ${warningsCount} active warnings${violationReasonText}. A 30-day compliance period is required.`
+            : `Your account is AT RISK due to active disciplinary sanctions${violationReasonText}.`;
+          
+          recoveryTimeline = "30-day compliance period required. Zero match or chat infractions will automatically progress your standing to LIMITED.";
 
           if (warningsCount > 0) {
             recs.push({
@@ -178,7 +183,7 @@ CRITICAL INSTRUCTIONS:
               title: "Active Disciplinary Cooldown",
               category: "moderation",
               severity: "high",
-              description: `You have ${warningsCount} active warning(s). Maintain 100% clean gameplay and zero chat infractions for 30 days to clear warnings and progress your standing to LIMITED.`,
+              description: `You have ${warningsCount} active warning(s)${violationReasonText}. Maintain 100% clean gameplay and zero chat infractions for 30 days to clear warnings and progress your standing to LIMITED.`,
               actionLabel: "Review Guidelines",
               actionTarget: "view_guidelines",
               impact: "Progresses Standing to LIMITED"
@@ -188,10 +193,10 @@ CRITICAL INSTRUCTIONS:
           if (isRestricted) {
             recs.push({
               id: "rec-restriction-appeal",
-              title: "Submit Disciplinary Appeal",
+              title: "Disciplinary Review & Appeal",
               category: "moderation",
               severity: "high",
-              description: "If you believe the restriction was applied in error or have mitigating evidence, submit an official dispute to the ArenaX Senior Moderation Council.",
+              description: `Your account is restricted${violationReasonText}. If you believe this was applied in error or have mitigating evidence, submit an official dispute to the ArenaX Moderation Council.`,
               actionLabel: "Contact Support",
               actionTarget: "support_appeal",
               impact: "Formal Case Review"
@@ -211,11 +216,14 @@ CRITICAL INSTRUCTIONS:
             });
           }
         } else if (currentStanding === "LIMITED") {
-          summary = `Your account standing is LIMITED due to ${
-            warningsCount === 1 ? "1 active warning under review" :
-            isRestricted ? "temporary feature restriction" :
-            !isDiscordLinked ? "uncompleted identity verification" : "minor standing penalty"
-          }.`;
+          summary = warningsCount === 1
+            ? `Your account standing is LIMITED due to 1 active warning${violationReasonText}. 14 days of clean play will restore ALL GOOD.`
+            : isRestricted
+            ? `Your account standing is LIMITED due to temporary feature restrictions${violationReasonText}.`
+            : !isDiscordLinked
+            ? "Your account standing is LIMITED due to uncompleted identity verification."
+            : "Your account standing is LIMITED due to a minor standing penalty.";
+
           recoveryTimeline = "14 days of sustained dispute-free gameplay will automatically restore your ALL GOOD standing.";
 
           if (warningsCount > 0) {
@@ -224,10 +232,23 @@ CRITICAL INSTRUCTIONS:
               title: "Complete 14-Day Clean Play",
               category: "moderation",
               severity: "medium",
-              description: "Avoid in-game disputes, unsportsmanlike behavior, or chat flags for 14 days. The system will automatically clear this warning upon completion.",
+              description: `Active warning recorded${violationReasonText}. Avoid in-game disputes, unsportsmanlike behavior, or chat flags for 14 days. The system will automatically clear this warning upon completion.`,
               actionLabel: "View Fair Play Rules",
               actionTarget: "view_guidelines",
               impact: "Restores ALL GOOD Standing"
+            });
+          }
+
+          if (isRestricted) {
+            recs.push({
+              id: "rec-restriction-clear",
+              title: "Temporary Restriction Cooldown",
+              category: "moderation",
+              severity: "medium",
+              description: `Account restriction active${violationReasonText}. Complete your assigned restriction duration with fair play.`,
+              actionLabel: "View Guidelines",
+              actionTarget: "view_guidelines",
+              impact: "Restores Unrestricted Access"
             });
           }
 
@@ -259,7 +280,7 @@ CRITICAL INSTRUCTIONS:
         } else {
           // ALL GOOD
           summary = "Your account is in excellent standing with zero active warnings and verified fair-play status.";
-          recoveryTimeline = "Standing is optimal (Score: " + userScore + "/100). Maintain regular activity to keep top-tier standing.";
+          recoveryTimeline = `Standing is optimal (Score: ${userScore}/100). Maintain regular activity to keep top-tier standing.`;
 
           if (!isDiscordLinked) {
             recs.push({
@@ -314,12 +335,16 @@ CRITICAL INSTRUCTIONS:
 
       try {
         const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { "User-Agent": "aistudio-build" } } });
+        const violationDetails = violationsList.map(v => `- ${v.status || 'Violation'}: ${v.reason || 'Unspecified'} (${v.action || 'Disciplinary Action'}${v.expiry ? `, Expiry: ${v.expiry}` : ''})`).join('\n');
+        
         const prompt = `Player Account Information:
 - User: ${userName || "Player"}
 - Current Standing: ${currentStanding} (Score: ${userScore}/100)
 - Active Warnings: ${warningsCount}
 - Active Restriction: ${isRestricted}
 - Disciplinary Suspension/Ban: ${isBanned}
+- Active Violations On Record:
+${violationDetails || "None (Clean record)"}
 - Discord Verification: ${isDiscordLinked ? "Linked & Verified" : "Unlinked"}
 - Email Verification: ${isEmailVerified ? "Verified" : "Unverified"}
 - Raw Reports Logged: ${rawReports} (Note: ArenaX rules state unverified reports never directly penalize a player without substantiated evidence)
@@ -345,11 +370,11 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 }`;
 
         const aiResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           config: {
-            systemInstruction: "You are the ArenaX AI Security and Account Standing Advisor. Output ONLY valid, parseable JSON with no code fences, no extra text. Strictly adhere to ArenaX rules: never punish purely for raw reports without evidence, give transparent progression paths (AT RISK -> LIMITED -> ALL GOOD), and tailor all advice directly to the player's provided signals.",
-            temperature: 0.3
+            systemInstruction: "You are the ArenaX AI Security and Account Standing Advisor. Output ONLY valid, parseable JSON with no markdown code fences, no extra text. Strictly adhere to ArenaX rules: never punish purely for raw reports without evidence, give transparent progression paths (AT RISK -> LIMITED -> ALL GOOD), and tailor all advice directly to the player's provided signals.",
+            responseMimeType: "application/json"
           }
         });
 
