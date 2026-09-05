@@ -6762,11 +6762,18 @@ window.updateDiscordSecurityUI = function() {
     const isLinked = profile && profile.discordVerified === true;
     const badge = $('badgeAxSecurityStatus');
     if (badge) {
-      if (isLinked) {
-        badge.textContent = 'All Good ✓';
-        badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+      const hasWarning = (Number(profile.warningCount) || 0) > 0 || profile.accountStatus === 'warned';
+      const isRestricted = Boolean(profile.restricted || profile.accountStatus === 'restricted');
+      const isAtRisk = Boolean(profile.banned || (Number(profile.warningCount) || 0) >= 2);
+
+      if (isAtRisk) {
+        badge.textContent = 'At Risk ✕';
+        badge.className = 'text-[9px] bg-rose-500/15 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+      } else if (hasWarning || isRestricted) {
+        badge.textContent = 'Limited !';
+        badge.className = 'text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
       } else {
-        badge.textContent = 'All Good';
+        badge.textContent = isLinked ? 'All Good ✓' : 'All Good';
         badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
       }
     }
@@ -6794,11 +6801,15 @@ window.closeDiscordVerificationGate = function() {
 window.openAxSecurityModal = function() {
   window.renderDiscordAuthWidget();
   window.updateDiscordSecurityUI();
-  if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
-    const profile = userProfile || guestProfile || {};
-    const computed = window.accountStanding.computeAccountStanding(profile, null, []);
-    window.accountStanding.renderAccountStandingUI(computed, profile);
-    window.accountStanding.fetchAiStandingRecommendations(false);
+  const profile = userProfile || guestProfile || {};
+  if (window.accountStanding) {
+    if (profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
+      window.accountStanding.refreshUserStanding(profile.uid);
+    } else if (typeof window.accountStanding.computeAccountStanding === 'function') {
+      const computed = window.accountStanding.computeAccountStanding(profile, null, []);
+      window.accountStanding.renderAccountStandingUI(computed, profile);
+      window.accountStanding.fetchAiStandingRecommendations(false);
+    }
   }
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.remove('hidden');
