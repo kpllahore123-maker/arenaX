@@ -111,8 +111,11 @@ window.showToastNotification = window.showToastNotification || function(title, b
 window.app = app;
 window.auth = auth;
 window.db = db;
+window.fbDb = db;
+window.fbAuth = auth;
 window.storage = storage;
 window.googleProvider = googleProvider;
+window.fbGoogleProvider = googleProvider;
 window.ADMIN_UIDS = ADMIN_UIDS;
 window.ADMIN_EMAILS = ADMIN_EMAILS;
 
@@ -150,6 +153,35 @@ window.limit = limit;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
 window.runTransaction = runTransaction;
+
+// Unified fsTools helper for admin, standing, and auth modules
+window.fsTools = {
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  increment,
+  arrayUnion,
+  arrayRemove,
+  runTransaction,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  sendPasswordResetEmail,
+  sendEmailVerification
+};
 
 // Storage methods
 window.getStorage = getStorage;
