@@ -6750,25 +6750,25 @@ window.renderDiscordAuthWidget = function() {
  */
 window.updateDiscordSecurityUI = function() {
   const profile = userProfile || guestProfile;
-  const isLinked = profile && profile.discordVerified === true;
+  if (!profile) return;
 
-  const badge = $('badgeAxSecurityStatus');
-  if (badge) {
-    if (isLinked) {
-      badge.textContent = 'Verified ✓';
-      badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
-    } else {
-      badge.textContent = 'Unlinked';
-      badge.className = 'text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+  if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
+    const computed = window.accountStanding.computeAccountStanding(profile, null, []);
+    window.accountStanding.renderAccountStandingUI(computed, profile);
+    if (profile.uid && typeof window.accountStanding.initUserStandingListener === 'function') {
+      window.accountStanding.initUserStandingListener(profile.uid);
     }
-  }
-
-  const sub = $('lblAxSecuritySubtitle');
-  if (sub) {
-    if (isLinked) {
-      sub.textContent = `Linked as @${profile.discordUsername || 'Verified'}`;
-    } else {
-      sub.textContent = 'Discord verification & safety status';
+  } else {
+    const isLinked = profile && profile.discordVerified === true;
+    const badge = $('badgeAxSecurityStatus');
+    if (badge) {
+      if (isLinked) {
+        badge.textContent = 'All Good ✓';
+        badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+      } else {
+        badge.textContent = 'All Good';
+        badge.className = 'text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase';
+      }
     }
   }
 };
@@ -6794,6 +6794,12 @@ window.closeDiscordVerificationGate = function() {
 window.openAxSecurityModal = function() {
   window.renderDiscordAuthWidget();
   window.updateDiscordSecurityUI();
+  if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
+    const profile = userProfile || guestProfile || {};
+    const computed = window.accountStanding.computeAccountStanding(profile, null, []);
+    window.accountStanding.renderAccountStandingUI(computed, profile);
+    window.accountStanding.fetchAiStandingRecommendations(false);
+  }
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.remove('hidden');
 };
