@@ -2466,19 +2466,53 @@ if ($('btnVppOptMute')) {
   });
 }
 
-// 4. REPORT USER MODAL CONTROLLER
+// 4. REPORT USER MULTI-STEP FULL-PAGE CONTROLLER (Reference Image 1 & 2 layout)
 const REPORT_CATEGORIES = [
-  { id: 'harassment', label: 'Harassment/Bullying', icon: 'fa-user-slash', desc: 'Threats, intimidation, or persistent harassment' },
-  { id: 'abusive', label: 'Abusive Language/Hate Speech', icon: 'fa-comment-slash', desc: 'Slurs, insults, or hateful content' },
-  { id: 'inappropriate', label: 'Inappropriate Username/Profile Picture', icon: 'fa-image', desc: 'Explicit, vulgar, or offensive photos/names' },
-  { id: 'fake', label: 'Fake Account/Impersonation', icon: 'fa-user-secret', desc: 'Pretending to be someone else or another player' },
-  { id: 'hacking', label: 'Hacking', icon: 'fa-shield-virus', desc: 'Cheats, scripts, or exploiting' },
-  { id: 'spam', label: 'Spam', icon: 'fa-envelope-open-text', desc: 'Phishing links or repeated spam' },
-  { id: 'underage', label: 'Underage User', icon: 'fa-child', desc: 'Account suspected to belong to a minor' },
-  { id: 'other', label: 'Other', icon: 'fa-ellipsis-h', desc: 'Any other safety or fair-play violation' }
+  { id: 'profile_photo_name', label: 'Their photo, Their name', icon: 'fa-user-circle', desc: 'Inappropriate or offensive avatar, banner, or display name' },
+  { id: 'harassment', label: 'Harassment or Bullying', icon: 'fa-user-slash', desc: 'Threats, intimidation, hate speech, or persistent harassment' },
+  { id: 'spam', label: 'Spam or Scamming', icon: 'fa-envelope-open-text', desc: 'Unsolicited promotional links, phishing, or financial scams' },
+  { id: 'cheating', label: 'Cheating or Game Exploits', icon: 'fa-shield-virus', desc: 'Hacking, modded scripts, lag abuse, or tournament match fixing' },
+  { id: 'impersonation', label: 'Fake Account or Impersonation', icon: 'fa-user-secret', desc: 'Pretending to be someone else, a tournament host, or staff' },
+  { id: 'underage', label: 'Underage User', icon: 'fa-child', desc: 'Account suspected of belonging to an unauthorized minor' },
+  { id: 'other', label: 'Other Violation', icon: 'fa-ellipsis-h', desc: 'Any other violation of ArenaX Community Guidelines' }
 ];
 
-let selectedReportCategory = 'Harassment/Bullying';
+let selectedReportCategory = 'Their photo, Their name';
+let currentReportStep = 1;
+let currentReportTarget = null;
+
+function getNumericTargetId(uid, handleOrGameUid) {
+  if (typeof window.getNumericPlayerId === 'function') {
+    return window.getNumericPlayerId(uid, handleOrGameUid);
+  }
+  if (typeof getNumericPlayerId === 'function') {
+    return getNumericPlayerId(uid, handleOrGameUid);
+  }
+  if (!uid) return '12345678';
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i);
+    hash |= 0;
+  }
+  return String(100000 + (Math.abs(hash) % 900000));
+}
+
+function showReportStep(stepNumber) {
+  currentReportStep = stepNumber;
+  const s1 = $('reportStep1');
+  const s2 = $('reportStep2');
+  const s3 = $('reportStep3');
+
+  if (s1) s1.classList.toggle('hidden', stepNumber !== 1);
+  if (s2) s2.classList.toggle('hidden', stepNumber !== 2);
+  if (s3) s3.classList.toggle('hidden', stepNumber !== 3);
+
+  if (stepNumber === 2) {
+    renderReportCategoryList();
+  } else if (stepNumber === 3) {
+    renderReportSummary();
+  }
+}
 
 function renderReportCategoryList() {
   const container = $('reportCategoryContainer');
@@ -2488,34 +2522,49 @@ function renderReportCategoryList() {
     const isSelected = selectedReportCategory === cat.label;
     return `
       <div 
-        onclick="window.selectReportCategory('${cat.label}')"
-        class="p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2.5 ${isSelected ? 'bg-amber-500/15 border-amber-500/60 shadow-sm' : 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-700/60'}"
+        onclick="window.selectReportCategory('${cat.label.replace(/'/g, "\\'")}')"
+        class="p-3 sm:p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+          isSelected 
+            ? 'bg-[#232736] border-indigo-500/80 shadow-md shadow-indigo-950/40 ring-1 ring-indigo-500/40' 
+            : 'bg-[#1f2129] hover:bg-[#252834] border-white/5'
+        }"
       >
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-7 h-7 rounded-lg ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'} flex items-center justify-center text-xs flex-shrink-0 transition">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-xl ${
+            isSelected ? 'bg-indigo-500 text-white' : 'bg-slate-800/90 text-slate-300 border border-white/5'
+          } flex items-center justify-center text-xs flex-shrink-0 transition">
             <i class="fas ${cat.icon}"></i>
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-bold ${isSelected ? 'text-amber-300' : 'text-white'} truncate">${cat.label}</div>
-            <div class="text-[10px] text-slate-400 truncate">${cat.desc}</div>
+            <div class="text-xs sm:text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-200'} truncate">${cat.label}</div>
+            <div class="text-[10px] sm:text-[11px] text-slate-400 truncate mt-0.5">${cat.desc}</div>
           </div>
         </div>
 
-        <div class="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-amber-400 bg-amber-400' : 'border-slate-500'}">
-          ${isSelected ? '<i class="fas fa-check text-[9px] text-slate-950 font-black"></i>' : ''}
+        <div class="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition ${
+          isSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-500/70 bg-transparent'
+        }">
+          ${isSelected ? '<i class="fas fa-check text-[10px] font-black pointer-events-none"></i>' : ''}
         </div>
       </div>
     `;
   }).join('');
 
-  // Toggle Other input
+  // Toggle Other input field
   const otherWrap = $('reportOtherCategoryWrap');
   if (otherWrap) {
-    if (selectedReportCategory === 'Other') {
+    if (selectedReportCategory === 'Other Violation') {
       otherWrap.classList.remove('hidden');
     } else {
       otherWrap.classList.add('hidden');
     }
+  }
+
+  // Update Step 2 Next button state
+  const btnNext2 = $('btnReportNextStep2');
+  if (btnNext2) {
+    btnNext2.disabled = !selectedReportCategory;
+    btnNext2.classList.toggle('opacity-50', !selectedReportCategory);
   }
 }
 
@@ -2524,34 +2573,173 @@ window.selectReportCategory = function(catLabel) {
   renderReportCategoryList();
 };
 
+function renderReportSummary() {
+  if (!currentReportTarget) return;
+
+  const targetUid = currentReportTarget.uid;
+  const targetName = currentReportTarget.name;
+  const targetAv = currentReportTarget.avatar;
+  const numericId = currentReportTarget.numericId;
+
+  if ($('summaryTargetName')) $('summaryTargetName').textContent = targetName;
+  if ($('summaryTargetNumericId')) $('summaryTargetNumericId').textContent = `ID: ${numericId}`;
+  if ($('summaryTargetAv')) $('summaryTargetAv').src = targetAv;
+
+  let finalCategory = selectedReportCategory;
+  if (selectedReportCategory === 'Other Violation') {
+    const otherText = $('reportOtherCategoryInp')?.value.trim();
+    if (otherText) finalCategory = `Other: ${otherText}`;
+  }
+
+  if ($('summaryCategoryLabel')) {
+    $('summaryCategoryLabel').textContent = finalCategory;
+  }
+
+  const details = $('reportDetailsInp')?.value.trim() || '';
+  const evidenceUrl = $('reportEvidenceUrlInp')?.value.trim() || '';
+  const detailsPreview = $('summaryDetailsPreview');
+  const detailsText = $('summaryDetailsText');
+  const evidenceText = $('summaryEvidenceText');
+
+  if (detailsPreview) {
+    if (details || evidenceUrl) {
+      detailsPreview.classList.remove('hidden');
+      if (detailsText) detailsText.textContent = details ? `"${details}"` : '';
+      if (evidenceText) evidenceText.textContent = evidenceUrl ? `Proof: ${evidenceUrl}` : '';
+    } else {
+      detailsPreview.classList.add('hidden');
+    }
+  }
+}
+
+// Open Dedicated Full-Page Report Screen
+function openReportUserFlow() {
+  $('vppMoreMenuDropdown')?.classList.add('hidden');
+  const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
+  if (!targetUid) {
+    alert("Please select a player to report.");
+    return;
+  }
+
+  const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
+  const targetHandle = currentViewedUser?.handle || '';
+  const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+  const numericId = getNumericTargetId(targetUid, currentViewedUser?.gameUID || targetHandle);
+
+  currentReportTarget = {
+    uid: targetUid,
+    name: targetName,
+    handle: targetHandle,
+    avatar: targetAv,
+    numericId: numericId
+  };
+
+  // Populate Page 1 elements (Display name & Numeric ID only, NO username/handle)
+  if ($('reportTargetName')) $('reportTargetName').textContent = targetName;
+  if ($('reportTargetNumericId')) $('reportTargetNumericId').textContent = `ID: ${numericId}`;
+  if ($('reportTargetAv')) $('reportTargetAv').src = targetAv;
+
+  // Reset inputs
+  if ($('reportDetailsInp')) $('reportDetailsInp').value = '';
+  if ($('reportEvidenceUrlInp')) $('reportEvidenceUrlInp').value = '';
+  if ($('reportOtherCategoryInp')) $('reportOtherCategoryInp').value = '';
+  if ($('reportOptionalDetailsWrap')) $('reportOptionalDetailsWrap').classList.add('hidden');
+  if ($('iconToggleReportOptional')) $('iconToggleReportOptional').className = 'fas fa-plus text-[10px] text-slate-500';
+
+  selectedReportCategory = 'Their photo, Their name';
+  showReportStep(1);
+
+  $('mReportUserModal')?.classList.remove('hidden');
+}
+
+// Bind Button on View Profile 3-dots Menu
 if ($('btnVppOptReport')) {
-  $('btnVppOptReport').addEventListener('click', () => {
-    $('vppMoreMenuDropdown')?.classList.add('hidden');
-    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
-    const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
-    const targetHandle = currentViewedUser?.handle ? `@${currentViewedUser.handle}` : (targetUid ? `UID: ${targetUid.slice(0, 10)}...` : '');
-    const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+  $('btnVppOptReport').addEventListener('click', openReportUserFlow);
+}
 
-    if ($('reportTargetName')) $('reportTargetName').textContent = targetName;
-    if ($('reportTargetHandle')) $('reportTargetHandle').textContent = targetHandle;
-    if ($('reportTargetAv')) $('reportTargetAv').src = targetAv;
-    if ($('reportDetailsInp')) $('reportDetailsInp').value = '';
-    if ($('reportEvidenceUrlInp')) $('reportEvidenceUrlInp').value = '';
-    if ($('reportOtherCategoryInp')) $('reportOtherCategoryInp').value = '';
+// Close full-screen flow handler
+function closeReportUserFlow() {
+  $('mReportUserModal')?.classList.add('hidden');
+  $('mReportLearnMoreModal')?.classList.add('hidden');
+  currentReportStep = 1;
+}
 
-    selectedReportCategory = 'Harassment/Bullying';
-    renderReportCategoryList();
+if ($('btnCloseReportPage1')) $('btnCloseReportPage1').addEventListener('click', closeReportUserFlow);
+if ($('btnCloseReportPage2')) $('btnCloseReportPage2').addEventListener('click', closeReportUserFlow);
+if ($('btnCloseReportPage3')) $('btnCloseReportPage3').addEventListener('click', closeReportUserFlow);
+if ($('btnCloseReportUserModal')) $('btnCloseReportUserModal').addEventListener('click', closeReportUserFlow);
 
-    $('mReportUserModal')?.classList.remove('hidden');
+// Back buttons
+if ($('btnBackReportPage2')) {
+  $('btnBackReportPage2').addEventListener('click', () => showReportStep(1));
+}
+if ($('btnBackReportPage3')) {
+  $('btnBackReportPage3').addEventListener('click', () => showReportStep(2));
+}
+
+// Next from Page 1 to Page 2
+if ($('btnReportNextStep1')) {
+  $('btnReportNextStep1').addEventListener('click', () => {
+    showReportStep(2);
   });
 }
 
-if ($('btnCloseReportUserModal')) {
-  $('btnCloseReportUserModal').addEventListener('click', () => {
-    $('mReportUserModal')?.classList.add('hidden');
+// Next from Page 2 to Page 3
+if ($('btnReportNextStep2')) {
+  $('btnReportNextStep2').addEventListener('click', () => {
+    if (!selectedReportCategory) {
+      alert("Please select a violation category to continue.");
+      return;
+    }
+    if (selectedReportCategory === 'Other Violation') {
+      const otherVal = $('reportOtherCategoryInp')?.value.trim();
+      if (!otherVal) {
+        alert("Please specify the violation in the text box.");
+        $('reportOtherCategoryInp')?.focus();
+        return;
+      }
+    }
+    showReportStep(3);
   });
 }
 
+// Learn More & Guidelines Modal handlers
+if ($('btnReportLearnMore')) {
+  $('btnReportLearnMore').addEventListener('click', () => {
+    $('mReportLearnMoreModal')?.classList.remove('hidden');
+  });
+}
+if ($('btnSummaryOpenGuidelines')) {
+  $('btnSummaryOpenGuidelines').addEventListener('click', () => {
+    $('mReportLearnMoreModal')?.classList.remove('hidden');
+  });
+}
+if ($('btnCloseReportLearnMoreModal')) {
+  $('btnCloseReportLearnMoreModal').addEventListener('click', () => {
+    $('mReportLearnMoreModal')?.classList.add('hidden');
+  });
+}
+if ($('btnDismissReportLearnMore')) {
+  $('btnDismissReportLearnMore').addEventListener('click', () => {
+    $('mReportLearnMoreModal')?.classList.add('hidden');
+  });
+}
+
+// Optional details accordion toggle
+if ($('btnToggleReportOptionalDetails')) {
+  $('btnToggleReportOptionalDetails').addEventListener('click', () => {
+    const wrap = $('reportOptionalDetailsWrap');
+    const icon = $('iconToggleReportOptional');
+    if (!wrap) return;
+    const isHidden = wrap.classList.contains('hidden');
+    wrap.classList.toggle('hidden', !isHidden);
+    if (icon) {
+      icon.className = isHidden ? 'fas fa-minus text-[10px] text-slate-500' : 'fas fa-plus text-[10px] text-slate-500';
+    }
+  });
+}
+
+// Final Submit Report on Page 3
 if ($('btnSubmitProfileReport')) {
   $('btnSubmitProfileReport').addEventListener('click', async () => {
     const myProfile = userProfile || window.userProfile || window.currentUser;
@@ -2560,17 +2748,23 @@ if ($('btnSubmitProfileReport')) {
       return;
     }
 
-    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
-    if (!targetUid) {
+    if (!currentReportTarget || !currentReportTarget.uid) {
       alert("Target user is not specified.");
       return;
     }
 
+    if (!selectedReportCategory) {
+      alert("Please select a report violation.");
+      showReportStep(2);
+      return;
+    }
+
     let category = selectedReportCategory;
-    if (category === 'Other') {
+    if (category === 'Other Violation') {
       const otherInp = $('reportOtherCategoryInp')?.value.trim();
       if (!otherInp) {
-        alert("Please specify the reason in the text box.");
+        alert("Please specify the violation reason in the text box.");
+        showReportStep(2);
         $('reportOtherCategoryInp')?.focus();
         return;
       }
@@ -2585,15 +2779,12 @@ if ($('btnSubmitProfileReport')) {
     btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Submitting...`;
 
     try {
-      const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'ArenaX Player';
-      const targetHandle = currentViewedUser?.handle || '';
-      const targetAv = currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar || '';
-
       await addDoc(collection(db, 'profile_reports'), {
-        reportedUid: targetUid,
-        reportedName: targetName,
-        reportedHandle: targetHandle,
-        reportedAvatar: targetAv,
+        reportedUid: currentReportTarget.uid,
+        reportedName: currentReportTarget.name,
+        reportedHandle: currentReportTarget.handle || '',
+        reportedNumericId: currentReportTarget.numericId,
+        reportedAvatar: currentReportTarget.avatar || '',
         reporterUid: myProfile.uid,
         reporterName: myProfile.name || myProfile.userName || 'ArenaX Player',
         reporterHandle: myProfile.handle || '',
@@ -2606,7 +2797,7 @@ if ($('btnSubmitProfileReport')) {
         timestamp: serverTimestamp()
       });
 
-      $('mReportUserModal')?.classList.add('hidden');
+      closeReportUserFlow();
       if (typeof showToastNotification === 'function') {
         showToastNotification("Report Submitted ✅", "Thank you for helping keep ArenaX safe. Our moderation team will review this report.");
       } else {
