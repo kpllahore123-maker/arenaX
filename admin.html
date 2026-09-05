@@ -2764,7 +2764,10 @@
                       <span class="truncate">${escapeHtml(reportedName)}</span>
                       ${isTargetBanned ? '<span class="text-[9px] bg-red-600/80 text-white px-1.5 py-0.2 rounded font-black">BANNED</span>' : ''}
                     </div>
-                    <div class="text-[10px] text-slate-400 font-mono truncate">UID: ${reportedUid || 'N/A'}</div>
+                    <div class="text-[10px] text-slate-400 font-mono truncate flex items-center gap-2">
+                      <span>UID: ${reportedUid || 'N/A'}</span>
+                      ${r.reportedNumericId ? `<span class="text-indigo-400 font-bold">| ID: ${r.reportedNumericId}</span>` : ''}
+                    </div>
                   </div>
                 </div>
 
