@@ -5228,69 +5228,247 @@ if (typeof tailwind !== 'undefined') {
   </div>
 </div>
 
-<!-- ==================== REPORT USER MODAL ==================== -->
-<div id="mReportUserModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100005] flex items-center justify-center p-4 hidden animate-fade-in font-sans">
-  <div class="bg-[#121526] border border-amber-500/30 rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl text-white max-h-[92vh] overflow-y-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-white/10 pb-3">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-base flex-shrink-0">
-          <i class="fas fa-flag"></i>
+<!-- ==================== REPORT USER MULTI-STEP FULL-PAGE FLOW ==================== -->
+<div id="mReportUserModal" class="fixed inset-0 bg-[#111217] z-[100005] flex flex-col hidden animate-fade-in font-sans text-white select-none overflow-hidden">
+  <div class="max-w-md w-full mx-auto h-full flex flex-col justify-between overflow-hidden relative px-5 py-4 sm:py-6">
+
+    <!-- ==================== PAGE 1: REPORT USER PROFILE ==================== -->
+    <div id="reportStep1" class="flex flex-col h-full justify-between">
+      <!-- Top Bar with Close Button -->
+      <div class="flex items-center justify-end w-full">
+        <button id="btnCloseReportPage1" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Close">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col pt-2 overflow-y-auto pr-1">
+        <!-- Title & Subtitle -->
+        <div class="text-center px-2">
+          <h1 class="text-2xl sm:text-[26px] font-black text-white tracking-tight">Report User Profile</h1>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mt-2 max-w-xs mx-auto">
+            Reports help us keep ArenaX safe — this user will not be notified that you reported them.
+          </p>
         </div>
-        <div>
-          <h3 class="text-sm font-black text-white">Report User</h3>
-          <p class="text-[11px] text-slate-400">Help keep ArenaX safe & fair</p>
+
+        <!-- Section: Selected User -->
+        <div class="mt-8 space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Selected User</div>
+          <div class="bg-[#1f2129] border border-white/10 rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm">
+            <img id="reportTargetAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Reported User" class="w-12 h-12 rounded-full object-cover bg-slate-800 border border-white/15 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <div id="reportTargetName" class="text-base font-bold text-white truncate leading-tight">Player Name</div>
+              <div id="reportTargetNumericId" class="text-xs text-slate-400 font-mono mt-0.5">ID: 19981376</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Learn More -->
+        <div class="mt-6 space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Learn More</div>
+          <div id="btnReportLearnMore" class="bg-[#1f2129] hover:bg-[#262832] border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-3 cursor-pointer transition shadow-sm group">
+            <span class="text-sm font-medium text-slate-200 group-hover:text-white leading-snug">Learn more about content that breaks ArenaX rules</span>
+            <i class="fas fa-arrow-up-right-from-square text-slate-400 group-hover:text-white text-sm shrink-0 transition"></i>
+          </div>
         </div>
       </div>
-      <button id="btnCloseReportUserModal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
-        <i class="fas fa-times text-xs"></i>
-      </button>
-    </div>
 
-    <!-- Reported User Target Preview -->
-    <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-3 flex items-center gap-3">
-      <img id="reportTargetAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="w-10 h-10 rounded-full object-cover border border-amber-500/40 bg-slate-800" />
-      <div class="flex-1 min-w-0">
-        <div id="reportTargetName" class="text-xs font-black text-white truncate">Player Name</div>
-        <div id="reportTargetHandle" class="text-[10px] text-slate-400 font-mono truncate">@handle</div>
-      </div>
-      <span class="text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-bold uppercase">Report Target</span>
-    </div>
-
-    <!-- Category Selection (Single-Select) -->
-    <div class="space-y-2">
-      <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-        Category / Reason <span class="text-rose-400">*</span>
-      </label>
-      <div id="reportCategoryContainer" class="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-        <!-- Categories dynamically rendered and interactive -->
+      <!-- Bottom Action: Next -->
+      <div class="pt-4 pb-2 w-full shrink-0">
+        <button id="btnReportNextStep1" type="button" class="w-full py-3.5 px-4 bg-[#5865f2] hover:bg-[#4752c4] active:scale-98 text-white font-bold rounded-2xl text-sm transition cursor-pointer shadow-lg shadow-indigo-600/25 flex items-center justify-center">
+          Next
+        </button>
       </div>
     </div>
 
-    <!-- Other Text Input (visible only when 'Other' selected) -->
-    <div id="reportOtherCategoryWrap" class="space-y-1 hidden">
-      <label class="text-[11px] font-bold text-slate-300 block">Specify Reason <span class="text-rose-400">*</span></label>
-      <input type="text" id="reportOtherCategoryInp" placeholder="Enter specific reason..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500" />
+    <!-- ==================== PAGE 2: SELECT VIOLATION ==================== -->
+    <div id="reportStep2" class="flex flex-col h-full justify-between hidden">
+      <!-- Top Navigation Bar -->
+      <div class="flex items-center justify-between w-full">
+        <button id="btnBackReportPage2" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Back">
+          <i class="fas fa-arrow-left text-sm"></i>
+        </button>
+        <button id="btnCloseReportPage2" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Close">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col pt-2 overflow-y-auto pr-1">
+        <!-- Title & Subtitle -->
+        <div class="text-center px-2">
+          <h1 class="text-2xl sm:text-[26px] font-black text-white tracking-tight">Select Violation</h1>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mt-1.5 max-w-xs mx-auto">
+            Choose the violation that best describes this issue.
+          </p>
+        </div>
+
+        <!-- Violation Category List -->
+        <div class="mt-6 space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Report Category</div>
+          <div id="reportCategoryContainer" class="space-y-2">
+            <!-- Dynamically populated categories -->
+          </div>
+        </div>
+
+        <!-- Other Category Input (Expands when 'Other' selected) -->
+        <div id="reportOtherCategoryWrap" class="mt-3 space-y-1.5 hidden px-1">
+          <label class="text-[11px] font-bold text-slate-300 block">Specify Reason <span class="text-rose-400">*</span></label>
+          <input type="text" id="reportOtherCategoryInp" placeholder="Enter specific violation reason..." class="w-full bg-[#161822] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <!-- Optional Additional Proof/Context Accordion -->
+        <div class="mt-4 px-1">
+          <button type="button" id="btnToggleReportOptionalDetails" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition cursor-pointer font-medium">
+            <i id="iconToggleReportOptional" class="fas fa-plus text-[10px] text-slate-500"></i>
+            <span>Add details or proof link (optional)</span>
+          </button>
+          <div id="reportOptionalDetailsWrap" class="hidden mt-2.5 space-y-2">
+            <input type="url" id="reportEvidenceUrlInp" placeholder="Screenshot/Video link (Imgur, Discord, etc.)..." class="w-full bg-[#161822] border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+            <textarea id="reportDetailsInp" rows="2" placeholder="Additional match details or context..." class="w-full bg-[#161822] border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none transition"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Action: Next -->
+      <div class="pt-4 pb-2 w-full shrink-0">
+        <button id="btnReportNextStep2" type="button" class="w-full py-3.5 px-4 bg-[#5865f2] hover:bg-[#4752c4] active:scale-98 text-white font-bold rounded-2xl text-sm transition cursor-pointer shadow-lg shadow-indigo-600/25 flex items-center justify-center">
+          Next
+        </button>
+      </div>
     </div>
 
-    <!-- Evidence / Proof URL Optional Input -->
-    <div class="space-y-1">
-      <label class="text-[11px] font-bold text-slate-300 block">Evidence / Proof Link (Optional)</label>
-      <input type="url" id="reportEvidenceUrlInp" placeholder="Screenshot/Video link (Imgur, Discord, YouTube, etc.)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500" />
+    <!-- ==================== PAGE 3: REPORT SUMMARY ==================== -->
+    <div id="reportStep3" class="flex flex-col h-full justify-between hidden">
+      <!-- Top Navigation Bar -->
+      <div class="flex items-center justify-between w-full">
+        <button id="btnBackReportPage3" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Back">
+          <i class="fas fa-arrow-left text-sm"></i>
+        </button>
+        <button id="btnCloseReportPage3" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Close">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col pt-2 overflow-y-auto pr-1">
+        <!-- Title & Subtitle -->
+        <div class="text-center px-2">
+          <h1 class="text-2xl sm:text-[26px] font-black text-white tracking-tight">Report Summary</h1>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mt-2 max-w-xs mx-auto">
+            Review your report before submitting.
+          </p>
+        </div>
+
+        <!-- Selected User Preview -->
+        <div class="mt-8 space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Selected User</div>
+          <div class="bg-[#1f2129] border border-white/10 rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm">
+            <img id="summaryTargetAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Reported User" class="w-11 h-11 rounded-full object-cover bg-slate-800 border border-white/15 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <div id="summaryTargetName" class="text-base font-bold text-white truncate leading-tight">Player Name</div>
+              <div id="summaryTargetNumericId" class="text-xs text-slate-400 font-mono mt-0.5">ID: 19981376</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Report Category (Matching Reference Image 2) -->
+        <div class="mt-6 space-y-2 px-1">
+          <div class="text-sm font-bold text-white tracking-tight">Report Category</div>
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center gap-2.5 text-sm text-slate-100 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0"></span>
+              <span id="summaryCategoryLabel" class="text-sm font-semibold text-white">Their photo, Their name</span>
+            </div>
+            <div id="summaryDetailsPreview" class="hidden text-xs text-slate-400 pl-4 border-l border-white/10 ml-0.5 space-y-1">
+              <div id="summaryDetailsText" class="italic text-slate-300"></div>
+              <div id="summaryEvidenceText" class="text-sky-400 truncate"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmation Note (Matching Reference Image 2) -->
+        <div class="mt-auto pt-8 px-2">
+          <p class="text-xs text-slate-400 text-center leading-relaxed">
+            By submitting this report you confirm that it is truthful and made in good faith. Please follow our <span id="btnSummaryOpenGuidelines" class="text-sky-400 hover:underline cursor-pointer font-semibold">Community Guidelines</span> and do not submit false or duplicate reports. You will be notified if your report is reviewed and accepted for further action.
+          </p>
+        </div>
+      </div>
+
+      <!-- Bottom Action: Submit Report (Red Button Matching Reference Image 2) -->
+      <div class="pt-4 pb-2 w-full shrink-0">
+        <button id="btnSubmitProfileReport" type="button" class="w-full py-3.5 px-4 bg-[#da373c] hover:bg-[#c03135] active:scale-98 text-white font-bold rounded-2xl text-sm transition cursor-pointer shadow-lg shadow-rose-900/30 flex items-center justify-center gap-2">
+          Submit Report
+        </button>
+      </div>
     </div>
 
-    <!-- Additional Details Optional Textarea -->
-    <div class="space-y-1">
-      <label class="text-[11px] font-bold text-slate-300 block">Additional Details & Context (Optional)</label>
-      <textarea id="reportDetailsInp" rows="2" placeholder="Provide extra context, match info, or details..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+    <!-- ==================== LEARN MORE & COMMUNITY GUIDELINES MODAL ==================== -->
+    <div id="mReportLearnMoreModal" class="absolute inset-0 bg-[#111217]/95 backdrop-blur-md z-30 flex flex-col p-5 hidden animate-fade-in">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-sm">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white">ArenaX Community Guidelines</h3>
+            <p class="text-[10px] text-slate-400">Fair play and player safety</p>
+          </div>
+        </div>
+        <button id="btnCloseReportLearnMoreModal" type="button" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto py-4 space-y-3.5 text-xs text-slate-300 leading-relaxed pr-1">
+        <div class="bg-[#1f2129] border border-white/5 rounded-2xl p-3.5 space-y-1.5">
+          <div class="text-amber-400 font-bold flex items-center gap-1.5 text-xs">
+            <i class="fas fa-circle-info"></i> Genuine Reports Only
+          </div>
+          <p class="text-slate-300 text-[11px] leading-relaxed">
+            Reports should only be submitted for genuine violations of ArenaX rules. False, spam, or duplicate reports abuse moderation resources and may result in penalties on the reporter's account.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">What ArenaX Prohibits:</div>
+          <ul class="space-y-2 text-[11px] text-slate-300">
+            <li class="flex items-start gap-2">
+              <i class="fas fa-circle-xmark text-rose-400 mt-0.5 text-xs shrink-0"></i>
+              <span><b>Harassment & Bullying:</b> Persistent insults, hate speech, threats, or targeting another player.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fas fa-circle-xmark text-rose-400 mt-0.5 text-xs shrink-0"></i>
+              <span><b>Inappropriate Content:</b> Offensive or explicit profile photos, bios, or player names.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fas fa-circle-xmark text-rose-400 mt-0.5 text-xs shrink-0"></i>
+              <span><b>Cheating & Exploits:</b> Using hacks, modded clients, scripts, or match tampering in tournaments.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fas fa-circle-xmark text-rose-400 mt-0.5 text-xs shrink-0"></i>
+              <span><b>Spam & Phishing:</b> Unsolicited advertising, scam links, or malicious websites.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-[11px] text-emerald-300 space-y-1">
+          <div class="font-bold flex items-center gap-1.5">
+            <i class="fas fa-user-shield"></i> Confidential & Secure
+          </div>
+          <p class="text-emerald-200/80">
+            Reports are strictly confidential. The reported user will never know who reported them.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-white/10">
+        <button id="btnDismissReportLearnMore" type="button" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition cursor-pointer">
+          Got It
+        </button>
+      </div>
     </div>
 
-    <!-- Submit Button -->
-    <div class="pt-2">
-      <button id="btnSubmitProfileReport" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98">
-        <i class="fas fa-paper-plane text-xs"></i> Submit Report
-      </button>
-    </div>
   </div>
 </div>
 
