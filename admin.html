@@ -4071,12 +4071,14 @@
           updatePayload.overrideLevel = null;
           updatePayload.overrideReason = null;
           const autoComputed = window.accountStanding?.computeAccountStanding(currentModeratingUser || {}, null, []) || { level: 'ALL_GOOD', score: 95 };
-          updatePayload.level = autoComputed.level;
-          updatePayload.score = autoComputed.score;
+          updatePayload.level = autoComputed.level || autoComputed.standing || 'ALL_GOOD';
+          updatePayload.standing = updatePayload.level;
+          updatePayload.score = autoComputed.score ?? 95;
         } else {
           updatePayload.isOverridden = true;
           updatePayload.overrideLevel = selectedAdminOverrideLevel;
           updatePayload.level = selectedAdminOverrideLevel;
+          updatePayload.standing = selectedAdminOverrideLevel;
           updatePayload.overrideReason = reason;
           updatePayload.score = selectedAdminOverrideLevel === 'ALL_GOOD' ? 95 : (selectedAdminOverrideLevel === 'LIMITED' ? 65 : 30);
         }
@@ -4565,9 +4567,11 @@
               const standingRef = doc(window.fbDb, 'account_standings', currentModeratingUid);
               await window.fsTools.setDoc(standingRef, {
                 userId: currentModeratingUid,
-                level: newStanding.level,
-                score: newStanding.score,
-                factors: newStanding.factors,
+                level: newStanding.level || newStanding.standing || 'ALL_GOOD',
+                standing: newStanding.level || newStanding.standing || 'ALL_GOOD',
+                score: newStanding.score ?? 95,
+                factors: newStanding.factors || {},
+                violations: newStanding.violations || [],
                 updatedAt: serverTimestamp(),
                 lastEvaluatedAt: serverTimestamp(),
                 isOverridden: false
