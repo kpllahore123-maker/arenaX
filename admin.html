@@ -10,6 +10,7 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/account-standing.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -303,6 +304,10 @@
       <div class="flex items-center gap-2 border-b border-white/5 pb-2 flex-shrink-0 overflow-x-auto">
         <button id="modTabBtn-dossier" onclick="switchModDossierTab('dossier')" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-sm whitespace-nowrap">
           <i class="fas fa-id-card"></i> <span>Player Dossier</span>
+        </button>
+        <button id="modTabBtn-standing" onclick="switchModDossierTab('standing')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap">
+          <i class="fas fa-shield-heart text-emerald-400"></i> <span>Account Standing</span>
+          <span id="modTabStandingBadge" class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">ALL GOOD</span>
         </button>
         <button id="modTabBtn-history" onclick="switchModDossierTab('history')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-slate-800/80 text-slate-300 hover:text-white whitespace-nowrap">
           <i class="fas fa-clock-rotate-left"></i> <span>Reports & Safety History</span>
@@ -659,6 +664,167 @@
             </div>
 
           </div>
+        </div>
+
+        <!-- ── TAB 5: ACCOUNT STANDING & SAFETY SYSTEM ── -->
+        <div id="modTabContent-standing" class="space-y-4 hidden">
+          
+          <!-- Standing Status Overview Card -->
+          <div class="bg-[#121626] border border-white/10 rounded-2xl p-4 shadow-lg space-y-3">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div id="adminStandingLevelIcon" class="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0">
+                  <i class="fas fa-shield-check"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="adminStandingLevelBadge" class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">ALL GOOD</span>
+                    <span id="adminStandingScoreText" class="text-xs font-mono font-bold text-slate-300">Score: 95/100</span>
+                  </div>
+                  <p id="adminStandingContextSub" class="text-[11px] text-slate-400 mt-1">Automatic System Evaluation • Updated real-time</p>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <span id="adminStandingOverrideTag" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Auto Mode</span>
+              </div>
+            </div>
+
+            <!-- 3-Stage Progress Stepper -->
+            <div class="pt-2 px-2">
+              <div class="relative flex items-center justify-between">
+                <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-800 rounded-full z-0"></div>
+                <div id="adminStandingProgressLine" class="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" style="width: 0%;"></div>
+
+                <div class="relative z-10 flex flex-col items-center">
+                  <div id="adminStageNode-1" class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-emerald-500/20">
+                    <i class="fas fa-check"></i>
+                  </div>
+                  <span id="adminStageLabel-1" class="text-[10px] font-bold text-emerald-400 mt-1">ALL GOOD</span>
+                </div>
+
+                <div class="relative z-10 flex flex-col items-center">
+                  <div id="adminStageNode-2" class="w-7 h-7 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-[10px] font-black ring-4 ring-[#121626]">
+                    <i class="fas fa-exclamation text-[9px]"></i>
+                  </div>
+                  <span id="adminStageLabel-2" class="text-[10px] font-medium text-slate-500 mt-1">LIMITED</span>
+                </div>
+
+                <div class="relative z-10 flex flex-col items-center">
+                  <div id="adminStageNode-3" class="w-7 h-7 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-[10px] font-black ring-4 ring-[#121626]">
+                    <i class="fas fa-triangle-exclamation text-[9px]"></i>
+                  </div>
+                  <span id="adminStageLabel-3" class="text-[10px] font-medium text-slate-500 mt-1">AT RISK</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Evaluation Signals & Factors Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <!-- Disciplinary Signal -->
+            <div class="p-3 bg-[#0e1220] rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Disciplinary Actions</span>
+                <i class="fas fa-gavel text-amber-400"></i>
+              </div>
+              <div id="adminFactorWarningsCount" class="text-base font-extrabold text-white">0 Warnings</div>
+              <p id="adminFactorWarningsDetail" class="text-[10px] text-slate-400">No active disciplinary restrictions</p>
+            </div>
+
+            <!-- Reports Integrity Signal -->
+            <div class="p-3 bg-[#0e1220] rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Reports Integrity</span>
+                <i class="fas fa-shield-halved text-indigo-400"></i>
+              </div>
+              <div id="adminFactorReportsCount" class="text-base font-extrabold text-white">0 Reports</div>
+              <p class="text-[10px] text-indigo-300/90">Unverified claims do not lower standing</p>
+            </div>
+
+            <!-- Security Signal -->
+            <div class="p-3 bg-[#0e1220] rounded-xl border border-slate-800 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Verification Health</span>
+                <i class="fas fa-shield-virus text-emerald-400"></i>
+              </div>
+              <div id="adminFactorSecurityStatus" class="text-base font-extrabold text-white">Protected</div>
+              <p id="adminFactorSecurityDetail" class="text-[10px] text-slate-400">Email & identity verified</p>
+            </div>
+          </div>
+
+          <!-- AI Guardian Recommendations for Player -->
+          <div class="bg-gradient-to-br from-indigo-950/30 to-[#0e1220] border border-indigo-500/20 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                <i class="fas fa-brain text-indigo-400"></i> AI Guardian Analysis & Player Recommendations
+              </span>
+              <button type="button" onclick="regenerateAdminAiStandingRecs()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30 transition cursor-pointer flex items-center gap-1">
+                <i class="fas fa-arrows-rotate text-[9px]"></i> Refresh AI
+              </button>
+            </div>
+            <div id="adminStandingAiRecsBox" class="space-y-2">
+              <div class="text-slate-400 text-[11px] italic">Loading player recommendations...</div>
+            </div>
+          </div>
+
+          <!-- Standing Audit History -->
+          <div class="bg-[#0e1220] border border-slate-800 rounded-2xl p-4 space-y-2.5">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i class="fas fa-history text-slate-400"></i> Standing Audit History
+            </span>
+            <div id="adminStandingAuditLogsContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              <div class="text-slate-500 text-[11px]">No previous standing transitions recorded.</div>
+            </div>
+          </div>
+
+          <!-- Admin Manual Override Controls -->
+          <div class="bg-[#15121b] border border-amber-500/30 rounded-2xl p-4 space-y-3 shadow-md">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+              <span class="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-user-shield"></i> Manual Standing Override (Moderator Control)
+              </span>
+              <span class="text-[10px] text-amber-200/80 font-mono">Logged to Security Audit</span>
+            </div>
+
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Moderators can manually override a user's standing if an appeal is accepted, if false reports were submitted, or during pending investigations. All overrides are strictly audited.
+            </p>
+
+            <!-- Override Options -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button type="button" onclick="selectAdminStandingOverride('ALL_GOOD')" id="btnAdminOverride-ALL_GOOD" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300 hover:border-emerald-500">
+                <i class="fas fa-check-circle text-emerald-400 text-sm"></i>
+                <span class="text-[11px] font-bold">ALL GOOD</span>
+              </button>
+              <button type="button" onclick="selectAdminStandingOverride('LIMITED')" id="btnAdminOverride-LIMITED" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300 hover:border-amber-500">
+                <i class="fas fa-exclamation-circle text-amber-400 text-sm"></i>
+                <span class="text-[11px] font-bold">LIMITED</span>
+              </button>
+              <button type="button" onclick="selectAdminStandingOverride('AT_RISK')" id="btnAdminOverride-AT_RISK" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-300 hover:border-rose-500">
+                <i class="fas fa-triangle-exclamation text-rose-400 text-sm"></i>
+                <span class="text-[11px] font-bold">AT RISK</span>
+              </button>
+              <button type="button" onclick="selectAdminStandingOverride('AUTO')" id="btnAdminOverride-AUTO" class="p-2.5 rounded-xl border border-indigo-500/50 bg-indigo-950/40 text-center transition cursor-pointer flex flex-col items-center gap-1 text-indigo-300 hover:border-indigo-400">
+                <i class="fas fa-rotate-left text-indigo-400 text-sm"></i>
+                <span class="text-[11px] font-bold">Reset to Auto</span>
+              </button>
+            </div>
+
+            <!-- Override Reason -->
+            <div class="space-y-1 pt-1">
+              <label class="text-[11px] font-bold text-slate-300 block">
+                Audit Reason for Override <span class="text-rose-400">*</span>
+              </label>
+              <input type="text" id="adminStandingOverrideReason" placeholder="e.g., False report dismissed upon appeal / Manual review completed" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition" />
+            </div>
+
+            <div class="pt-1">
+              <button type="button" id="btnApplyAdminStandingOverride" onclick="executeAdminStandingOverride()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-600/20 transition cursor-pointer flex items-center justify-center gap-2 active:scale-98">
+                <i class="fas fa-shield-check"></i> Save Standing Override & Log Audit
+              </button>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -3413,7 +3579,7 @@
     let sensitiveActionPending = 'view_dms';
 
     function switchModDossierTab(tabName) {
-      const tabs = ['dossier', 'history', 'sensitive', 'actions'];
+      const tabs = ['dossier', 'standing', 'history', 'sensitive', 'actions'];
       tabs.forEach((t) => {
         const btn = $(`modTabBtn-${t}`);
         const content = $(`modTabContent-${t}`);
@@ -3550,6 +3716,9 @@
       // Populate Tab 2: Safety History & Reports
       populateModSafetyHistory(uid, reportId);
 
+      // Populate Tab: Account Standing & Safety
+      loadAdminAccountStanding(uid);
+
       // Pre-select Action
       selectModAction('warning');
 
@@ -3573,6 +3742,374 @@
         $('modDossierMomentsInfo').textContent = count > 0 ? `${count} published posts` : 'No moments posted';
       } catch (err) {
         console.warn("Could not load moments count:", err);
+      }
+    }
+
+    // ── ACCOUNT STANDING & SAFETY SYSTEM (ADMIN CONTROLS) ──
+    let currentAdminStandingComputed = null;
+    let currentAdminStandingDoc = null;
+    let selectedAdminOverrideLevel = 'AUTO';
+
+    function selectAdminStandingOverride(level) {
+      selectedAdminOverrideLevel = level;
+      ['ALL_GOOD', 'LIMITED', 'AT_RISK', 'AUTO'].forEach((l) => {
+        const btn = $(`btnAdminOverride-${l}`);
+        if (!btn) return;
+        if (l === level) {
+          btn.className = 'p-2.5 rounded-xl border border-amber-400 bg-amber-950/50 text-center transition cursor-pointer flex flex-col items-center gap-1 text-amber-200 ring-2 ring-amber-500/40';
+        } else {
+          btn.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-center transition cursor-pointer flex flex-col items-center gap-1 text-slate-400 hover:border-slate-500';
+        }
+      });
+    }
+
+    async function loadAdminAccountStanding(uid) {
+      try {
+        if (!uid || !window.fsTools || !window.fbDb) return;
+        const { doc, getDoc, collection, query, where, getDocs } = window.fsTools;
+
+        // Fetch standing doc
+        let standingDocData = null;
+        try {
+          const sSnap = await getDoc(doc(window.fbDb, 'account_standings', uid));
+          if (sSnap.exists()) standingDocData = sSnap.data();
+        } catch (e) {
+          console.warn('Could not load account_standings doc:', e);
+        }
+        currentAdminStandingDoc = standingDocData;
+
+        // Fetch user's reports
+        let reports = [];
+        try {
+          const rSnap = await getDocs(query(collection(window.fbDb, 'profile_reports'), where('reportedUid', '==', uid)));
+          rSnap.forEach((d) => reports.push({ id: d.id, ...d.data() }));
+        } catch (e) {
+          console.warn('Could not fetch user reports:', e);
+        }
+
+        const user = currentModeratingUser || {};
+        let computed = null;
+        if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
+          computed = window.accountStanding.computeAccountStanding(user, standingDocData, reports);
+        } else {
+          computed = {
+            level: standingDocData?.level || 'ALL_GOOD',
+            score: standingDocData?.score ?? 95,
+            isOverridden: !!standingDocData?.isOverridden,
+            overrideLevel: standingDocData?.overrideLevel,
+            overrideReason: standingDocData?.overrideReason,
+            factors: {
+              activeWarnings: (user.warnings && Array.isArray(user.warnings)) ? user.warnings.length : (user.warningCount || 0),
+              reportsCount: reports.length,
+              verifiedViolationsCount: 0,
+              securityVerified: !!user.discordVerified
+            }
+          };
+        }
+        currentAdminStandingComputed = computed;
+
+        renderAdminStandingUI(computed, user, standingDocData, reports);
+        loadAdminAiStandingRecommendations(uid, user, computed);
+        loadAdminStandingAuditLogs(uid);
+
+      } catch (err) {
+        console.error('Error in loadAdminAccountStanding:', err);
+      }
+    }
+
+    function renderAdminStandingUI(computed, user, standingDoc, reports) {
+      const level = computed.level || 'ALL_GOOD';
+      const score = computed.score ?? 95;
+      const isOverridden = !!computed.isOverridden;
+
+      // Update Dossier Tab Badge
+      const tabBadge = $('modTabStandingBadge');
+      if (tabBadge) {
+        if (level === 'ALL_GOOD') {
+          tabBadge.textContent = 'ALL GOOD';
+          tabBadge.className = 'text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold';
+        } else if (level === 'LIMITED') {
+          tabBadge.textContent = 'LIMITED';
+          tabBadge.className = 'text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold';
+        } else {
+          tabBadge.textContent = 'AT RISK';
+          tabBadge.className = 'text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-bold';
+        }
+      }
+
+      // Level Icon & Badges
+      const iconEl = $('adminStandingLevelIcon');
+      const badgeEl = $('adminStandingLevelBadge');
+      const scoreEl = $('adminStandingScoreText');
+      const contextEl = $('adminStandingContextSub');
+      const overrideTag = $('adminStandingOverrideTag');
+
+      if (scoreEl) scoreEl.textContent = `Score: ${score}/100`;
+
+      if (level === 'ALL_GOOD') {
+        if (iconEl) iconEl.className = 'w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0';
+        if (iconEl) iconEl.innerHTML = '<i class="fas fa-shield-check"></i>';
+        if (badgeEl) {
+          badgeEl.textContent = 'ALL GOOD';
+          badgeEl.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase';
+        }
+      } else if (level === 'LIMITED') {
+        if (iconEl) iconEl.className = 'w-11 h-11 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl flex-shrink-0';
+        if (iconEl) iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        if (badgeEl) {
+          badgeEl.textContent = 'LIMITED';
+          badgeEl.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase';
+        }
+      } else {
+        if (iconEl) iconEl.className = 'w-11 h-11 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-xl flex-shrink-0';
+        if (iconEl) iconEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        if (badgeEl) {
+          badgeEl.textContent = 'AT RISK';
+          badgeEl.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 uppercase';
+        }
+      }
+
+      if (overrideTag) {
+        if (isOverridden) {
+          overrideTag.textContent = 'Manual Admin Override';
+          overrideTag.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold';
+        } else {
+          overrideTag.textContent = 'Auto Engine';
+          overrideTag.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+        }
+      }
+
+      if (contextEl) {
+        if (isOverridden) {
+          contextEl.textContent = `Manual Override: "${computed.overrideReason || 'Admin specified'}"`;
+        } else {
+          contextEl.textContent = `Automated Real-Time Evaluation • Evaluated across ${reports.length} report(s) & signals`;
+        }
+      }
+
+      // Stepper nodes
+      const pLine = $('adminStandingProgressLine');
+      const n1 = $('adminStageNode-1');
+      const n2 = $('adminStageNode-2');
+      const n3 = $('adminStageNode-3');
+      const l1 = $('adminStageLabel-1');
+      const l2 = $('adminStageLabel-2');
+      const l3 = $('adminStageLabel-3');
+
+      if (level === 'ALL_GOOD') {
+        if (pLine) { pLine.style.width = '0%'; pLine.className = 'absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500'; }
+        if (n1) n1.className = 'w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-emerald-500/20';
+        if (n2) n2.className = 'w-7 h-7 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-[10px] font-black ring-4 ring-[#121626]';
+        if (n3) n3.className = 'w-7 h-7 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-[10px] font-black ring-4 ring-[#121626]';
+        if (l1) l1.className = 'text-[10px] font-bold text-emerald-400 mt-1';
+        if (l2) l2.className = 'text-[10px] font-medium text-slate-500 mt-1';
+        if (l3) l3.className = 'text-[10px] font-medium text-slate-500 mt-1';
+      } else if (level === 'LIMITED') {
+        if (pLine) { pLine.style.width = '50%'; pLine.className = 'absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-amber-500 rounded-full z-0 transition-all duration-500'; }
+        if (n1) n1.className = 'w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-emerald-500/20';
+        if (n2) n2.className = 'w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-amber-500/20';
+        if (n3) n3.className = 'w-7 h-7 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-[10px] font-black ring-4 ring-[#121626]';
+        if (l1) l1.className = 'text-[10px] font-medium text-slate-400 mt-1';
+        if (l2) l2.className = 'text-[10px] font-bold text-amber-400 mt-1';
+        if (l3) l3.className = 'text-[10px] font-medium text-slate-500 mt-1';
+      } else {
+        if (pLine) { pLine.style.width = '100%'; pLine.className = 'absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-rose-500 rounded-full z-0 transition-all duration-500'; }
+        if (n1) n1.className = 'w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-emerald-500/20';
+        if (n2) n2.className = 'w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-amber-500/20';
+        if (n3) n3.className = 'w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-black ring-4 ring-rose-500/20';
+        if (l1) l1.className = 'text-[10px] font-medium text-slate-400 mt-1';
+        if (l2) l2.className = 'text-[10px] font-medium text-slate-400 mt-1';
+        if (l3) l3.className = 'text-[10px] font-bold text-rose-400 mt-1';
+      }
+
+      // Update factor details
+      const wCount = (user.warnings && Array.isArray(user.warnings)) ? user.warnings.length : (user.warningCount || 0);
+      const warningsCountEl = $('adminFactorWarningsCount');
+      const warningsDetailEl = $('adminFactorWarningsDetail');
+      if (warningsCountEl) warningsCountEl.textContent = `${wCount} Warning${wCount === 1 ? '' : 's'}`;
+      if (warningsDetailEl) {
+        if (wCount === 0) warningsDetailEl.textContent = 'No active disciplinary restrictions';
+        else warningsDetailEl.textContent = `${wCount} official disciplinary warning(s) applied`;
+      }
+
+      const repCountEl = $('adminFactorReportsCount');
+      if (repCountEl) repCountEl.textContent = `${reports.length} Reports Filed`;
+
+      const secStatusEl = $('adminFactorSecurityStatus');
+      const secDetailEl = $('adminFactorSecurityDetail');
+      if (secStatusEl) {
+        const isDisc = !!user.discordVerified;
+        secStatusEl.textContent = isDisc ? 'Protected ✓' : 'Basic Auth';
+        if (secDetailEl) {
+          secDetailEl.textContent = isDisc ? `Linked to @${user.discordUsername || 'Verified'}` : 'Discord unlinked';
+        }
+      }
+
+      // Pre-select radio
+      selectAdminStandingOverride(isOverridden ? (computed.overrideLevel || level) : 'AUTO');
+    }
+
+    async function loadAdminAiStandingRecommendations(uid, user, computed) {
+      const box = $('adminStandingAiRecsBox');
+      if (!box) return;
+      box.innerHTML = '<div class="text-slate-400 text-[11px] flex items-center gap-2 py-2"><i class="fas fa-circle-notch animate-spin text-indigo-400"></i> Querying AI Guardian recommendation model...</div>';
+
+      try {
+        const resp = await fetch('/api/account-standing/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: uid,
+            standingLevel: computed.level,
+            standingScore: computed.score,
+            factors: computed.factors,
+            accountStatus: user.accountStatus || 'active',
+            historySummary: `${(user.warnings && user.warnings.length) || 0} warnings, ${computed.factors?.reportsCount || 0} reports`
+          })
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+
+        if (data.recommendations && data.recommendations.length > 0) {
+          box.innerHTML = `
+            <div class="p-2.5 rounded-xl bg-slate-900/90 border border-indigo-500/20 space-y-1.5">
+              <div class="text-[10px] text-amber-300 font-bold flex items-center gap-1.5">
+                <i class="fas fa-clock"></i> Recovery Guideline: ${data.recoveryTimeline || 'Active adherence'}
+              </div>
+              <ul class="space-y-1 text-[11px] text-slate-300">
+                ${data.recommendations.map((r) => `<li class="flex items-start gap-1.5"><i class="fas fa-check text-emerald-400 text-[9px] mt-1 flex-shrink-0"></i> <span><strong>${r.title || 'Advice'}:</strong> ${r.action || r.description || ''}</span></li>`).join('')}
+              </ul>
+            </div>
+          `;
+        } else {
+          box.innerHTML = '<div class="text-slate-400 text-[11px] italic">No active corrective actions required. Account is in healthy standing.</div>';
+        }
+      } catch (err) {
+        console.warn('Could not fetch admin AI recs:', err);
+        box.innerHTML = '<div class="text-slate-400 text-[11px] italic">AI Guardian: Maintain fair play in match rooms and tournament lobbies to sustain positive standing.</div>';
+      }
+    }
+
+    async function regenerateAdminAiStandingRecs() {
+      if (!currentModeratingUid) return;
+      loadAdminAiStandingRecommendations(currentModeratingUid, currentModeratingUser || {}, currentAdminStandingComputed || { level: 'ALL_GOOD', score: 95 });
+    }
+
+    async function loadAdminStandingAuditLogs(uid) {
+      const container = $('adminStandingAuditLogsContainer');
+      if (!container || !window.fsTools || !window.fbDb) return;
+
+      try {
+        const { collection, query, where, getDocs } = window.fsTools;
+        const q = query(collection(window.fbDb, 'standing_audit_logs'), where('targetUid', '==', uid));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          container.innerHTML = '<div class="text-slate-500 text-[11px] py-1">No historical standing overrides or transitions logged for this user.</div>';
+          return;
+        }
+
+        const logs = [];
+        snap.forEach((d) => logs.push({ id: d.id, ...d.data() }));
+        logs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+        container.innerHTML = logs.map((l) => {
+          const dateStr = l.timestamp?.seconds ? new Date(l.timestamp.seconds * 1000).toLocaleString() : 'Recent';
+          const isOverride = l.action.includes('override');
+          return `
+            <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[10px] space-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white flex items-center gap-1">
+                  <i class="fas ${isOverride ? 'fa-user-gear text-amber-400' : 'fa-bolt text-indigo-400'}"></i>
+                  ${l.action === 'standing_override_applied' ? `Manual Override to ${l.newLevel}` : (l.action === 'standing_override_cleared' ? 'Override Reset to Auto' : `Standing Transition: ${l.newLevel}`)}
+                </span>
+                <span class="text-slate-500 font-mono">${dateStr}</span>
+              </div>
+              <div class="text-slate-400">${l.reason || 'No reason specified'}</div>
+              <div class="text-slate-500 font-mono text-[9px]">By: ${l.adminEmail || l.adminName || 'System'}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.warn('Could not load audit logs:', err);
+        container.innerHTML = '<div class="text-slate-500 text-[11px]">Audit log recording active.</div>';
+      }
+    }
+
+    async function executeAdminStandingOverride() {
+      if (!currentModeratingUid) return;
+      const reason = ($('adminStandingOverrideReason')?.value || '').trim();
+      if (!reason) {
+        showAdminToast('Reason Required', 'Please enter an audit reason for the standing override.', 'error');
+        $('adminStandingOverrideReason')?.focus();
+        return;
+      }
+
+      const btn = $('btnApplyAdminStandingOverride');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Applying Override...';
+      }
+
+      try {
+        const { doc, setDoc, collection, addDoc, serverTimestamp } = window.fsTools;
+        const adminUser = window.fbAuth.currentUser;
+        const adminEmail = adminUser?.email || 'admin@arenax.gg';
+        const isClearing = selectedAdminOverrideLevel === 'AUTO';
+
+        const standingRef = doc(window.fbDb, 'account_standings', currentModeratingUid);
+        const updatePayload = {
+          userId: currentModeratingUid,
+          updatedAt: serverTimestamp(),
+          lastEvaluatedAt: serverTimestamp(),
+          updatedBy: adminEmail
+        };
+
+        if (isClearing) {
+          updatePayload.isOverridden = false;
+          updatePayload.overrideLevel = null;
+          updatePayload.overrideReason = null;
+          const autoComputed = window.accountStanding?.computeAccountStanding(currentModeratingUser || {}, null, []) || { level: 'ALL_GOOD', score: 95 };
+          updatePayload.level = autoComputed.level;
+          updatePayload.score = autoComputed.score;
+        } else {
+          updatePayload.isOverridden = true;
+          updatePayload.overrideLevel = selectedAdminOverrideLevel;
+          updatePayload.level = selectedAdminOverrideLevel;
+          updatePayload.overrideReason = reason;
+          updatePayload.score = selectedAdminOverrideLevel === 'ALL_GOOD' ? 95 : (selectedAdminOverrideLevel === 'LIMITED' ? 65 : 30);
+        }
+
+        await setDoc(standingRef, updatePayload, { merge: true });
+
+        // Add audit record
+        await addDoc(collection(window.fbDb, 'standing_audit_logs'), {
+          targetUid: currentModeratingUid,
+          targetName: currentModeratingUser?.name || currentModeratingUser?.displayName || 'User',
+          action: isClearing ? 'standing_override_cleared' : 'standing_override_applied',
+          overrideLevel: selectedAdminOverrideLevel,
+          previousLevel: currentAdminStandingComputed?.level || 'ALL_GOOD',
+          newLevel: updatePayload.level,
+          reason: reason,
+          adminEmail: adminEmail,
+          adminUid: adminUser?.uid || 'admin',
+          timestamp: serverTimestamp()
+        });
+
+        showAdminToast('Standing Override Applied', `Account standing successfully set to ${updatePayload.level}!`);
+        if ($('adminStandingOverrideReason')) $('adminStandingOverrideReason').value = '';
+
+        await loadAdminAccountStanding(currentModeratingUid);
+
+      } catch (err) {
+        console.error('Failed to update standing override:', err);
+        showAdminToast('Override Failed', err.message || 'Error updating standing', 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-shield-check"></i> Save Standing Override & Log Audit';
+        }
       }
     }
 
@@ -4018,6 +4555,38 @@
             });
           } catch (pe) {
             console.warn("Could not write to punishments subcollection:", pe);
+          }
+
+          // Auto-sync Account Standing
+          try {
+            const mergedUser = { ...currentModeratingUser, ...userUpdates };
+            if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
+              const newStanding = window.accountStanding.computeAccountStanding(mergedUser, null, []);
+              const standingRef = doc(window.fbDb, 'account_standings', currentModeratingUid);
+              await window.fsTools.setDoc(standingRef, {
+                userId: currentModeratingUid,
+                level: newStanding.level,
+                score: newStanding.score,
+                factors: newStanding.factors,
+                updatedAt: serverTimestamp(),
+                lastEvaluatedAt: serverTimestamp(),
+                isOverridden: false
+              }, { merge: true });
+
+              await addDoc(collection(window.fbDb, 'standing_audit_logs'), {
+                targetUid: currentModeratingUid,
+                targetName: mergedUser.name || 'Player',
+                action: 'standing_transition_moderation',
+                newLevel: newStanding.level,
+                score: newStanding.score,
+                reason: `Automated re-evaluation following disciplinary action: ${currentModAction}`,
+                adminName: adminName,
+                adminUid: adminUid,
+                timestamp: serverTimestamp()
+              });
+            }
+          } catch (stErr) {
+            console.warn("Could not auto-sync account standing:", stErr);
           }
 
           // If send official message is checked, send official DM
