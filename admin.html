@@ -10,7 +10,15 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="./js/account-standing.js"></script>
+  <script type="module" src="./js/account-standing.js"></script>
+  <script>
+    window.addEventListener('error', function(e) {
+      if (e.message === 'Script error.') {
+        if (e.preventDefault) e.preventDefault();
+        return true;
+      }
+    });
+  </script>
   <script>
     tailwind.config = {
       darkMode: 'class',
