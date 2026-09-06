@@ -6752,11 +6752,15 @@ window.updateDiscordSecurityUI = function() {
   const profile = userProfile || guestProfile;
   if (!profile) return;
 
-  if (window.accountStanding && typeof window.accountStanding.computeAccountStanding === 'function') {
-    const computed = window.accountStanding.computeAccountStanding(profile, null, []);
-    window.accountStanding.renderAccountStandingUI(computed, profile);
+  if (window.accountStanding) {
     if (profile.uid && typeof window.accountStanding.initUserStandingListener === 'function') {
       window.accountStanding.initUserStandingListener(profile.uid);
+    }
+    if (typeof window.accountStanding.reevaluateAndRender === 'function') {
+      window.accountStanding.reevaluateAndRender();
+    } else if (typeof window.accountStanding.computeAccountStanding === 'function') {
+      const computed = window.accountStanding.computeAccountStanding(profile);
+      window.accountStanding.renderAccountStandingUI(computed, profile);
     }
   } else {
     const isLinked = profile && profile.discordVerified === true;
@@ -6800,16 +6804,21 @@ window.closeDiscordVerificationGate = function() {
  */
 window.openAxSecurityModal = function() {
   window.renderDiscordAuthWidget();
-  window.updateDiscordSecurityUI();
   const profile = userProfile || guestProfile || {};
   if (window.accountStanding) {
     if (profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
       window.accountStanding.refreshUserStanding(profile.uid);
+    } else if (typeof window.accountStanding.reevaluateAndRender === 'function') {
+      window.accountStanding.reevaluateAndRender();
     } else if (typeof window.accountStanding.computeAccountStanding === 'function') {
-      const computed = window.accountStanding.computeAccountStanding(profile, null, []);
+      const computed = window.accountStanding.computeAccountStanding(profile);
       window.accountStanding.renderAccountStandingUI(computed, profile);
+    }
+    if (typeof window.accountStanding.fetchAiStandingRecommendations === 'function') {
       window.accountStanding.fetchAiStandingRecommendations(false);
     }
+  } else {
+    window.updateDiscordSecurityUI();
   }
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.remove('hidden');
