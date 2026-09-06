@@ -565,8 +565,19 @@
     renderViolationsDisplay(violations || [], standing);
     updateFactorsList(standingData);
 
-    // 5. Trigger Real-Time AI Recommendations
-    fetchAiStandingRecommendations(false);
+    // 5. Trigger Real-Time AI Recommendations:
+    // Only query backend if the AX Security modal is currently open.
+    // Otherwise render instant local client advice so UI is ready immediately without network spam.
+    const secModal = document.getElementById('mAxSecurityModal');
+    const isModalOpen = secModal && !secModal.classList.contains('hidden');
+    if (isModalOpen) {
+      fetchAiStandingRecommendations(false);
+    } else if (cachedAiRecommendations && cachedAiRecommendations.standing === standing) {
+      renderAiRecommendations(cachedAiRecommendations);
+    } else {
+      const instantAdvice = generateClientFallbackAdvice(standingData);
+      renderAiRecommendations(instantAdvice);
+    }
   }
 
   /**
@@ -716,32 +727,37 @@
   /**
    * Fetches real-time personalized AI recommendations from server
    */
+  let isAiFetchInFlight = false;
+  let lastAiFetchTimestamp = 0;
+
   async function fetchAiStandingRecommendations(forceRefresh = false) {
     const container = document.getElementById('axAiRecsContainer');
-    const timelineEl = document.getElementById('axAiRecoveryTimeline');
-    const sourceBadge = document.getElementById('axAiSourceBadge');
     const refreshIcon = document.getElementById('iconRefreshAi');
 
     if (!container || !currentStandingState) return;
 
-    if (cachedAiRecommendations && !forceRefresh && cachedAiRecommendations.standing === currentStandingState.standing) {
+    const now = Date.now();
+    // Use cached data if fresh (within 5 minutes) unless forced
+    if (cachedAiRecommendations && !forceRefresh && cachedAiRecommendations.standing === currentStandingState.standing && (now - lastAiFetchTimestamp < 5 * 60 * 1000)) {
       renderAiRecommendations(cachedAiRecommendations);
       return;
     }
 
+    if (isAiFetchInFlight) return;
+    isAiFetchInFlight = true;
+
     if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
-    container.innerHTML = `
-      <div class="p-4 text-center text-slate-400 text-xs space-y-2">
-        <i class="fas fa-circle-notch animate-spin text-indigo-400 text-base"></i>
-        <p class="animate-pulse">ArenaX AI analyzing your live account signals & moderation history...</p>
-      </div>
-    `;
+    // Immediately show high-quality client recommendations so screen is never empty or stuck
+    if (!cachedAiRecommendations) {
+      const instantFallback = generateClientFallbackAdvice(currentStandingState);
+      renderAiRecommendations(instantFallback);
+    }
 
     try {
       const user = window.userProfile || window.guestProfile || {};
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const res = await fetch('/api/account-standing/recommendations', {
         method: 'POST',
@@ -758,15 +774,21 @@
       });
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error('AI service response error');
-      const data = await res.json();
-      cachedAiRecommendations = data;
-      renderAiRecommendations(data);
-    } catch (err) {
-      console.warn("AI recommendation fetch error, generating local advice:", err);
+      if (res.ok) {
+        const data = await res.json();
+        cachedAiRecommendations = data;
+        lastAiFetchTimestamp = Date.now();
+        renderAiRecommendations(data);
+      } else {
+        const fallback = generateClientFallbackAdvice(currentStandingState);
+        renderAiRecommendations(fallback);
+      }
+    } catch {
+      // Gracefully show instant tailored client advice without error logs
       const fallback = generateClientFallbackAdvice(currentStandingState);
       renderAiRecommendations(fallback);
     } finally {
+      isAiFetchInFlight = false;
       if (refreshIcon) refreshIcon.classList.remove('animate-spin');
     }
   }
@@ -1147,5 +1169,47 @@
       alert("Disciplinary Appeal:\nTo submit a formal dispute or appeal a warning, open the Support Hub in profile settings or email support@arenax.gg with your match UID and evidence.");
     }
   };
+
+  // Auto-bind Firebase Auth state so standing updates in real-time as soon as user logs in
+  function setupAutoAuthBinding() {
+    function tryBind() {
+      const auth = window.auth || window.fbAuth;
+      const onAuthFn = window.onAuthStateChanged;
+      if (auth && typeof onAuthFn === 'function') {
+        try {
+          onAuthFn(auth, (user) => {
+            if (user && user.uid) {
+              console.log('[AccountStanding] Real-time auth resolved for user:', user.uid);
+              initUserStandingListener(user.uid);
+            } else {
+              reevaluateAndRender();
+            }
+          });
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    }
+
+    if (!tryBind()) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (tryBind() || attempts > 30) {
+          clearInterval(interval);
+        }
+      }, 500);
+    }
+  }
+
+  // Trigger auto-binding
+  setupAutoAuthBinding();
+
+  // Initial evaluation on script load
+  try {
+    reevaluateAndRender();
+  } catch (e) {}
 
 })();
