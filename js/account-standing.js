@@ -184,18 +184,45 @@
       });
     }
 
+    // 6. Process administrative override as active violation entry if overridden to LIMITED or AT_RISK
+    const isOverrideActive = Boolean(
+      (docData.isOverridden === true || docData.overrideActive === true) &&
+      (docData.overrideLevel || docData.level) &&
+      (docData.overrideLevel || docData.level) !== STANDING_LEVELS.ALL_GOOD
+    );
+    if (isOverrideActive) {
+      const oLevel = docData.overrideLevel || docData.level;
+      const isRisk = oLevel === STANDING_LEVELS.AT_RISK;
+      const reason = docData.overrideReason || (isRisk ? 'Disciplinary Standing Action by Moderation' : 'Account Standing Limited by Moderation');
+      const key = `override_${oLevel}_${reason}`;
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        violations.unshift({
+          id: 'admin-override-violation',
+          type: isRisk ? 'suspension' : 'restriction',
+          reason: reason,
+          status: isRisk ? 'Disciplinary Override' : 'Administrative Override',
+          date: formatDateTime(docData.updatedAt || docData.lastEvaluatedAt || Date.now()),
+          action: `Standing set to ${oLevel.replace('_', ' ')} by moderation`,
+          expiry: 'Subject to moderation council review'
+        });
+      }
+    }
+
     return violations;
   }
 
   /**
    * Evaluates user account signals and computes mathematical score, standing level, and violations
    */
-  function computeAccountStanding(user, standingDoc = null, reports = [], punishments = [], moderationHistory = []) {
-    const profile = user || {};
-    const docData = standingDoc || {};
+  function computeAccountStanding(user, standingDoc = null, reports = null, punishments = null, moderationHistory = []) {
+    const profile = user || window.userProfile || window.guestProfile || {};
+    const docData = (standingDoc !== null && standingDoc !== undefined) ? standingDoc : (latestStandingDoc || {});
+    const effectivePunishments = (Array.isArray(punishments) && punishments.length > 0) ? punishments : (latestPunishments || []);
+    const effectiveReports = (Array.isArray(reports) && reports.length > 0) ? reports : (latestReports || []);
 
     // 1. Extract all active violations from real signals
-    const activeViolations = extractActiveViolations(profile, docData, punishments);
+    const activeViolations = extractActiveViolations(profile, docData, effectivePunishments);
 
     // 2. Check for active manual admin override
     const hasOverride = Boolean(
@@ -215,7 +242,7 @@
         overrideReason: docData.overrideReason || 'Administrative decision',
         overrideBy: docData.updatedBy || docData.overrideBy || 'Admin',
         overrideAt: docData.updatedAt || docData.overrideAt || null,
-        factors: extractFactors(profile, docData, reports, activeViolations, overrideLevel),
+        factors: extractFactors(profile, docData, effectiveReports, activeViolations, overrideLevel),
         violations: activeViolations
       };
     }
@@ -713,9 +740,13 @@
 
     try {
       const user = window.userProfile || window.guestProfile || {};
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
       const res = await fetch('/api/account-standing/recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           standing: currentStandingState.standing,
           standingLevel: currentStandingState.level,
@@ -725,6 +756,7 @@
           userName: user.displayName || user.name || 'Player'
         })
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error('AI service response error');
       const data = await res.json();
@@ -931,6 +963,7 @@
     const user = window.userProfile || window.guestProfile || {};
     const computed = computeAccountStanding(user, latestStandingDoc, latestReports, latestPunishments);
     renderAccountStandingUI(computed, user);
+    return computed;
   }
 
   /**
@@ -940,42 +973,68 @@
     if (!uid) return;
     const db = window.fbDb || window.db;
     const fs = window.fsTools || window;
-    if (!db || !fs || typeof fs.doc !== 'function') return;
+    const docFn = (fs && fs.doc) || window.doc;
+    const collectionFn = (fs && fs.collection) || window.collection;
+    const onSnapshotFn = (fs && fs.onSnapshot) || window.onSnapshot;
+
+    if (!db || typeof docFn !== 'function' || typeof onSnapshotFn !== 'function') {
+      setTimeout(() => initUserStandingListener(uid), 500);
+      return;
+    }
 
     if (standingUnsubscribe) { standingUnsubscribe(); standingUnsubscribe = null; }
     if (punishmentsUnsubscribe) { punishmentsUnsubscribe(); punishmentsUnsubscribe = null; }
+    if (userDocUnsubscribe) { userDocUnsubscribe(); userDocUnsubscribe = null; }
 
     try {
-      const { doc, collection, onSnapshot } = fs;
-
       // 1. Listen to account_standings/{uid}
-      const standingDocRef = doc(db, 'account_standings', uid);
-      standingUnsubscribe = onSnapshot(standingDocRef, (snap) => {
+      const standingDocRef = docFn(db, 'account_standings', uid);
+      standingUnsubscribe = onSnapshotFn(standingDocRef, (snap) => {
         latestStandingDoc = snap.exists() ? snap.data() : null;
+        console.log("[AccountStanding] Real-time standing update:", latestStandingDoc);
         reevaluateAndRender();
       }, (err) => {
-        console.warn("Standing listener note:", err);
+        console.warn("[AccountStanding] Standing listener note:", err);
       });
 
       // 2. Listen to users/{uid}/punishments subcollection
+      if (typeof collectionFn === 'function') {
+        try {
+          const punishmentsRef = collectionFn(db, 'users', uid, 'punishments');
+          punishmentsUnsubscribe = onSnapshotFn(punishmentsRef, (snap) => {
+            const list = [];
+            snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+            latestPunishments = list;
+            console.log("[AccountStanding] Real-time punishments update:", list.length, "records");
+            reevaluateAndRender();
+          }, (err) => {
+            console.warn("[AccountStanding] Punishments listener note:", err);
+          });
+        } catch (pe) {
+          console.warn("[AccountStanding] Could not listen to punishments subcollection:", pe);
+        }
+      }
+
+      // 3. Listen to users/{uid} for warning/restriction changes
       try {
-        const punishmentsRef = collection(db, 'users', uid, 'punishments');
-        punishmentsUnsubscribe = onSnapshot(punishmentsRef, (snap) => {
-          const list = [];
-          snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-          latestPunishments = list;
-          reevaluateAndRender();
+        const userDocRef = docFn(db, 'users', uid);
+        userDocUnsubscribe = onSnapshotFn(userDocRef, (snap) => {
+          if (snap.exists()) {
+            const uData = snap.data();
+            window.userProfile = { ...(window.userProfile || {}), ...uData, id: uid, uid };
+            reevaluateAndRender();
+          }
         }, (err) => {
-          console.warn("Punishments listener note:", err);
+          console.warn("[AccountStanding] User doc listener note:", err);
         });
-      } catch (pe) {
-        console.warn("Could not listen to punishments subcollection:", pe);
+      } catch (ue) {
+        console.warn("[AccountStanding] Could not listen to user doc:", ue);
       }
 
       // Initial immediate evaluation
       reevaluateAndRender();
     } catch (e) {
-      console.warn("Could not attach standing listeners:", e);
+      console.warn("[AccountStanding] Could not attach standing listeners:", e);
       reevaluateAndRender();
     }
   }
@@ -990,39 +1049,44 @@
     }
     const db = window.fbDb || window.db;
     const fs = window.fsTools || window;
-    if (!db || !fs || typeof fs.getDoc !== 'function') {
+    const docFn = (fs && fs.doc) || window.doc;
+    const getDocFn = (fs && fs.getDoc) || window.getDoc;
+    const collectionFn = (fs && fs.collection) || window.collection;
+    const getDocsFn = (fs && fs.getDocs) || window.getDocs;
+
+    if (!db || typeof docFn !== 'function' || typeof getDocFn !== 'function') {
       reevaluateAndRender();
       return;
     }
 
     try {
-      const { doc, getDoc, collection, getDocs } = fs;
-      
       // Fetch standing doc
       try {
-        const sSnap = await getDoc(doc(db, 'account_standings', uid));
+        const sSnap = await getDocFn(docFn(db, 'account_standings', uid));
         if (sSnap.exists()) latestStandingDoc = sSnap.data();
       } catch (e) {}
 
       // Fetch punishments subcollection
-      try {
-        const pSnap = await getDocs(collection(db, 'users', uid, 'punishments'));
-        const list = [];
-        pSnap.forEach(d => list.push({ id: d.id, ...d.data() }));
-        latestPunishments = list;
-      } catch (e) {}
+      if (typeof collectionFn === 'function' && typeof getDocsFn === 'function') {
+        try {
+          const pSnap = await getDocsFn(collectionFn(db, 'users', uid, 'punishments'));
+          const list = [];
+          pSnap.forEach(d => list.push({ id: d.id, ...d.data() }));
+          latestPunishments = list;
+        } catch (e) {}
+      }
 
-      // Fetch user doc directly if needed
+      // Fetch user doc directly
       try {
-        const uSnap = await getDoc(doc(db, 'users', uid));
+        const uSnap = await getDocFn(docFn(db, 'users', uid));
         if (uSnap.exists()) {
-          window.userProfile = { ...uSnap.data(), id: uid, uid };
+          window.userProfile = { ...(window.userProfile || {}), ...uSnap.data(), id: uid, uid };
         }
       } catch (e) {}
 
       reevaluateAndRender();
     } catch (err) {
-      console.warn("Error in refreshUserStanding:", err);
+      console.warn("[AccountStanding] Error in refreshUserStanding:", err);
       reevaluateAndRender();
     }
   }
@@ -1035,7 +1099,10 @@
     fetchAiStandingRecommendations,
     initUserStandingListener,
     refreshUserStanding,
-    getCurrentState: () => currentStandingState
+    reevaluateAndRender,
+    getCurrentState: () => currentStandingState,
+    getLatestStandingDoc: () => latestStandingDoc,
+    getLatestPunishments: () => latestPunishments
   };
 
   window.toggleAxProgressionRules = function() {
