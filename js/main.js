@@ -2,6 +2,7 @@
 // ARENAX MAIN RUNTIME APPLICATION CONTROLLER
 // ==========================================
 
+import './account-standing.js';
 
 function getNumericPlayerId(uid, currentHandle) {
   if (currentHandle) {
