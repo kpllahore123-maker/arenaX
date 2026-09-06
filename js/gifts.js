@@ -194,6 +194,11 @@ window.sendPopularityGiftItem = async function(type) {
   }
 
   // Check if either user has blocked the other
+  if (typeof window.isLocallyBlockedByMe === 'function' && window.isLocallyBlockedByMe(currentSender?.uid, recipientId)) {
+    alert("You have blocked this user. Unblock them first to send gifts. ❌");
+    return;
+  }
+
   try {
     const _getDoc = typeof getDoc !== 'undefined' ? getDoc : window.getDoc;
     const _doc = typeof doc !== 'undefined' ? doc : window.doc;
