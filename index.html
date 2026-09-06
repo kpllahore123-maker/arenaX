@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('/')) {
       player.setAttribute('src', (basePath.endsWith('/') ? basePath : basePath + '/') + src.replace(/^\.\//, ''));
     }
+    player.addEventListener('error', (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+    });
   });
 
   // Ensure img elements resolve local paths properly
@@ -92,17 +95,33 @@ if ('serviceWorker' in navigator) {
       if ('caches' in window && typeof caches.keys === 'function') {
         caches.keys().then(names => {
           for (let name of names) {
-            if (name !== 'arenax-cache-v10') {
-              caches.delete(name).then(() => console.log('Deleted old cache:', name)).catch(() => {});
+            if (name !== 'arenax-cache-v13') {
+              caches.delete(name).catch(() => {});
             }
           }
-        }).catch(err => console.warn('Caches access failed or rejected:', err));
+        }).catch(() => {});
       }
-    } catch (e) {
-      console.warn('Cache keys delete failed:', e);
+    } catch {
+      // cache access fallback
     }
   });
 }
+</script>
+<script>
+  // Global defensive error boundary for third-party script/lottie events
+  window.addEventListener('error', function(event) {
+    if (event.message === 'Script error.' || (event.filename && (event.filename.includes('lottie') || event.filename.includes('three')))) {
+      if (event.preventDefault) event.preventDefault();
+      return true;
+    }
+  });
+  window.addEventListener('unhandledrejection', function(event) {
+    var reason = String(event.reason || '');
+    if (reason.includes('quota') || reason.includes('429') || reason.includes('Unexpected token <') || reason.includes('lottie')) {
+      if (event.preventDefault) event.preventDefault();
+      return true;
+    }
+  });
 </script>
 <title>ArenaX — Play & Dominate</title>
 <!-- Google Fonts CDN with 12 VIP Game Fonts & UI Fonts -->
@@ -152,6 +171,11 @@ if (typeof tailwind !== 'undefined') {
 }
 </script>
 <style>
+html, body {
+  background-color: #0a0c12;
+  color: #f0f2ff;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
 .golden-name-shimmer {
   background: linear-gradient(
@@ -6408,7 +6432,7 @@ if (typeof tailwind !== 'undefined') {
   <script type="module" src="./js/teams.js"></script>
   <script type="module" src="./js/voiceroom.js"></script>
   <script type="module" src="./js/moments.js"></script>
-  <script src="./js/account-standing.js"></script>
+  <script type="module" src="./js/account-standing.js"></script>
   <script type="module" src="./js/main.js"></script>
 
 <!-- PWA Update Modal Overlay -->
