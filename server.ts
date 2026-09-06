@@ -369,7 +369,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   ]
 }`;
 
-        const aiResponse = await ai.models.generateContent({
+        const aiCallPromise = ai.models.generateContent({
           model: "gemini-3.8-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           config: {
@@ -377,6 +377,12 @@ Generate personalized real-time advice strictly as a JSON object matching this s
             responseMimeType: "application/json"
           }
         });
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("AI recommendation timeout")), 3500)
+        );
+
+        const aiResponse = (await Promise.race([aiCallPromise, timeoutPromise])) as any;
 
         const rawText = aiResponse.text?.trim() || "";
         let parsed = null;
