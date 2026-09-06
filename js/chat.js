@@ -1785,6 +1785,10 @@ function removeLocallyBlockedUser(myUid, targetUid) {
   } catch(e) {}
 }
 
+window.isLocallyBlockedByMe = isLocallyBlockedByMe;
+window.saveLocallyBlockedUser = saveLocallyBlockedUser;
+window.removeLocallyBlockedUser = removeLocallyBlockedUser;
+
 window.openPlayerProfileCard = async function(targetUid) {
   if (!targetUid) return;
 
@@ -2292,113 +2296,222 @@ if ($('btnVppOptCopyLink')) {
 // 2. BLOCK / UNBLOCK USER OPTION
 let pendingBlockTarget = null;
 
-if ($('btnVppOptBlock')) {
-  $('btnVppOptBlock').addEventListener('click', async () => {
-    $('vppMoreMenuDropdown')?.classList.add('hidden');
-    const myUid = getActiveUserUid();
-    const targetUid = currentViewedUser?.uid || window.currentViewingPlayerId;
-    const targetName = currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName || 'this user';
-    
-    if (!targetUid) return;
+window.closeBlockUserConfirmationModal = function() {
+  $('mBlockUserConfirmModal')?.classList.add('hidden');
+  const errBox = $('lblBlockError');
+  if (errBox) {
+    errBox.classList.add('hidden');
+    errBox.textContent = '';
+  }
+  const btn = $('btnConfirmBlockUser');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-ban text-xs"></i> Block';
+  }
+  pendingBlockTarget = null;
+};
 
-    try {
-      let isCurrentlyBlocked = isLocallyBlockedByMe(myUid, targetUid);
-      if (!isCurrentlyBlocked && myUid) {
-        try {
-          const blockedDocRef = doc(db, 'users', myUid, 'blocked', targetUid);
-          const snap = await getDoc(blockedDocRef);
-          if (snap && snap.exists()) isCurrentlyBlocked = true;
-        } catch(e) {
-          console.warn("Check block error:", e);
-        }
-      }
+window.openBlockUserConfirmationModal = async function(targetUserOrUid) {
+  $('vppMoreMenuDropdown')?.classList.add('hidden');
+  const myUid = getActiveUserUid();
+  let targetUid = typeof targetUserOrUid === 'string' 
+    ? targetUserOrUid 
+    : (targetUserOrUid?.uid || targetUserOrUid?.id || currentViewedUser?.uid || window.currentViewingPlayerId);
+  
+  if (!targetUid) return;
 
-      if (isCurrentlyBlocked) {
-        // User is currently blocked -> prompt or unblock immediately
-        if (confirm(`Unblock ${targetName}? They will be able to message you and send gifts again.`)) {
-          removeLocallyBlockedUser(myUid, targetUid);
-          if (myUid) {
-            try { await deleteDoc(doc(db, 'users', myUid, 'blocked', targetUid)); } catch(e){}
-            try { await updateDoc(doc(db, 'users', myUid), { blockedUserIds: arrayRemove(targetUid) }); } catch(e){}
-          }
-          if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Block User";
-          if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-ban text-rose-400"></i>';
-          if (typeof showToastNotification === 'function') {
-            showToastNotification("User Unblocked", `${targetName} has been unblocked.`);
-          } else {
-            alert(`${targetName} has been unblocked.`);
-          }
-          // Immediately reload the profile card with unblocked data
-          window.openPlayerProfileCard(targetUid);
-        }
-      } else {
-        // Show Block Confirmation Modal
-        pendingBlockTarget = { uid: targetUid, name: targetName };
-        if ($('lblBlockConfirmTitle')) $('lblBlockConfirmTitle').textContent = `Block ${targetName}?`;
-        if ($('lblBlockConfirmDesc')) {
-          $('lblBlockConfirmDesc').textContent = `Block ${targetName}? They won't be able to message you, send gifts, or view your full profile.`;
-        }
-        $('mBlockUserConfirmModal')?.classList.remove('hidden');
-      }
-    } catch (err) {
-      console.error("Block check error:", err);
-      alert("Error checking block status: " + err.message);
+  if (myUid && targetUid === myUid) {
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Action Not Allowed", "You cannot block your own profile.");
+    } else {
+      alert("You cannot block your own profile.");
     }
+    return;
+  }
+
+  // Check if currently blocked
+  let isCurrentlyBlocked = isLocallyBlockedByMe(myUid, targetUid);
+  if (!isCurrentlyBlocked && myUid) {
+    try {
+      const blockedDocRef = doc(db, 'users', myUid, 'blocked', targetUid);
+      const snap = await getDoc(blockedDocRef);
+      if (snap && snap.exists()) isCurrentlyBlocked = true;
+    } catch(e) {
+      console.warn("Check block error:", e);
+    }
+  }
+
+  let targetName = (typeof targetUserOrUid === 'object' && (targetUserOrUid?.name || targetUserOrUid?.userName)) || currentViewedUser?.name || currentViewedUser?.userName || window.currentViewingPlayerName;
+  let targetAv = (typeof targetUserOrUid === 'object' && (targetUserOrUid?.av || targetUserOrUid?.avatar)) || currentViewedUser?.av || currentViewedUser?.avatar || window.currentViewingPlayerAvatar;
+  let targetHandle = (typeof targetUserOrUid === 'object' && (targetUserOrUid?.handle || targetUserOrUid?.gameUID)) || currentViewedUser?.handle || currentViewedUser?.gameUID;
+
+  if (isCurrentlyBlocked) {
+    const displayName = targetName || 'this user';
+    if (confirm(`Unblock ${displayName}? They will be able to message you and send gifts again.`)) {
+      removeLocallyBlockedUser(myUid, targetUid);
+      if (myUid) {
+        try { await deleteDoc(doc(db, 'users', myUid, 'blocked', targetUid)); } catch(e){}
+        try { await updateDoc(doc(db, 'users', myUid), { blockedUserIds: arrayRemove(targetUid) }); } catch(e){}
+      }
+      if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Block User";
+      if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-ban text-rose-400"></i>';
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("User Unblocked", `${displayName} has been unblocked.`);
+      } else {
+        alert(`${displayName} has been unblocked.`);
+      }
+      window.openPlayerProfileCard(targetUid);
+    }
+    return;
+  }
+
+  // Fetch real profile from Firestore if name or avatar is missing to prevent placeholder fallback
+  if (!targetName || !targetAv) {
+    try {
+      const snap = await getDoc(doc(db, 'users', targetUid));
+      if (snap && snap.exists()) {
+        const d = snap.data();
+        targetName = targetName || d.name || d.userName;
+        targetAv = targetAv || d.av || d.avatar;
+        targetHandle = targetHandle || d.handle || d.gameUID;
+      }
+    } catch(err) {
+      console.warn("Could not fetch target user details for block modal:", err);
+    }
+  }
+
+  targetName = targetName || 'ArenaX Player';
+  targetAv = targetAv || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+  const targetNumericId = getNumericTargetId(targetUid, targetHandle);
+
+  pendingBlockTarget = {
+    uid: targetUid,
+    name: targetName,
+    avatar: targetAv,
+    numericId: targetNumericId
+  };
+
+  // Populate dynamic header info with selected player's real info
+  if ($('lblBlockConfirmTitle')) $('lblBlockConfirmTitle').textContent = `Block ${targetName}?`;
+  if ($('blockTargetAvatar')) $('blockTargetAvatar').src = targetAv;
+  if ($('lblBlockTargetId')) {
+    $('lblBlockTargetId').textContent = targetNumericId ? `ID: ${targetNumericId}` : '';
+    $('lblBlockTargetId').classList.toggle('hidden', !targetNumericId);
+  }
+
+  // Reset error notification box
+  const errBox = $('lblBlockError');
+  if (errBox) {
+    errBox.classList.add('hidden');
+    errBox.textContent = '';
+  }
+
+  // Reset confirmation button
+  const btnConfirm = $('btnConfirmBlockUser');
+  if (btnConfirm) {
+    btnConfirm.disabled = false;
+    btnConfirm.innerHTML = '<i class="fas fa-ban text-xs"></i> Block';
+  }
+
+  // Display modal
+  $('mBlockUserConfirmModal')?.classList.remove('hidden');
+};
+
+if ($('btnVppOptBlock')) {
+  $('btnVppOptBlock').addEventListener('click', () => {
+    window.openBlockUserConfirmationModal(currentViewedUser);
   });
 }
 
 if ($('btnCancelBlockUser')) {
   $('btnCancelBlockUser').addEventListener('click', () => {
-    $('mBlockUserConfirmModal')?.classList.add('hidden');
-    pendingBlockTarget = null;
+    window.closeBlockUserConfirmationModal();
+  });
+}
+
+if ($('btnCloseBlockModalX')) {
+  $('btnCloseBlockModalX').addEventListener('click', () => {
+    window.closeBlockUserConfirmationModal();
+  });
+}
+
+const blockModalElem = $('mBlockUserConfirmModal');
+if (blockModalElem) {
+  blockModalElem.addEventListener('click', (e) => {
+    if (e.target === blockModalElem) {
+      window.closeBlockUserConfirmationModal();
+    }
   });
 }
 
 if ($('btnConfirmBlockUser')) {
   $('btnConfirmBlockUser').addEventListener('click', async () => {
-    if (!pendingBlockTarget) return;
+    if (!pendingBlockTarget || !pendingBlockTarget.uid) return;
     const myUid = getActiveUserUid();
 
     const blockedUid = pendingBlockTarget.uid;
     const blockedName = pendingBlockTarget.name;
 
     const btn = $('btnConfirmBlockUser');
-    const origHtml = btn.innerHTML;
+    const errBox = $('lblBlockError');
+    if (errBox) {
+      errBox.classList.add('hidden');
+      errBox.textContent = '';
+    }
+
+    if (!myUid) {
+      if (errBox) {
+        errBox.textContent = "Please sign in to block players.";
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (myUid === blockedUid) {
+      if (errBox) {
+        errBox.textContent = "You cannot block yourself.";
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
     btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Blocking...`;
+    btn.innerHTML = `<i class="fas fa-circle-notch animate-spin text-xs"></i> Blocking...`;
 
     try {
       // 1. Immediately save to local persistent cache
       saveLocallyBlockedUser(myUid, blockedUid);
 
       // 2. Persist to Firestore if myUid exists
-      if (myUid) {
-        try {
-          const blockedDocRef = doc(db, 'users', myUid, 'blocked', blockedUid);
-          await setDoc(blockedDocRef, {
-            blockedAt: serverTimestamp(),
-            blockedUid: blockedUid,
-            blockedName: blockedName
-          });
-        } catch (subErr) {
-          console.warn("Firestore subcollection setDoc error:", subErr);
-        }
-
-        try {
-          await updateDoc(doc(db, 'users', myUid), {
-            blockedUserIds: arrayUnion(blockedUid)
-          });
-        } catch (arrErr) {
-          console.warn("Firestore blockedUserIds update error:", arrErr);
-        }
+      // Prevent duplicate block doc writes
+      const blockedDocRef = doc(db, 'users', myUid, 'blocked', blockedUid);
+      const snap = await getDoc(blockedDocRef);
+      if (!snap.exists()) {
+        await setDoc(blockedDocRef, {
+          blockedAt: serverTimestamp(),
+          blockedUid: blockedUid,
+          blockedName: blockedName
+        }, { merge: true });
       }
 
-      $('mBlockUserConfirmModal')?.classList.add('hidden');
+      try {
+        await updateDoc(doc(db, 'users', myUid), {
+          blockedUserIds: arrayUnion(blockedUid)
+        });
+      } catch (arrErr) {
+        console.warn("Firestore blockedUserIds update error:", arrErr);
+      }
+
+      // Close modal
+      window.closeBlockUserConfirmationModal();
+
+      // Update 3-dots menu button text
       if ($('vppOptBlockText')) $('vppOptBlockText').textContent = "Unblock User";
       if ($('vppOptBlockIcon')) $('vppOptBlockIcon').innerHTML = '<i class="fas fa-user-check text-emerald-400"></i>';
 
+      // Show toast notification
       if (typeof showToastNotification === 'function') {
-        showToastNotification("User Blocked 🚫", `${blockedName} has been blocked.`);
+        showToastNotification("User Blocked", `${blockedName} has been blocked.`);
       } else {
         alert(`${blockedName} has been blocked.`);
       }
@@ -2406,13 +2519,14 @@ if ($('btnConfirmBlockUser')) {
       // Immediately reload the profile card in blocked state
       window.openPlayerProfileCard(blockedUid);
     } catch (err) {
-      console.error("Block error:", err);
-      $('mBlockUserConfirmModal')?.classList.add('hidden');
-      window.openPlayerProfileCard(blockedUid);
-    } finally {
+      console.error("Block operation error:", err);
+      // Keep modal open and display clear error message
+      if (errBox) {
+        errBox.textContent = "Something went wrong. Please try again.";
+        errBox.classList.remove('hidden');
+      }
       btn.disabled = false;
-      btn.innerHTML = origHtml;
-      pendingBlockTarget = null;
+      btn.innerHTML = `<i class="fas fa-ban text-xs"></i> Block`;
     }
   });
 }
@@ -3241,6 +3355,15 @@ async function sendDirectMessage() {
   }
 
   // Check if either user has blocked the other
+  if (isLocallyBlockedByMe(userProfile.uid, activeDMFriendUid)) {
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("User Blocked 🚫", "You have blocked this player. Unblock them first to send a message.");
+    } else {
+      alert("You have blocked this player. Unblock them first to send a message.");
+    }
+    return;
+  }
+
   try {
     const [theyBlockedMe, iBlockedThem] = await Promise.all([
       getDoc(doc(db, 'users', activeDMFriendUid, 'blocked', userProfile.uid)),
