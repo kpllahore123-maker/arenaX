@@ -22,7 +22,6 @@ if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)
 if (typeof firebase !== 'undefined' && firebase.messaging) {
   try {
     const messaging = firebase.messaging();
-
     messaging.onBackgroundMessage((payload) => {
       console.log('[sw.js] Received background message ', payload);
       const notificationTitle = payload.notification?.title || payload.data?.title || 'ArenaX Notification';
@@ -35,7 +34,6 @@ if (typeof firebase !== 'undefined' && firebase.messaging) {
           ...payload.data
         }
       };
-
       self.registration.showNotification(notificationTitle, notificationOptions);
     });
   } catch (e) {
@@ -43,8 +41,8 @@ if (typeof firebase !== 'undefined' && firebase.messaging) {
   }
 }
 
-// Cache & Offline Support
-const CACHE_NAME = 'arenax-cache-v11';
+// Cache & Offline Support - Bumped to v13 to invalidate stale client caches immediately
+const CACHE_NAME = 'arenax-cache-v13';
 const ASSETS = [
   './',
   'index.html',
@@ -62,7 +60,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Caching assets in sw.js');
+      console.log('Caching initial assets in sw.js');
       return cache.addAll(ASSETS).catch(err => {
         console.warn('Some initial assets failed to cache:', err);
       });
@@ -70,45 +68,57 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate Event
+// Activate Event - aggressively deletes all outdated cache versions (including v11 and older)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
         keys.map(key => {
           if (key !== CACHE_NAME) {
-            console.log('Clearing old cache:', key);
+            console.log('[sw.js] Deleting old stale cache:', key);
             return caches.delete(key);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // Listen for SKIP_WAITING
 self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data.action === 'skipWaiting')) {
     self.skipWaiting();
   }
 });
 
-// Fetch Event (Network First for document / Cache First for assets)
+// Fetch Event (Network First for navigation, documents, and script bundles / Cache First for static media)
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
   const url = event.request.url;
+
+  // Never cache Firebase, Firestore, or server API endpoints
   if (
     url.includes('firestore.googleapis.com') ||
     url.includes('firebase') ||
     url.includes('identitytoolkit') ||
-    url.includes('/api/')
+    url.includes('/api/') ||
+    url.includes('cloudfunctions.net')
   ) {
     return;
   }
 
-  if (event.request.mode === 'navigate' || url.endsWith('index.html') || url.endsWith('/') || url.endsWith('./')) {
+  // Network First for HTML documents, scripts, and code bundles so users immediately get deployed fixes
+  const isCodeOrDoc = 
+    event.request.mode === 'navigate' || 
+    url.endsWith('index.html') || 
+    url.endsWith('admin.html') || 
+    url.endsWith('/') || 
+    url.endsWith('./') ||
+    url.includes('/assets/') ||
+    url.includes('/js/') ||
+    url.endsWith('.js');
+
+  if (isCodeOrDoc) {
     event.respondWith(
       fetch(event.request).then(networkResponse => {
         if (networkResponse && networkResponse.status === 200) {
@@ -125,6 +135,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Cache First for static media / fonts / icons
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       if (cachedResponse) {
