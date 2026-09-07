@@ -542,6 +542,50 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     }
   });
 
+  // Custom 6-Digit Email Verification Code Endpoint
+  app.all("/api/send-verification-code", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/send-verification-code.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/send-verification-code error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal error" });
+    }
+  });
+
+  // Verify 6-Digit Email Verification Code Endpoint
+  app.all("/api/verify-email-code", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/verify-email-code.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/verify-email-code error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal error" });
+    }
+  });
+
+  // Request Password Reset Link (Branded Email with Button)
+  app.all("/api/request-password-reset", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/request-password-reset.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/request-password-reset error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal error" });
+    }
+  });
+
+  // Complete Password Reset (Validate token & update password via Admin SDK)
+  app.all("/api/complete-password-reset", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/complete-password-reset.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/complete-password-reset error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal error" });
+    }
+  });
+
   // ── EXTRA SECURITY LAYER FOR HIGHLY SENSITIVE ADMIN ACTIONS ──
   interface AuditLogEntry {
     id: string;
