@@ -36,9 +36,6 @@ export default async function handler(req, res) {
     let auth = null;
     let initError = null;
 
-    const fallbackEmail = 'firebase-adminsdk-fbsvc@arenax-c1586.iam.gserviceaccount.com';
-    const fallbackKey = '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDEqnhWmyFfBQV8\nQ0DM7hw/T2QUq4eSsQGok4vWCBHNpZy5vcvCYpVMwtVNjFahwreH7UkMR8hu7GdK\nPMrF9rmhfvyflPoJ9mMN2YC6tUegVwT2wC2qKanvP8v2e86L01OOYoTxZlu3C1O0\nrxyodJc8i7l3LXW7MhKR3f9m0WVchCfYxl6/KybIxDf0knaR+DDJGtbgRxoV+qXo\nXzXMkz0cRl2Lzv2gkS5Yog+UOzgS8Qn7S+eOYxyIr1AwRXuNs27MfAPVhwJNEaKP\nMWqEiL5UB3Wmsyb1+1MPx8XxZr35VWh+xBdyxc754VymcvNOxN5JwGB2MCktZlrq\ny+15UtAPAgMBAAECggEAA+ObHZtTvZ1LznlF/sd2p4naYM5DkBMQBVVlnoXqVDbC\nMqoeLWnlqe7waOgtjmVbW8TFfQiuXgMux7kMCX4njZoFROKdTzUgIFX8xbRwBiuy\nXW7PeF36jlCkp+sq2nkDXf10w5FSnvwKW7hayLoFg5z/veuYOGt1Eo1hT5c0ee/a\nKQFg60AtlXEr4Z1qCeFyYJlr/HevHJ0jT2rAcqwa0We/tVeeWkn6oXKoHH+S7oFX\nXdmWFbGL+JPUL8VJqni/quo7sN4PWyzyXd4mA7/+58zc8tw8Ncrd7paEd6EUJN8B\nzbJVLSO7L1o1VQ1V9wbUxuDPV/Zw6IsrqEeyyVGEAQKBgQD9k2PcLFdFfl0zprl3\nz4WKXMGSqiCNcqERvGZs/ozhNx/xeAdKn9/VvomYA8p4pAurc+m+mBnH9ksrsu6+\nbAHkGEZvYleUYqzW+haTEzOuuB/ZAfbNsb7XGAbnJqwf6U+Y99K8Lu9X77Fh3sG4\n9MN8rf9LQNvK28nFNh4VZ67O4QKBgQDGi8wBqLwC8ieLp6pyQcJmzydffh3w7Mg2\nCZbV9KG4CpGos4SZV4pyygnv1HQFV+2w3IdPB73wmMBvoWStYG0rKlozcUJZINo4\nEEMpPZO/DoSy0lQ8a+y8eHRqOEAxbjcPY1w+7L6yeuZc5sUs2Q7aKN91c2WUP2xY\n+YwNmLEs7wKBgQC7BIx+4xkOgO8eXBWn3p7/9/8wO1c821Ed8pScSHUA2ZYukjbW\ne+krDJcQTaNzrJGKxzeawTUqfGTeet6IBMK0Ro8UMTSklM4i01n46Q2SC+w5MbCj\n7jbxDqBwtN33vyxchlKfRgJyGa76nr7DuYnAF9gU2WYBTG6Yi5xObyTHIQKBgGg5\njJ82V3PocG/0VRpjgMx9ZDrRtp/5fGQ5hm/MWnSFP89iZXIlrSzy+GJokXsYnFLi\ngTkwZDn/xc0T2QjWfJhTRESK6PxmrYcOqmLky0FZOrmwhb2uHfkV9m6oFrKcG9U9\nIHh7yONidrk//zO6wfwtxpgeOq2m2ZafcTDV/fQLAoGAYqjdET23LQYScwgVh0PB\nBL6eWOB0BNYp0ffWksCs7Cikw2muLurOdIKLLh3/lyMNUgFOhISCjpsgK7HqR9GB\npnzYVIFu/MiOcbci5JhVh0K5QgEl0urgGq8Rxi+Oxg0U2N4xaw2gwV5M4kVK/vSU\n1qfvkRsg2KdDUOudldguIbE=\n-----END PRIVATE KEY-----\n';
-
     function cleanKey(raw) {
       if (!raw) return '';
       let k = String(raw).trim();
@@ -49,37 +46,30 @@ export default async function handler(req, res) {
     }
 
     const projectId = process.env.FIREBASE_PROJECT_ID || 'arenax-c1586';
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || fallbackEmail;
-    let privateKey = cleanKey(process.env.FIREBASE_PRIVATE_KEY) || cleanKey(fallbackKey);
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = cleanKey(process.env.FIREBASE_PRIVATE_KEY);
+
+    if (!clientEmail || !privateKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database service unavailable. Firebase environment variables are missing.'
+      });
+    }
 
     const { initializeApp, getApps, cert } = await import('firebase-admin/app');
     const { getFirestore } = await import('firebase-admin/firestore');
     const { getAuth } = await import('firebase-admin/auth');
 
-    // Attempt initialization with current credentials; if parsing fails, try fallback
-    let credential = null;
     try {
-      credential = cert({ projectId, clientEmail, privateKey });
-    } catch (certErr) {
-      console.warn('[Password Reset] Primary key parse failed, trying fallback:', certErr.message);
-      try {
-        credential = cert({ projectId: 'arenax-c1586', clientEmail: fallbackEmail, privateKey: cleanKey(fallbackKey) });
-      } catch (fbErr) {
-        initError = fbErr.message;
-      }
-    }
-
-    if (credential) {
-      try {
-        const app = getApps().length === 0
-          ? initializeApp({ credential })
-          : getApps()[0];
-        db = getFirestore(app);
-        auth = getAuth(app);
-      } catch (err) {
-        initError = err.message;
-        console.warn('[Password Reset] Admin init error:', err.message);
-      }
+      const credential = cert({ projectId, clientEmail, privateKey });
+      const app = getApps().length === 0
+        ? initializeApp({ credential })
+        : getApps()[0];
+      db = getFirestore(app);
+      auth = getAuth(app);
+    } catch (err) {
+      initError = err.message;
+      console.warn('[Password Reset] Admin init error:', err.message);
     }
 
     if (!db) {
