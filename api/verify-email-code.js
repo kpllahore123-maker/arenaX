@@ -29,9 +29,17 @@ export default async function handler(req, res) {
   try {
     let db = null;
     let auth = null;
+    function cleanKey(raw) {
+      if (!raw) return '';
+      let k = String(raw).trim();
+      if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
+        k = k.slice(1, -1).trim();
+      }
+      return k.replace(/\\n/g, '\n').replace(/\r/g, '');
+    }
+
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const rawKey = process.env.FIREBASE_PRIVATE_KEY || '';
-    const privateKey = rawKey.includes('\\n') ? rawKey.replace(/\\n/g, '\n') : rawKey;
+    const privateKey = cleanKey(process.env.FIREBASE_PRIVATE_KEY);
     const projectId = process.env.FIREBASE_PROJECT_ID || 'arenax-c1586';
 
     if (clientEmail && privateKey) {
