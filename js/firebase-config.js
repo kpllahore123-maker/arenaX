@@ -12,10 +12,45 @@ import {
   signOut, 
   onAuthStateChanged, 
   updateProfile, 
-  sendPasswordResetEmail, 
   sendEmailVerification, 
   deleteUser 
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+// Custom Branded Nodemailer / Brevo Password Reset Flow (Replaces Firebase's default email completely)
+const sendPasswordResetEmail = async (authOrEmail, maybeEmail) => {
+  const email = (typeof authOrEmail === 'string' ? authOrEmail : maybeEmail) || '';
+  if (!email) throw new Error('Email is required');
+  const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+  const primaryEndpoint = isStaticHost ? 'https://arena-x-beta.vercel.app/api/request-password-reset' : '/api/request-password-reset';
+  let res;
+  try {
+    res = await fetch(primaryEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), origin: window.location.origin })
+    });
+    if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+      res = await fetch('https://arena-x-beta.vercel.app/api/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), origin: window.location.origin })
+      });
+    }
+  } catch (err) {
+    if (!primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+      res = await fetch('https://arena-x-beta.vercel.app/api/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), origin: window.location.origin })
+      });
+    } else {
+      throw err;
+    }
+  }
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || 'Failed to dispatch custom password reset email.');
+  return data;
+};
 import { 
   getFirestore, 
   collection, 
