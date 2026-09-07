@@ -1533,20 +1533,36 @@ $('bEmail').addEventListener('click', async () => {
       const cred = await createUserWithEmailAndPassword(auth, em, pw);
       await updateProfile(cred.user, { displayName: username });
       
-      // Send verification email
+      // Save initial profile document in Firestore
       try {
-        await sendEmailVerification(cred.user);
-      } catch (vErr) {
-        console.warn('Email verification send error:', vErr);
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          email: em,
+          username: username,
+          emailVerified: false,
+          createdAt: Date.now()
+        }, { merge: true });
+      } catch (pErr) {
+        console.warn('Initial profile doc write:', pErr);
       }
 
-      // Force sign out until email is verified
-      await signOut(auth);
+      // Dispatch custom branded 6-digit verification code email via our Brevo SMTP endpoint
+      try {
+        await fetch('/api/send-verification-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: cred.user.uid,
+            email: em,
+            username: username
+          })
+        });
+      } catch (vErr) {
+        console.warn('Custom email verification send error:', vErr);
+      }
 
-      alert('✉️ Account created successfully! A verification email has been sent to ' + em + '.\n\nPlease check your inbox and spam folder and click the verification link before signing in.');
-      
-      // Switch UI to login mode
-      $('lnkSignup').click();
+      // Open custom 6-digit verification modal
+      openEmailVerificationModal(cred.user.uid, em, username);
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         $('loginErr').textContent = '⚠️ This email address is already registered. Please sign in or reset password.';
@@ -1564,10 +1580,23 @@ $('bEmail').addEventListener('click', async () => {
     try {
       const cred = await signInWithEmailAndPassword(auth, em, pw);
 
-      // Block unverified logins
-      if (!cred.user.emailVerified) {
-        await signOut(auth);
-        $('loginErr').textContent = '⚠️ Email Not Verified! We sent a verification link to ' + em + '. Please check your inbox and click the link to verify before logging in.';
+      // Check email verification status in Firebase Auth OR Firestore profile
+      let isVerified = cred.user.emailVerified;
+      if (!isVerified) {
+        try {
+          const uSnap = await getDoc(doc(db, 'users', cred.user.uid));
+          if (uSnap.exists() && uSnap.data().emailVerified === true) {
+            isVerified = true;
+          }
+        } catch (checkErr) {
+          console.warn('Firestore verification check error:', checkErr);
+        }
+      }
+
+      // Block unverified logins and offer 6-digit code verification
+      if (!isVerified) {
+        openEmailVerificationModal(cred.user.uid, em, cred.user.displayName || '');
+        $('loginErr').textContent = '⚠️ Please enter the 6-digit verification code sent to ' + em + ' to activate your account.';
         $('loginErr').classList.remove('hidden');
         return;
       }
@@ -1584,7 +1613,7 @@ $('bEmail').addEventListener('click', async () => {
   }
 });
 
-// Forgot Password Handler
+// Forgot Password Handler -> Custom Branded Email with Single-Use 30-min Reset Link
 $('lnkForgot').addEventListener('click', async () => {
   const em = $('iEmail').value.trim();
   if (!em) {
@@ -1592,19 +1621,35 @@ $('lnkForgot').addEventListener('click', async () => {
     $('loginErr').classList.remove('hidden');
     return;
   }
+
+  $('loginErr').classList.add('hidden');
+  const originalText = $('lnkForgot').textContent;
+  $('lnkForgot').textContent = 'Sending reset link...';
+
   try {
-    await sendPasswordResetEmail(auth, em);
-    alert('✉️ Password reset link sent!\n\nWe have sent a password reset email to: ' + em + '\nPlease check your inbox and spam folder.');
-    $('loginErr').classList.add('hidden');
+    const res = await fetch('/api/request-password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: em,
+        origin: window.location.origin
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to dispatch password reset email.');
+    }
+
+    alert('✉️ Password reset link sent!\n\nWe have dispatched a branded password reset email with a secure single-use button link to:\n' + em + '\n\nPlease check your inbox and spam folder (valid for 30 minutes).');
   } catch (err) {
-    if (err.code === 'auth/user-not-found') {
+    if (err.message && err.message.includes('No registered account')) {
       $('loginErr').textContent = '⚠️ No registered user found with this email address. Please sign up!';
-    } else if (err.code === 'auth/invalid-email') {
-      $('loginErr').textContent = '⚠️ Please enter a valid email address.';
     } else {
       $('loginErr').textContent = '⚠️ ' + err.message;
     }
     $('loginErr').classList.remove('hidden');
+  } finally {
+    $('lnkForgot').textContent = originalText;
   }
 });
 
@@ -5104,10 +5149,20 @@ if ($('btnResendVerifyEmail')) {
       return;
     }
     try {
-      await sendEmailVerification(auth.currentUser);
-      alert('✉️ Verification email sent to ' + auth.currentUser.email + '!\n\nPlease check your inbox and click the verification link.');
+      const res = await fetch('/api/send-verification-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: auth.currentUser.uid,
+          email: auth.currentUser.email,
+          username: auth.currentUser.displayName || ''
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to send code');
+      openEmailVerificationModal(auth.currentUser.uid, auth.currentUser.email, auth.currentUser.displayName || '');
     } catch (err) {
-      alert('⚠️ Could not send verification email: ' + err.message);
+      alert('⚠️ Could not send verification code: ' + err.message);
     }
   });
 }
@@ -5118,8 +5173,17 @@ if ($('btnSendResetPassword')) {
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, auth.currentUser.email);
-      alert('✉️ Password reset link sent to: ' + auth.currentUser.email + '\n\nPlease check your inbox to reset your password.');
+      const res = await fetch('/api/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: auth.currentUser.email,
+          origin: window.location.origin
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to dispatch reset email.');
+      alert('✉️ Branded password reset link sent to: ' + auth.currentUser.email + '\n\nPlease check your inbox and spam folder (valid for 30 minutes).');
     } catch (err) {
       alert('⚠️ Could not send password reset email: ' + err.message);
     }
@@ -6848,6 +6912,271 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const bCancelGate = $('bCancelDiscordGate');
   if (bCancelGate) bCancelGate.addEventListener('click', () => window.closeDiscordVerificationGate());
+
+  // Check URL on startup for password reset token
+  checkPasswordResetRoute();
 });
+
+// ==================== CUSTOM 6-DIGIT EMAIL VERIFICATION CONTROLLER ====================
+let pendingVerifyUid = null;
+let pendingVerifyEmail = null;
+let pendingVerifyUsername = null;
+
+window.openEmailVerificationModal = function(uid, email, username) {
+  pendingVerifyUid = uid;
+  pendingVerifyEmail = email;
+  pendingVerifyUsername = username || '';
+
+  if ($('txtVerifyEmailTarget')) $('txtVerifyEmailTarget').textContent = email;
+  if ($('iVerificationCode')) $('iVerificationCode').value = '';
+  if ($('verifyCodeErr')) $('verifyCodeErr').classList.add('hidden');
+  if ($('verifyCodeSuccess')) $('verifyCodeSuccess').classList.add('hidden');
+  if ($('mEmailVerification')) $('mEmailVerification').classList.remove('hidden');
+  if ($('iVerificationCode')) {
+    setTimeout(() => $('iVerificationCode').focus(), 150);
+  }
+};
+
+window.closeEmailVerificationModal = async function() {
+  if ($('mEmailVerification')) $('mEmailVerification').classList.add('hidden');
+  if (auth.currentUser) {
+    try {
+      await signOut(auth);
+    } catch (e) {}
+  }
+};
+
+if ($('btnCloseVerificationModal')) {
+  $('btnCloseVerificationModal').addEventListener('click', () => window.closeEmailVerificationModal());
+}
+
+if ($('btnSubmitVerificationCode')) {
+  $('btnSubmitVerificationCode').addEventListener('click', async () => {
+    const code = ($('iVerificationCode')?.value || '').trim();
+    if (!code || code.length !== 6) {
+      if ($('verifyCodeErr')) {
+        $('verifyCodeErr').textContent = 'Please enter a valid 6-digit verification code.';
+        $('verifyCodeErr').classList.remove('hidden');
+      }
+      return;
+    }
+
+    if ($('verifyCodeErr')) $('verifyCodeErr').classList.add('hidden');
+    $('btnSubmitVerificationCode').disabled = true;
+    const origBtnText = $('btnSubmitVerificationCode').textContent;
+    $('btnSubmitVerificationCode').textContent = 'Verifying Code...';
+
+    const targetUid = pendingVerifyUid || auth.currentUser?.uid;
+
+    try {
+      const res = await fetch('/api/verify-email-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: targetUid,
+          code: code
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Invalid code, please try again.');
+      }
+
+      if ($('verifyCodeSuccess')) {
+        $('verifyCodeSuccess').textContent = '✅ Account verified successfully! Entering ArenaX...';
+        $('verifyCodeSuccess').classList.remove('hidden');
+      }
+
+      // Refresh Firestore user state in current session
+      if (userProfile && userProfile.uid === targetUid) {
+        userProfile.emailVerified = true;
+      }
+
+      setTimeout(() => {
+        if ($('mEmailVerification')) $('mEmailVerification').classList.add('hidden');
+        if (auth.currentUser) {
+          goTo('sDash');
+        } else {
+          goTo('sLogin');
+          if ($('loginErr')) {
+            $('loginErr').textContent = '✅ Email verified! Please sign in with your credentials.';
+            $('loginErr').classList.remove('hidden');
+          }
+        }
+      }, 1200);
+    } catch (err) {
+      if ($('verifyCodeErr')) {
+        $('verifyCodeErr').textContent = '⚠️ ' + err.message;
+        $('verifyCodeErr').classList.remove('hidden');
+      }
+    } finally {
+      $('btnSubmitVerificationCode').disabled = false;
+      $('btnSubmitVerificationCode').textContent = origBtnText;
+    }
+  });
+}
+
+if ($('btnResendVerificationCode')) {
+  $('btnResendVerificationCode').addEventListener('click', async () => {
+    const targetUid = pendingVerifyUid || auth.currentUser?.uid;
+    const targetEmail = pendingVerifyEmail || auth.currentUser?.email;
+
+    if (!targetUid || !targetEmail) {
+      alert('Unable to identify account. Please sign in again.');
+      return;
+    }
+
+    $('btnResendVerificationCode').disabled = true;
+    const origText = $('btnResendVerificationCode').textContent;
+    $('btnResendVerificationCode').textContent = 'Sending...';
+
+    try {
+      const res = await fetch('/api/send-verification-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: targetUid,
+          email: targetEmail,
+          username: pendingVerifyUsername || auth.currentUser?.displayName || ''
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to resend code');
+      }
+
+      if ($('verifyCodeSuccess')) {
+        $('verifyCodeSuccess').textContent = '✉️ A new 6-digit code has been sent to ' + targetEmail;
+        $('verifyCodeSuccess').classList.remove('hidden');
+        setTimeout(() => $('verifyCodeSuccess')?.classList.add('hidden'), 4000);
+      }
+    } catch (err) {
+      if ($('verifyCodeErr')) {
+        $('verifyCodeErr').textContent = '⚠️ ' + err.message;
+        $('verifyCodeErr').classList.remove('hidden');
+      }
+    } finally {
+      $('btnResendVerificationCode').disabled = false;
+      $('btnResendVerificationCode').textContent = origText;
+    }
+  });
+}
+
+// Auto-submit 6th digit in code input
+if ($('iVerificationCode')) {
+  $('iVerificationCode').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    if (e.target.value.length === 6) {
+      $('btnSubmitVerificationCode')?.click();
+    }
+  });
+}
+
+// ==================== CUSTOM PASSWORD RESET CONTROLLER ====================
+async function checkPasswordResetRoute() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token') || urlParams.get('resetToken');
+  const pathname = window.location.pathname;
+
+  if (token || pathname.includes('reset-password')) {
+    const resetToken = token || (new URLSearchParams(window.location.search)).get('token');
+    if (!resetToken) return;
+
+    if ($('mResetPassword')) $('mResetPassword').classList.remove('hidden');
+    if ($('mAuth')) $('mAuth').classList.add('hidden');
+
+    try {
+      const res = await fetch(`/api/complete-password-reset?token=${encodeURIComponent(resetToken)}`);
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        if ($('resetPasswordErr')) {
+          $('resetPasswordErr').textContent = data.error || 'This password reset link is invalid or has expired.';
+          $('resetPasswordErr').classList.remove('hidden');
+        }
+        if ($('formResetPassword')) $('formResetPassword').classList.add('hidden');
+        return;
+      }
+
+      if (data.email && $('txtResetPasswordEmail')) {
+        $('txtResetPasswordEmail').textContent = `Resetting password for: ${data.email}`;
+      }
+    } catch (err) {
+      if ($('resetPasswordErr')) {
+        $('resetPasswordErr').textContent = 'Unable to validate reset link: ' + err.message;
+        $('resetPasswordErr').classList.remove('hidden');
+      }
+    }
+
+    if ($('formResetPassword')) {
+      $('formResetPassword').onsubmit = async (e) => {
+        e.preventDefault();
+        const p1 = $('iResetNewPass')?.value || '';
+        const p2 = $('iResetConfirmPass')?.value || '';
+
+        if (p1 !== p2) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = 'Passwords do not match.';
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (p1.length < 6) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = 'Password must be at least 6 characters.';
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+          return;
+        }
+
+        if ($('resetPasswordErr')) $('resetPasswordErr').classList.add('hidden');
+        if ($('btnSubmitNewPassword')) {
+          $('btnSubmitNewPassword').disabled = true;
+          $('btnSubmitNewPassword').textContent = 'Updating Password...';
+        }
+
+        try {
+          const res = await fetch('/api/complete-password-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: resetToken,
+              newPassword: p1
+            })
+          });
+          const result = await res.json();
+          if (!res.ok || !result.success) {
+            throw new Error(result.error || 'Failed to update password.');
+          }
+
+          if ($('formResetPassword')) $('formResetPassword').classList.add('hidden');
+          if ($('resetPasswordSuccess')) $('resetPasswordSuccess').classList.remove('hidden');
+        } catch (err) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = '⚠️ ' + err.message;
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+        } finally {
+          if ($('btnSubmitNewPassword')) {
+            $('btnSubmitNewPassword').disabled = false;
+            $('btnSubmitNewPassword').textContent = 'Save New Password';
+          }
+        }
+      };
+    }
+
+    if ($('btnProceedToLogin')) {
+      $('btnProceedToLogin').onclick = () => {
+        window.location.href = window.location.origin;
+      };
+    }
+
+    if ($('btnCancelResetPassword')) {
+      $('btnCancelResetPassword').onclick = () => {
+        window.location.href = window.location.origin;
+      };
+    }
+  }
+}
 
 
