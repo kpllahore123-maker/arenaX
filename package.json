@@ -12,21 +12,25 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "express": "^4.22.2",
-    "dotenv": "^17.4.2",
     "@google/genai": "^2.10.0",
+    "@tailwindcss/vite": "^4.3.2",
+    "@vitejs/plugin-react": "^5.2.0",
     "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.3.0",
-    "lucide-react": "^0.546.0",
     "framer-motion": "^12.42.0",
+    "lucide-react": "^0.546.0",
+    "nodemailer": "^6.10.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "vite": "^6.4.3",
-    "@vitejs/plugin-react": "^5.2.0",
     "tailwindcss": "^4.3.2",
-    "@tailwindcss/vite": "^4.3.2",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3",
-    "tsx": "^4.22.4"
+    "vite": "^6.4.3"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1"
   }
 }
