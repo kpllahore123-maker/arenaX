@@ -1606,7 +1606,54 @@ $('bEmail').addEventListener('click', async () => {
   }
 });
 
-// Forgot Password Handler -> Firebase Auth Native Password Reset (Guaranteed on arenax.cyou & static GitHub Pages)
+// Helper: Request branded password reset link via custom Nodemailer/Brevo API flow (api/request-password-reset.js)
+async function requestCustomPasswordReset(email) {
+  const payload = {
+    email: email,
+    origin: window.location.origin
+  };
+
+  const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+  const primaryEndpoint = isStaticHost 
+    ? 'https://arena-x-beta.vercel.app/api/request-password-reset'
+    : '/api/request-password-reset';
+
+  let res;
+  try {
+    res = await fetch(primaryEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    // Fall back to Vercel serverless backend if local/static host returned 404 or 405 Method Not Allowed
+    if ((res.status === 405 || res.status === 404) && !primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+      res = await fetch('https://arena-x-beta.vercel.app/api/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+  } catch (err) {
+    if (!primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+      res = await fetch('https://arena-x-beta.vercel.app/api/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      throw err;
+    }
+  }
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to dispatch password reset email.');
+  }
+  return data;
+}
+
+// Forgot Password Handler -> Custom Branded Nodemailer / Brevo Reset Email (api/request-password-reset.js)
 $('lnkForgot').addEventListener('click', async () => {
   const em = $('iEmail').value.trim();
   if (!em) {
@@ -1620,15 +1667,13 @@ $('lnkForgot').addEventListener('click', async () => {
   $('lnkForgot').textContent = 'Sending reset email...';
 
   try {
-    await sendPasswordResetEmail(auth, em);
-    alert('✉️ Password reset email sent!\n\nWe have sent a secure password reset email to:\n' + em + '\n\nPlease check your inbox and spam folder to set your new password.');
+    await requestCustomPasswordReset(em);
+    alert('✉️ Password Reset Email Sent!\n\nWe have sent a branded email with a secure "Reset Password" button link to:\n' + em + '\n\nPlease check your inbox and spam folder (valid for 30 minutes).');
   } catch (err) {
-    if (err.code === 'auth/user-not-found') {
+    if (err.message && (err.message.includes('No registered account') || err.message.includes('user-not-found'))) {
       $('loginErr').textContent = '⚠️ No registered user found with this email address. Please sign up!';
-    } else if (err.code === 'auth/invalid-email') {
-      $('loginErr').textContent = '⚠️ Please enter a valid email address.';
-    } else if (err.code === 'auth/too-many-requests') {
-      $('loginErr').textContent = '⚠️ Too many attempts. Please wait a few moments before trying again.';
+    } else if (err.message && err.message.includes('Too many password reset requests')) {
+      $('loginErr').textContent = '⚠️ Rate limit reached: Please wait 10 minutes before requesting another reset email.';
     } else {
       $('loginErr').textContent = '⚠️ ' + err.message;
     }
@@ -5147,11 +5192,18 @@ if ($('btnSendResetPassword')) {
       alert('⚠️ Please sign in with an email account first.');
       return;
     }
+    const targetEmail = auth.currentUser.email;
+    const btn = $('btnSendResetPassword');
+    const origOpacity = btn.style.opacity;
+    btn.style.opacity = '0.5';
+
     try {
-      await sendPasswordResetEmail(auth, auth.currentUser.email);
-      alert('✉️ Password reset link sent to: ' + auth.currentUser.email + '\n\nPlease check your inbox and spam folder to reset your password.');
+      await requestCustomPasswordReset(targetEmail);
+      alert('✉️ Branded Password Reset Link Sent!\n\nWe have dispatched a custom reset email with a secure "Reset Password" button link to:\n' + targetEmail + '\n\nPlease check your inbox and spam folder (valid for 30 minutes).');
     } catch (err) {
       alert('⚠️ Could not send password reset email: ' + err.message);
+    } finally {
+      btn.style.opacity = origOpacity || '1';
     }
   });
 }
@@ -6906,5 +6958,119 @@ if ($('btnProceedToLogin')) {
     goTo('sLogin');
   };
 }
+
+// ==================== CUSTOM PASSWORD RESET LINK RECEIVER & FORM CONTROLLER ====================
+async function checkPasswordResetRoute() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token') || urlParams.get('resetToken');
+  const pathname = window.location.pathname;
+
+  if (token || pathname.includes('reset-password')) {
+    const resetToken = token || (new URLSearchParams(window.location.search)).get('token');
+    if (!resetToken) return;
+
+    if ($('mResetPassword')) $('mResetPassword').classList.remove('hidden');
+    if ($('mAuth')) $('mAuth').classList.add('hidden');
+
+    const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+    const apiBase = isStaticHost ? 'https://arena-x-beta.vercel.app' : '';
+
+    try {
+      let res = await fetch(`${apiBase}/api/complete-password-reset?token=${encodeURIComponent(resetToken)}`);
+      if ((res.status === 404 || res.status === 405) && !apiBase) {
+        res = await fetch(`https://arena-x-beta.vercel.app/api/complete-password-reset?token=${encodeURIComponent(resetToken)}`);
+      }
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        if ($('resetPasswordErr')) {
+          $('resetPasswordErr').textContent = data.error || 'This password reset link is invalid or has expired.';
+          $('resetPasswordErr').classList.remove('hidden');
+        }
+        if ($('formResetPassword')) $('formResetPassword').classList.add('hidden');
+        return;
+      }
+
+      if (data.email && $('txtResetPasswordEmail')) {
+        $('txtResetPasswordEmail').textContent = `Resetting password for: ${data.email}`;
+      }
+    } catch (err) {
+      if ($('resetPasswordErr')) {
+        $('resetPasswordErr').textContent = 'Unable to validate reset link: ' + err.message;
+        $('resetPasswordErr').classList.remove('hidden');
+      }
+    }
+
+    if ($('formResetPassword')) {
+      $('formResetPassword').onsubmit = async (e) => {
+        e.preventDefault();
+        const p1 = $('iResetNewPass')?.value || '';
+        const p2 = $('iResetConfirmPass')?.value || '';
+
+        if (p1 !== p2) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = 'Passwords do not match.';
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (p1.length < 6) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = 'Password must be at least 6 characters.';
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+          return;
+        }
+
+        if ($('resetPasswordErr')) $('resetPasswordErr').classList.add('hidden');
+        if ($('btnSubmitNewPassword')) {
+          $('btnSubmitNewPassword').disabled = true;
+          $('btnSubmitNewPassword').textContent = 'Updating Password...';
+        }
+
+        try {
+          let res = await fetch(`${apiBase}/api/complete-password-reset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: resetToken,
+              newPassword: p1
+            })
+          });
+          if ((res.status === 404 || res.status === 405) && !apiBase) {
+            res = await fetch('https://arena-x-beta.vercel.app/api/complete-password-reset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: resetToken,
+                newPassword: p1
+              })
+            });
+          }
+          const result = await res.json();
+          if (!res.ok || !result.success) {
+            throw new Error(result.error || 'Failed to update password.');
+          }
+
+          if ($('formResetPassword')) $('formResetPassword').classList.add('hidden');
+          if ($('resetPasswordSuccess')) $('resetPasswordSuccess').classList.remove('hidden');
+        } catch (err) {
+          if ($('resetPasswordErr')) {
+            $('resetPasswordErr').textContent = '⚠️ ' + err.message;
+            $('resetPasswordErr').classList.remove('hidden');
+          }
+        } finally {
+          if ($('btnSubmitNewPassword')) {
+            $('btnSubmitNewPassword').disabled = false;
+            $('btnSubmitNewPassword').textContent = 'Save New Password';
+          }
+        }
+      };
+    }
+  }
+}
+
+// Check route on startup for incoming password reset links
+checkPasswordResetRoute();
 
 
