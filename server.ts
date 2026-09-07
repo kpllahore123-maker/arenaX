@@ -137,10 +137,23 @@ CRITICAL INSTRUCTIONS:
       const replyText = response.text || "Aapki query mil gayi hai. Kya aapko kisi human moderator se baat karni hai?";
       res.json({ text: replyText });
     } catch (error: any) {
-      console.error("Gemini Support Chat Error:", error);
+      const errMsg = error?.message || String(error);
+      if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
+        return res.json({
+          text: "ArenaX Support AI is currently busy handling high player volume. Please feel free to open a ticket directly or message our moderators in the ArenaX Discord community."
+        });
+      }
       res.status(500).json({ error: error.message || "An internal error occurred." });
     }
   });
+
+  // AI Account Standing Recommendations Cache & Circuit Breaker
+  interface CachedStandingRecs {
+    timestamp: number;
+    data: any;
+  }
+  const standingAiCache = new Map<string, CachedStandingRecs>();
+  let geminiStandingCooldownUntil = 0;
 
   // AI Account Standing Recommendations Endpoint
   app.post("/api/account-standing/recommendations", async (req, res) => {
@@ -328,9 +341,27 @@ CRITICAL INSTRUCTIONS:
         };
       };
 
+      const cacheKey = `${userName || 'player'}:${currentStanding}:${userScore}:${warningsCount}:${isBanned}:${isRestricted}:${isDiscordLinked}:${cleanDays}:${violationsList.length}`;
+      const now = Date.now();
+
+      // 1. Check in-memory cache (10 minute TTL)
+      const cached = standingAiCache.get(cacheKey);
+      if (cached && (now - cached.timestamp < 10 * 60 * 1000)) {
+        return res.json(cached.data);
+      }
+
+      // 2. Check if API is in quota cooldown
+      if (now < geminiStandingCooldownUntil) {
+        const fallback = generatePersonalizedFallback();
+        standingAiCache.set(cacheKey, { timestamp: now, data: fallback });
+        return res.json(fallback);
+      }
+
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        return res.json(generatePersonalizedFallback());
+        const fallback = generatePersonalizedFallback();
+        standingAiCache.set(cacheKey, { timestamp: now, data: fallback });
+        return res.json(fallback);
       }
 
       try {
@@ -379,7 +410,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("AI recommendation timeout")), 3500)
+          setTimeout(() => reject(new Error("AI recommendation timeout")), 5000)
         );
 
         const aiResponse = (await Promise.race([aiCallPromise, timeoutPromise])) as any;
@@ -389,28 +420,35 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         try {
           const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
           parsed = JSON.parse(cleaned);
-        } catch (pe) {
-          console.warn("Could not parse Gemini JSON response, using fallback:", pe);
+        } catch {
+          // fallback gracefully
         }
 
         if (parsed && Array.isArray(parsed.recommendations) && parsed.recommendations.length > 0) {
-          return res.json({
+          const result = {
             standing: currentStanding,
             score: userScore,
             summary: parsed.summary || "",
             recoveryTimeline: parsed.recoveryTimeline || "",
             recommendations: parsed.recommendations,
             source: "gemini_ai"
-          });
+          };
+          standingAiCache.set(cacheKey, { timestamp: Date.now(), data: result });
+          return res.json(result);
         }
       } catch (geminiErr: any) {
-        console.warn("Gemini standing advice error, falling back to personalized rules:", geminiErr.message);
+        const errMsg = geminiErr?.message || String(geminiErr);
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded") || errMsg.includes("quota")) {
+          // Set a 60-second cooldown so subsequent requests don't hit the exhausted rate limit
+          geminiStandingCooldownUntil = Date.now() + 60 * 1000;
+        }
       }
 
-      return res.json(generatePersonalizedFallback());
-    } catch (err: any) {
-      console.error("Account Standing Error:", err);
-      res.status(500).json({ error: err.message || "Failed to process standing" });
+      const fallback = generatePersonalizedFallback();
+      standingAiCache.set(cacheKey, { timestamp: Date.now(), data: fallback });
+      return res.json(fallback);
+    } catch {
+      res.status(500).json({ error: "Failed to process standing" });
     }
   });
 
@@ -490,6 +528,17 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     } catch (err: any) {
       console.error("[FCM Server Relay] Error sending push:", err);
       res.status(500).json({ error: err.message || "Failed to send FCM push" });
+    }
+  });
+
+  // Brevo SMTP Email Sending Relay (delegates to api/send-email.js)
+  app.all("/api/send-email", async (req, res) => {
+    try {
+      const { default: sendEmailHandler } = await import("./api/send-email.js");
+      return await sendEmailHandler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/send-email handler error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Failed to execute send-email handler" });
     }
   });
 
