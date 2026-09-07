@@ -13,9 +13,8 @@ import nodemailer from 'nodemailer';
  * }
  */
 export default async function handler(req, res) {
-  // 1. Enable CORS for cross-origin requests from ArenaX PWA
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  // Set CORS headers for arenax.cyou and external client requests
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
