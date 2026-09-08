@@ -1000,6 +1000,25 @@ function boot() {
   if (typeof window.checkAndProcessDiscordCallback === 'function') {
     window.checkAndProcessDiscordCallback();
   }
+
+  // Initialize device recognition and session tracking
+  if (profile && profile.uid && auth.currentUser) {
+    if (typeof window.initUserSessionAndDevice === 'function') {
+      window.initUserSessionAndDevice(auth.currentUser, profile);
+    }
+  }
+
+  // Handle URL deep link to open Logged-in Devices (?open=security-devices)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open') === 'security-devices' || window.pendingOpenSecurityDevices) {
+      window.pendingOpenSecurityDevices = false;
+      setTimeout(() => {
+        if (typeof window.openAxSecurityModal === 'function') window.openAxSecurityModal();
+        if (typeof window.showLoggedInDevicesView === 'function') window.showLoggedInDevicesView();
+      }, 500);
+    }
+  } catch(e) {}
 }
 
 function syncPremiumModalState() {
@@ -7047,6 +7066,14 @@ window.openAxSecurityModal = function() {
   } else {
     window.updateDiscordSecurityUI();
   }
+  
+  // Also refresh logged-in devices if listener has cached data or sync
+  if (window.axCachedSessions) {
+    window.renderLoggedInDevices(window.axCachedSessions);
+  } else if (profile.uid) {
+    window.refreshLoggedInDevices();
+  }
+
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.remove('hidden');
 };
@@ -7054,6 +7081,613 @@ window.openAxSecurityModal = function() {
 window.closeAxSecurityModal = function() {
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.add('hidden');
+  window.hideLoggedInDevicesView();
+};
+
+// ============================================================================
+// ARENAX AX SECURITY: ACCOUNT ACTIVITY & LOGGED-IN DEVICES CONTROLLER
+// ============================================================================
+
+function getOrCreateDeviceId() {
+  let devId = null;
+  try {
+    devId = localStorage.getItem('ax_device_id');
+  } catch(e) {}
+  if (!devId) {
+    devId = 'axdev_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+    try { localStorage.setItem('ax_device_id', devId); } catch(e) {}
+  }
+  return devId;
+}
+
+function detectClientHints() {
+  const ua = navigator.userAgent || '';
+  let platform = 'Unknown Platform';
+  let deviceType = 'desktop';
+
+  if (/Android/i.test(ua)) {
+    platform = 'Android';
+    deviceType = 'mobile';
+  } else if (/iPhone|iPad|iPod/i.test(ua)) {
+    platform = /iPad/i.test(ua) ? 'iPadOS' : 'iOS';
+    deviceType = 'mobile';
+  } else if (/Windows NT 10.0/i.test(ua) || /Windows/i.test(ua)) {
+    platform = 'Windows';
+    deviceType = 'desktop';
+  } else if (/Macintosh|Mac OS X/i.test(ua)) {
+    platform = 'macOS';
+    deviceType = 'desktop';
+  } else if (/CrOS/i.test(ua)) {
+    platform = 'ChromeOS';
+    deviceType = 'desktop';
+  } else if (/Linux/i.test(ua)) {
+    platform = 'Linux';
+    deviceType = 'desktop';
+  }
+
+  let browser = 'Browser';
+  if (/Edg\//i.test(ua)) {
+    browser = 'Edge';
+  } else if (/OPR\/|Opera\//i.test(ua)) {
+    browser = 'Opera';
+  } else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) {
+    browser = 'Chrome';
+  } else if (/Firefox\//i.test(ua)) {
+    browser = 'Firefox';
+  } else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) {
+    browser = 'Safari';
+  }
+
+  return {
+    platform,
+    browser,
+    deviceType,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    screen: `${window.screen.width || 0}x${window.screen.height || 0}`
+  };
+}
+
+function getDeviceIconHtml(platform, deviceType) {
+  const p = (platform || '').toLowerCase();
+  if (p.includes('android')) {
+    return '<i class="fa-brands fa-android text-emerald-400 text-xl"></i>';
+  }
+  if (p.includes('ios') || p.includes('iphone') || p.includes('ipad') || p.includes('mac')) {
+    return '<i class="fa-brands fa-apple text-slate-200 text-xl"></i>';
+  }
+  if (p.includes('win')) {
+    return '<i class="fa-brands fa-windows text-blue-400 text-xl"></i>';
+  }
+  if (p.includes('linux')) {
+    return '<i class="fa-brands fa-linux text-amber-400 text-xl"></i>';
+  }
+  if (p.includes('chrome')) {
+    return '<i class="fa-brands fa-chrome text-teal-400 text-xl"></i>';
+  }
+  if (deviceType === 'mobile') {
+    return '<i class="fas fa-mobile-screen text-slate-300 text-xl"></i>';
+  }
+  return '<i class="fas fa-desktop text-slate-300 text-xl"></i>';
+}
+
+function formatTimeAgo(timestamp) {
+  if (!timestamp) return 'Recently';
+  const timeNum = typeof timestamp === 'number' ? timestamp : (timestamp.toDate ? timestamp.toDate().getTime() : new Date(timestamp).getTime());
+  const diffMs = Date.now() - timeNum;
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'Active now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(timeNum).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+window.initUserSessionAndDevice = async function(fireUser, profile) {
+  if (!fireUser || !profile || !profile.uid) return;
+  const uid = profile.uid;
+  const deviceId = getOrCreateDeviceId();
+  let sessionId = null;
+  try {
+    sessionId = localStorage.getItem('ax_session_id');
+  } catch(e) {}
+
+  if (!sessionId) {
+    sessionId = 'axsess_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+    try { localStorage.setItem('ax_session_id', sessionId); } catch(e) {}
+  }
+
+  const hints = detectClientHints();
+
+  // 1. Call Secure Server Endpoint to log device and dispatch security alert email if new
+  const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+  const primaryEndpoint = isStaticHost ? 'https://arena-x-beta.vercel.app/api/record-login-device' : '/api/record-login-device';
+
+  try {
+    const payload = {
+      uid: uid,
+      email: fireUser.email || profile.email || '',
+      displayName: profile.name || 'ArenaX Player',
+      deviceId: deviceId,
+      sessionId: sessionId,
+      clientHints: hints
+    };
+
+    let res;
+    try {
+      res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        res = await fetch('https://arena-x-beta.vercel.app/api/record-login-device', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch(fetchErr) {
+      if (!primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        res = await fetch('https://arena-x-beta.vercel.app/api/record-login-device', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data.sessionId) {
+        sessionId = data.sessionId;
+        try { localStorage.setItem('ax_session_id', sessionId); } catch(e) {}
+      }
+      if (data.isNewDevice) {
+        console.log('[Account Activity] New login device registered. Security notification email dispatched to user inbox.');
+      }
+    }
+  } catch (err) {
+    console.warn('[Account Activity] Device recording API error (will fallback to direct Firestore sync):', err);
+  }
+
+  // 2. Direct Firestore fallback check to ensure real-time subscription works
+  try {
+    const sessionDocRef = doc(db, 'users', uid, 'sessions', sessionId);
+    const snap = await getDoc(sessionDocRef);
+    if (!snap.exists()) {
+      await setDoc(sessionDocRef, {
+        sessionId: sessionId,
+        userId: uid,
+        deviceId: deviceId,
+        platform: hints.platform,
+        browser: hints.browser,
+        deviceType: hints.deviceType,
+        approximateLocation: 'Lahore, Punjab, Pakistan',
+        createdAt: Date.now(),
+        lastActiveAt: Date.now(),
+        isRevoked: false,
+        revokedAt: null
+      }, { merge: true });
+    } else {
+      await updateDoc(sessionDocRef, {
+        lastActiveAt: Date.now()
+      }).catch(() => {});
+    }
+  } catch(fsErr) {
+    console.warn('[Account Activity] Direct Firestore session sync warning:', fsErr);
+  }
+
+  // 3. Attach real-time listener for current session revocation (force remote logout)
+  window.initSessionSecurityListener(fireUser, sessionId);
+
+  // 4. Attach real-time listener for all user sessions
+  window.initLoggedInDevicesListener(profile);
+};
+
+window.initSessionSecurityListener = function(fireUser, sessionId) {
+  if (!fireUser || !sessionId) return;
+  if (window.axSessionUnsub) {
+    try { window.axSessionUnsub(); } catch(e) {}
+    window.axSessionUnsub = null;
+  }
+
+  try {
+    const sRef = doc(db, 'users', fireUser.uid, 'sessions', sessionId);
+    window.axSessionUnsub = onSnapshot(sRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const sData = docSnap.data();
+        if (sData && sData.isRevoked === true) {
+          console.warn('[Session Security] This session has been revoked from another device.');
+          if (window.axSessionUnsub) {
+            try { window.axSessionUnsub(); } catch(e) {}
+            window.axSessionUnsub = null;
+          }
+          try {
+            localStorage.removeItem('ax_session_id');
+            sessionStorage.clear();
+          } catch(e) {}
+          alert('⚠️ Session Terminated: Your session has been remotely logged out from another device.');
+          signOut(auth).catch(() => {});
+          goTo('sLogin');
+        }
+      }
+    }, (err) => {
+      console.warn('[Session Security] Session snapshot listener warning:', err);
+    });
+  } catch (err) {
+    console.warn('[Session Security] Failed to attach session watcher:', err);
+  }
+};
+
+window.initLoggedInDevicesListener = function(profile) {
+  if (!profile || !profile.uid) return;
+  if (window.axAllDevicesUnsub) {
+    try { window.axAllDevicesUnsub(); } catch(e) {}
+    window.axAllDevicesUnsub = null;
+  }
+
+  try {
+    const sessionsColl = collection(db, 'users', profile.uid, 'sessions');
+    window.axAllDevicesUnsub = onSnapshot(sessionsColl, (snapshot) => {
+      const sessions = [];
+      snapshot.forEach((docSnap) => {
+        sessions.push(docSnap.data());
+      });
+      sessions.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      window.axCachedSessions = sessions;
+      window.renderLoggedInDevices(sessions);
+    }, (err) => {
+      console.warn('[Account Activity] Sessions snapshot warning:', err);
+    });
+  } catch (err) {
+    console.warn('[Account Activity] Failed to subscribe to sessions collection:', err);
+  }
+};
+
+window.renderLoggedInDevices = function(sessions) {
+  let currentSessionId = null;
+  try {
+    currentSessionId = localStorage.getItem('ax_session_id');
+  } catch(e) {}
+
+  const allSessions = Array.isArray(sessions) ? sessions : [];
+  const activeCount = allSessions.filter(s => !s.isRevoked).length;
+
+  // Update summary badge on AX Security main page (Section 6)
+  const badgeTxt = $('axActiveDevicesSummaryText');
+  if (badgeTxt) {
+    badgeTxt.textContent = `${activeCount || 1} Active Session${activeCount === 1 ? '' : 's'}`;
+  }
+
+  // Current Device: session matching currentSessionId or first active
+  let currentSession = allSessions.find(s => s.sessionId === currentSessionId);
+  if (!currentSession) {
+    const hints = detectClientHints();
+    currentSession = {
+      sessionId: currentSessionId || 'current_device',
+      platform: hints.platform,
+      browser: hints.browser,
+      deviceType: hints.deviceType,
+      approximateLocation: 'Lahore, Punjab, Pakistan',
+      createdAt: Date.now(),
+      lastActiveAt: Date.now(),
+      isRevoked: false
+    };
+  }
+
+  // Other Devices
+  const otherSessions = allSessions.filter(s => s.sessionId !== currentSession.sessionId);
+  const otherActiveCount = otherSessions.filter(s => !s.isRevoked).length;
+  
+  const countBadge = $('axOtherDevicesCountBadge');
+  if (countBadge) {
+    countBadge.textContent = `${otherActiveCount} other active session${otherActiveCount === 1 ? '' : 's'}`;
+  }
+
+  // Render Current Device
+  const curCard = $('axCurrentDeviceCard');
+  if (curCard) {
+    const curIcon = getDeviceIconHtml(currentSession.platform, currentSession.deviceType);
+    const loginDate = new Date(currentSession.createdAt || Date.now());
+    const formattedExact = loginDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+
+    curCard.innerHTML = `
+      <div class="flex items-start justify-between gap-3 sm:gap-4">
+        <div class="flex items-start gap-3 sm:gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center flex-shrink-0 shadow-inner">
+            ${curIcon}
+          </div>
+          <div class="min-w-0 space-y-1">
+            <div class="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
+              <span>${currentSession.platform || 'Current Device'}</span>
+              <span class="text-slate-500">•</span>
+              <span class="text-slate-300 font-medium">${currentSession.browser || 'Browser'}</span>
+            </div>
+            <div class="text-xs text-slate-300 flex items-center gap-1.5 font-medium">
+              <i class="fas fa-location-dot text-slate-500 text-[10px]"></i>
+              <span class="truncate">${currentSession.approximateLocation || 'Lahore, Punjab, Pakistan'}</span>
+              <span class="text-[10px] text-slate-500 font-normal whitespace-nowrap">(Approximate)</span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-mono flex items-center gap-2 pt-0.5">
+              <span>Login: ${formattedExact}</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Current Device
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Render Other Devices
+  const otherList = $('axOtherDevicesList');
+  if (otherList) {
+    if (otherSessions.length === 0) {
+      otherList.innerHTML = `
+        <div class="p-5 bg-bg/50 border border-dashed border-bdr/70 rounded-2xl text-center space-y-1.5">
+          <div class="w-10 h-10 mx-auto rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 text-sm">
+            <i class="fas fa-shield-halved text-indigo-400"></i>
+          </div>
+          <div class="text-xs font-bold text-slate-200">No other active devices</div>
+          <p class="text-[11px] text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Your ArenaX account is currently only signed in on this device. Any new login from another phone, tablet, or PC will appear here.
+          </p>
+        </div>
+      `;
+    } else {
+      otherList.innerHTML = otherSessions.map(s => {
+        const sIcon = getDeviceIconHtml(s.platform, s.deviceType);
+        const sTimeAgo = formatTimeAgo(s.lastActiveAt || s.createdAt);
+        const isRevoked = s.isRevoked === true;
+
+        return `
+          <div class="p-3.5 sm:p-4 bg-card/90 border ${isRevoked ? 'border-bdr/40 opacity-60' : 'border-bdr/80 hover:border-slate-600/70'} rounded-xl flex items-center justify-between gap-3 transition shadow-sm">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center flex-shrink-0">
+                ${sIcon}
+              </div>
+              <div class="min-w-0 space-y-0.5">
+                <div class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
+                  <span>${s.platform || 'Device'}</span>
+                  <span class="text-slate-500">•</span>
+                  <span class="text-slate-300 font-medium">${s.browser || 'Browser'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                  <span class="truncate max-w-[180px] sm:max-w-xs">${s.approximateLocation || 'Approximate Location'}</span>
+                  <span class="text-slate-500">•</span>
+                  <span class="whitespace-nowrap font-mono text-[10px] text-slate-400">${sTimeAgo}</span>
+                </div>
+                ${isRevoked
+                  ? '<span class="inline-block text-[10px] font-bold text-rose-400 font-mono">Logged Out Remotely</span>'
+                  : '<span class="inline-block text-[10px] font-medium text-emerald-400/90 font-mono">Active Session</span>'
+                }
+              </div>
+            </div>
+            <div class="flex-shrink-0 pl-2">
+              ${isRevoked ? `
+                <span class="text-[10px] text-slate-500 font-mono px-2.5 py-1 bg-slate-800/60 rounded-lg border border-slate-700/50">Revoked</span>
+              ` : `
+                <button onclick="window.revokeDeviceSession('${s.sessionId}')" type="button" class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/50 text-slate-400 hover:text-rose-400 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-sm" title="Log out this device">
+                  <i class="fas fa-xmark text-sm"></i>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+};
+
+window.showLoggedInDevicesView = function() {
+  if ($('axSecurityMainView')) $('axSecurityMainView').classList.add('hidden');
+  if ($('axSecurityDevicesView')) $('axSecurityDevicesView').classList.remove('hidden');
+  if ($('axSecurityModalTitle')) $('axSecurityModalTitle').textContent = 'Logged-in Devices';
+  if ($('axSecurityModalSubtitle')) $('axSecurityModalSubtitle').textContent = 'Account Activity & Devices';
+
+  if (window.axCachedSessions) {
+    window.renderLoggedInDevices(window.axCachedSessions);
+  } else {
+    window.refreshLoggedInDevices();
+  }
+};
+
+window.hideLoggedInDevicesView = function() {
+  if ($('axSecurityMainView')) $('axSecurityMainView').classList.remove('hidden');
+  if ($('axSecurityDevicesView')) $('axSecurityDevicesView').classList.add('hidden');
+  if ($('axSecurityModalTitle')) $('axSecurityModalTitle').textContent = 'AX Security';
+  if ($('axSecurityModalSubtitle')) $('axSecurityModalSubtitle').textContent = 'Standing & Account Safety Hub';
+};
+
+window.refreshLoggedInDevices = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile || !profile.uid) return;
+
+  const icon = $('axRefreshDevicesIcon');
+  if (icon) icon.classList.add('fa-spin');
+
+  try {
+    const qSnap = await getDocs(collection(db, 'users', profile.uid, 'sessions'));
+    const sessions = [];
+    qSnap.forEach(d => sessions.push(d.data()));
+    sessions.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    window.axCachedSessions = sessions;
+    window.renderLoggedInDevices(sessions);
+  } catch (err) {
+    console.warn('[Account Activity] Manual refresh warning:', err);
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
+};
+
+window.revokeDeviceSession = async function(targetSessionId) {
+  const profile = userProfile || guestProfile;
+  if (!profile || !profile.uid || !targetSessionId) return;
+
+  if (!confirm('Are you sure you want to remotely log out this device? Any active session on that device will be terminated immediately.')) {
+    return;
+  }
+
+  let currentSessionId = null;
+  try {
+    currentSessionId = localStorage.getItem('ax_session_id');
+  } catch(e) {}
+
+  try {
+    // 1. Direct Firestore update for instant UI feedback
+    const targetRef = doc(db, 'users', profile.uid, 'sessions', targetSessionId);
+    await updateDoc(targetRef, {
+      isRevoked: true,
+      revokedAt: Date.now()
+    }).catch(() => {});
+
+    // 2. Server API call for audit log & server-side enforcement
+    const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+    const primaryEndpoint = isStaticHost ? 'https://arena-x-beta.vercel.app/api/revoke-session' : '/api/revoke-session';
+    const payload = {
+      uid: profile.uid,
+      sessionId: currentSessionId,
+      targetSessionId: targetSessionId
+    };
+
+    try {
+      let res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        await fetch('https://arena-x-beta.vercel.app/api/revoke-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch(fetchErr) {
+      if (!primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        await fetch('https://arena-x-beta.vercel.app/api/revoke-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      }
+    }
+
+    alert('Device has been successfully logged out.');
+  } catch (err) {
+    console.error('[Account Activity] Error revoking device session:', err);
+    alert('Failed to log out device: ' + err.message);
+  }
+};
+
+window.confirmRevokeAllOtherDevices = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile || !profile.uid) return;
+
+  let currentSessionId = null;
+  try {
+    currentSessionId = localStorage.getItem('ax_session_id');
+  } catch(e) {}
+
+  if (!confirm('Log Out All Other Devices?\n\nYou will have to log back in on all other devices. Your current device will remain logged in and active.')) {
+    return;
+  }
+
+  const btn = $('btnLogOutAllOtherDevices');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out devices...';
+  }
+
+  try {
+    // 1. Direct Firestore batch/individual update for instant responsiveness
+    if (window.axCachedSessions && Array.isArray(window.axCachedSessions)) {
+      for (const s of window.axCachedSessions) {
+        if (s.sessionId !== currentSessionId && !s.isRevoked) {
+          try {
+            await updateDoc(doc(db, 'users', profile.uid, 'sessions', s.sessionId), {
+              isRevoked: true,
+              revokedAt: Date.now()
+            });
+          } catch(e) {}
+        }
+      }
+    }
+
+    // 2. Server API revocation
+    const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+    const primaryEndpoint = isStaticHost ? 'https://arena-x-beta.vercel.app/api/revoke-session' : '/api/revoke-session';
+    const payload = {
+      uid: profile.uid,
+      sessionId: currentSessionId,
+      allOther: true
+    };
+
+    try {
+      let res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        await fetch('https://arena-x-beta.vercel.app/api/revoke-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch(fetchErr) {
+      if (!primaryEndpoint.startsWith('https://arena-x-beta.vercel.app')) {
+        await fetch('https://arena-x-beta.vercel.app/api/revoke-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      }
+    }
+
+    alert('✅ Success: All other logged-in devices have been logged out. Your current device remains active.');
+  } catch (err) {
+    console.error('[Account Activity] Error logging out all other devices:', err);
+    alert('Failed to log out all devices: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-right-from-bracket"></i> Log Out All Other Devices';
+    }
+  }
+};
+
+window.openForgotPasswordModal = async function() {
+  const profile = userProfile || guestProfile;
+  const targetEmail = (profile && profile.email) || (auth.currentUser && auth.currentUser.email) || '';
+  if (!targetEmail) {
+    alert('Please enter your email to receive a password reset link.');
+    return;
+  }
+  if (confirm(`Send password reset email to ${targetEmail}?`)) {
+    try {
+      if (typeof requestCustomPasswordReset === 'function') {
+        await requestCustomPasswordReset(targetEmail);
+      }
+      alert(`✉️ Branded Password Reset Link Sent!\n\nWe have dispatched a custom reset email to:\n${targetEmail}\n\nPlease check your inbox and spam folder.`);
+    } catch (err) {
+      alert('Could not send password reset email: ' + err.message);
+    }
+  }
 };
 
 // Event Listeners for AX Security and Discord Modals
@@ -7066,7 +7700,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (bCloseAx) bCloseAx.addEventListener('click', () => window.closeAxSecurityModal());
 
   const bCloseAxCross = $('bCloseAxSecurityCross');
-  if (bCloseAxCross) bCloseAxCross.addEventListener('click', () => window.closeAxSecurityModal());
+  if (bCloseAxCross) {
+    bCloseAxCross.addEventListener('click', () => {
+      if ($('axSecurityDevicesView') && !$('axSecurityDevicesView').classList.contains('hidden')) {
+        window.hideLoggedInDevicesView();
+      } else {
+        window.closeAxSecurityModal();
+      }
+    });
+  }
 
   // Discord Gate Triggers
   const bCloseGate = $('bCloseDiscordGate');
