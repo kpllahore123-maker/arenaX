@@ -1340,6 +1340,18 @@ onAuthStateChanged(auth, async (fireUser) => {
           }
         }
 
+        // 2FA Security Check for existing profile
+        if (userProfile.twoFactorEnabled === true) {
+          const is2FaVerified = sessionStorage.getItem('ax_2fa_verified_' + fireUser.uid) === 'true';
+          if (!is2FaVerified) {
+            console.log('[2FA] Active 2FA detected for profile. Enforcing verification step before booting app.');
+            if (typeof window.startTwoFactorLoginFlow === 'function') {
+              window.startTwoFactorLoginFlow(fireUser, userProfile);
+            }
+            return;
+          }
+        }
+
         boot();
       } else {
         // Bootstrap new user in Firestore
@@ -1573,17 +1585,19 @@ $('bEmail').addEventListener('click', async () => {
     try {
       const cred = await signInWithEmailAndPassword(auth, em, pw);
 
-      // Check email verification status in Firebase Auth OR Firestore profile
+      // Check email verification status and 2FA status in Firebase Auth OR Firestore profile
       let isVerified = cred.user.emailVerified;
-      if (!isVerified) {
-        try {
-          const uSnap = await getDoc(doc(db, 'users', cred.user.uid));
-          if (uSnap.exists() && uSnap.data().emailVerified === true) {
+      let userData = null;
+      try {
+        const uSnap = await getDoc(doc(db, 'users', cred.user.uid));
+        if (uSnap.exists()) {
+          userData = uSnap.data();
+          if (userData.emailVerified === true) {
             isVerified = true;
           }
-        } catch (checkErr) {
-          console.warn('Firestore verification check error:', checkErr);
         }
+      } catch (checkErr) {
+        console.warn('Firestore verification check error:', checkErr);
       }
 
       // Block unverified logins with clear prompt
@@ -1592,6 +1606,17 @@ $('bEmail').addEventListener('click', async () => {
         $('loginErr').textContent = '⚠️ Email Not Verified! Please check your inbox for ' + em + ' and click the verification link before logging in.';
         $('loginErr').classList.remove('hidden');
         return;
+      }
+
+      // Check if user has Two-Factor Authentication (2FA) enabled
+      if (userData && userData.twoFactorEnabled === true) {
+        const is2FaVerified = sessionStorage.getItem('ax_2fa_verified_' + cred.user.uid) === 'true';
+        if (!is2FaVerified) {
+          if (typeof window.startTwoFactorLoginFlow === 'function') {
+            await window.startTwoFactorLoginFlow(cred.user, userData);
+          }
+          return;
+        }
       }
     } catch (err) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
@@ -1745,6 +1770,9 @@ $('bLogout').addEventListener('click', async () => {
   guestProfile = null;
   userProfile = null;
   cleanupAllUserListeners();
+  try {
+    sessionStorage.clear();
+  } catch(e) {}
   goTo('sLogin');
   try {
     await signOut(auth);
@@ -6826,6 +6854,119 @@ window.renderDiscordAuthWidget = function() {
   // Inject into gate modal and settings widget containers
   if ($('discordGateWidget')) $('discordGateWidget').innerHTML = html;
   if ($('discordSettingsWidget')) $('discordSettingsWidget').innerHTML = html;
+
+  if (typeof window.renderTwoFactorAuthWidget === 'function') {
+    window.renderTwoFactorAuthWidget();
+  }
+};
+
+/**
+ * Generates and injects the 2FA Login Verification widget in AX Security
+ */
+window.renderTwoFactorAuthWidget = function() {
+  const profile = userProfile || guestProfile;
+  const is2FaEnabled = profile && profile.twoFactorEnabled === true;
+
+  const badgeHeader = $('ax2FaStatusHeaderBadge');
+  if (badgeHeader) {
+    if (is2FaEnabled) {
+      badgeHeader.textContent = 'Active';
+      badgeHeader.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono';
+    } else {
+      badgeHeader.textContent = 'Disabled';
+      badgeHeader.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono';
+    }
+  }
+
+  const container = $('ax2FaSettingsWidget');
+  if (!container) return;
+
+  const html = is2FaEnabled ? `
+    <div class="p-4 bg-gradient-to-r from-emerald-950/40 via-card to-card border border-emerald-500/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg shadow-sm">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-white font-display">2FA Login Verification</span>
+            <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[8px] font-black uppercase rounded flex items-center gap-1">
+              <i class="fas fa-check text-[7px]"></i> 2FA Enabled
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-300 leading-tight">Every login attempt requires email confirmation link.</p>
+        </div>
+      </div>
+      <button onclick="window.toggleTwoFactorAuth(false)" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase rounded-lg transition active:scale-95 cursor-pointer whitespace-nowrap">
+        Disable 2FA
+      </button>
+    </div>
+  ` : `
+    <div class="space-y-3">
+      <div class="p-3.5 bg-bg/60 border border-bdr rounded-xl flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-slate-800 border border-bdr flex items-center justify-center text-[#f0c040] text-sm">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-200">2FA Login Verification is OFF</div>
+            <div class="text-[10px] text-t3">Protect your account with email login confirmations</div>
+          </div>
+        </div>
+        <span class="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-bold uppercase font-mono">
+          Disabled
+        </span>
+      </div>
+
+      <button onclick="window.toggleTwoFactorAuth(true)" class="w-full py-3 bg-gradient-to-r from-[#f0c040] to-[#e5a820] hover:brightness-110 text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition shadow-lg shadow-gold/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+        <i class="fas fa-lock"></i> Enable 2FA
+      </button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+};
+
+/**
+ * Toggles Two-Factor Authentication (2FA) status in Firestore
+ */
+window.toggleTwoFactorAuth = async function(targetState) {
+  const profile = userProfile || guestProfile;
+  if (!profile || !profile.uid) {
+    alert('Please sign in to configure Two-Factor Authentication.');
+    return;
+  }
+
+  const newState = typeof targetState === 'boolean' ? targetState : !profile.twoFactorEnabled;
+
+  if (!newState) {
+    if (!confirm('Are you sure you want to disable Two-Factor Authentication (2FA)? Your account will be less protected against unauthorized logins.')) {
+      return;
+    }
+  }
+
+  try {
+    profile.twoFactorEnabled = newState;
+    window.renderTwoFactorAuthWidget();
+
+    await updateDoc(doc(db, 'users', profile.uid), {
+      twoFactorEnabled: newState,
+      twoFactorUpdatedAt: new Date().toISOString()
+    });
+
+    if (newState) {
+      // Mark active session as verified so the current user isn't immediately blocked
+      sessionStorage.setItem('ax_2fa_verified_' + profile.uid, 'true');
+      alert('Two-Factor Authentication (2FA) is now ENABLED! Future login sessions will require email confirmation.');
+    } else {
+      sessionStorage.removeItem('ax_2fa_verified_' + profile.uid);
+      alert('Two-Factor Authentication (2FA) has been disabled.');
+    }
+  } catch (err) {
+    console.error('[2FA] Error toggling 2FA:', err);
+    alert('Failed to update 2FA setting: ' + err.message);
+    window.renderTwoFactorAuthWidget();
+  }
 };
 
 /**
@@ -6887,6 +7028,9 @@ window.closeDiscordVerificationGate = function() {
  */
 window.openAxSecurityModal = function() {
   window.renderDiscordAuthWidget();
+  if (typeof window.renderTwoFactorAuthWidget === 'function') {
+    window.renderTwoFactorAuthWidget();
+  }
   const profile = userProfile || guestProfile || {};
   if (window.accountStanding) {
     if (profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
@@ -7078,5 +7222,309 @@ async function checkPasswordResetRoute() {
 
 // Check route on startup for incoming password reset links
 checkPasswordResetRoute();
+
+/**
+ * ============================================================================
+ * TWO-FACTOR AUTHENTICATION (2FA) LOGIN VERIFICATION FLOW
+ * ============================================================================
+ */
+
+/**
+ * Initiates the 2FA login verification process:
+ * 1. Shows the "Check your email" waiting screen
+ * 2. Generates a secure random verification token
+ * 3. Stores it in Firestore under login_verifications/{token} with 10-minute expiry
+ * 4. Calls api/send-email.js with branded dark+gold email
+ * 5. Realtime listener on login_verifications/{token} auto-boots app upon used: true
+ */
+window.startTwoFactorLoginFlow = async function(user, profile) {
+  if (!user || !user.email) return;
+
+  const userEmail = user.email;
+  const displayName = profile?.name || user.displayName || userEmail.split('@')[0] || 'ArenaX Player';
+
+  // Ensure user cannot navigate into the dashboard while awaiting 2FA verification
+  if ($('sDash')) $('sDash').classList.add('hidden');
+  if ($('mAuth')) $('mAuth').classList.add('hidden');
+
+  const modal = $('mTwoFactorWaitingModal');
+  if (modal) modal.classList.remove('hidden');
+
+  if ($('txt2FaWaitingEmail')) $('txt2FaWaitingEmail').textContent = userEmail;
+  if ($('txt2FaWaitingStatus')) $('txt2FaWaitingStatus').textContent = 'Generating secure verification link...';
+
+  // Stop any previous listener to prevent duplicate triggers
+  if (window.twoFactorUnsub) {
+    try { window.twoFactorUnsub(); } catch(e) {}
+    window.twoFactorUnsub = null;
+  }
+
+  // Generate secure 48-character random hex token (crypto.getRandomValues)
+  let token = '';
+  try {
+    const array = new Uint8Array(24);
+    crypto.getRandomValues(array);
+    token = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+  } catch(e) {
+    token = Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+
+  // Store in login_verifications/{token}
+  try {
+    await setDoc(doc(db, 'login_verifications', token), {
+      token: token,
+      uid: user.uid,
+      email: userEmail,
+      expiry: Date.now() + (10 * 60 * 1000), // 10 minutes
+      used: false,
+      createdAt: Date.now()
+    });
+  } catch (docErr) {
+    console.error('[2FA] Error storing verification token:', docErr);
+    if ($('txt2FaWaitingStatus')) {
+      $('txt2FaWaitingStatus').textContent = '⚠️ Token error: ' + (docErr.message || 'Check connection.');
+    }
+    return;
+  }
+
+  // Build branded dark (#0a0c12) + gold (#f0c040) HTML email card
+  let baseOrigin = 'https://arenax.cyou';
+  if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+    baseOrigin = window.location.origin;
+  }
+  const verifyUrl = `${baseOrigin}/?loginVerify=${token}`;
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your ArenaX Login</title>
+</head>
+<body style="margin:0;padding:0;background-color:#05070a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#05070a;padding:40px 15px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:#0a0c12;border:1px solid #1f2538;border-radius:18px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="padding:32px 24px 20px 24px;background:linear-gradient(180deg,#121624 0%,#0a0c12 100%);border-bottom:1px solid #1a2030;">
+              <div style="display:inline-block;padding:8px 16px;border-radius:30px;background-color:#161c2b;border:1px solid #28334d;margin-bottom:12px;">
+                <span style="color:#f0c040;font-weight:900;font-size:16px;letter-spacing:2px;text-transform:uppercase;">ARENAX ESPORTS</span>
+              </div>
+              <h1 style="margin:8px 0 0 0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:0.5px;">Confirm Your Login</h1>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:32px 28px;">
+              <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
+                Hello <strong style="color:#ffffff;">${displayName}</strong>,
+              </p>
+              <p style="margin:0 0 24px 0;font-size:14px;line-height:1.6;color:#94a3b8;">
+                We detected a login attempt to your ArenaX account. If this was you, click below to continue:
+              </p>
+
+              <!-- Prominent Gold Login Button -->
+              <div style="text-align:center;margin:32px 0;">
+                <a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#f0c040 0%,#d4a017 100%);color:#000000;font-size:16px;font-weight:900;letter-spacing:1px;text-decoration:none;border-radius:50px;box-shadow:0 6px 20px rgba(240,192,64,0.35);text-transform:uppercase;">
+                  Login
+                </a>
+              </div>
+
+              <div style="background-color:#0d111a;border-left:3px solid #f0c040;padding:14px 16px;border-radius:6px;margin:24px 0;">
+                <p style="margin:0;font-size:13px;line-height:1.5;color:#94a3b8;">
+                  ⚠️ <strong style="color:#cbd5e1;">Security Notice:</strong> If this wasn't you, ignore this email and consider changing your password immediately.
+                </p>
+              </div>
+
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#64748b;text-align:center;">
+                This one-time verification link will expire in <strong style="color:#cbd5e1;">10 minutes</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:20px;background-color:#07090d;border-top:1px solid #141824;">
+              <p style="margin:0;font-size:11px;color:#475569;">
+                &copy; ${new Date().getFullYear()} ArenaX Esports • Two-Factor Login Verification
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+  const apiBase = isStaticHost ? 'https://arena-x-beta.vercel.app' : '';
+
+  try {
+    let res = await fetch(`${apiBase}/api/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: userEmail,
+        subject: 'Confirm Your ArenaX Login',
+        htmlBody: emailHtml,
+        recipientName: displayName
+      })
+    });
+    if ((res.status === 404 || res.status === 405) && !apiBase) {
+      await fetch('https://arena-x-beta.vercel.app/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: userEmail,
+          subject: 'Confirm Your ArenaX Login',
+          htmlBody: emailHtml,
+          recipientName: displayName
+        })
+      });
+    }
+    if ($('txt2FaWaitingStatus')) {
+      $('txt2FaWaitingStatus').textContent = 'Verification email sent! Waiting for your confirmation...';
+    }
+  } catch (emailErr) {
+    console.warn('[2FA] Email dispatch warning:', emailErr);
+    if ($('txt2FaWaitingStatus')) {
+      $('txt2FaWaitingStatus').textContent = 'Waiting for email confirmation...';
+    }
+  }
+
+  // 4. Realtime Firestore listener watching login_verifications/{token}
+  // Auto-completes sign in as soon as used: true is detected
+  window.twoFactorUnsub = onSnapshot(doc(db, 'login_verifications', token), (snap) => {
+    if (snap.exists()) {
+      const data = snap.data() || {};
+      if (data.used === true) {
+        console.log('[2FA] Verification detected in real-time on waiting session!');
+        if (window.twoFactorUnsub) {
+          window.twoFactorUnsub();
+          window.twoFactorUnsub = null;
+        }
+        sessionStorage.setItem('ax_2fa_verified_' + user.uid, 'true');
+        if ($('mTwoFactorWaitingModal')) $('mTwoFactorWaitingModal').classList.add('hidden');
+        boot();
+      }
+    }
+  });
+
+  // Wire up Resend Button with 15s cooldown
+  if ($('btnResend2FaEmail')) {
+    $('btnResend2FaEmail').onclick = async () => {
+      $('btnResend2FaEmail').disabled = true;
+      $('btnResend2FaEmail').innerHTML = '<i class="fas fa-circle-notch animate-spin"></i> Resending...';
+      await window.startTwoFactorLoginFlow(user, profile);
+      setTimeout(() => {
+        if ($('btnResend2FaEmail')) {
+          $('btnResend2FaEmail').disabled = false;
+          $('btnResend2FaEmail').innerHTML = '<i class="fas fa-envelope"></i> Resend Verification Email';
+        }
+      }, 15000);
+    };
+  }
+
+  // Wire up Cancel / Sign Out Button
+  if ($('btnCancel2FaWaiting')) {
+    $('btnCancel2FaWaiting').onclick = async () => {
+      if (window.twoFactorUnsub) {
+        window.twoFactorUnsub();
+        window.twoFactorUnsub = null;
+      }
+      if ($('mTwoFactorWaitingModal')) $('mTwoFactorWaitingModal').classList.add('hidden');
+      sessionStorage.removeItem('ax_2fa_verified_' + user.uid);
+      try {
+        await signOut(auth);
+      } catch(e) {}
+      goTo('sLogin');
+    };
+  }
+};
+
+/**
+ * Detects ?loginVerify=THE_TOKEN on page load (GitHub Pages SPA compatible),
+ * validates the token with /api/complete-login-verification, and displays status.
+ */
+window.checkLoginVerificationRoute = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('loginVerify');
+  if (!token) return;
+
+  // Immediately finish splash screen if active
+  if (window.ArenaSplash && typeof window.ArenaSplash.finish === 'function') {
+    window.ArenaSplash.finish(true);
+  }
+
+  const modal = $('mLoginVerifyModal');
+  if (modal) modal.classList.remove('hidden');
+  if ($('mAuth')) $('mAuth').classList.add('hidden');
+
+  if ($('loginVerifyStateLoading')) $('loginVerifyStateLoading').classList.remove('hidden');
+  if ($('loginVerifyStateSuccess')) $('loginVerifyStateSuccess').classList.add('hidden');
+  if ($('loginVerifyStateError')) $('loginVerifyStateError').classList.add('hidden');
+
+  const isStaticHost = window.location.hostname === 'arenax.cyou' || window.location.hostname.endsWith('github.io');
+  const apiBase = isStaticHost ? 'https://arena-x-beta.vercel.app' : '';
+
+  try {
+    let res = await fetch(`${apiBase}/api/complete-login-verification?token=${encodeURIComponent(token.trim())}`);
+    if ((res.status === 404 || res.status === 405) && !apiBase) {
+      res = await fetch(`https://arena-x-beta.vercel.app/api/complete-login-verification?token=${encodeURIComponent(token.trim())}`);
+    }
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'This login verification link is invalid or has expired.');
+    }
+
+    // Mark verified in sessionStorage for this session
+    if (data.uid) {
+      sessionStorage.setItem('ax_2fa_verified_' + data.uid, 'true');
+    }
+
+    if ($('loginVerifyStateLoading')) $('loginVerifyStateLoading').classList.add('hidden');
+    if ($('loginVerifyStateSuccess')) $('loginVerifyStateSuccess').classList.remove('hidden');
+
+    if ($('btnContinueToArenaX')) {
+      $('btnContinueToArenaX').onclick = () => {
+        if (modal) modal.classList.add('hidden');
+        try {
+          const cleanUrl = window.location.pathname + (window.location.hash || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch(e) {}
+        if (auth.currentUser && userProfile) {
+          boot();
+        } else {
+          goTo('sLogin');
+        }
+      };
+    }
+  } catch (err) {
+    if ($('loginVerifyStateLoading')) $('loginVerifyStateLoading').classList.add('hidden');
+    if ($('loginVerifyStateError')) $('loginVerifyStateError').classList.remove('hidden');
+    if ($('txtLoginVerifyErrorMsg')) {
+      $('txtLoginVerifyErrorMsg').textContent = err.message || 'This login link is invalid or has expired.';
+    }
+
+    if ($('btnRetryLogin2Fa')) {
+      $('btnRetryLogin2Fa').onclick = () => {
+        if (modal) modal.classList.add('hidden');
+        try {
+          const cleanUrl = window.location.pathname + (window.location.hash || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch(e) {}
+        goTo('sLogin');
+      };
+    }
+  }
+};
+
+// Check route on startup for incoming 2FA login verification links
+checkLoginVerificationRoute();
 
 
