@@ -126,12 +126,13 @@ export default async function handler(req, res) {
     });
 
     // 4. Construct reset link URL
-    // Default to https://arenax.cyou/reset-password?token=... or request origin
+    // Use root URL with query parameter for GitHub Pages static hosting compatibility:
+    // https://arenax.cyou/?resetToken=xxxxx
     let baseOrigin = 'https://arenax.cyou';
     if (origin && typeof origin === 'string' && (origin.startsWith('http://') || origin.startsWith('https://'))) {
       baseOrigin = origin.replace(/\/+$/, '');
     }
-    const resetUrl = `${baseOrigin}/reset-password?token=${token}`;
+    const resetUrl = `${baseOrigin}/?resetToken=${token}`;
 
     const displayName = userRecord?.displayName || cleanEmail.split('@')[0];
 
