@@ -4826,14 +4826,17 @@ html, body {
             <i class="fas fa-chevron-left text-sm"></i>
           </button>
           <div>
-            <span class="font-display text-lg font-bold text-white block leading-tight">AX Security</span>
-            <span class="text-[10px] text-t3 font-mono">Standing & Account Safety Hub</span>
+            <span id="axSecurityModalTitle" class="font-display text-lg font-bold text-white block leading-tight">AX Security</span>
+            <span id="axSecurityModalSubtitle" class="text-[10px] text-t3 font-mono">Standing & Account Safety Hub</span>
           </div>
         </div>
         <button id="bCloseAxSecurity" class="text-xs text-t3 hover:text-indigo-400 font-medium px-2.5 py-1 rounded-lg transition cursor-pointer bg-slate-800/40 hover:bg-slate-800">
           Done
         </button>
       </div>
+
+      <!-- PRIMARY AX SECURITY MAIN VIEW -->
+      <div id="axSecurityMainView" class="space-y-5">
 
       <!-- ── SECTION 1: 3-STAGE ACCOUNT STANDING CARD (REFERENCE DESIGN) ── -->
       <div id="axStandingOverviewCard" class="bg-[#151722] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 relative overflow-hidden">
@@ -5047,6 +5050,42 @@ html, body {
         </div>
       </div>
 
+      <!-- ── SECTION 6: ACCOUNT ACTIVITY ── -->
+      <div class="space-y-2 pt-1 border-t border-bdr/40">
+        <div class="flex items-center justify-between px-1">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fas fa-clock-rotate-left text-indigo-400"></i>
+            <span>Account Activity</span>
+          </div>
+          <span class="text-[10px] text-t3 font-mono">Sessions & Audit</span>
+        </div>
+        
+        <div class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
+          <!-- Logged-in Devices Navigation Item -->
+          <button id="btnOpenLoggedInDevices" onclick="window.showLoggedInDevicesView()" type="button" class="w-full flex items-center justify-between p-3.5 bg-bg/70 hover:bg-bg border border-bdr/70 hover:border-indigo-500/50 rounded-xl transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition flex-shrink-0">
+                <i class="fas fa-laptop-mobile text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold text-white group-hover:text-indigo-300 transition">Logged-in Devices</span>
+                  <span id="axActiveDevicesSummaryBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="axActiveDevicesSummaryText">1 Active Session</span>
+                  </span>
+                </div>
+                <p class="text-[11px] text-t3 mt-0.5 leading-snug">Review active hardware, approximate locations, and remotely terminate unauthorized sessions</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-t3 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-[11px] font-medium hidden sm:inline text-slate-400">Manage</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-0.5 transition"></i>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- Information Card -->
       <div class="p-4 bg-bg/60 border border-bdr/40 rounded-xl space-y-2.5 text-xs text-t2">
         <div class="font-bold text-white flex items-center gap-1.5 text-xs">
@@ -5059,6 +5098,101 @@ html, body {
           <li>Uses standard secure OAuth2 (<strong class="text-indigo-300">identify</strong> scope only).</li>
         </ul>
       </div>
+
+      </div><!-- END #axSecurityMainView -->
+
+      <!-- ==================== SUBVIEW: LOGGED-IN DEVICES ==================== -->
+      <div id="axSecurityDevicesView" class="space-y-5 hidden">
+        <!-- Subview Back Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-bdr/40">
+          <button onclick="window.hideLoggedInDevicesView()" type="button" class="flex items-center gap-2 text-xs font-bold text-t2 hover:text-white transition cursor-pointer group">
+            <div class="w-8 h-8 rounded-full bg-card border border-bdr/80 flex items-center justify-center text-t2 group-hover:text-white group-hover:border-indigo-500/40 transition shadow-sm">
+              <i class="fas fa-chevron-left text-xs"></i>
+            </div>
+            <span>Back to AX Security</span>
+          </button>
+          <button onclick="window.refreshLoggedInDevices()" type="button" class="px-2.5 py-1 text-xs text-t3 hover:text-white bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition cursor-pointer flex items-center gap-1.5" title="Refresh session list">
+            <i id="axRefreshDevicesIcon" class="fas fa-arrows-rotate text-[11px]"></i>
+            <span class="text-[10px] font-medium">Sync</span>
+          </button>
+        </div>
+
+        <!-- Section Introduction -->
+        <div class="space-y-1">
+          <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <i class="fas fa-laptop-mobile text-xs"></i>
+            </div>
+            Logged-in Devices
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            These are all the devices that are currently logged-in with your ArenaX account. Log out of devices that you don't recognize.
+          </p>
+        </div>
+
+        <!-- 1. CURRENT DEVICE SECTION -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[11px] font-bold text-t3 uppercase tracking-wider">Current Device</span>
+            <span class="text-[9px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Active Session
+            </span>
+          </div>
+
+          <!-- Dynamic Current Device Card -->
+          <div id="axCurrentDeviceCard" class="bg-[#121622] border border-emerald-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 relative overflow-hidden">
+            <div class="animate-pulse flex items-center gap-3 py-2">
+              <div class="w-12 h-12 bg-slate-800 rounded-xl"></div>
+              <div class="space-y-2 flex-1">
+                <div class="h-4 bg-slate-800 rounded w-1/3"></div>
+                <div class="h-3 bg-slate-800 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. OTHER DEVICES SECTION -->
+        <div class="space-y-2.5 pt-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[11px] font-bold text-t3 uppercase tracking-wider">Other Devices</span>
+            <span id="axOtherDevicesCountBadge" class="text-[10px] font-mono text-slate-400">0 other devices</span>
+          </div>
+
+          <!-- List of Other Sessions -->
+          <div id="axOtherDevicesList" class="space-y-2.5">
+            <!-- Injected dynamically via renderLoggedInDevices() -->
+          </div>
+        </div>
+
+        <!-- 3. INFORMATIONAL NOTE CARD (MATCHING REFERENCE DESIGN) -->
+        <div class="p-3.5 sm:p-4 bg-bg/80 border border-bdr/70 rounded-xl flex items-start gap-3.5">
+          <div class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-300 text-sm flex-shrink-0 mt-0.5">
+            <i class="fas fa-shield-cat text-indigo-400"></i>
+          </div>
+          <div class="space-y-1 min-w-0">
+            <div class="text-xs font-bold text-white">Some older devices may not be shown here</div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              To log them out across all historical sessions, please <button onclick="window.openForgotPasswordModal()" type="button" class="text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer">change your password</button>.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4. LOG OUT OF ALL KNOWN DEVICES -->
+        <div class="space-y-3 pt-3 border-t border-bdr/50">
+          <div class="space-y-1">
+            <div class="text-xs font-bold text-white uppercase tracking-wider">Log out of all known devices</div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              You'll have to log back in on all logged out devices. Your current device will remain logged in.
+            </p>
+          </div>
+          <button id="btnLogOutAllOtherDevices" onclick="window.confirmRevokeAllOtherDevices()" type="button" class="w-full sm:w-auto px-5 py-3 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-rose-950/40 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fas fa-arrow-right-from-bracket"></i>
+            Log Out All Other Devices
+          </button>
+        </div>
+
+      </div><!-- END #axSecurityDevicesView -->
 
     </div>
   </div>
