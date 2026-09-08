@@ -74,12 +74,73 @@
         "duration": { "type": "string", "description": "Duration if applicable" }
       },
       "required": ["targetUid", "actionType", "reason", "adminUid"]
+    },
+    "UserSession": {
+      "title": "UserSession",
+      "description": "Active and past logged-in sessions for account activity tracking",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "Unique session identifier" },
+        "userId": { "type": "string", "description": "User UID" },
+        "deviceId": { "type": "string", "description": "Device hardware/fingerprint ID" },
+        "deviceType": { "type": "string", "description": "desktop, mobile, tablet" },
+        "platform": { "type": "string", "description": "OS/Platform (Windows, Android, iOS, etc)" },
+        "browser": { "type": "string", "description": "Browser or app client" },
+        "approximateLocation": { "type": "string", "description": "Approximate IP-derived city/region/country" },
+        "ip": { "type": "string", "description": "Client IP address for security audit" },
+        "createdAt": { "type": "number", "description": "Session creation timestamp" },
+        "lastActiveAt": { "type": "number", "description": "Last activity timestamp" },
+        "isRevoked": { "type": "boolean", "description": "Whether session has been remotely terminated" },
+        "revokedAt": { "type": ["number", "null"], "description": "Revocation timestamp" }
+      },
+      "required": ["sessionId", "userId", "platform", "createdAt", "isRevoked"]
+    },
+    "KnownDevice": {
+      "title": "KnownDevice",
+      "description": "Recognized device record for smart new-device login detection",
+      "type": "object",
+      "properties": {
+        "deviceId": { "type": "string", "description": "Persistent device identifier" },
+        "platform": { "type": "string", "description": "OS/Platform" },
+        "browser": { "type": "string", "description": "Browser or app client" },
+        "firstSeenAt": { "type": "number", "description": "First login timestamp" },
+        "lastSeenAt": { "type": "number", "description": "Most recent login timestamp" },
+        "approximateLocation": { "type": "string", "description": "Location where first seen" }
+      },
+      "required": ["deviceId", "platform", "firstSeenAt"]
+    },
+    "AccountActivity": {
+      "title": "AccountActivity",
+      "description": "Security audit events and login logs",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User UID" },
+        "securityEventType": { "type": "string", "description": "NEW_DEVICE_LOGIN, REVOKED_SESSION, etc" },
+        "sessionId": { "type": "string", "description": "Associated session ID" },
+        "platform": { "type": "string", "description": "OS/Platform" },
+        "browser": { "type": "string", "description": "Browser name" },
+        "approximateLocation": { "type": "string", "description": "Approximate location" },
+        "createdAt": { "type": "number", "description": "Event timestamp" }
+      },
+      "required": ["userId", "securityEventType", "createdAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User profiles collection"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "UserSession",
+      "description": "Logged-in device sessions for user"
+    },
+    "/users/{userId}/known_devices/{deviceId}": {
+      "schema": "KnownDevice",
+      "description": "Known recognized devices for user"
+    },
+    "/users/{userId}/account_activity/{activityId}": {
+      "schema": "AccountActivity",
+      "description": "Account activity security event logs"
     },
     "/tournaments/{tourId}": {
       "schema": "Tournament",
