@@ -930,11 +930,12 @@ html, body {
     }
   }, 3200);
 
-  // Early detection of password reset token on root URL (GitHub Pages SPA)
+  // Early detection of password reset or 2FA login verification token on root URL (GitHub Pages SPA)
   (function() {
     try {
       var searchParams = new URLSearchParams(window.location.search);
       var rToken = searchParams.get('resetToken') || searchParams.get('token');
+      var lvToken = searchParams.get('loginVerify');
       if (rToken) {
         // Fast-track splash dismissal so reset password screen opens immediately
         if (window.ArenaSplash) {
@@ -943,6 +944,15 @@ html, body {
         var mReset = document.getElementById('mResetPassword');
         if (mReset) {
           mReset.classList.remove('hidden');
+        }
+      } else if (lvToken) {
+        // Fast-track splash dismissal so 2FA verification screen opens immediately
+        if (window.ArenaSplash) {
+          window.ArenaSplash.finish(true);
+        }
+        var mLv = document.getElementById('mLoginVerifyModal');
+        if (mLv) {
+          mLv.classList.remove('hidden');
         }
       }
     } catch (e) {}
@@ -1138,6 +1148,113 @@ html, body {
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ==================== 2FA LOGIN VERIFICATION WAITING MODAL ==================== -->
+<div id="mTwoFactorWaitingModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
+  <div class="bg-[#0c0d12] border border-[#f0c040]/30 rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
+    <!-- Glowing background accent -->
+    <div class="absolute -top-20 -right-20 w-44 h-44 bg-[#f0c040]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Pulsing Radar Shield Icon -->
+    <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+      <div class="absolute inset-0 rounded-full bg-[#f0c040]/25 animate-ping opacity-60"></div>
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#1b1c24] to-[#0c0d12] border border-[#f0c040]/50 flex items-center justify-center text-[#f0c040] text-2xl shadow-lg relative z-10">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+    </div>
+
+    <!-- Text Header -->
+    <div class="space-y-1.5">
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#f0c040]/15 border border-[#f0c040]/30 text-[#f0c040] text-[10px] font-bold uppercase tracking-wider">
+        <i class="fas fa-lock"></i> 2FA Security Check
+      </div>
+      <h3 class="font-display text-xl font-bold text-white tracking-tight">Confirm Your Login</h3>
+      <p class="text-xs text-slate-300 leading-relaxed px-1">
+        Two-Factor Authentication is enabled on your account. We sent a secure confirmation link to:
+      </p>
+      <div id="txt2FaWaitingEmail" class="text-xs font-mono font-bold text-[#f0c040] bg-[#f0c040]/10 border border-[#f0c040]/30 rounded-xl py-2 px-3 truncate max-w-full inline-block mt-1">
+        player@example.com
+      </div>
+    </div>
+
+    <!-- Live Status Indicator -->
+    <div class="p-3 bg-[#151722] border border-white/10 rounded-xl flex items-center justify-center gap-2.5 text-xs text-slate-300 shadow-inner">
+      <i class="fas fa-circle-notch animate-spin text-[#f0c040] text-sm"></i>
+      <span id="txt2FaWaitingStatus">Waiting for email confirmation...</span>
+    </div>
+
+    <p class="text-[11px] text-slate-400 leading-normal px-2">
+      Click the <strong class="text-white">"Login"</strong> button in the email on this or any device. This window will automatically finish logging you in once confirmed.
+    </p>
+
+    <!-- Actions -->
+    <div class="space-y-2 pt-1 border-t border-white/5">
+      <button id="btnResend2FaEmail" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition border border-slate-700 active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+        <i class="fas fa-envelope"></i> Resend Verification Email
+      </button>
+      <button id="btnCancel2FaWaiting" class="w-full py-2 text-xs text-slate-400 hover:text-rose-400 transition cursor-pointer">
+        Cancel / Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 2FA EMAIL CONFIRMATION MODAL ==================== -->
+<div id="mLoginVerifyModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
+  <div class="bg-[#0c0d12] border border-[#f0c040]/30 rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
+    <!-- Glowing background accent -->
+    <div class="absolute -top-20 -right-20 w-44 h-44 bg-[#f0c040]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- State 1: Verifying Spinner -->
+    <div id="loginVerifyStateLoading" class="space-y-4 py-4">
+      <div class="w-16 h-16 mx-auto rounded-full bg-[#f0c040]/10 border border-[#f0c040]/30 flex items-center justify-center text-[#f0c040] text-2xl">
+        <i class="fas fa-circle-notch animate-spin"></i>
+      </div>
+      <div class="space-y-1">
+        <h3 class="text-xl font-bold text-white font-display">Verifying Login Link...</h3>
+        <p class="text-xs text-slate-400">Validating your one-time 2FA authorization token.</p>
+      </div>
+    </div>
+
+    <!-- State 2: Success State -->
+    <div id="loginVerifyStateSuccess" class="space-y-4 hidden">
+      <div class="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 text-2xl shadow-lg shadow-emerald-950/50">
+        <i class="fas fa-check"></i>
+      </div>
+      <div class="space-y-1.5">
+        <h3 class="text-xl font-bold text-white font-display tracking-tight">Login Verified!</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          You can now continue to ArenaX. Your sign-in attempt has been safely authorized.
+        </p>
+        <p class="text-[11px] text-emerald-400 font-medium">
+          If you are waiting on another device, that session has also automatically logged in!
+        </p>
+      </div>
+      <button id="btnContinueToArenaX" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#e5a820] hover:from-[#f5c952] hover:to-[#f0b030] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-gold/20 active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+        <i class="fas fa-arrow-right"></i> Continue to ArenaX
+      </button>
+    </div>
+
+    <!-- State 3: Error State -->
+    <div id="loginVerifyStateError" class="space-y-4 hidden">
+      <div class="w-16 h-16 mx-auto rounded-full bg-rose-500/15 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-2xl shadow-lg shadow-rose-950/50">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+      <div class="space-y-1.5">
+        <h3 class="text-lg font-bold text-white font-display">Verification Failed</h3>
+        <p id="txtLoginVerifyErrorMsg" class="text-xs text-rose-300 leading-relaxed">
+          This login verification link is invalid, has expired, or has already been used.
+        </p>
+      </div>
+      <button id="btnRetryLogin2Fa" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition border border-slate-700 active:scale-98 cursor-pointer">
+        Back to Login
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -4911,6 +5028,22 @@ html, body {
         <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Discord Integration Status</div>
         <div id="discordSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-4">
           <!-- Injected dynamically via renderDiscordAuthWidget() -->
+        </div>
+      </div>
+
+      <!-- ── SECTION 5: TWO-FACTOR AUTHENTICATION (2FA) LOGIN VERIFICATION ── -->
+      <div class="space-y-2 pt-1 border-t border-bdr/40">
+        <div class="flex items-center justify-between px-1">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fas fa-shield-halved text-[#f0c040]"></i>
+            <span>Two-Factor Authentication (2FA)</span>
+          </div>
+          <span id="ax2FaStatusHeaderBadge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+            Disabled
+          </span>
+        </div>
+        <div id="ax2FaSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
+          <!-- Injected dynamically via renderTwoFactorAuthWidget() -->
         </div>
       </div>
 
