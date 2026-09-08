@@ -6962,13 +6962,19 @@ if ($('btnProceedToLogin')) {
 // ==================== CUSTOM PASSWORD RESET LINK RECEIVER & FORM CONTROLLER ====================
 async function checkPasswordResetRoute() {
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token') || urlParams.get('resetToken');
+  const resetToken = urlParams.get('resetToken') || urlParams.get('token');
   const pathname = window.location.pathname;
 
-  if (token || pathname.includes('reset-password')) {
-    const resetToken = token || (new URLSearchParams(window.location.search)).get('token');
-    if (!resetToken) return;
+  if (resetToken || pathname.includes('reset-password')) {
+    const token = resetToken || urlParams.get('token') || urlParams.get('resetToken');
+    if (!token) return;
 
+    // Immediately finish splash screen if still showing
+    if (window.ArenaSplash && typeof window.ArenaSplash.finish === 'function') {
+      window.ArenaSplash.finish(true);
+    }
+
+    // Automatically reveal the Reset Password screen and hide auth modal
     if ($('mResetPassword')) $('mResetPassword').classList.remove('hidden');
     if ($('mAuth')) $('mAuth').classList.add('hidden');
 
@@ -6976,9 +6982,9 @@ async function checkPasswordResetRoute() {
     const apiBase = isStaticHost ? 'https://arena-x-beta.vercel.app' : '';
 
     try {
-      let res = await fetch(`${apiBase}/api/complete-password-reset?token=${encodeURIComponent(resetToken)}`);
+      let res = await fetch(`${apiBase}/api/complete-password-reset?token=${encodeURIComponent(token)}`);
       if ((res.status === 404 || res.status === 405) && !apiBase) {
-        res = await fetch(`https://arena-x-beta.vercel.app/api/complete-password-reset?token=${encodeURIComponent(resetToken)}`);
+        res = await fetch(`https://arena-x-beta.vercel.app/api/complete-password-reset?token=${encodeURIComponent(token)}`);
       }
       const data = await res.json();
       if (!res.ok || !data.valid) {
@@ -7033,7 +7039,7 @@ async function checkPasswordResetRoute() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              token: resetToken,
+              token: token,
               newPassword: p1
             })
           });
@@ -7042,7 +7048,7 @@ async function checkPasswordResetRoute() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                token: resetToken,
+                token: token,
                 newPassword: p1
               })
             });
