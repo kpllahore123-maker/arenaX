@@ -20,6 +20,16 @@
           }
         }
         
+        // If route is /login-verify, map token to ?loginVerify for the SPA
+        if (pathname.indexOf('login-verify') !== -1) {
+          var params = new URLSearchParams(search);
+          var lvToken = params.get('loginVerify') || params.get('token');
+          if (lvToken) {
+            window.location.replace('/?loginVerify=' + encodeURIComponent(lvToken) + (hash ? hash : ''));
+            return;
+          }
+        }
+        
         // Preserve query params and redirect to root with parameters
         var targetUrl = '/' + (search ? search : '') + (hash ? hash : '');
         window.location.replace(targetUrl);
