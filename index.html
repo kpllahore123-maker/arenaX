@@ -929,6 +929,24 @@ html, body {
       window.ArenaSplash.finish(true);
     }
   }, 3200);
+
+  // Early detection of password reset token on root URL (GitHub Pages SPA)
+  (function() {
+    try {
+      var searchParams = new URLSearchParams(window.location.search);
+      var rToken = searchParams.get('resetToken') || searchParams.get('token');
+      if (rToken) {
+        // Fast-track splash dismissal so reset password screen opens immediately
+        if (window.ArenaSplash) {
+          window.ArenaSplash.finish(true);
+        }
+        var mReset = document.getElementById('mResetPassword');
+        if (mReset) {
+          mReset.classList.remove('hidden');
+        }
+      }
+    } catch (e) {}
+  })();
 </script>
 
 <!-- ==================== SIGN IN SCREEN ==================== -->
