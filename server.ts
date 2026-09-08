@@ -1085,6 +1085,57 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     }
   });
 
+  // Dynamic serverless route handlers in development & container mode
+  app.all("/api/record-login-device", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/record-login-device.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[API Error] /api/record-login-device:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.all("/api/revoke-session", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/revoke-session.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[API Error] /api/revoke-session:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.all("/api/complete-login-verification", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/complete-login-verification.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[API Error] /api/complete-login-verification:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.all("/api/request-password-reset", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/request-password-reset.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[API Error] /api/request-password-reset:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.all("/api/complete-password-reset", async (req, res) => {
+    try {
+      const { default: handler } = await import("./api/complete-password-reset.js");
+      return await handler(req, res);
+    } catch (err: any) {
+      console.error("[API Error] /api/complete-password-reset:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // Rewrite subpath requests (e.g. /arenax/...)
   app.use((req, res, next) => {
     const subpathRegex = /^\/(arenax|arenaX)(\/|$)/i;
