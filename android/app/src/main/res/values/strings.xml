@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ArenaX Esports</string>
+    <string name="title_activity_main">ArenaX Esports</string>
+    <string name="package_name">com.arenax.esports</string>
+    <string name="custom_url_scheme">com.arenax.esports</string>
+</resources>
