@@ -4568,6 +4568,23 @@ html, body {
             <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
           </button>
 
+          <!-- Check for Updates -->
+          <button id="btnCheckAppUpdates" type="button" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fas fa-sync-alt"></i>
+              </div>
+              <div>
+                <span class="font-medium text-white group-hover:text-emerald-300 transition block">Check for Updates</span>
+                <span class="text-[10px] text-t3 font-normal">ArenaX Android APK Auto-Update</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/20">Check</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </div>
+          </button>
+
         </div>
       </div>
 
@@ -7365,6 +7382,122 @@ html, body {
   <script type="module" src="./js/moments.js"></script>
   <script type="module" src="./js/account-standing.js"></script>
   <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./js/auto-update.js"></script>
+
+<!-- ==================== ARENAX APK AUTO-UPDATE MODAL ==================== -->
+<div id="apkUpdateModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[350] flex items-center justify-center p-4 hidden transition-all duration-300">
+  <div class="group relative w-[420px] max-w-full">
+    <div class="relative overflow-hidden rounded-2xl bg-[#0b0e17] border border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.2)] transition-all duration-300">
+      <!-- Glow ambient highlights -->
+      <div class="absolute -left-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br from-emerald-500/25 to-teal-500/0 blur-2xl pointer-events-none"></div>
+      <div class="absolute -right-16 -bottom-16 h-36 w-36 rounded-full bg-gradient-to-br from-teal-500/25 to-emerald-500/0 blur-2xl pointer-events-none"></div>
+
+      <div class="relative p-6 space-y-4">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="relative flex-shrink-0">
+              <div class="absolute -inset-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 opacity-40 blur-sm"></div>
+              <div class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-[#121826] border border-emerald-500/30 text-emerald-400 text-xl shadow-inner">
+                <i class="fab fa-android"></i>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-display font-bold text-white text-base tracking-wide">Update Available</h3>
+                <span id="apkModalBadge" class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">New</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">
+                Version <span id="apkModalLatestVersion" class="font-bold text-emerald-400 font-mono">1.1.0</span> is ready
+              </p>
+            </div>
+          </div>
+          <button id="bCloseApkModalCross" type="button" class="text-slate-400 hover:text-white transition p-1 cursor-pointer">
+            <i class="fas fa-times text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Version Comparison Badge -->
+        <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#131929] border border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px]">Current:</span>
+            <span id="apkModalCurrentVersion" class="text-slate-200 font-mono font-semibold">v1.0.0</span>
+          </div>
+          <i class="fas fa-arrow-right text-[10px] text-emerald-400"></i>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px]">Latest:</span>
+            <span id="apkModalTargetVersion" class="text-emerald-400 font-mono font-bold">v1.1.0</span>
+          </div>
+        </div>
+
+        <!-- Release Notes Section -->
+        <div class="space-y-1.5">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fas fa-sparkles text-emerald-400 text-[9px]"></i> What's New
+          </div>
+          <div id="apkModalReleaseNotes" class="bg-[#0e1320] border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-line font-sans">
+            • One-Tap auto update system with native APK installer integration
+            • Enhanced tournament live match sync
+            • Performance optimizations & UI polish
+          </div>
+        </div>
+
+        <!-- Download & Install Progress Section -->
+        <div id="apkDownloadProgressSection" class="space-y-2.5 hidden pt-1">
+          <div class="flex items-center justify-between text-xs">
+            <span id="apkDownloadStatusText" class="text-emerald-400 font-medium flex items-center gap-2">
+              <i class="fas fa-circle-notch fa-spin text-xs"></i>
+              <span>Downloading update package...</span>
+            </span>
+            <span id="apkDownloadPercentText" class="font-mono text-emerald-300 font-bold text-xs">0%</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800/80 rounded-full overflow-hidden border border-emerald-500/20 p-0.5">
+            <div id="apkDownloadProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full w-0 transition-all duration-150 shadow-[0_0_12px_rgba(16,185,129,0.5)]"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <span id="apkDownloadSizeText">0.0 MB / -- MB</span>
+            <span id="apkDownloadSpeedText" class="text-emerald-400/80">Connecting...</span>
+          </div>
+        </div>
+
+        <!-- Android Unknown Sources / Help Guide -->
+        <div id="apkUnknownSourcesGuide" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 space-y-1.5">
+          <div class="flex items-center gap-2 font-bold text-amber-300 text-[11px] uppercase tracking-wide">
+            <i class="fas fa-shield-alt text-amber-400"></i> Android Install Permission Notice
+          </div>
+          <p class="text-[11px] leading-relaxed text-amber-100/90">
+            Android requires permission to install sideloaded APK updates. When the system prompt appears, tap <strong>Settings</strong> and switch on <strong>Allow from this source</strong>.
+          </p>
+        </div>
+
+        <!-- Error Container -->
+        <div id="apkUpdateErrorBox" class="hidden bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-200 space-y-1.5">
+          <div class="flex items-center gap-2 font-bold text-red-300 text-[11px]">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="apkUpdateErrorTitle">Installation Notice</span>
+          </div>
+          <p id="apkUpdateErrorMsg" class="text-[11px] leading-relaxed text-red-100/90"></p>
+          <div class="pt-1">
+            <a id="apkDirectBrowserFallback" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer">
+              <i class="fas fa-download"></i> Download APK directly via browser
+            </a>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2.5 pt-2">
+          <button id="btnApkUpdateLater" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition border border-slate-700 cursor-pointer">
+            Later
+          </button>
+          <button id="btnApkUpdateNow" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fas fa-download"></i>
+            <span id="btnApkUpdateNowText">Update Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PWA Update Modal Overlay -->
 <div id="pwaUpdateModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden transition-all duration-300">
