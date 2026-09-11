@@ -123,9 +123,26 @@
         "createdAt": { "type": "number", "description": "Event timestamp" }
       },
       "required": ["userId", "securityEventType", "createdAt"]
+    },
+    "AppVersionConfig": {
+      "title": "AppVersionConfig",
+      "description": "App version configuration for auto-update checks",
+      "type": "object",
+      "properties": {
+        "latestVersion": { "type": "string", "description": "Latest release semver version (e.g. 1.1.0)" },
+        "downloadUrl": { "type": "string", "description": "Direct APK download link" },
+        "releaseNotes": { "type": "string", "description": "Summary of what's new in this release" },
+        "mandatory": { "type": "boolean", "description": "Whether this update is mandatory" },
+        "updatedAt": { "type": "string", "description": "Timestamp when release was published" }
+      },
+      "required": ["latestVersion", "downloadUrl"]
     }
   },
   "firestore": {
+    "/app_config/{configId}": {
+      "schema": "AppVersionConfig",
+      "description": "Application remote versioning and configuration"
+    },
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User profiles collection"
