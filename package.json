@@ -16,7 +16,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
+<<<<<<< HEAD
     "@capacitor/app": "^8.1.1",
+=======
+>>>>>>> fb8eace24098197d7d6575e2cc0a8c2c21c09217
     "@capacitor/core": "^8.5.1",
     "@google/genai": "^2.10.0",
     "@tailwindcss/vite": "^4.3.2",

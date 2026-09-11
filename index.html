@@ -25,6 +25,96 @@ window.$ = function(id) {
   return typeof id === 'string' ? document.getElementById(id) : id;
 };
 
+// Global AX Security Subview & Modal navigation controller (available immediately)
+window.currentAxSecuritySubView = null;
+window.showAxSecuritySubView = function(subView) {
+  window.currentAxSecuritySubView = subView || null;
+  const mainView = document.getElementById('axSecurityMainView');
+  const standingView = document.getElementById('axSecurityStandingView');
+  const activityView = document.getElementById('axSecurityActivityView');
+  const devicesView = document.getElementById('axSecurityDevicesView');
+  const linkAccountsView = document.getElementById('axSecurityLinkAccountsView');
+  const twoFaView = document.getElementById('axSecurity2FaView');
+
+  const titleEl = document.getElementById('axSecurityModalTitle');
+  const subEl = document.getElementById('axSecurityModalSubtitle');
+
+  if (mainView) mainView.classList.add('hidden');
+  if (standingView) standingView.classList.add('hidden');
+  if (activityView) activityView.classList.add('hidden');
+  if (devicesView) devicesView.classList.add('hidden');
+  if (linkAccountsView) linkAccountsView.classList.add('hidden');
+  if (twoFaView) twoFaView.classList.add('hidden');
+
+  if (!subView) {
+    if (mainView) mainView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'AX Security';
+    if (subEl) subEl.textContent = 'Standing & Account Safety Hub';
+    if (typeof window.updateAxSecurityBadges === 'function') window.updateAxSecurityBadges();
+  } else if (subView === 'standing') {
+    if (standingView) standingView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Account Standing';
+    if (subEl) subEl.textContent = 'Standing & Guidelines';
+    const profile = window.userProfile || window.guestProfile || {};
+    if (window.accountStanding && profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
+      window.accountStanding.refreshUserStanding(profile.uid);
+    }
+  } else if (subView === 'activity') {
+    if (activityView) activityView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Account Activity';
+    if (subEl) subEl.textContent = 'Sessions & Hardware Audit';
+    if (typeof window.updateAxSecurityBadges === 'function') window.updateAxSecurityBadges();
+  } else if (subView === 'devices') {
+    if (devicesView) devicesView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Logged-in Devices';
+    if (subEl) subEl.textContent = 'Account Activity & Devices';
+    if (window.axCachedSessions && typeof window.renderLoggedInDevices === 'function') {
+      window.renderLoggedInDevices(window.axCachedSessions);
+    } else if (typeof window.refreshLoggedInDevices === 'function') {
+      window.refreshLoggedInDevices();
+    }
+  } else if (subView === 'link-accounts') {
+    if (linkAccountsView) linkAccountsView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Link Accounts';
+    if (subEl) subEl.textContent = 'Third-Party Identity Connections';
+    if (typeof window.renderDiscordAuthWidget === 'function') window.renderDiscordAuthWidget();
+  } else if (subView === '2fa') {
+    if (twoFaView) twoFaView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = '2 Factor Authentication';
+    if (subEl) subEl.textContent = 'Login Verification Security';
+    if (typeof window.renderTwoFactorAuthWidget === 'function') window.renderTwoFactorAuthWidget();
+  }
+};
+
+window.openAxSecurityModal = function(initialSubView) {
+  if (typeof window.renderDiscordAuthWidget === 'function') window.renderDiscordAuthWidget();
+  if (typeof window.renderTwoFactorAuthWidget === 'function') window.renderTwoFactorAuthWidget();
+  const profile = window.userProfile || window.guestProfile || {};
+  if (window.accountStanding) {
+    if (profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
+      window.accountStanding.refreshUserStanding(profile.uid);
+    } else if (typeof window.accountStanding.reevaluateAndRender === 'function') {
+      window.accountStanding.reevaluateAndRender();
+    }
+  }
+  if (typeof window.showAxSecuritySubView === 'function') {
+    window.showAxSecuritySubView(initialSubView || null);
+  }
+  if (typeof window.updateAxSecurityBadges === 'function') {
+    window.updateAxSecurityBadges();
+  }
+  const modal = document.getElementById('mAxSecurityModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeAxSecurityModal = function() {
+  const modal = document.getElementById('mAxSecurityModal');
+  if (modal) modal.classList.add('hidden');
+  if (typeof window.showAxSecuritySubView === 'function') {
+    window.showAxSecuritySubView(null);
+  }
+};
+
 // Module-scoped localStorage shadow fallback
 (function() {
   let localMemoryStorage = {};
@@ -215,6 +305,87 @@ html, body {
 .font-unifraktur { font-family: 'UnifrakturMaguntia', cursive !important; }
 .font-permanent-marker { font-family: 'Permanent Marker', cursive !important; }
 .font-pacifico { font-family: 'Pacifico', cursive !important; }
+
+/* ========================================================
+   DISCORD-STYLE ANIMATED PROFILE EFFECTS
+   ======================================================== */
+.profile-effect-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+/* 1. Cyber Sparks Effect */
+.effect-cyber-sparks {
+  box-shadow: 0 0 22px rgba(6, 182, 212, 0.75), inset 0 0 14px rgba(6, 182, 212, 0.45);
+  border: 2.5px solid #06b6d4;
+  animation: cyberSparksPulse 2s ease-in-out infinite alternate;
+}
+@keyframes cyberSparksPulse {
+  0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.3); border-color: #06b6d4; transform: scale(1); }
+  50% { box-shadow: 0 0 28px rgba(59, 130, 246, 0.85), inset 0 0 18px rgba(59, 130, 246, 0.5); border-color: #38bdf8; transform: scale(1.02); }
+  100% { box-shadow: 0 0 22px rgba(14, 165, 233, 0.7), inset 0 0 12px rgba(14, 165, 233, 0.35); border-color: #06b6d4; transform: scale(1); }
+}
+
+/* 2. Golden Aura Effect */
+.effect-golden-aura {
+  box-shadow: 0 0 25px rgba(240, 192, 64, 0.8), inset 0 0 18px rgba(240, 192, 64, 0.5);
+  border: 2.5px solid #f0c040;
+  animation: goldenAuraSweep 2.5s ease-in-out infinite alternate;
+}
+@keyframes goldenAuraSweep {
+  0% { box-shadow: 0 0 18px rgba(240, 192, 64, 0.6), inset 0 0 12px rgba(240, 192, 64, 0.3); transform: scale(1); }
+  100% { box-shadow: 0 0 35px rgba(251, 191, 36, 0.95), inset 0 0 22px rgba(251, 191, 36, 0.6); transform: scale(1.03); }
+}
+
+/* 3. Mystic Fire Effect */
+.effect-mystic-fire {
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.8), inset 0 0 16px rgba(249, 115, 22, 0.5);
+  border: 2.5px solid #ef4444;
+  animation: mysticFirePulse 1.8s ease-in-out infinite;
+}
+@keyframes mysticFirePulse {
+  0% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.6); border-color: #ef4444; }
+  50% { box-shadow: 0 0 32px rgba(249, 115, 22, 0.95); border-color: #f97316; }
+  100% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.6); border-color: #ef4444; }
+}
+
+/* 4. Neon Pulse Effect */
+.effect-neon-pulse {
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.8), inset 0 0 15px rgba(168, 85, 247, 0.4);
+  border: 2.5px solid #a855f7;
+  animation: neonPulseGlow 2.2s ease-in-out infinite alternate;
+}
+@keyframes neonPulseGlow {
+  0% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.6); border-color: #a855f7; }
+  100% { box-shadow: 0 0 32px rgba(217, 70, 239, 0.9); border-color: #d946ef; }
+}
+
+/* 5. Cosmic Void Effect */
+.effect-cosmic-void {
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.8), inset 0 0 16px rgba(79, 70, 229, 0.5);
+  border: 2.5px solid #6366f1;
+  animation: cosmicVoidShimmer 3s linear infinite;
+}
+@keyframes cosmicVoidShimmer {
+  0% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.7); }
+  50% { box-shadow: 0 0 32px rgba(129, 140, 248, 0.95); }
+  100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.7); }
+}
+
+/* 6. Frost Shield Effect */
+.effect-frost-shield {
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.8), inset 0 0 15px rgba(186, 230, 253, 0.5);
+  border: 2.5px solid #38bdf8;
+  animation: frostShieldPulse 2.4s ease-in-out infinite alternate;
+}
+@keyframes frostShieldPulse {
+  0% { box-shadow: 0 0 16px rgba(56, 189, 248, 0.6); border-color: #38bdf8; }
+  100% { box-shadow: 0 0 30px rgba(224, 242, 254, 0.95); border-color: #bae6fd; }
+}
 
 /* Interactive Jelly theme wiggle animation */
 @keyframes jelly-wiggle {
@@ -1277,11 +1448,11 @@ html, body {
       <img src="arenax_logo_user_1783946436893.jpg"  alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
-      <!-- App Download Button (Opens Download Options Modal) -->
-      <button id="btnDownloadApp" class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-lg text-xs font-bold transition shadow-md active:scale-[0.98] cursor-pointer z-50">
-        <span class="sm:hidden">📲 App</span>
-        <span class="hidden sm:inline">📲 Download App</span>
-      </button>
+      <!-- App Download Button (Direct APK Download) -->
+      <a id="btnDownloadApp" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white border border-emerald-400/40 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-[0_0_12px_rgba(16,185,129,0.25)] hover:shadow-[0_0_20px_rgba(16,185,129,0.45)] active:scale-[0.98] cursor-pointer z-50 no-underline whitespace-nowrap" title="Download ArenaX App (Android APK)">
+        <i class="fab fa-android text-sm text-white"></i>
+        <span>Download ArenaX App</span>
+      </a>
 
       <!-- Topbar Menu Button (Hamburger) -->
       <button id="bTopbarMenu" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Menu Hub">
@@ -2769,15 +2940,18 @@ html, body {
     </div>
 
     <!-- App Download Card in Menu Hub -->
-    <div id="btnHubInstallApp" class="bg-card hover:bg-ele/60 border border-emerald-500/20 hover:border-emerald-400/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98]">
-      <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
-        <i class="fas fa-download"></i>
+    <a id="btnHubInstallApp" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="bg-card hover:bg-ele/60 border border-emerald-500/30 hover:border-emerald-400/50 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] no-underline">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fab fa-android"></i>
       </div>
       <div>
-        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider">📲 Download ArenaX App</h4>
-        <p class="text-[9px] text-t3 mt-0.5">Android APK & PC Desktop PWA</p>
+        <h4 class="font-display text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+          <span>Download ArenaX App</span>
+          <i class="fas fa-download text-[10px] text-emerald-400"></i>
+        </h4>
+        <p class="text-[9px] text-t3 mt-0.5">Android APK Direct Download (v1.1.0)</p>
       </div>
-    </div>
+    </a>
   </div>
 </div>
 
@@ -3816,263 +3990,206 @@ html, body {
   </div>
 </div>
 
-<!-- ==================== CUSTOMIZE PROFILE MODAL ==================== -->
-<div id="mCustomize" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-md z-[320] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl">
-    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-palette"></i></div>
-        <h3 class="font-display text-lg font-bold text-white">Customize Profile</h3>
-      </div>
-      <button id="bCloseCustomizeCross" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+<!-- ==================== FULL-SCREEN CUSTOMIZE PROFILE PAGE ==================== -->
+<div id="sCustomizeProfile" class="fixed inset-0 bg-[#0a0c12] z-[320] overflow-y-auto hidden animate-fade-in flex flex-col">
+  
+  <!-- Sticky Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-[#0a0c12]/95 backdrop-blur-md border-b border-white/10 px-4 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button id="bCloseCustomizeProfile" type="button" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white hover:text-[#f0c040] transition cursor-pointer active:scale-95 shadow-sm" aria-label="Go Back">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="font-display text-lg font-bold text-white tracking-wide">Customize Profile</h2>
     </div>
+    <div class="flex items-center gap-2">
+      <span id="editProfileStatusBadge" class="hidden text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Synced</span>
+    </div>
+  </header>
+
+  <!-- Main Scrollable Body without card framing -->
+  <main class="flex-1 max-w-md w-full mx-auto px-4 py-6 space-y-6 pb-28">
     
-    <div class="flex-1 overflow-y-auto space-y-4 text-left pr-1.5 scrollbar-thin">
-      <!-- BASIC INFO (FOR ALL USERS) -->
-      <div class="border-b border-bdr/20 pb-4">
-        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
-          <i class="fas fa-info-circle"></i> Basic Info
-        </h4>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Display Name</label>
-            <input id="custName" type="text" placeholder="Enter display name" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-gold"/>
-            <p class="text-[9px] text-t3 mt-1"><i class="fas fa-history mr-1 text-gold/80"></i> Display Name can only be changed once every 14 days.</p>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Country / Region</label>
-              <select id="custCountry" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
-                <option value="">Select Country</option>
-                <option value="PK">🇵🇰 Pakistan</option>
-                <option value="IN">🇮🇳 India</option>
-                <option value="BD">🇧🇩 Bangladesh</option>
-                <option value="SA">🇸🇦 Saudi Arabia</option>
-                <option value="AE">🇦🇪 UAE</option>
-                <option value="US">🇺🇸 USA</option>
-                <option value="GB">🇬🇧 UK</option>
-                <option value="Other">🌍 Other</option>
-              </select>
-            </div>
-            
-            <div>
-              <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Favorite Game</label>
-              <select id="custFavGame" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold">
-                <option value="">Select Game</option>
-                <option value="Grand RP Mobile">Grand RP Mobile</option>
-                <option value="PUBG Mobile">PUBG Mobile</option>
-                <option value="Free Fire">Free Fire</option>
-                <option value="COD Mobile">COD Mobile</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-          </div>
+    <!-- 1. TOP SECTION — PROFILE PICTURE -->
+    <section class="flex flex-col items-center justify-center text-center space-y-3">
+      <div class="relative group">
+        <!-- Animated Profile Effect Ring Overlay -->
+        <div id="editProfileEffectRing" class="profile-effect-ring hidden"></div>
 
-          <div>
-            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Game UID / IGN</label>
-            <input id="custGameUID" type="text" placeholder="e.g. 52410291" class="w-full bg-card border border-bdr rounded-lg px-3 py-1.5 text-xs text-t1 outline-none focus:border-gold"/>
-          </div>
-          
-          <div>
-            <label class="block text-[10px] uppercase tracking-wider text-t3 font-bold mb-1">Title / Badge Display (Read-Only)</label>
-            <div class="w-full bg-card/50 border border-bdr/60 rounded-lg px-3 py-2 text-xs text-t2 flex items-center justify-between">
-              <span id="custBadgeVal" class="font-semibold text-white">No badge awarded yet</span>
-              <span class="text-[9px] text-t3 italic">Awarded by admins</span>
-            </div>
-          </div>
+        <!-- Centered Circular Avatar -->
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-[#121522] border-2 border-slate-700/60 shadow-2xl relative cursor-pointer" onclick="document.getElementById('editProfileFileInput').click()">
+          <img id="editProfileAvatarImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover select-none" />
         </div>
+
+        <!-- Small Pencil / Edit Icon in Corner (Bottom-Right) -->
+        <button id="btnEditProfileAvatarPicker" type="button" onclick="document.getElementById('editProfileFileInput').click()" title="Change Profile Picture" class="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-[#f0c040] hover:bg-[#ffd359] text-[#0a0c12] border-2 border-[#0a0c12] flex items-center justify-center text-xs font-bold shadow-lg shadow-amber-500/25 transition transform active:scale-90 cursor-pointer" aria-label="Change photo">
+          <i class="fas fa-pencil-alt text-xs text-[#0a0c12]"></i>
+        </button>
       </div>
 
-      <!-- SOCIAL LINKS (FOR ALL USERS) -->
-      <div class="border-b border-bdr/20 pb-4">
-        <h4 class="text-[10px] uppercase tracking-wider text-gold font-bold mb-2.5 flex items-center gap-1.5">
-          <i class="fas fa-share-alt"></i> Social Connections
-        </h4>
-        <div class="space-y-2">
-          <div>
-            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
-              <i class="fab fa-discord text-blue-400 text-sm w-4 text-center"></i>
-              <input id="custDiscord" type="text" placeholder="Discord username" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
-              <i class="fab fa-instagram text-pink-400 text-sm w-4 text-center"></i>
-              <input id="custInstagram" type="text" placeholder="Instagram handle" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center gap-2 bg-card border border-bdr rounded-lg px-2.5 py-1.5 focus-within:border-gold">
-              <i class="fab fa-youtube text-red-500 text-sm w-4 text-center"></i>
-              <input id="custYoutube" type="text" placeholder="YouTube channel URL" class="bg-transparent border-none outline-none text-xs text-t1 w-full"/>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Hidden File Input for Avatar Upload -->
+      <input id="editProfileFileInput" type="file" accept="image/*" class="hidden" />
 
-      <!-- PREMIUM VISUALS (FOR PREMIUM ONLY) -->
-      <div class="space-y-4">
-        <h4 class="text-[10px] uppercase tracking-wider text-purple font-bold flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><i class="fas fa-crown"></i> Premium Customization</span>
-          <span id="custPrmBadge" class="text-[8px] bg-purple/20 text-purple px-1.5 py-0.5 rounded uppercase font-bold">Premium Only</span>
-        </h4>
+      <!-- Upload Status Pill -->
+      <div id="editProfileAvatarStatus" class="text-xs font-semibold hidden animate-fade-in"></div>
+
+      <p class="text-[11px] text-slate-400">Tap avatar or pencil to change photo</p>
+    </section>
+
+    <!-- 2. NAME FIELD -->
+    <section class="space-y-2">
+      <div class="flex items-center justify-between">
+        <label for="editProfileName" class="text-xs font-bold uppercase tracking-wider text-slate-300">Name</label>
         
-        <!-- Custom Avatar Upload -->
-        <div class="p-3 bg-purple/5 border border-purple/10 rounded-xl space-y-2.5">
-          <div class="flex items-center justify-between">
-            <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Custom Profile Photo</label>
-            <span class="text-[8px] text-t3 italic">Max 3MB</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-card border border-bdr rounded-full overflow-hidden flex-shrink-0">
-              <img id="custAvPreview" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="w-full h-full object-cover" alt="Preview"/>
-            </div>
-            <div class="flex-1">
-              <input id="fileAvatar" type="file" accept="image/*" class="hidden" />
-              <button id="btnBrowseAvatar" class="px-2.5 py-1 bg-ele hover:bg-card border border-bdr text-t1 hover:text-white rounded text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
-                <i class="fas fa-upload text-purple"></i> Upload Photo
-              </button>
-              <p class="text-[8px] text-t3 mt-1">Accepts PNG, JPG, or WEBP images up to 3MB.</p>
-            </div>
-          </div>
-          <div id="uploadStatus" class="text-[9px] font-semibold hidden"></div>
-        </div>
-
-        <!-- Avatar Seed Styles (Dicebear fallback) -->
-        <div class="space-y-1.5">
-          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Or Select Animated Seed Avatar</label>
-          <div id="custAvatars" class="grid grid-cols-4 gap-2">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <!-- VIP Avatar Frame Item Collection -->
-        <div class="space-y-2 p-3.5 bg-gradient-to-r from-[#f0c040]/10 via-[#171b2e] to-[#a78bfa]/10 border border-[#f0c040]/30 rounded-xl">
-          <div class="flex items-center justify-between">
-            <label class="block text-[9px] uppercase tracking-wider text-[#f0c040] font-bold flex items-center gap-1.5">
-              <i class="fas fa-crown text-[#f0c040]"></i> Avatar Frame Collection
-            </label>
-            <span class="text-[8px] bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 px-1.5 py-0.5 rounded font-bold uppercase">1 Frame</span>
-          </div>
-
-          <div class="flex items-center justify-between gap-3 pt-1">
-            <div class="flex items-center gap-3 min-w-0">
-              <div id="custModalFramePreviewContainer" class="relative w-12 h-12 rounded-full shrink-0 flex items-center justify-center bg-[#0a0c12]">
-                <img id="custModalFrameAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-10 h-10 rounded-full object-cover" />
-                <img id="custModalFrameOverlay" src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-20 object-contain" />
-              </div>
-              <div class="min-w-0">
-                <div class="text-xs font-bold text-white truncate flex items-center gap-1">
-                  VIP Golden Frame
-                  <span class="text-[8px] px-1 py-0.2 bg-[#f0c040]/20 text-[#f0c040] rounded font-bold">3-Day Pass</span>
-                </div>
-                <div id="custModalFrameStatusText" class="text-[10px] text-[#8890b0] truncate">
-                  Unlocked & Ready to Equip
-                </div>
-              </div>
-            </div>
-
-            <button id="btnCustModalToggleFrame" type="button" onclick="handleClaimOrToggleFrameFromVanilla()" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer">
-              Equip Frame
-            </button>
-          </div>
-        </div>
-
-        <!-- Avatar Border/Glow selection -->
-        <div class="space-y-1.5">
-          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Avatar Border Frame / Glow Effect</label>
-          <select id="custAvatarFrame" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple">
-            <option value="none">None (Standard Border)</option>
-            <option value="gold">⭐ Gold Glow</option>
-            <option value="fire">🔥 Fire Glow</option>
-            <option value="ice">❄️ Ice Glow</option>
-            <option value="royal">👑 Royal Purple Glow</option>
-          </select>
-        </div>
-
-        <!-- Username color swatches -->
-        <div class="space-y-2">
-          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Username Color Swatch</label>
-          <div class="grid grid-cols-8 gap-2" id="custNameColors">
-            <!-- Swatches -->
-          </div>
-        </div>
-
-        <!-- VIP / PREMIUM CUSTOM FONT SELECTOR -->
-        <div id="custVipFontBox" class="p-3 bg-gradient-to-r from-blue-500/10 via-card to-indigo-500/10 border border-blue-500/30 rounded-xl space-y-2.5">
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="block text-[10px] uppercase tracking-wider text-blue-400 font-bold flex items-center gap-1.5">
-                <i class="fas fa-font text-blue-400"></i> VIP Custom Font
-              </label>
-              <p class="text-[9px] text-t3 mt-0.5">Style your name with 12 exclusive esports fonts across the app</p>
-            </div>
-            <button type="button" id="btnOpenChooseFontModal" onclick="window.openFontPickerModal()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg shadow-md shadow-blue-500/20 active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
-              <i class="fas fa-sliders-h text-[10px]"></i> Choose Font
-            </button>
-          </div>
-
-          <!-- Active Font Card Preview -->
-          <div class="p-2.5 bg-card/80 border border-bdr rounded-lg flex items-center justify-between cursor-pointer hover:border-blue-500/50 transition" onclick="window.openFontPickerModal()">
-            <div class="flex items-center gap-2.5">
-              <div id="custCurrentFontBadge" class="w-8 h-8 rounded-lg bg-[#121522] border border-blue-500/40 flex items-center justify-center text-base font-bold text-white font-poppins shrink-0">
-                Gg
-              </div>
-              <div class="min-w-0">
-                <div id="custCurrentFontName" class="text-xs font-bold text-white truncate">Poppins (Default)</div>
-                <div class="text-[9px] text-t3 truncate">Click to browse 12 VIP game fonts</div>
-              </div>
-            </div>
-            <span class="text-[10px] text-blue-400 font-semibold flex items-center gap-1 shrink-0">Change <i class="fas fa-chevron-right text-[8px]"></i></span>
-          </div>
-        </div>
-
-        <!-- GOLDEN PREMIUM NAME TOGGLE & PREVIEW -->
-        <div id="custGoldenNameBox" class="p-3 bg-gradient-to-r from-amber-500/10 via-card to-yellow-500/10 border border-amber-500/30 rounded-xl space-y-2.5">
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="block text-[10px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
-                <i class="fas fa-crown text-amber-400"></i> Golden Premium Name
-              </label>
-              <p class="text-[9px] text-t3 mt-0.5">Golden Name — show your name in premium gold gradient everywhere in the app</p>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer shrink-0">
-              <input id="chkGoldenName" type="checkbox" class="sr-only peer" checked>
-              <div class="w-9 h-5 bg-card peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 border border-bdr"></div>
-            </label>
-          </div>
-
-          <!-- Live Name Preview Box -->
-          <div class="p-2.5 bg-card/80 border border-bdr rounded-lg flex items-center justify-between">
-            <span class="text-[10px] text-t3 font-semibold uppercase tracking-wider">Live Name Preview:</span>
-            <span id="goldenNamePreviewText" class="text-sm font-black truncate max-w-[200px] golden-name-shimmer" style="font-style: italic;">
-              Player Name
-            </span>
-          </div>
-        </div>
-
-        <!-- Banner Theme gradients selection -->
-        <div class="space-y-2">
-          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold">Profile Card Background Theme</label>
-          <div class="grid grid-cols-4 gap-2" id="custBannerThemes">
-            <!-- Theme cards -->
-          </div>
-        </div>
-
-        <!-- Bio Description -->
-        <div>
-          <label class="block text-[9px] uppercase tracking-wider text-purple font-bold mb-1">Bio Description</label>
-          <input id="custBio" type="text" placeholder="Tell something about you..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 text-xs text-t1 outline-none focus:border-purple"/>
+        <!-- Golden Premium Name Toggle / Status -->
+        <div id="editProfileGoldenWrapper" class="flex items-center gap-2">
+          <!-- Populated dynamically -->
         </div>
       </div>
-    </div>
 
-    <div class="flex gap-3 pt-2 flex-shrink-0">
-      <button id="bCloseCustomize" class="flex-1 py-2 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition cursor-pointer">Cancel</button>
-      <button id="bSaveCustomize" class="flex-1 py-2 bg-gold text-bg font-bold rounded-lg text-xs transition cursor-pointer">Save Changes</button>
+      <div class="relative">
+        <input id="editProfileName" type="text" placeholder="Enter display name" class="w-full bg-[#121522] border border-[#252a45] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#f0c040] transition font-semibold" maxlength="24" autocomplete="off" />
+      </div>
+
+      <!-- Live Golden Name Preview Row -->
+      <div id="editProfileGoldenPreviewRow" class="hidden flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs">
+        <span class="text-[10px] text-amber-300/80 font-bold uppercase tracking-wider">Golden Shimmer Preview:</span>
+        <span id="editProfileGoldenPreviewText" class="font-black text-amber-400 golden-name-shimmer text-sm">Player</span>
+      </div>
+
+      <p class="text-[10px] text-slate-500 flex items-center gap-1">
+        <i class="fas fa-info-circle text-[9px]"></i> Display Name can only be changed once every 14 days.
+      </p>
+    </section>
+
+    <!-- 3. COUNTRY FIELD -->
+    <section class="space-y-2">
+      <label for="editProfileCountry" class="text-xs font-bold uppercase tracking-wider text-slate-300">Country / Region</label>
+      <div class="relative">
+        <select id="editProfileCountry" class="w-full bg-[#121522] border border-[#252a45] rounded-xl px-4 py-3 pr-10 text-sm text-white outline-none focus:border-[#f0c040] appearance-none transition font-medium cursor-pointer">
+          <option value="">Select Country</option>
+          <option value="PK">🇵🇰 Pakistan</option>
+          <option value="IN">🇮🇳 India</option>
+          <option value="BD">🇧🇩 Bangladesh</option>
+          <option value="SA">🇸🇦 Saudi Arabia</option>
+          <option value="AE">🇦🇪 United Arab Emirates</option>
+          <option value="US">🇺🇸 United States</option>
+          <option value="GB">🇬🇧 United Kingdom</option>
+          <option value="NG">🇳🇬 Nigeria</option>
+          <option value="CA">🇨🇦 Canada</option>
+          <option value="DE">🇩🇪 Germany</option>
+          <option value="FR">🇫🇷 France</option>
+          <option value="TR">🇹🇷 Turkey</option>
+          <option value="EG">🇪🇬 Egypt</option>
+          <option value="ID">🇮🇩 Indonesia</option>
+          <option value="BR">🇧🇷 Brazil</option>
+          <option value="JP">🇯🇵 Japan</option>
+          <option value="KR">🇰🇷 South Korea</option>
+          <option value="AU">🇦🇺 Australia</option>
+          <option value="Other">🌍 Other / International</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+          <i class="fas fa-chevron-down text-xs"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SIGNATURE FIELD -->
+    <section class="space-y-2">
+      <div class="flex items-center justify-between">
+        <label for="editProfileSignature" class="text-xs font-bold uppercase tracking-wider text-slate-300">Signature</label>
+        <span class="text-[10px] text-slate-500 font-mono" id="editProfileSignatureCount">0/140</span>
+      </div>
+      <textarea id="editProfileSignature" rows="2" placeholder="Write a short signature or bio..." class="w-full bg-[#121522] border border-[#252a45] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#f0c040] resize-none transition font-medium" maxlength="140"></textarea>
+      <p class="text-[10px] text-slate-500">
+        Displayed as your personal bio & status on your public player profile card.
+      </p>
+    </section>
+
+    <!-- 5. PROFILE EFFECT -->
+    <section class="space-y-2.5">
+      <div class="flex items-center justify-between">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fas fa-wand-magic-sparkles text-amber-400"></i> Profile Effect
+          </label>
+          <p class="text-[10px] text-slate-400 mt-0.5">Animated visual energy playing around your profile avatar</p>
+        </div>
+        <span id="editProfileActiveEffectBadge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">None</span>
+      </div>
+
+      <!-- Effects Gallery Grid -->
+      <div id="editProfileEffectsGallery" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <!-- Populated dynamically with None and owned animated effects -->
+      </div>
+
+      <!-- Store Link / Button -->
+      <div id="editProfileStoreRow" class="pt-1 flex items-center justify-between bg-[#121522]/60 border border-[#252a45]/80 p-3 rounded-xl">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs">
+            <i class="fas fa-store"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white">Need more effects?</div>
+            <div class="text-[10px] text-slate-400">Unlock mythic animated effects in Store</div>
+          </div>
+        </div>
+        <button id="btnGetEffectsStore" type="button" class="px-3 py-1.5 bg-[#f0c040]/10 hover:bg-[#f0c040]/20 border border-[#f0c040]/40 text-[#f0c040] hover:text-amber-300 text-xs font-bold rounded-lg transition cursor-pointer">
+          Open Store
+        </button>
+      </div>
+    </section>
+
+    <!-- 6. VIP CUSTOM FONT NAME (Premium users only) -->
+    <section id="editProfileFontSection" class="space-y-2.5">
+      <!-- Populated dynamically: Premium font picker or locked state -->
+    </section>
+
+  </main>
+
+  <!-- BOTTOM STICKY: Save Changes Button -->
+  <footer class="sticky bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0c12] via-[#0a0c12]/95 to-transparent pt-3 pb-5 px-4 z-40 border-t border-white/5">
+    <div class="max-w-md w-full mx-auto">
+      <button id="btnSaveCustomizeProfile" type="button" class="w-full py-3.5 bg-[#f0c040] hover:bg-[#e8b830] text-[#0a0c12] font-black text-sm uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-500/25 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer">
+        <i class="fas fa-check"></i>
+        <span>Save Changes</span>
+      </button>
     </div>
-  </div>
+  </footer>
+
+</div>
+
+<!-- Compatibility Layer for Legacy Selectors -->
+<div id="mCustomize" class="hidden">
+  <input id="custName" type="hidden" />
+  <select id="custCountry" class="hidden">
+    <option value="">Select Country</option>
+    <option value="PK">🇵🇰 Pakistan</option>
+    <option value="IN">🇮🇳 India</option>
+    <option value="BD">🇧🇩 Bangladesh</option>
+    <option value="SA">🇸🇦 Saudi Arabia</option>
+    <option value="AE">🇦🇪 UAE</option>
+    <option value="US">🇺🇸 USA</option>
+    <option value="GB">🇬🇧 UK</option>
+    <option value="Other">🌍 Other</option>
+  </select>
+  <select id="custFavGame" class="hidden"><option value=""></option></select>
+  <input id="custGameUID" type="hidden" />
+  <input id="custDiscord" type="hidden" />
+  <input id="custInstagram" type="hidden" />
+  <input id="custYoutube" type="hidden" />
+  <input id="custBio" type="hidden" />
+  <img id="custAvPreview" class="hidden" src="" alt=""/>
+  <input id="fileAvatar" type="file" class="hidden" />
+  <button id="btnBrowseAvatar" class="hidden"></button>
+  <div id="uploadStatus" class="hidden"></div>
+  <input id="chkGoldenName" type="checkbox" class="hidden" />
+  <select id="custAvatarFrame" class="hidden"><option value="none"></option></select>
+  <div id="custNameColors" class="hidden"></div>
+  <div id="custBannerThemes" class="hidden"></div>
+  <div id="custAvatars" class="hidden"></div>
+  <button id="bCloseCustomize" class="hidden"></button>
+  <button id="bCloseCustomizeCross" class="hidden"></button>
+  <button id="bSaveCustomize" class="hidden"></button>
 </div>
 
 <!-- ==================== CHOOSE FONT SELECTOR MODAL (VIP EXCLUSIVE) ==================== -->
@@ -4449,6 +4566,23 @@ html, body {
               <span class="font-medium text-white group-hover:text-amber-300 transition">About Us</span>
             </div>
             <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+          </button>
+
+          <!-- Check for Updates -->
+          <button id="btnCheckAppUpdates" type="button" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fas fa-sync-alt"></i>
+              </div>
+              <div>
+                <span class="font-medium text-white group-hover:text-emerald-300 transition block">Check for Updates</span>
+                <span class="text-[10px] text-t3 font-normal">ArenaX Android APK Auto-Update</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/20">Check</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </div>
           </button>
 
         </div>
@@ -4835,296 +4969,413 @@ html, body {
         </button>
       </div>
 
-      <!-- PRIMARY AX SECURITY MAIN VIEW -->
-      <div id="axSecurityMainView" class="space-y-5">
+      <!-- ==================== PRIMARY AX SECURITY MAIN VIEW ==================== -->
+      <div id="axSecurityMainView" class="space-y-4">
 
-      <!-- ── SECTION 1: 3-STAGE ACCOUNT STANDING CARD (REFERENCE DESIGN) ── -->
-      <div id="axStandingOverviewCard" class="bg-[#151722] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 relative overflow-hidden">
-        <!-- Top Info Row -->
-        <div class="flex items-center gap-3.5 sm:gap-4">
-          <!-- Avatar Circle with dynamic ring -->
-          <div class="relative flex-shrink-0">
-            <img id="axStandingUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=u" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-500 bg-slate-900 shadow-md ring-4 ring-emerald-500/20" alt="Avatar" />
-            <div id="axStandingStatusBadgeDot" class="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#151722] flex items-center justify-center text-[8px] text-white">
-              <i class="fas fa-check"></i>
+        <!-- Security Hub Header Banner -->
+        <div class="p-4 bg-gradient-to-r from-indigo-950/40 via-card/80 to-card border border-indigo-500/20 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 flex-shrink-0 shadow-inner">
+              <i class="fas fa-shield-halved text-lg"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white leading-tight">Security & Account Protection</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Manage trust standing, active hardware, and login security</p>
             </div>
           </div>
+          <div id="axMainSecurityStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold flex-shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Protected</span>
+          </div>
+        </div>
+
+        <!-- THE 4 PRIMARY CLICKABLE BUTTONS -->
+        <div class="space-y-2.5">
           
-          <div class="min-w-0 flex-1">
-            <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">
-              Your account is <span id="axStandingLevelLabel" class="text-emerald-400 font-extrabold capitalize">all good</span>
-            </h3>
-            <p id="axStandingContextMessage" class="text-xs text-slate-300 leading-relaxed mt-1">
-              Thank you for upholding ArenaX's Terms of Service and Community Guidelines. If you have a violation, it will appear here.
-            </p>
-          </div>
-        </div>
-
-        <!-- 3-Stage Standing Horizontal Stepper Track -->
-        <div class="pt-2 pb-1">
-          <div class="relative flex items-center justify-between">
-            <!-- Background connecting line -->
-            <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-800 rounded-full z-0"></div>
-            <!-- Active progress line -->
-            <div id="axStandingProgressLine" class="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" style="width: 0%;"></div>
-
-            <!-- Stage 1: ALL GOOD -->
-            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('ALL_GOOD')">
-              <div id="axStageNode-1" class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-emerald-950/60 ring-4 ring-emerald-500/20 transition-all">
-                <i class="fas fa-check"></i>
-              </div>
-              <span id="axStageLabel-1" class="text-[11px] font-bold text-emerald-400 mt-2 whitespace-nowrap">All good!</span>
-            </div>
-
-            <!-- Stage 2: LIMITED -->
-            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('LIMITED')">
-              <div id="axStageNode-2" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
-                <i class="fas fa-exclamation text-[10px]"></i>
-              </div>
-              <span id="axStageLabel-2" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">Limited</span>
-            </div>
-
-            <!-- Stage 3: AT RISK -->
-            <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('AT_RISK')">
-              <div id="axStageNode-3" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
-                <i class="fas fa-triangle-exclamation text-[10px]"></i>
-              </div>
-              <span id="axStageLabel-3" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">At risk</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION 2: WHY IS MY ACCOUNT AT THIS LEVEL? ── -->
-      <div class="space-y-2.5">
-        <div class="flex items-center justify-between px-1">
-          <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
-            <i class="fas fa-shield-halved text-indigo-400"></i>
-            <span>Why is my account at this level?</span>
-          </div>
-          <span id="axStandingScoreBadge" class="text-[10px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">Score: 95/100</span>
-        </div>
-
-        <div class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
-          <p id="axStandingFactorSummary" class="text-xs text-slate-300 leading-relaxed">
-            Your standing is evaluated automatically from verified moderation records, security signals, and player fair-play integrity.
-          </p>
-
-          <!-- Active Disciplinary Records & Violations Display (Dynamic) -->
-          <div id="axViolationsContainer" class="space-y-2">
-            <!-- Rendered dynamically by renderViolationsDisplay() -->
-          </div>
-
-          <!-- Factors List -->
-          <div class="grid grid-cols-1 gap-2.5">
-            <!-- Factor 1: Disciplinary Records & Warnings -->
-            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
-              <div id="axFactorIconDisciplinary" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
-                <i class="fas fa-gavel"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-bold text-white">Disciplinary Actions & Warnings</span>
-                  <span id="axFactorValDisciplinary" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">0 Active Warnings</span>
-                </div>
-                <p id="axFactorDescDisciplinary" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                  No active warnings or disciplinary restrictions on record.
-                </p>
-              </div>
-            </div>
-
-            <!-- Factor 2: Community Reports & Evidence Verification -->
-            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
-              <div id="axFactorIconReports" class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
-                <i class="fas fa-flag-checkered"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-bold text-white">Reports & Evidence Credibility</span>
-                  <span id="axFactorValReports" class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded">Evidence Protected</span>
-                </div>
-                <p id="axFactorDescReports" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                  Reports are verified for evidence before any action is taken. Unsubstantiated claims never lower your standing.
-                </p>
-              </div>
-            </div>
-
-            <!-- Factor 3: Security & Verification Health -->
-            <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
-              <div id="axFactorIconSecurity" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
-                <i class="fas fa-lock"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-bold text-white">Identity & Verification Health</span>
-                  <span id="axFactorValSecurity" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">Protected</span>
-                </div>
-                <p id="axFactorDescSecurity" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                  Discord identity and email authentication status strengthen your account trust resilience.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Transparent Progression Rules Accordion -->
-          <div class="pt-2 border-t border-white/5">
-            <button onclick="window.toggleAxProgressionRules()" class="w-full text-left flex items-center justify-between text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
-              <span class="flex items-center gap-1.5"><i class="fas fa-scale-balanced"></i> How Automatic Progression Works</span>
-              <i id="axProgressionRulesIcon" class="fas fa-chevron-down text-[10px] transition-transform"></i>
-            </button>
-            <div id="axProgressionRulesWrap" class="mt-2.5 p-3 bg-[#0d101c] rounded-xl border border-white/5 space-y-2 text-[11px] text-slate-300 leading-relaxed hidden">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                <span><strong class="text-white">🟢 ALL GOOD (80–100 pts):</strong> Zero active warnings. Full access to tournaments, instant rewards, and verified matchmaking.</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
-                <span><strong class="text-white">🟡 LIMITED (45–79 pts):</strong> Triggered by 1 active warning or temporary restriction. 14 days of sustained dispute-free play automatically restores ALL GOOD.</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
-                <span><strong class="text-white">🔴 AT RISK (&lt;45 pts):</strong> Triggered by multiple warnings or serious disciplinary infraction. 30-day compliance period and clean behavior required to recover to LIMITED, then ALL GOOD.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION 3: HOW CAN I IMPROVE? (AI-POWERED RECOMMENDATIONS) ── -->
-      <div class="space-y-2.5">
-        <div class="flex items-center justify-between px-1">
-          <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
-            <i class="fas fa-wand-magic-sparkles text-amber-400"></i>
-            <span>How can I improve?</span>
-          </div>
-          <button id="btnRefreshAxAiRecs" onclick="window.accountStanding?.fetchAiStandingRecommendations(true)" class="text-[10px] font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 px-2.5 py-1 rounded-lg transition flex items-center gap-1.5 cursor-pointer">
-            <i id="iconRefreshAi" class="fas fa-arrows-rotate"></i>
-            <span>Refresh AI</span>
-          </button>
-        </div>
-
-        <div class="bg-gradient-to-br from-indigo-950/30 via-card to-card border border-indigo-500/25 rounded-2xl p-4 shadow-md space-y-3">
-          <!-- AI Badge & Recovery Timeline Banner -->
-          <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
-                <i class="fas fa-brain"></i> AI Guardian Analysis
-              </span>
-              <span id="axAiSourceBadge" class="text-[9px] text-slate-400 font-mono">Live</span>
-            </div>
-            <span id="axAiRecoveryTimeline" class="text-[10px] text-amber-300/90 font-bold truncate">Calculating...</span>
-          </div>
-
-          <!-- Dynamic AI Recommendations Container -->
-          <div id="axAiRecsContainer" class="space-y-2.5">
-            <!-- Populated dynamically via fetchAiStandingRecommendations() -->
-            <div class="p-4 text-center text-slate-400 text-xs space-y-2">
-              <i class="fas fa-circle-notch animate-spin text-indigo-400 text-base"></i>
-              <p>Analyzing security, moderation, and activity signals...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION 4: DISCORD IDENTITY & INTEGRATION WIDGET (RETAINED) ── -->
-      <div class="space-y-2 pt-1 border-t border-bdr/40">
-        <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Discord Integration Status</div>
-        <div id="discordSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-4">
-          <!-- Injected dynamically via renderDiscordAuthWidget() -->
-        </div>
-      </div>
-
-      <!-- ── SECTION 5: TWO-FACTOR AUTHENTICATION (2FA) LOGIN VERIFICATION ── -->
-      <div class="space-y-2 pt-1 border-t border-bdr/40">
-        <div class="flex items-center justify-between px-1">
-          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fas fa-shield-halved text-[#f0c040]"></i>
-            <span>Two-Factor Authentication (2FA)</span>
-          </div>
-          <span id="ax2FaStatusHeaderBadge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
-            Disabled
-          </span>
-        </div>
-        <div id="ax2FaSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
-          <!-- Injected dynamically via renderTwoFactorAuthWidget() -->
-        </div>
-      </div>
-
-      <!-- ── SECTION 6: ACCOUNT ACTIVITY ── -->
-      <div class="space-y-2 pt-1 border-t border-bdr/40">
-        <div class="flex items-center justify-between px-1">
-          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fas fa-clock-rotate-left text-indigo-400"></i>
-            <span>Account Activity</span>
-          </div>
-          <span class="text-[10px] text-t3 font-mono">Sessions & Audit</span>
-        </div>
-        
-        <div class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
-          <!-- Logged-in Devices Navigation Item -->
-          <button id="btnOpenLoggedInDevices" onclick="window.showLoggedInDevicesView()" type="button" class="w-full flex items-center justify-between p-3.5 bg-bg/70 hover:bg-bg border border-bdr/70 hover:border-indigo-500/50 rounded-xl transition cursor-pointer group text-left">
-            <div class="flex items-center gap-3.5">
-              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition flex-shrink-0">
-                <i class="fas fa-laptop-mobile text-base"></i>
+          <!-- 1. Account Standing Button -->
+          <button id="btnAxNavStanding" onclick="window.showAxSecuritySubView('standing')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-emerald-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/40" aria-label="Open Account Standing">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-105 group-hover:bg-emerald-500/20 transition flex-shrink-0 shadow-inner">
+                <i class="fas fa-shield-check text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-xs font-bold text-white group-hover:text-indigo-300 transition">Logged-in Devices</span>
+                  <span class="text-sm font-bold text-white group-hover:text-emerald-300 transition">Account Standing</span>
+                  <span id="axBtnBadgeStanding" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span id="axBtnBadgeStandingText">All Good</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Standing rating, community guidelines health, and fair-play status</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">View</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </button>
+
+          <!-- 2. Account Activity Button -->
+          <button id="btnAxNavActivity" onclick="window.showAxSecuritySubView('activity')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-indigo-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500/40" aria-label="Open Account Activity">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 group-hover:scale-105 group-hover:bg-indigo-500/20 transition flex-shrink-0 shadow-inner">
+                <i class="fas fa-clock-rotate-left text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white group-hover:text-indigo-300 transition">Account Activity</span>
+                  <span id="axBtnBadgeActivity" class="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[9px] font-mono font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                    <span id="axBtnBadgeActivityText">1 Active Device</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Monitor login sessions, active hardware, and security audit log</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">View</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </button>
+
+          <!-- 3. Link Accounts Button -->
+          <button id="btnAxNavLinkAccounts" onclick="window.showAxSecuritySubView('link-accounts')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-[#5865F2]/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-[#5865F2]/40" aria-label="Open Link Accounts">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/25 flex items-center justify-center text-[#5865F2] group-hover:scale-105 group-hover:bg-[#5865F2]/20 transition flex-shrink-0 shadow-inner">
+                <i class="fa-brands fa-discord text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white group-hover:text-[#7289da] transition">Link Accounts</span>
+                  <span id="axBtnBadgeDiscord" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold">
+                    <span id="axBtnBadgeDiscordText">Not Linked</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Connect Discord account for verified tournaments, anti-smurf & roles</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Configure</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </button>
+
+          <!-- 4. 2 Factor Authentication Button -->
+          <button id="btnAxNav2Fa" onclick="window.showAxSecuritySubView('2fa')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open 2 Factor Authentication">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
+                <i class="fas fa-key text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white group-hover:text-amber-300 transition">2 Factor Authentication</span>
+                  <span id="axBtnBadge2Fa" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold">
+                    <span id="axBtnBadge2FaText">Disabled</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Require approval on sign-in to protect against unauthorized access</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Configure</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </button>
+
+          <!-- Customize Profile Action Button -->
+          <button id="btnAxNavCustomizeProfile" onclick="window.openCustomizeProfilePage('axSecurity')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open Customize Profile">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
+                <i class="fas fa-palette text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white group-hover:text-amber-300 transition">Customize Profile</span>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[9px] font-mono font-bold">Edit</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Avatar photo, display name, golden name, country, effects & signature</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Edit</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </button>
+
+        </div>
+
+        <!-- Trust Note -->
+        <div class="p-3.5 bg-bg/50 border border-bdr/40 rounded-xl flex items-center gap-3 text-[11px] text-slate-400">
+          <i class="fas fa-lock text-indigo-400 text-sm flex-shrink-0"></i>
+          <span>ArenaX Zero-Trust Security Protocol actively guards your credentials, matchmaking rankings, and tournament earnings.</span>
+        </div>
+
+      </div><!-- END #axSecurityMainView -->
+
+      <!-- ==================== SUBVIEW 1: ACCOUNT STANDING ==================== -->
+      <div id="axSecurityStandingView" class="space-y-5 hidden">
+        <!-- ── SECTION 1: 3-STAGE ACCOUNT STANDING CARD (REFERENCE DESIGN) ── -->
+        <div id="axStandingOverviewCard" class="bg-[#151722] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 relative overflow-hidden">
+          <!-- Top Info Row -->
+          <div class="flex items-center gap-3.5 sm:gap-4">
+            <!-- Avatar Circle with dynamic ring -->
+            <div class="relative flex-shrink-0">
+              <img id="axStandingUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=u" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-500 bg-slate-900 shadow-md ring-4 ring-emerald-500/20" alt="Avatar" />
+              <div id="axStandingStatusBadgeDot" class="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#151722] flex items-center justify-center text-[8px] text-white">
+                <i class="fas fa-check"></i>
+              </div>
+            </div>
+            
+            <div class="min-w-0 flex-1">
+              <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">
+                Your account is <span id="axStandingLevelLabel" class="text-emerald-400 font-extrabold capitalize">all good</span>
+              </h3>
+              <p id="axStandingContextMessage" class="text-xs text-slate-300 leading-relaxed mt-1">
+                Thank you for upholding ArenaX's Terms of Service and Community Guidelines. If you have a violation, it will appear here.
+              </p>
+            </div>
+          </div>
+
+          <!-- 3-Stage Standing Horizontal Stepper Track -->
+          <div class="pt-2 pb-1">
+            <div class="relative flex items-center justify-between">
+              <!-- Background connecting line -->
+              <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-800 rounded-full z-0"></div>
+              <!-- Active progress line -->
+              <div id="axStandingProgressLine" class="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" style="width: 0%;"></div>
+
+              <!-- Stage 1: ALL GOOD -->
+              <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('ALL_GOOD')">
+                <div id="axStageNode-1" class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-emerald-950/60 ring-4 ring-emerald-500/20 transition-all">
+                  <i class="fas fa-check"></i>
+                </div>
+                <span id="axStageLabel-1" class="text-[11px] font-bold text-emerald-400 mt-2 whitespace-nowrap">All good!</span>
+              </div>
+
+              <!-- Stage 2: LIMITED -->
+              <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('LIMITED')">
+                <div id="axStageNode-2" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
+                  <i class="fas fa-exclamation text-[10px]"></i>
+                </div>
+                <span id="axStageLabel-2" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">Limited</span>
+              </div>
+
+              <!-- Stage 3: AT RISK -->
+              <div class="relative z-10 flex flex-col items-center group cursor-pointer" onclick="window.explainStandingStage('AT_RISK')">
+                <div id="axStageNode-3" class="w-8 h-8 rounded-full bg-slate-800 text-slate-500 border border-slate-700 flex items-center justify-center text-xs font-black ring-4 ring-[#151722] transition-all">
+                  <i class="fas fa-triangle-exclamation text-[10px]"></i>
+                </div>
+                <span id="axStageLabel-3" class="text-[11px] font-medium text-slate-500 mt-2 whitespace-nowrap">At risk</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 2: WHY IS MY ACCOUNT AT THIS LEVEL? ── -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-1">
+            <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
+              <i class="fas fa-shield-halved text-indigo-400"></i>
+              <span>Why is my account at this level?</span>
+            </div>
+            <span id="axStandingScoreBadge" class="text-[10px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">Score: 95/100</span>
+          </div>
+
+          <div class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
+            <p id="axStandingFactorSummary" class="text-xs text-slate-300 leading-relaxed">
+              Your standing is evaluated automatically from verified moderation records, security signals, and player fair-play integrity.
+            </p>
+
+            <!-- Active Disciplinary Records & Violations Display (Dynamic) -->
+            <div id="axViolationsContainer" class="space-y-2">
+              <!-- Rendered dynamically by renderViolationsDisplay() -->
+            </div>
+
+            <!-- Factors List -->
+            <div class="grid grid-cols-1 gap-2.5">
+              <!-- Factor 1: Disciplinary Records & Warnings -->
+              <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+                <div id="axFactorIconDisciplinary" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                  <i class="fas fa-gavel"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-white">Disciplinary Actions & Warnings</span>
+                    <span id="axFactorValDisciplinary" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">0 Active Warnings</span>
+                  </div>
+                  <p id="axFactorDescDisciplinary" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                    No active warnings or disciplinary restrictions on record.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Factor 2: Community Reports & Evidence Verification -->
+              <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+                <div id="axFactorIconReports" class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                  <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-white">Reports & Evidence Credibility</span>
+                    <span id="axFactorValReports" class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded">Evidence Protected</span>
+                  </div>
+                  <p id="axFactorDescReports" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                    Reports are verified for evidence before any action is taken. Unsubstantiated claims never lower your standing.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Factor 3: Security & Verification Health -->
+              <div class="p-3 bg-[#111422] rounded-xl border border-white/5 flex items-start gap-3">
+                <div id="axFactorIconSecurity" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+                  <i class="fas fa-lock"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-white">Identity & Verification Health</span>
+                    <span id="axFactorValSecurity" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">Protected</span>
+                  </div>
+                  <p id="axFactorDescSecurity" class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                    Discord identity and email authentication status strengthen your account trust resilience.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transparent Progression Rules Accordion -->
+            <div class="pt-2 border-t border-white/5">
+              <button onclick="window.toggleAxProgressionRules()" class="w-full text-left flex items-center justify-between text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
+                <span class="flex items-center gap-1.5"><i class="fas fa-scale-balanced"></i> How Automatic Progression Works</span>
+                <i id="axProgressionRulesIcon" class="fas fa-chevron-down text-[10px] transition-transform"></i>
+              </button>
+              <div id="axProgressionRulesWrap" class="mt-2.5 p-3 bg-[#0d101c] rounded-xl border border-white/5 space-y-2 text-[11px] text-slate-300 leading-relaxed hidden">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                  <span><strong class="text-white">🟢 ALL GOOD (80–100 pts):</strong> Zero active warnings. Full access to tournaments, instant rewards, and verified matchmaking.</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+                  <span><strong class="text-white">🟡 LIMITED (45–79 pts):</strong> Triggered by 1 active warning or temporary restriction. 14 days of sustained dispute-free play automatically restores ALL GOOD.</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+                  <span><strong class="text-white">🔴 AT RISK (&lt;45 pts):</strong> Triggered by multiple warnings or serious disciplinary infraction. 30-day compliance period and clean behavior required to recover to LIMITED, then ALL GOOD.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 3: HOW CAN I IMPROVE? (AI-POWERED RECOMMENDATIONS) ── -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-1">
+            <div class="text-xs font-extrabold text-white flex items-center gap-2 uppercase tracking-wider">
+              <i class="fas fa-wand-magic-sparkles text-amber-400"></i>
+              <span>How can I improve?</span>
+            </div>
+            <button id="btnRefreshAxAiRecs" onclick="window.accountStanding?.fetchAiStandingRecommendations(true)" class="text-[10px] font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 px-2.5 py-1 rounded-lg transition flex items-center gap-1.5 cursor-pointer">
+              <i id="iconRefreshAi" class="fas fa-arrows-rotate"></i>
+              <span>Refresh AI</span>
+            </button>
+          </div>
+
+          <div class="bg-gradient-to-br from-indigo-950/30 via-card to-card border border-indigo-500/25 rounded-2xl p-4 shadow-md space-y-3">
+            <!-- AI Badge & Recovery Timeline Banner -->
+            <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                  <i class="fas fa-brain"></i> AI Guardian Analysis
+                </span>
+                <span id="axAiSourceBadge" class="text-[9px] text-slate-400 font-mono">Live</span>
+              </div>
+              <span id="axAiRecoveryTimeline" class="text-[10px] text-amber-300/90 font-bold truncate">Calculating...</span>
+            </div>
+
+            <!-- Dynamic AI Recommendations Container -->
+            <div id="axAiRecsContainer" class="space-y-2.5">
+              <!-- Populated dynamically via fetchAiStandingRecommendations() -->
+              <div class="p-4 text-center text-slate-400 text-xs space-y-2">
+                <i class="fas fa-circle-notch animate-spin text-indigo-400 text-base"></i>
+                <p>Analyzing security, moderation, and activity signals...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- END #axSecurityStandingView -->
+
+      <!-- ==================== SUBVIEW 2: ACCOUNT ACTIVITY ==================== -->
+      <div id="axSecurityActivityView" class="space-y-5 hidden">
+        <!-- Section Introduction -->
+        <div class="space-y-1">
+          <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <i class="fas fa-clock-rotate-left text-xs"></i>
+            </div>
+            Account Activity
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Monitor login sessions, active hardware devices, and manage access security across all platforms.
+          </p>
+        </div>
+
+        <!-- CLICKABLE BUTTON: LOGGED-IN DEVICES -->
+        <div class="space-y-2.5">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Hardware & Sessions</div>
+          <button id="btnOpenLoggedInDevices" onclick="window.showLoggedInDevicesView()" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-indigo-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500/40" aria-label="Open Logged-in Devices">
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 group-hover:scale-105 group-hover:bg-indigo-500/20 transition flex-shrink-0 shadow-inner">
+                <i class="fas fa-laptop-mobile text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-white group-hover:text-indigo-300 transition">Logged-in Devices</span>
                   <span id="axActiveDevicesSummaryBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span id="axActiveDevicesSummaryText">1 Active Session</span>
                   </span>
                 </div>
-                <p class="text-[11px] text-t3 mt-0.5 leading-snug">Review active hardware, approximate locations, and remotely terminate unauthorized sessions</p>
+                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Review active hardware, approximate locations, and remotely terminate unauthorized sessions</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-t3 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-[11px] font-medium hidden sm:inline text-slate-400">Manage</span>
-              <i class="fas fa-chevron-right text-xs group-hover:translate-x-0.5 transition"></i>
+            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Manage</span>
+              <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
         </div>
-      </div>
 
-      <!-- Information Card -->
-      <div class="p-4 bg-bg/60 border border-bdr/40 rounded-xl space-y-2.5 text-xs text-t2">
-        <div class="font-bold text-white flex items-center gap-1.5 text-xs">
-          <i class="fas fa-info-circle text-indigo-400"></i> Why Discord Verification?
+        <!-- Automatic Device Protection & Audit Info -->
+        <div class="p-4 bg-bg/70 border border-bdr/60 rounded-2xl space-y-2.5 text-xs text-slate-300">
+          <div class="font-bold text-white flex items-center gap-2">
+            <i class="fas fa-shield-halved text-indigo-400"></i>
+            <span>Continuous Login Protection</span>
+          </div>
+          <ul class="space-y-1.5 list-disc list-inside text-slate-400 text-[11px] leading-relaxed">
+            <li>Every login is evaluated against recognized hardware signatures and browser characteristics.</li>
+            <li>Unrecognized or new devices trigger an automated security notification to your registered inbox.</li>
+            <li>You can instantly revoke any active session to force remote sign-out across all devices.</li>
+          </ul>
         </div>
-        <ul class="space-y-1.5 list-disc list-inside text-t3 text-[11px] leading-relaxed">
-          <li>Unlocks access to all official <strong class="text-white">ArenaX Tournaments</strong>.</li>
-          <li>Guarantees anti-smurf protection & fair reward payouts.</li>
-          <li>Syncs your official verified badge across leaderboards.</li>
-          <li>Uses standard secure OAuth2 (<strong class="text-indigo-300">identify</strong> scope only).</li>
-        </ul>
-      </div>
 
-      </div><!-- END #axSecurityMainView -->
+      </div><!-- END #axSecurityActivityView -->
 
-      <!-- ==================== SUBVIEW: LOGGED-IN DEVICES ==================== -->
+      <!-- ==================== SUBVIEW 3: LOGGED-IN DEVICES ==================== -->
       <div id="axSecurityDevicesView" class="space-y-5 hidden">
-        <!-- Subview Back Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-bdr/40">
-          <button onclick="window.hideLoggedInDevicesView()" type="button" class="flex items-center gap-2 text-xs font-bold text-t2 hover:text-white transition cursor-pointer group">
-            <div class="w-8 h-8 rounded-full bg-card border border-bdr/80 flex items-center justify-center text-t2 group-hover:text-white group-hover:border-indigo-500/40 transition shadow-sm">
-              <i class="fas fa-chevron-left text-xs"></i>
-            </div>
-            <span>Back to AX Security</span>
-          </button>
-          <button onclick="window.refreshLoggedInDevices()" type="button" class="px-2.5 py-1 text-xs text-t3 hover:text-white bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition cursor-pointer flex items-center gap-1.5" title="Refresh session list">
-            <i id="axRefreshDevicesIcon" class="fas fa-arrows-rotate text-[11px]"></i>
-            <span class="text-[10px] font-medium">Sync</span>
-          </button>
-        </div>
-
         <!-- Section Introduction -->
         <div class="space-y-1">
-          <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <i class="fas fa-laptop-mobile text-xs"></i>
-            </div>
-            Logged-in Devices
-          </h2>
+          <div class="flex items-center justify-between">
+            <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i class="fas fa-laptop-mobile text-xs"></i>
+              </div>
+              Logged-in Devices
+            </h2>
+            <button onclick="window.refreshLoggedInDevices()" type="button" class="px-2.5 py-1 text-xs text-t3 hover:text-white bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition cursor-pointer flex items-center gap-1.5" title="Refresh session list">
+              <i id="axRefreshDevicesIcon" class="fas fa-arrows-rotate text-[11px]"></i>
+              <span class="text-[10px] font-medium">Sync</span>
+            </button>
+          </div>
           <p class="text-xs text-slate-300 leading-relaxed">
             These are all the devices that are currently logged-in with your ArenaX account. Log out of devices that you don't recognize.
           </p>
@@ -5194,9 +5445,262 @@ html, body {
 
       </div><!-- END #axSecurityDevicesView -->
 
+      <!-- ==================== SUBVIEW 4: LINK ACCOUNTS ==================== -->
+      <div id="axSecurityLinkAccountsView" class="space-y-5 hidden">
+        <!-- Section Introduction -->
+        <div class="space-y-1">
+          <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/30 flex items-center justify-center text-[#5865F2]">
+              <i class="fa-brands fa-discord text-xs"></i>
+            </div>
+            Link Accounts
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Connect external gaming accounts to verify player identity, prevent duplicate smurfs, and unlock official tournaments.
+          </p>
+        </div>
+
+        <!-- Discord Identity & Integration Widget -->
+        <div class="space-y-2">
+          <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Discord Integration Status</div>
+          <div id="discordSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-4">
+            <!-- Injected dynamically via renderDiscordAuthWidget() -->
+          </div>
+        </div>
+
+        <!-- Information Card: Why Discord Verification? -->
+        <div class="p-4 bg-bg/60 border border-bdr/40 rounded-xl space-y-2.5 text-xs text-t2">
+          <div class="font-bold text-white flex items-center gap-1.5 text-xs">
+            <i class="fas fa-info-circle text-indigo-400"></i> Why Discord Verification?
+          </div>
+          <ul class="space-y-1.5 list-disc list-inside text-t3 text-[11px] leading-relaxed">
+            <li>Unlocks access to all official <strong class="text-white">ArenaX Tournaments</strong>.</li>
+            <li>Guarantees anti-smurf protection & fair reward payouts.</li>
+            <li>Syncs your official verified badge across leaderboards.</li>
+            <li>Uses standard secure OAuth2 (<strong class="text-indigo-300">identify</strong> scope only).</li>
+          </ul>
+        </div>
+
+      </div><!-- END #axSecurityLinkAccountsView -->
+
+      <!-- ==================== SUBVIEW 5: TWO-FACTOR AUTHENTICATION ==================== -->
+      <div id="axSecurity2FaView" class="space-y-5 hidden">
+        <!-- Section Introduction -->
+        <div class="flex items-center justify-between px-1">
+          <div class="space-y-1">
+            <h2 class="font-display text-lg sm:text-xl font-black text-white tracking-wide flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <i class="fas fa-key text-xs"></i>
+              </div>
+              Two-Factor Authentication (2FA)
+            </h2>
+            <p class="text-xs text-slate-300 leading-relaxed flex items-center gap-1.5 flex-wrap">
+              <span>Require One-Time OTP verification on login to protect against unauthorized account access.</span>
+              <button type="button" id="btn2FaLearnMore" onclick="window.openTwoFactorLearnMoreSheet()" class="text-[#f0c040] hover:text-amber-300 font-bold underline underline-offset-2 inline-flex items-center gap-1 transition cursor-pointer text-xs" aria-label="Learn more about Two-Factor Authentication">
+                <span>Learn More</span>
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+              </button>
+            </p>
+          </div>
+          <span id="ax2FaStatusHeaderBadge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+            Disabled
+          </span>
+        </div>
+
+        <!-- 2FA Settings Container -->
+        <div id="ax2FaSettingsWidget" class="bg-card border border-bdr/80 rounded-2xl p-4 shadow-md space-y-3">
+          <!-- Injected dynamically via renderTwoFactorAuthWidget() -->
+        </div>
+
+      </div><!-- END #axSecurity2FaView -->
+
     </div>
   </div>
 </div>
+
+<!-- ==================== 2FA LEARN MORE BOTTOM SHEET ==================== -->
+<div id="sheetTwoFactorLearnMore" class="fixed inset-0 z-[290] flex flex-col justify-end sm:items-center sm:justify-center hidden pointer-events-none transition-all duration-300" role="dialog" aria-modal="true" aria-labelledby="sheetTwoFactorTitle">
+  <!-- Backdrop (Existing 2FA page remains visible behind sheet with backdrop/overlay) -->
+  <div id="sheetTwoFactorBackdrop" onclick="window.closeTwoFactorLearnMoreSheet()" class="absolute inset-0 bg-black/75 backdrop-filter backdrop-blur-sm opacity-0 transition-opacity duration-300 cursor-pointer pointer-events-auto"></div>
+
+  <!-- Bottom Sheet Container (Covers ~50-65% viewport height on mobile, adapts on desktop, rounded top corners) -->
+  <div id="sheetTwoFactorPanel" class="relative z-10 w-full sm:max-w-lg bg-[#0a0c12] border-t sm:border border-amber-500/30 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_45px_rgba(0,0,0,0.85)] h-[62vh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden pointer-events-auto transform translate-y-full transition-transform duration-300 ease-out">
+    
+    <!-- Top Bar with Drag Handle & Close X Button -->
+    <div class="px-5 pt-3 pb-2 flex-shrink-0 flex items-center justify-between border-b border-slate-800/80 bg-[#0d101a]/90 backdrop-blur-md">
+      <div class="w-8"></div>
+      <!-- Drag Handle for touch affordance -->
+      <div class="w-12 h-1.5 bg-slate-700 hover:bg-slate-600 rounded-full cursor-grab active:cursor-grabbing sm:hidden"></div>
+      <button type="button" onclick="window.closeTwoFactorLearnMoreSheet()" class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer text-sm" aria-label="Close 2FA Briefing">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-5 text-left custom-scrollbar">
+      
+      <!-- TOP ANIMATION (public/2FA.json) -->
+      <div class="flex flex-col items-center justify-center pt-1 pb-1">
+        <div class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center relative flex-shrink-0">
+          <lottie-player id="lottie2FaLearnMore" src="./2FA.json" background="transparent" speed="1.0" loop autoplay style="width: 100%; height: 100%;" class="mx-auto"></lottie-player>
+        </div>
+      </div>
+
+      <!-- Main Heading & Introductory Briefing -->
+      <div class="text-center space-y-2">
+        <h3 id="sheetTwoFactorTitle" class="font-display text-lg sm:text-xl font-black text-white tracking-wide">
+          How ArenaX 2FA protects your account
+        </h3>
+        <p class="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+          Two-factor authentication adds an extra layer of security to your ArenaX account. After you enter your correct login credentials, ArenaX requires an additional one-time approval before your account can be accessed.
+        </p>
+      </div>
+
+      <!-- Section: Every Login Requires Approval -->
+      <div class="p-3.5 bg-[#121522] border border-amber-500/25 rounded-2xl space-y-2 shadow-sm">
+        <div class="flex items-center gap-2 text-[#f0c040]">
+          <i class="fas fa-shield-halved text-sm"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-white">Every Login Requires Approval</h4>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Once 2FA is enabled, <strong class="text-amber-300">EVERY</strong> future login to your ArenaX account requires approval through your verified email address.
+        </p>
+        <div class="pt-1">
+          <span class="text-[11px] font-semibold text-slate-400 block mb-1.5">This applies even when:</span>
+          <ul class="space-y-1.5 text-xs text-slate-300 pl-1">
+            <li class="flex items-center gap-2"><i class="fas fa-check text-amber-400 text-[10px]"></i> You use the same device</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-amber-400 text-[10px]"></i> You use the same browser</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-amber-400 text-[10px]"></i> You use a previously recognized device</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-amber-400 text-[10px]"></i> You use a new device</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-amber-400 text-[10px]"></i> You use a different browser</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section: No Trusted Device Bypass -->
+      <div class="p-3.5 bg-[#121522] border border-rose-500/25 rounded-2xl space-y-1.5 shadow-sm">
+        <div class="flex items-center gap-2 text-rose-400">
+          <i class="fas fa-ban text-sm"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-white">No Trusted Device Bypass</h4>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          ArenaX does not use a "Remember this device" option to skip 2FA.
+        </p>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          There is no trusted-device whitelist, browser whitelist, or local-device bypass that can permanently skip the required approval.
+        </p>
+      </div>
+
+      <!-- Section: How Login Works -->
+      <div class="p-3.5 bg-[#121522] border border-indigo-500/25 rounded-2xl space-y-2.5 shadow-sm">
+        <div class="flex items-center gap-2 text-indigo-400">
+          <i class="fas fa-list-ol text-sm"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-white">How Login Works</h4>
+        </div>
+        <ol class="space-y-2 text-xs text-slate-300">
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">1</span>
+            <span>Enter your ArenaX email and password.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">2</span>
+            <span>ArenaX verifies your credentials.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">3</span>
+            <span>Your account remains locked while approval is pending.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">4</span>
+            <span>ArenaX sends a one-time login approval request to your verified email address.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">5</span>
+            <span>Approve the login request.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-700">6</span>
+            <span>Only after successful approval can you access your ArenaX account.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section: Your Verified Email -->
+      <div class="p-3.5 bg-[#121522] border border-cyan-500/25 rounded-2xl space-y-1.5 shadow-sm">
+        <div class="flex items-center gap-2 text-cyan-400">
+          <i class="fas fa-envelope-circle-check text-sm"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-white">Your Verified Email</h4>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          The approval request is sent to the same verified email address associated with your ArenaX account.
+        </p>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          If you do not see the email, check your inbox and spam/junk folder.
+        </p>
+      </div>
+
+      <!-- Section: Security Notice -->
+      <div class="p-3.5 bg-amber-500/10 border border-amber-500/35 rounded-2xl space-y-1.5 shadow-sm">
+        <div class="flex items-center gap-2 text-amber-400">
+          <i class="fas fa-triangle-exclamation text-sm"></i>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-300">Security Notice</h4>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Never share your login approval, OTP, password, or security codes with anyone.
+        </p>
+        <p class="text-[11px] text-amber-400/90 leading-relaxed font-semibold">
+          If you did not attempt to log in, do not approve the request and secure your account.
+        </p>
+      </div>
+
+      <!-- Prominent Bottom Close Button -->
+      <div class="pt-2 pb-1 sticky bottom-0 bg-gradient-to-t from-[#0a0c12] via-[#0a0c12]/95 to-transparent">
+        <button type="button" onclick="window.closeTwoFactorLearnMoreSheet()" class="w-full py-3 bg-gradient-to-r from-[#f0c040] to-[#e5a820] hover:brightness-110 text-black text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-gold/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fas fa-check"></i>
+          <span>Got it, back to Security</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function initAxSecurityButtons() {
+    const bind = function(id, fn) {
+      const el = document.getElementById(id);
+      if (el && !el._axBound) {
+        el._axBound = true;
+        el.addEventListener('click', fn);
+      }
+    };
+    bind('btnAxNavStanding', function(e) { e.preventDefault(); window.showAxSecuritySubView('standing'); });
+    bind('btnAxNavActivity', function(e) { e.preventDefault(); window.showAxSecuritySubView('activity'); });
+    bind('btnAxNavLinkAccounts', function(e) { e.preventDefault(); window.showAxSecuritySubView('link-accounts'); });
+    bind('btnAxNav2Fa', function(e) { e.preventDefault(); window.showAxSecuritySubView('2fa'); });
+    bind('bCloseAxSecurityCross', function(e) {
+      e.preventDefault();
+      if (window.currentAxSecuritySubView === 'devices') {
+        window.showAxSecuritySubView('activity');
+      } else if (window.currentAxSecuritySubView) {
+        window.showAxSecuritySubView(null);
+      } else {
+        window.closeAxSecurityModal();
+      }
+    });
+    bind('bCloseAxSecurity', function(e) {
+      e.preventDefault();
+      window.closeAxSecurityModal();
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAxSecurityButtons);
+  } else {
+    initAxSecurityButtons();
+  }
+})();
+</script>
 
 <!-- ==================== ADD FRIEND & REQUESTS MODAL ==================== -->
 <div id="mAddFriend" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
@@ -6878,6 +7382,122 @@ html, body {
   <script type="module" src="./js/moments.js"></script>
   <script type="module" src="./js/account-standing.js"></script>
   <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./js/auto-update.js"></script>
+
+<!-- ==================== ARENAX APK AUTO-UPDATE MODAL ==================== -->
+<div id="apkUpdateModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[350] flex items-center justify-center p-4 hidden transition-all duration-300">
+  <div class="group relative w-[420px] max-w-full">
+    <div class="relative overflow-hidden rounded-2xl bg-[#0b0e17] border border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.2)] transition-all duration-300">
+      <!-- Glow ambient highlights -->
+      <div class="absolute -left-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br from-emerald-500/25 to-teal-500/0 blur-2xl pointer-events-none"></div>
+      <div class="absolute -right-16 -bottom-16 h-36 w-36 rounded-full bg-gradient-to-br from-teal-500/25 to-emerald-500/0 blur-2xl pointer-events-none"></div>
+
+      <div class="relative p-6 space-y-4">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="relative flex-shrink-0">
+              <div class="absolute -inset-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 opacity-40 blur-sm"></div>
+              <div class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-[#121826] border border-emerald-500/30 text-emerald-400 text-xl shadow-inner">
+                <i class="fab fa-android"></i>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-display font-bold text-white text-base tracking-wide">Update Available</h3>
+                <span id="apkModalBadge" class="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">New</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">
+                Version <span id="apkModalLatestVersion" class="font-bold text-emerald-400 font-mono">1.1.0</span> is ready
+              </p>
+            </div>
+          </div>
+          <button id="bCloseApkModalCross" type="button" class="text-slate-400 hover:text-white transition p-1 cursor-pointer">
+            <i class="fas fa-times text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Version Comparison Badge -->
+        <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#131929] border border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px]">Current:</span>
+            <span id="apkModalCurrentVersion" class="text-slate-200 font-mono font-semibold">v1.0.0</span>
+          </div>
+          <i class="fas fa-arrow-right text-[10px] text-emerald-400"></i>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px]">Latest:</span>
+            <span id="apkModalTargetVersion" class="text-emerald-400 font-mono font-bold">v1.1.0</span>
+          </div>
+        </div>
+
+        <!-- Release Notes Section -->
+        <div class="space-y-1.5">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fas fa-sparkles text-emerald-400 text-[9px]"></i> What's New
+          </div>
+          <div id="apkModalReleaseNotes" class="bg-[#0e1320] border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-line font-sans">
+            • One-Tap auto update system with native APK installer integration
+            • Enhanced tournament live match sync
+            • Performance optimizations & UI polish
+          </div>
+        </div>
+
+        <!-- Download & Install Progress Section -->
+        <div id="apkDownloadProgressSection" class="space-y-2.5 hidden pt-1">
+          <div class="flex items-center justify-between text-xs">
+            <span id="apkDownloadStatusText" class="text-emerald-400 font-medium flex items-center gap-2">
+              <i class="fas fa-circle-notch fa-spin text-xs"></i>
+              <span>Downloading update package...</span>
+            </span>
+            <span id="apkDownloadPercentText" class="font-mono text-emerald-300 font-bold text-xs">0%</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800/80 rounded-full overflow-hidden border border-emerald-500/20 p-0.5">
+            <div id="apkDownloadProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full w-0 transition-all duration-150 shadow-[0_0_12px_rgba(16,185,129,0.5)]"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <span id="apkDownloadSizeText">0.0 MB / -- MB</span>
+            <span id="apkDownloadSpeedText" class="text-emerald-400/80">Connecting...</span>
+          </div>
+        </div>
+
+        <!-- Android Unknown Sources / Help Guide -->
+        <div id="apkUnknownSourcesGuide" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 space-y-1.5">
+          <div class="flex items-center gap-2 font-bold text-amber-300 text-[11px] uppercase tracking-wide">
+            <i class="fas fa-shield-alt text-amber-400"></i> Android Install Permission Notice
+          </div>
+          <p class="text-[11px] leading-relaxed text-amber-100/90">
+            Android requires permission to install sideloaded APK updates. When the system prompt appears, tap <strong>Settings</strong> and switch on <strong>Allow from this source</strong>.
+          </p>
+        </div>
+
+        <!-- Error Container -->
+        <div id="apkUpdateErrorBox" class="hidden bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-200 space-y-1.5">
+          <div class="flex items-center gap-2 font-bold text-red-300 text-[11px]">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="apkUpdateErrorTitle">Installation Notice</span>
+          </div>
+          <p id="apkUpdateErrorMsg" class="text-[11px] leading-relaxed text-red-100/90"></p>
+          <div class="pt-1">
+            <a id="apkDirectBrowserFallback" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer">
+              <i class="fas fa-download"></i> Download APK directly via browser
+            </a>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2.5 pt-2">
+          <button id="btnApkUpdateLater" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition border border-slate-700 cursor-pointer">
+            Later
+          </button>
+          <button id="btnApkUpdateNow" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fas fa-download"></i>
+            <span id="btnApkUpdateNowText">Update Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PWA Update Modal Overlay -->
 <div id="pwaUpdateModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[210] flex items-center justify-center p-4 hidden transition-all duration-300">
@@ -7081,8 +7701,8 @@ html, body {
             </div>
           </div>
         </div>
-        <a id="btnDownloadApkDirect" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.0.0/ArenaX.apk" target="_blank" rel="noopener noreferrer" download="ArenaX.apk" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer no-underline">
-          <i class="fas fa-file-download text-xs"></i> Download ArenaX.apk (Android)
+        <a id="btnDownloadApkDirect" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer no-underline">
+          <i class="fab fa-android text-sm"></i> Download ArenaX App
         </a>
       </div>
 
@@ -7177,12 +7797,12 @@ html, body {
       const iosNote = document.getElementById('iosSafariNote');
 
       if (btnDownloadApp) {
-        btnDownloadApp.addEventListener('click', () => {
-          if (modal) {
-            modal.classList.remove('hidden');
-            if (isIosSafari() && iosNote) {
-              iosNote.classList.remove('hidden');
-            }
+        btnDownloadApp.addEventListener('click', (e) => {
+          // Open the latest ArenaX Android APK safely
+          const apkUrl = 'https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk';
+          if (!btnDownloadApp.getAttribute('href')) {
+            e.preventDefault();
+            window.open(apkUrl, '_blank', 'noopener,noreferrer');
           }
         });
       }

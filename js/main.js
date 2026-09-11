@@ -4993,113 +4993,496 @@ $('bBell').addEventListener('click', async () => {
 // Button upgrades redirections
 $('gUpgradeBtn').addEventListener('click', () => alert('Exit guest profile, and connect real Google or email ID to save AX earnings!'));
 $('btnEditProfile').addEventListener('click', () => {
+  if (window.openCustomizeProfilePage) {
+    window.openCustomizeProfilePage('settings');
+  }
+});
+
+/* ========================================================
+   FULL-SCREEN CUSTOMIZE PROFILE PAGE CONTROLLER
+   ======================================================== */
+window.PROFILE_EFFECTS_LIST = [
+  { id: 'none', name: 'None', desc: 'Default avatar circle', color: '#64748b' },
+  { id: 'effect-cyber-sparks', name: 'Cyber Sparks', desc: 'Cyan energy pulse', color: '#06b6d4' },
+  { id: 'effect-golden-aura', name: 'Golden Aura', desc: 'Liquid gold radiance', color: '#f0c040' },
+  { id: 'effect-mystic-fire', name: 'Mystic Fire', desc: 'Blazing inferno flame', color: '#ef4444' },
+  { id: 'effect-neon-pulse', name: 'Neon Pulse', desc: 'Cyberpunk synthwave', color: '#a855f7' },
+  { id: 'effect-cosmic-void', name: 'Cosmic Void', desc: 'Deep space nebula', color: '#6366f1' },
+  { id: 'effect-frost-shield', name: 'Frost Shield', desc: 'Glacial crystal armor', color: '#38bdf8' }
+];
+
+window._selectedProfileEffect = 'none';
+window._selectedCustomizeFont = 'font-poppins';
+window._selectedEditProfileAvatarUrl = null;
+window._customizeProfileSource = 'settings';
+
+window.openCustomizeProfilePage = function(source = 'settings') {
+  window._customizeProfileSource = source;
   if ($('mSettings')) $('mSettings').classList.add('hidden');
-  if (guestProfile) {
-    alert('Connect a full account first to change Display Name!');
+  if ($('mAxSecurityModal')) $('mAxSecurityModal').classList.add('hidden');
+
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+
+  const isPremium = !!(profile.premium || profile.isVIP || profile.isPremium || profile.vip);
+
+  // 1. Avatar Photo
+  const avUrl = profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid || 'ax'}`;
+  if ($('editProfileAvatarImg')) $('editProfileAvatarImg').src = avUrl;
+  window._selectedEditProfileAvatarUrl = null;
+  const statusEl = $('editProfileAvatarStatus');
+  if (statusEl) {
+    statusEl.classList.add('hidden');
+    statusEl.innerHTML = '';
+  }
+
+  // 2. Display Name
+  if ($('editProfileName')) {
+    $('editProfileName').value = profile.name || '';
+  }
+
+  // Golden Name Toggle
+  const goldenWrapper = $('editProfileGoldenWrapper');
+  const previewRow = $('editProfileGoldenPreviewRow');
+  const previewText = $('editProfileGoldenPreviewText');
+
+  if (goldenWrapper) {
+    if (isPremium) {
+      const isEnabled = profile.goldenNameEnabled !== false;
+      goldenWrapper.innerHTML = `
+        <label class="relative inline-flex items-center cursor-pointer select-none">
+          <input id="editProfileGoldenToggle" type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''}>
+          <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400 border border-slate-700"></div>
+          <span class="ml-2 text-xs font-bold text-amber-400 flex items-center gap-1"><i class="fas fa-crown text-[10px]"></i> Golden</span>
+        </label>
+      `;
+      if (previewRow) {
+        if (isEnabled) {
+          previewRow.classList.remove('hidden');
+          if (previewText) previewText.textContent = profile.name || 'Player';
+        } else {
+          previewRow.classList.add('hidden');
+        }
+      }
+      const toggle = $('editProfileGoldenToggle');
+      if (toggle) {
+        toggle.addEventListener('change', () => {
+          if (toggle.checked) {
+            if (previewRow) previewRow.classList.remove('hidden');
+            if (previewText) previewText.textContent = ($('editProfileName')?.value.trim()) || profile.name || 'Player';
+          } else {
+            if (previewRow) previewRow.classList.add('hidden');
+          }
+        });
+      }
+    } else {
+      goldenWrapper.innerHTML = `
+        <span class="text-[10px] text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 cursor-pointer font-bold" onclick="if(window.openPremiumModal) window.openPremiumModal();">
+          <i class="fas fa-lock text-[9px]"></i> Golden Name (Premium)
+        </span>
+      `;
+      if (previewRow) previewRow.classList.add('hidden');
+    }
+  }
+
+  // Live Name input updating golden preview
+  if ($('editProfileName') && !$('editProfileName').dataset.previewBound) {
+    $('editProfileName').dataset.previewBound = 'true';
+    $('editProfileName').addEventListener('input', () => {
+      const val = $('editProfileName').value.trim() || 'Player';
+      if ($('editProfileGoldenPreviewText')) $('editProfileGoldenPreviewText').textContent = val;
+    });
+  }
+
+  // 3. Country / Region
+  if ($('editProfileCountry')) {
+    $('editProfileCountry').value = profile.country || '';
+  }
+
+  // 4. Signature / Bio
+  const signature = profile.signature || profile.bio || '';
+  if ($('editProfileSignature')) {
+    $('editProfileSignature').value = signature;
+    if ($('editProfileSignatureCount')) $('editProfileSignatureCount').textContent = `${signature.length}/140`;
+    if (!$('editProfileSignature').dataset.countBound) {
+      $('editProfileSignature').dataset.countBound = 'true';
+      $('editProfileSignature').addEventListener('input', () => {
+        if ($('editProfileSignatureCount')) {
+          $('editProfileSignatureCount').textContent = `${$('editProfileSignature').value.length}/140`;
+        }
+      });
+    }
+  }
+
+  // 5. Profile Effects
+  window._selectedProfileEffect = profile.profileEffect || 'none';
+  window.renderCustomizeProfileEffects();
+  window.updateCustomizeAvatarEffectRing(window._selectedProfileEffect);
+
+  // 6. VIP Custom Font
+  window._selectedCustomizeFont = profile.selectedFont || 'font-poppins';
+  window.renderCustomizeProfileFonts(isPremium);
+
+  // Show full-screen page
+  if ($('sCustomizeProfile')) {
+    $('sCustomizeProfile').classList.remove('hidden');
+  }
+};
+
+window.renderCustomizeProfileEffects = function() {
+  const container = $('editProfileEffectsGallery');
+  if (!container) return;
+
+  const current = window._selectedProfileEffect || 'none';
+  const badge = $('editProfileActiveEffectBadge');
+  const found = window.PROFILE_EFFECTS_LIST.find(e => e.id === current) || window.PROFILE_EFFECTS_LIST[0];
+  if (badge) badge.textContent = found.name;
+
+  container.innerHTML = window.PROFILE_EFFECTS_LIST.map(eff => {
+    const isSelected = eff.id === current;
+    return `
+      <button type="button" onclick="window.selectCustomizeProfileEffect('${eff.id}')" class="p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative group ${
+        isSelected
+          ? 'bg-[#181d2f] border-amber-400 ring-1 ring-amber-400/50 shadow-md shadow-amber-500/10'
+          : 'bg-[#121522] border-[#252a45] hover:border-slate-500 hover:bg-[#161a2b]'
+      }">
+        <div class="flex items-center justify-between w-full mb-2">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" style="background-color: ${eff.color}20; border: 1.5px solid ${eff.color}; color: ${eff.color}">
+            <i class="fas ${eff.id === 'none' ? 'fa-ban' : 'fa-wand-magic-sparkles'} text-[10px]"></i>
+          </div>
+          ${isSelected ? '<span class="w-4 h-4 rounded-full bg-amber-400 text-[#0a0c12] flex items-center justify-center text-[9px] font-bold"><i class="fas fa-check"></i></span>' : ''}
+        </div>
+        <div>
+          <div class="text-xs font-bold text-white truncate group-hover:text-amber-300 transition">${eff.name}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-0.5">${eff.desc}</div>
+        </div>
+      </button>
+    `;
+  }).join('');
+};
+
+window.selectCustomizeProfileEffect = function(effectId) {
+  window._selectedProfileEffect = effectId;
+  window.renderCustomizeProfileEffects();
+  window.updateCustomizeAvatarEffectRing(effectId);
+};
+
+window.updateCustomizeAvatarEffectRing = function(effectId) {
+  const ring = $('editProfileEffectRing');
+  if (!ring) return;
+
+  // Clear existing classes
+  window.PROFILE_EFFECTS_LIST.forEach(eff => {
+    if (eff.id !== 'none') ring.classList.remove(eff.id);
+  });
+
+  if (effectId && effectId !== 'none') {
+    ring.classList.add(effectId);
+    ring.classList.remove('hidden');
+  } else {
+    ring.classList.add('hidden');
+  }
+};
+
+window.renderCustomizeProfileFonts = function(isPremium) {
+  const section = $('editProfileFontSection');
+  if (!section) return;
+
+  if (!isPremium) {
+    section.innerHTML = `
+      <div class="p-3.5 bg-[#121522]/80 border border-[#252a45] rounded-xl flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/20">
+            <i class="fas fa-lock"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              VIP Custom Font Name
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30">Premium Only</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Unlock 12 exclusive esports display fonts across the app</div>
+          </div>
+        </div>
+        <button type="button" onclick="if(window.openPremiumModal) window.openPremiumModal();" class="px-3 py-1.5 bg-[#f0c040]/15 hover:bg-[#f0c040]/25 text-[#f0c040] text-xs font-bold rounded-lg transition border border-[#f0c040]/30 cursor-pointer">
+          Unlock VIP
+        </button>
+      </div>
+    `;
     return;
   }
+
+  const currentFont = window._selectedCustomizeFont || 'font-poppins';
+  const previewName = $('editProfileName')?.value.trim() || 'Player';
+
+  const curatedFonts = [
+    { id: 'font-poppins', name: 'Poppins', style: 'Default' },
+    { id: 'font-luckiest-guy', name: 'Luckiest Guy', style: 'Bubble' },
+    { id: 'font-bungee', name: 'Bungee', style: 'Block' },
+    { id: 'font-pacifico', name: 'Pacifico', style: 'Script' },
+    { id: 'font-rajdhani', name: 'Rajdhani', style: 'Cyber' },
+    { id: 'font-orbitron', name: 'Orbitron', style: 'Sci-Fi' },
+    { id: 'font-chakra', name: 'Chakra Petch', style: 'Angular' }
+  ];
+
+  section.innerHTML = `
+    <div class="p-3.5 bg-[#121522] border border-[#252a45] rounded-xl space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fas fa-font text-blue-400"></i> VIP Custom Font Name
+          </label>
+          <p class="text-[10px] text-slate-400 mt-0.5">Personalize how your name appears across the app</p>
+        </div>
+        <button type="button" onclick="window.openFontPickerModal()" class="text-xs text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 transition cursor-pointer">
+          <span>All 12 Fonts</span> <i class="fas fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        ${curatedFonts.map(f => {
+          const isSelected = f.id === currentFont;
+          return `
+            <button type="button" onclick="window.selectCustomizeProfileFont('${f.id}')" class="p-2 rounded-lg border text-center transition cursor-pointer ${
+              isSelected
+                ? 'bg-blue-600/20 border-blue-500 text-white ring-1 ring-blue-500/40'
+                : 'bg-[#181d2f] border-slate-800 text-slate-300 hover:border-slate-600'
+            }">
+              <div class="text-sm font-bold truncate ${f.id}">${previewName}</div>
+              <div class="text-[9px] text-slate-400 mt-0.5">${f.name}</div>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+};
+
+window.selectCustomizeProfileFont = function(fontClassName) {
+  window._selectedCustomizeFont = fontClassName;
+  selectedVipFont = fontClassName;
+  const isPremium = !!(userProfile?.premium || guestProfile?.premium || userProfile?.isVIP || guestProfile?.isVIP);
+  window.renderCustomizeProfileFonts(isPremium);
+
+  const nameInput = $('editProfileName');
+  if (nameInput) {
+    window.VIP_FONTS.forEach(f => nameInput.classList.remove(f.className));
+    nameInput.classList.add(fontClassName);
+  }
+  const previewText = $('editProfileGoldenPreviewText');
+  if (previewText) {
+    window.VIP_FONTS.forEach(f => previewText.classList.remove(f.className));
+    previewText.classList.add(fontClassName);
+  }
+};
+
+window.closeCustomizeProfilePage = function() {
+  if ($('sCustomizeProfile')) $('sCustomizeProfile').classList.add('hidden');
+  if (window._customizeProfileSource === 'axSecurity' && $('mAxSecurityModal')) {
+    $('mAxSecurityModal').classList.remove('hidden');
+  } else if (window._customizeProfileSource === 'settings' && $('mSettings')) {
+    $('mSettings').classList.remove('hidden');
+  }
+};
+
+window.saveCustomizeProfilePage = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+
+  const nameInput = $('editProfileName');
+  const name = nameInput ? nameInput.value.trim() : (profile.name || 'Player');
+  const country = $('editProfileCountry') ? $('editProfileCountry').value : (profile.country || '');
+  const signature = $('editProfileSignature') ? $('editProfileSignature').value.trim() : (profile.signature || profile.bio || '');
+
+  if (!name) {
+    alert('Display Name is required!');
+    if (nameInput) nameInput.focus();
+    return;
+  }
+
   const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-  if (userProfile && userProfile.lastNameChangeAt && (Date.now() - userProfile.lastNameChangeAt < fourteenDaysMs)) {
-    const msLeft = fourteenDaysMs - (Date.now() - userProfile.lastNameChangeAt);
+  const nameChanged = name !== profile.name;
+  if (nameChanged && profile.lastNameChangeAt && (Date.now() - profile.lastNameChangeAt < fourteenDaysMs)) {
+    const msLeft = fourteenDaysMs - (Date.now() - profile.lastNameChangeAt);
     const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
     alert(`You can change your name only after 14 days! Please wait ${daysLeft} more day(s).`);
     return;
   }
-  const currentName = userProfile ? userProfile.name : 'Player';
-  const n = prompt('Enter your new Display Name:', currentName);
-  if (n && n.trim() && userProfile && n.trim() !== userProfile.name) {
-    updateDoc(doc(db, 'users', userProfile.uid), { 
-      name: n.trim(),
-      lastNameChangeAt: Date.now()
-    })
-      .then(() => alert('Name updated successfully!'))
-      .catch(err => alert(err.message));
+
+  const saveBtn = $('btnSaveCustomizeProfile');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>`;
   }
-});
 
-// Trigger customise modal
-$('btnCustomize').addEventListener('click', () => {
-  if ($('mSettings')) $('mSettings').classList.add('hidden');
-  const profile = userProfile || guestProfile;
-  if (!profile) return;
+  const updateData = {
+    name,
+    country,
+    signature,
+    bio: signature,
+    profileEffect: window._selectedProfileEffect || 'none'
+  };
 
-  // Basic Info Values
-  $('custName').value = profile.name || '';
-  $('custCountry').value = profile.country || '';
-  $('custFavGame').value = profile.favoriteGame || '';
-  $('custGameUID').value = profile.gameUID || '';
-  $('custBadgeVal').textContent = profile.badge || 'No badge awarded yet';
+  if (nameChanged) {
+    updateData.lastNameChangeAt = Date.now();
+  }
 
-  // Social Connections
-  $('custDiscord').value = profile.socialDiscord || '';
-  $('custInstagram').value = profile.socialInstagram || '';
-  $('custYoutube').value = profile.socialYoutube || '';
+  if (window._selectedEditProfileAvatarUrl) {
+    updateData.av = window._selectedEditProfileAvatarUrl;
+  }
 
-  // Values
-  $('custBio').value = profile.bio || '';
-  $('custAvPreview').src = profile.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid || 'ax'}`;
-  selectedCustomAvatarUrl = null; // reset upload state
-  $('uploadStatus').classList.add('hidden');
-  $('uploadStatus').innerHTML = '';
-
-  selectedBannerTheme = profile.bannerTheme || 'dark';
-  selectedAvatarFrame = profile.avatarFrame || 'none';
-  selectedNameColor = profile.nameColor || '#ffffff';
-  selectedVipFont = profile.selectedFont || 'font-poppins';
-  if (window.updateCustomizeFontPreview) window.updateCustomizeFontPreview();
-
-  // Always enable avatar photo upload and bio for everyone
-  $('custBio').disabled = false;
-  $('custBio').classList.remove('opacity-60', 'pointer-events-none');
-  $('btnBrowseAvatar').disabled = false;
-  $('btnBrowseAvatar').classList.remove('opacity-60', 'pointer-events-none');
-
-  if (profile.premium) {
-    $('custPrmBadge').textContent = 'Premium Active';
-    $('custPrmBadge').classList.remove('bg-purple/20', 'text-purple');
-    $('custPrmBadge').classList.add('bg-green-500/20', 'text-green-400');
-    
-    $('custAvatarFrame').disabled = false;
-    $('custAvatarFrame').classList.remove('opacity-60', 'pointer-events-none');
-
-    if ($('custGoldenNameBox')) $('custGoldenNameBox').classList.remove('opacity-60', 'pointer-events-none');
-    if ($('chkGoldenName')) {
-      $('chkGoldenName').disabled = false;
-      $('chkGoldenName').checked = profile.goldenNameEnabled !== false;
+  const isPremium = !!(profile.premium || profile.isVIP || profile.isPremium || profile.vip);
+  if (isPremium) {
+    const goldenToggle = $('editProfileGoldenToggle');
+    if (goldenToggle) {
+      updateData.goldenNameEnabled = goldenToggle.checked;
     }
-  } else {
-    $('custPrmBadge').textContent = 'Standard Account';
-    $('custPrmBadge').classList.remove('bg-purple/20', 'text-purple');
-    $('custPrmBadge').classList.add('bg-gold/20', 'text-gold');
-    
-    $('custAvatarFrame').disabled = true;
-    $('custAvatarFrame').classList.add('opacity-60', 'pointer-events-none');
-
-    if ($('custGoldenNameBox')) $('custGoldenNameBox').classList.add('opacity-60', 'pointer-events-none');
-    if ($('chkGoldenName')) {
-      $('chkGoldenName').disabled = true;
-      $('chkGoldenName').checked = false;
+    if (window._selectedCustomizeFont) {
+      updateData.selectedFont = window._selectedCustomizeFont;
     }
   }
 
-  // Attach live preview event listeners once
-  if ($('custName') && !$('custName').dataset.goldenBound) {
-    $('custName').dataset.goldenBound = 'true';
-    $('custName').addEventListener('input', () => { if (window.updateGoldenNamePreview) window.updateGoldenNamePreview(); });
-  }
-  if ($('chkGoldenName') && !$('chkGoldenName').dataset.goldenBound) {
-    $('chkGoldenName').dataset.goldenBound = 'true';
-    $('chkGoldenName').addEventListener('change', () => { if (window.updateGoldenNamePreview) window.updateGoldenNamePreview(); });
-  }
+  try {
+    if (userProfile && userProfile.uid) {
+      await updateDoc(doc(db, 'users', userProfile.uid), updateData);
+      Object.assign(userProfile, updateData);
 
-  // Load select grids/swatches
-  loadAvatarPickerGrid();
-  loadBannerThemeSelector();
-  loadNameColorSelector();
-  if (window.updateCustomizeFrameButtonState) window.updateCustomizeFrameButtonState();
+      // Sync updated avatar and name to all friends
+      try {
+        if (updateData.av || updateData.name) {
+          const syncData = {};
+          if (updateData.av) syncData.av = updateData.av;
+          if (updateData.name) syncData.name = updateData.name;
+          const friendsSnap = await getDocs(collection(db, 'users', userProfile.uid, 'friends'));
+          friendsSnap.forEach(fDoc => {
+            updateDoc(doc(db, 'users', fDoc.id, 'friends', userProfile.uid), syncData).catch(() => {});
+          });
+        }
+      } catch (e) {
+        console.warn("Failed syncing profile update to friends:", e);
+      }
+    } else if (guestProfile) {
+      Object.assign(guestProfile, updateData);
+      try {
+        localStorage.setItem('arenaX_guest_profile', JSON.stringify(guestProfile));
+      } catch (e) {}
+    }
 
-  $('mCustomize').classList.remove('hidden');
-});
+    // Immediately update UI avatar images across all sections
+    const newAv = updateData.av || profile.av;
+    if (newAv) {
+      if ($('pAv')) $('pAv').src = newAv;
+      if ($('avImg')) $('avImg').src = newAv;
+      if ($('homeAvImg')) $('homeAvImg').src = newAv;
+      if ($('custAvPreview')) $('custAvPreview').src = newAv;
+      if ($('editProfileAvatarImg')) $('editProfileAvatarImg').src = newAv;
+    }
+    if ($('pName')) $('pName').textContent = updateData.name;
+    if ($('pCountry') && updateData.country) $('pCountry').textContent = updateData.country;
+    if ($('pBio')) $('pBio').textContent = updateData.signature;
+
+    // Show temporary status badge
+    const badge = $('editProfileStatusBadge');
+    if (badge) {
+      badge.classList.remove('hidden');
+      setTimeout(() => { if (badge) badge.classList.add('hidden'); }, 3000);
+    }
+
+    alert('Profile customized successfully! ✅');
+    window.closeCustomizeProfilePage();
+  } catch (err) {
+    console.error('Error saving customize profile:', err);
+    alert('Error saving profile: ' + err.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<i class="fas fa-check"></i> <span>Save Changes</span>`;
+    }
+  }
+};
+
+// Wire up events
+if ($('btnCustomize')) {
+  $('btnCustomize').addEventListener('click', () => {
+    window.openCustomizeProfilePage('settings');
+  });
+}
+
+if ($('bCloseCustomizeProfile')) {
+  $('bCloseCustomizeProfile').addEventListener('click', () => {
+    window.closeCustomizeProfilePage();
+  });
+}
+
+if ($('btnSaveCustomizeProfile')) {
+  $('btnSaveCustomizeProfile').addEventListener('click', () => {
+    window.saveCustomizeProfilePage();
+  });
+}
+
+if ($('btnGetEffectsStore')) {
+  $('btnGetEffectsStore').addEventListener('click', () => {
+    window.closeCustomizeProfilePage();
+    if (window.switchTab) window.switchTab('Store');
+  });
+}
+
+// Avatar file upload
+const editProfileFileInput = $('editProfileFileInput');
+if (editProfileFileInput && !editProfileFileInput.dataset.bound) {
+  editProfileFileInput.dataset.bound = 'true';
+  editProfileFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Invalid file type! Please upload an image file (PNG, JPG, WEBP).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('❌ File is too large! Maximum size allowed is 5MB.');
+      return;
+    }
+
+    const statusEl = $('editProfileAvatarStatus');
+    if (statusEl) {
+      statusEl.classList.remove('hidden');
+      statusEl.innerHTML = `<span class="text-amber-400 flex items-center gap-1.5"><i class="fas fa-spinner fa-spin"></i> Processing image...</span>`;
+    }
+
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 320, 320, 0.88);
+      if ($('editProfileAvatarImg')) $('editProfileAvatarImg').src = dataUrl;
+      window._selectedEditProfileAvatarUrl = dataUrl;
+
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1.5"><i class="fas fa-check-circle"></i> Photo loaded! Click "Save Changes" below.</span>`;
+      }
+
+      // Background cloud storage upload if available
+      if (userProfile && userProfile.uid && typeof ref === 'function' && typeof uploadBytes === 'function') {
+        try {
+          const timestamp = Date.now();
+          const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+          const storagePath = `avatars/${userProfile.uid}_${timestamp}_${cleanFileName}`;
+          const storageRef = ref(storage, storagePath);
+          uploadBytes(storageRef, file).then(async (snapshot) => {
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            if (downloadURL) {
+              window._selectedEditProfileAvatarUrl = downloadURL;
+            }
+          }).catch(err => console.warn('Background storage upload fallback:', err));
+        } catch (err) {
+          console.warn('Background storage exception:', err);
+        }
+      }
+    } catch (err) {
+      console.error('File processing failed:', err);
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> Failed to process: ${err.message}</span>`;
+      }
+    }
+  });
+}
 
 $('btnChangeAv').addEventListener('click', () => $('btnCustomize').click());
 $('btnPlayerChat').addEventListener('click', () => {
@@ -5187,7 +5570,6 @@ if (installBtn) {
       window.closeRedReportHubDrawer();
     }
     if ($('mSettings')) $('mSettings').classList.add('hidden');
-    if ($('mAppDownloadOptions')) $('mAppDownloadOptions').classList.remove('hidden');
   });
 }
 
@@ -6874,6 +7256,10 @@ window.renderDiscordAuthWidget = function() {
   if ($('discordGateWidget')) $('discordGateWidget').innerHTML = html;
   if ($('discordSettingsWidget')) $('discordSettingsWidget').innerHTML = html;
 
+  if (typeof window.updateAxSecurityBadges === 'function') {
+    window.updateAxSecurityBadges();
+  }
+
   if (typeof window.renderTwoFactorAuthWidget === 'function') {
     window.renderTwoFactorAuthWidget();
   }
@@ -6913,7 +7299,13 @@ window.renderTwoFactorAuthWidget = function() {
               <i class="fas fa-check text-[7px]"></i> 2FA Enabled
             </span>
           </div>
-          <p class="text-[10px] text-slate-300 leading-tight">Every login attempt requires email confirmation link.</p>
+          <p class="text-[10px] text-slate-300 leading-tight flex items-center gap-1.5 flex-wrap">
+            <span>Every login attempt requires email confirmation link.</span>
+            <button type="button" onclick="window.openTwoFactorLearnMoreSheet()" class="text-amber-400 hover:text-amber-300 font-bold underline underline-offset-2 inline-flex items-center gap-1 transition cursor-pointer text-[10px]" aria-label="Learn more about 2FA">
+              <span>Learn More</span>
+              <i class="fas fa-arrow-up-right-from-square text-[8px]"></i>
+            </button>
+          </p>
         </div>
       </div>
       <button onclick="window.toggleTwoFactorAuth(false)" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase rounded-lg transition active:scale-95 cursor-pointer whitespace-nowrap">
@@ -6929,7 +7321,13 @@ window.renderTwoFactorAuthWidget = function() {
           </div>
           <div>
             <div class="text-xs font-bold text-slate-200">2FA Login Verification is OFF</div>
-            <div class="text-[10px] text-t3">Protect your account with email login confirmations</div>
+            <div class="text-[10px] text-t3 flex items-center gap-1.5 flex-wrap">
+              <span>Protect your account with email login confirmations.</span>
+              <button type="button" onclick="window.openTwoFactorLearnMoreSheet()" class="text-amber-400 hover:text-amber-300 font-bold underline underline-offset-2 inline-flex items-center gap-1 transition cursor-pointer text-[10px]" aria-label="Learn more about 2FA">
+                <span>Learn More</span>
+                <i class="fas fa-arrow-up-right-from-square text-[8px]"></i>
+              </button>
+            </div>
           </div>
         </div>
         <span class="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-bold uppercase font-mono">
@@ -6944,6 +7342,10 @@ window.renderTwoFactorAuthWidget = function() {
   `;
 
   container.innerHTML = html;
+
+  if (typeof window.updateAxSecurityBadges === 'function') {
+    window.updateAxSecurityBadges();
+  }
 };
 
 /**
@@ -6987,6 +7389,102 @@ window.toggleTwoFactorAuth = async function(targetState) {
     window.renderTwoFactorAuthWidget();
   }
 };
+
+/**
+ * Opens the 2FA Learn More Bottom Sheet
+ */
+window._twoFactorLearnMoreOpen = false;
+
+window.openTwoFactorLearnMoreSheet = function() {
+  const sheet = $('sheetTwoFactorLearnMore');
+  const backdrop = $('sheetTwoFactorBackdrop');
+  const panel = $('sheetTwoFactorPanel');
+  if (!sheet || !panel || !backdrop) return;
+
+  window._twoFactorLearnMoreOpen = true;
+
+  sheet.classList.remove('hidden', 'pointer-events-none');
+  
+  // Trigger animations in next animation frame
+  requestAnimationFrame(() => {
+    backdrop.classList.remove('opacity-0');
+    backdrop.classList.add('opacity-100');
+    panel.classList.remove('translate-y-full');
+    panel.classList.add('translate-y-0');
+  });
+
+  // Ensure Lottie animation plays
+  const player = $('lottie2FaLearnMore');
+  if (player) {
+    const basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : '/';
+    const targetSrc = (basePath.endsWith('/') ? basePath : basePath + '/') + '2FA.json';
+    if (!player.getAttribute('src') || player.getAttribute('src') === './2FA.json') {
+      player.setAttribute('src', targetSrc);
+    }
+    if (typeof player.play === 'function') {
+      try { player.play(); } catch(e) {}
+    }
+  }
+};
+
+/**
+ * Closes the 2FA Learn More Bottom Sheet
+ */
+window.closeTwoFactorLearnMoreSheet = function() {
+  const sheet = $('sheetTwoFactorLearnMore');
+  const backdrop = $('sheetTwoFactorBackdrop');
+  const panel = $('sheetTwoFactorPanel');
+  if (!sheet || !panel || !backdrop) return;
+
+  window._twoFactorLearnMoreOpen = false;
+
+  backdrop.classList.remove('opacity-100');
+  backdrop.classList.add('opacity-0');
+  panel.classList.remove('translate-y-0');
+  panel.classList.add('translate-y-full');
+
+  setTimeout(() => {
+    if (!window._twoFactorLearnMoreOpen) {
+      sheet.classList.add('hidden', 'pointer-events-none');
+    }
+  }, 300);
+};
+
+// Global escape key and touch swipe listeners for the 2FA Learn More sheet
+if (!window._twoFactorSheetListenersInitialized) {
+  window._twoFactorSheetListenersInitialized = true;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && window._twoFactorLearnMoreOpen) {
+      window.closeTwoFactorLearnMoreSheet();
+    }
+  });
+
+  let touchStartY = 0;
+  let touchCurrentY = 0;
+  document.addEventListener('touchstart', (e) => {
+    if (!window._twoFactorLearnMoreOpen) return;
+    const panel = document.getElementById('sheetTwoFactorPanel');
+    if (panel && panel.contains(e.target)) {
+      touchStartY = e.touches[0].clientY;
+      touchCurrentY = touchStartY;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!window._twoFactorLearnMoreOpen) return;
+    touchCurrentY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!window._twoFactorLearnMoreOpen) return;
+    if (touchCurrentY - touchStartY > 75) {
+      window.closeTwoFactorLearnMoreSheet();
+    }
+    touchStartY = 0;
+    touchCurrentY = 0;
+  }, { passive: true });
+}
 
 /**
  * Updates UI badges and state across the settings panel
@@ -7043,14 +7541,145 @@ window.closeDiscordVerificationGate = function() {
 };
 
 /**
+ * AX Security Subview Manager & Navigation
+ */
+window.currentAxSecuritySubView = null;
+
+window.updateAxSecurityBadges = function() {
+  const profile = userProfile || guestProfile || {};
+
+  // 1. Account Standing Badge
+  const standingBadge = $('axBtnBadgeStanding');
+  const standingText = $('axBtnBadgeStandingText');
+  if (standingBadge && standingText) {
+    const standingLevel = (window.accountStanding?.currentStandingState?.standing) || (profile.accountStanding) || 'ALL_GOOD';
+    if (standingLevel === 'ALL_GOOD') {
+      standingText.textContent = 'All Good';
+      standingBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1';
+    } else if (standingLevel === 'LIMITED') {
+      standingText.textContent = 'Limited';
+      standingBadge.className = 'px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[9px] font-mono font-bold flex items-center gap-1';
+    } else {
+      standingText.textContent = 'At Risk';
+      standingBadge.className = 'px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] font-mono font-bold flex items-center gap-1';
+    }
+  }
+
+  // 2. Account Activity / Active Devices Badge
+  const activityBadge = $('axBtnBadgeActivity');
+  const activityText = $('axBtnBadgeActivityText');
+  const summaryBadge = $('axActiveDevicesSummaryBadge');
+  const summaryText = $('axActiveDevicesSummaryText');
+  let activeCount = 1;
+  if (window.axCachedSessions && Array.isArray(window.axCachedSessions)) {
+    activeCount = window.axCachedSessions.filter(s => !s.isRevoked).length || 1;
+  }
+  const devText = `${activeCount} Active ${activeCount === 1 ? 'Device' : 'Devices'}`;
+  const sessText = `${activeCount} Active ${activeCount === 1 ? 'Session' : 'Sessions'}`;
+  if (activityText) activityText.textContent = devText;
+  if (summaryText) summaryText.textContent = sessText;
+
+  // 3. Link Accounts / Discord Badge
+  const discordBadge = $('axBtnBadgeDiscord');
+  const discordText = $('axBtnBadgeDiscordText');
+  if (discordBadge && discordText) {
+    const isDiscordLinked = !!(profile.discordLinked || profile.discordId || profile.discordUsername);
+    if (isDiscordLinked) {
+      discordText.textContent = profile.discordUsername ? `@${profile.discordUsername}` : 'Linked';
+      discordBadge.className = 'px-2 py-0.5 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#7289da] text-[9px] font-mono font-bold flex items-center gap-1';
+    } else {
+      discordText.textContent = 'Not Linked';
+      discordBadge.className = 'px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold';
+    }
+  }
+
+  // 4. 2FA Badge
+  const twoFaBadge = $('axBtnBadge2Fa');
+  const twoFaText = $('axBtnBadge2FaText');
+  if (twoFaBadge && twoFaText) {
+    const is2Fa = profile.twoFactorEnabled === true;
+    if (is2Fa) {
+      twoFaText.textContent = 'Active';
+      twoFaBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1';
+    } else {
+      twoFaText.textContent = 'Disabled';
+      twoFaBadge.className = 'px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold';
+    }
+  }
+};
+
+window.showAxSecuritySubView = function(subView) {
+  window.currentAxSecuritySubView = subView || null;
+  const mainView = $('axSecurityMainView');
+  const standingView = $('axSecurityStandingView');
+  const activityView = $('axSecurityActivityView');
+  const devicesView = $('axSecurityDevicesView');
+  const linkAccountsView = $('axSecurityLinkAccountsView');
+  const twoFaView = $('axSecurity2FaView');
+
+  const titleEl = $('axSecurityModalTitle');
+  const subEl = $('axSecurityModalSubtitle');
+
+  // Hide all subviews first
+  if (mainView) mainView.classList.add('hidden');
+  if (standingView) standingView.classList.add('hidden');
+  if (activityView) activityView.classList.add('hidden');
+  if (devicesView) devicesView.classList.add('hidden');
+  if (linkAccountsView) linkAccountsView.classList.add('hidden');
+  if (twoFaView) twoFaView.classList.add('hidden');
+
+  if (!subView) {
+    // Show Main Hub (4 Primary Buttons)
+    if (mainView) mainView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'AX Security';
+    if (subEl) subEl.textContent = 'Standing & Account Safety Hub';
+    if (typeof window.updateAxSecurityBadges === 'function') window.updateAxSecurityBadges();
+  } else if (subView === 'standing') {
+    if (standingView) standingView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Account Standing';
+    if (subEl) subEl.textContent = 'Standing & Guidelines';
+    const profile = window.userProfile || window.guestProfile || {};
+    if (window.accountStanding && profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
+      window.accountStanding.refreshUserStanding(profile.uid);
+    }
+  } else if (subView === 'activity') {
+    if (activityView) activityView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Account Activity';
+    if (subEl) subEl.textContent = 'Sessions & Hardware Audit';
+    if (typeof window.updateAxSecurityBadges === 'function') window.updateAxSecurityBadges();
+  } else if (subView === 'devices') {
+    if (devicesView) devicesView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Logged-in Devices';
+    if (subEl) subEl.textContent = 'Account Activity & Devices';
+    if (window.axCachedSessions && typeof window.renderLoggedInDevices === 'function') {
+      window.renderLoggedInDevices(window.axCachedSessions);
+    } else if (typeof window.refreshLoggedInDevices === 'function') {
+      window.refreshLoggedInDevices();
+    }
+  } else if (subView === 'link-accounts') {
+    if (linkAccountsView) linkAccountsView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'Link Accounts';
+    if (subEl) subEl.textContent = 'Third-Party Identity Connections';
+    if (typeof window.renderDiscordAuthWidget === 'function') window.renderDiscordAuthWidget();
+  } else if (subView === '2fa') {
+    if (twoFaView) twoFaView.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = '2 Factor Authentication';
+    if (subEl) subEl.textContent = 'Login Verification Security';
+    if (typeof window.renderTwoFactorAuthWidget === 'function') {
+      window.renderTwoFactorAuthWidget();
+    }
+  }
+};
+
+/**
  * Opens the AX Security Modal from Profile Settings
  */
-window.openAxSecurityModal = function() {
-  window.renderDiscordAuthWidget();
+window.openAxSecurityModal = function(initialSubView) {
+  if (typeof window.renderDiscordAuthWidget === 'function') window.renderDiscordAuthWidget();
   if (typeof window.renderTwoFactorAuthWidget === 'function') {
     window.renderTwoFactorAuthWidget();
   }
-  const profile = userProfile || guestProfile || {};
+  const profile = window.userProfile || window.guestProfile || {};
   if (window.accountStanding) {
     if (profile.uid && typeof window.accountStanding.refreshUserStanding === 'function') {
       window.accountStanding.refreshUserStanding(profile.uid);
@@ -7063,16 +7692,20 @@ window.openAxSecurityModal = function() {
     if (typeof window.accountStanding.fetchAiStandingRecommendations === 'function') {
       window.accountStanding.fetchAiStandingRecommendations(false);
     }
-  } else {
+  } else if (typeof window.updateDiscordSecurityUI === 'function') {
     window.updateDiscordSecurityUI();
   }
   
   // Also refresh logged-in devices if listener has cached data or sync
-  if (window.axCachedSessions) {
+  if (window.axCachedSessions && typeof window.renderLoggedInDevices === 'function') {
     window.renderLoggedInDevices(window.axCachedSessions);
-  } else if (profile.uid) {
+  } else if (profile.uid && typeof window.refreshLoggedInDevices === 'function') {
     window.refreshLoggedInDevices();
   }
+
+  // Open requested subview or main 4-button menu
+  window.showAxSecuritySubView(initialSubView || null);
+  if (typeof window.updateAxSecurityBadges === 'function') window.updateAxSecurityBadges();
 
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.remove('hidden');
@@ -7081,7 +7714,7 @@ window.openAxSecurityModal = function() {
 window.closeAxSecurityModal = function() {
   const modal = $('mAxSecurityModal');
   if (modal) modal.classList.add('hidden');
-  window.hideLoggedInDevicesView();
+  window.showAxSecuritySubView(null);
 };
 
 // ============================================================================
@@ -7490,26 +8123,18 @@ window.renderLoggedInDevices = function(sessions) {
       }).join('');
     }
   }
-};
 
-window.showLoggedInDevicesView = function() {
-  if ($('axSecurityMainView')) $('axSecurityMainView').classList.add('hidden');
-  if ($('axSecurityDevicesView')) $('axSecurityDevicesView').classList.remove('hidden');
-  if ($('axSecurityModalTitle')) $('axSecurityModalTitle').textContent = 'Logged-in Devices';
-  if ($('axSecurityModalSubtitle')) $('axSecurityModalSubtitle').textContent = 'Account Activity & Devices';
-
-  if (window.axCachedSessions) {
-    window.renderLoggedInDevices(window.axCachedSessions);
-  } else {
-    window.refreshLoggedInDevices();
+  if (typeof window.updateAxSecurityBadges === 'function') {
+    window.updateAxSecurityBadges();
   }
 };
 
+window.showLoggedInDevicesView = function() {
+  window.showAxSecuritySubView('devices');
+};
+
 window.hideLoggedInDevicesView = function() {
-  if ($('axSecurityMainView')) $('axSecurityMainView').classList.remove('hidden');
-  if ($('axSecurityDevicesView')) $('axSecurityDevicesView').classList.add('hidden');
-  if ($('axSecurityModalTitle')) $('axSecurityModalTitle').textContent = 'AX Security';
-  if ($('axSecurityModalSubtitle')) $('axSecurityModalSubtitle').textContent = 'Standing & Account Safety Hub';
+  window.showAxSecuritySubView('activity');
 };
 
 window.refreshLoggedInDevices = async function() {
@@ -7702,8 +8327,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const bCloseAxCross = $('bCloseAxSecurityCross');
   if (bCloseAxCross) {
     bCloseAxCross.addEventListener('click', () => {
-      if ($('axSecurityDevicesView') && !$('axSecurityDevicesView').classList.contains('hidden')) {
-        window.hideLoggedInDevicesView();
+      if (window.currentAxSecuritySubView === 'devices') {
+        window.showAxSecuritySubView('activity');
+      } else if (window.currentAxSecuritySubView) {
+        window.showAxSecuritySubView(null);
       } else {
         window.closeAxSecurityModal();
       }
