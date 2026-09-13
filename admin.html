@@ -1223,6 +1223,16 @@
         </button>
 
         <button
+          id="tabBtn-creator-requests"
+          onclick="switchAdminTab('creator-requests')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-certificate text-purple-400"></i>
+          <span>AX Creator Requests</span>
+          <span id="tabBadgeCreatorRequests" class="hidden px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-extrabold font-mono">0</span>
+        </button>
+
+        <button
           id="tabBtn-broadcast"
           onclick="switchAdminTab('broadcast')"
           class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
@@ -1622,7 +1632,62 @@
             </div>
           </div>
         </div>
+      </section>
 
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB: AX CREATOR REQUESTS -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-creator-requests" class="hidden space-y-6">
+        <!-- Header & Filter Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-cardBg border border-bdr p-5 rounded-2xl shadow-lg">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-black uppercase tracking-wider">
+                Esports Creator Access
+              </span>
+              <span id="creatorRequestsCountBadge" class="text-xs font-mono font-bold text-slate-400">0 Total</span>
+            </div>
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2 mt-1">
+              <i class="fas fa-certificate text-purple-400"></i> AX Creator Applications
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Approve or reject player requests to gain AX Creator status required for establishing esports teams.</p>
+          </div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <select id="filterCreatorRequestsStatus" onchange="renderCreatorRequestsTable()" class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-purple-400 cursor-pointer">
+              <option value="pending">Pending Review Only</option>
+              <option value="all">All Applications</option>
+              <option value="approved">Approved Creators</option>
+              <option value="rejected">Rejected Applications</option>
+            </select>
+            <button onclick="refreshCreatorRequests()" class="px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Applications Table Container -->
+        <div class="bg-cardBg border border-bdr rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-[#0e1220] border-b border-bdr text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="p-4">Applicant Profile</th>
+                  <th class="p-4">UID / Handle</th>
+                  <th class="p-4">Requested Date</th>
+                  <th class="p-4 text-center">Status</th>
+                  <th class="p-4 text-right">Moderator Actions</th>
+                </tr>
+              </thead>
+              <tbody id="creatorRequestsTableBody" class="divide-y divide-bdr/50">
+                <tr>
+                  <td colspan="5" class="p-10 text-center text-slate-500">
+                    <i class="fas fa-spinner animate-spin mr-2 text-purple-400"></i> Loading AX Creator requests...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1848,6 +1913,81 @@
               <i class="fas fa-check mr-1.5"></i> Save Settings
             </button>
 
+            <!-- APK Auto-Update Release Manager -->
+            <div class="p-5 bg-[#0d101a] border border-emerald-500/30 rounded-2xl space-y-3.5 mt-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                  <i class="fab fa-android text-base"></i> APK Auto-Update Release Manager
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">app_config/version</span>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                When you upload a new APK to GitHub Releases, update the release info below. All ArenaX Android apps will automatically detect it on launch and prompt users with a one-tap update.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">Latest Version (e.g. 1.1.0):</label>
+                  <input
+                    id="settApkLatestVersion"
+                    type="text"
+                    placeholder="1.1.0"
+                    value="1.1.0"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white font-mono mt-1 outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">Mandatory Update:</label>
+                  <div class="flex items-center h-10 mt-1">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input id="settApkMandatory" type="checkbox" class="sr-only peer" />
+                      <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                      <span class="ml-2 text-xs text-slate-300">Force update (no dismiss)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-xs">
+                <label class="text-[11px] text-slate-400 font-semibold">Direct APK Download URL (GitHub Releases):</label>
+                <input
+                  id="settApkDownloadUrl"
+                  type="url"
+                  placeholder="https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk"
+                  value="https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk"
+                  class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white font-mono mt-1 outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div class="text-xs">
+                <label class="text-[11px] text-slate-400 font-semibold">Release Notes (What's New):</label>
+                <textarea
+                  id="settApkReleaseNotes"
+                  rows="3"
+                  placeholder="• What is new in this release..."
+                  class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white text-xs mt-1 outline-none focus:border-emerald-400"
+                >• One-Tap auto update system with native APK installer integration
+• Enhanced tournament live match sync
+• Performance optimizations & UI polish</textarea>
+              </div>
+
+              <div class="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onclick="loadApkVersionConfig()"
+                  class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <i class="fas fa-sync-alt"></i> Load From Firestore
+                </button>
+                <button
+                  type="button"
+                  onclick="saveApkVersionConfig()"
+                  class="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition cursor-pointer shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                >
+                  <i class="fas fa-cloud-upload-alt"></i> Publish Version Update
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -1970,6 +2110,7 @@
     let rawUsers = [];
     let rawReports = [];
     let rawProfileReports = [];
+    let rawCreatorRequests = [];
     let currentAdminIdentity = null;
 
     // Helper element selector
@@ -2369,12 +2510,42 @@
       } catch (e) {
         console.warn("Profile reports listener failed:", e);
       }
+      // 7. AX Creator Requests
+      try {
+        onSnapshot(
+          collection(window.fbDb, 'ax_creator_requests'),
+          (snap) => {
+            const list = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+            rawCreatorRequests = list;
+            updateCreatorRequestsStats();
+            renderCreatorRequestsTable();
+          },
+          async (err) => {
+            console.warn("AX Creator requests snapshot warning:", err);
+            try {
+              if (window.fsTools?.getDocs && window.fbDb) {
+                const snap = await window.fsTools.getDocs(collection(window.fbDb, 'ax_creator_requests'));
+                const list = [];
+                snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+                rawCreatorRequests = list;
+                updateCreatorRequestsStats();
+                renderCreatorRequestsTable();
+              }
+            } catch (fallbackErr) {
+              console.warn("AX Creator requests fallback error:", fallbackErr);
+            }
+          }
+        );
+      } catch (e) {
+        console.warn("AX Creator requests listener failed:", e);
+      }
     }
 
     // 3. Tab Switching
     function switchAdminTab(tabName) {
       activeTab = tabName;
-      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'broadcast', 'bot', 'settings'];
+      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'creator-requests', 'broadcast', 'bot', 'settings'];
       
       tabs.forEach((t) => {
         const btn = $(`tabBtn-${t}`);
@@ -2392,6 +2563,8 @@
 
       if (tabName === 'profile-reports') {
         renderProfileReportsTable();
+      } else if (tabName === 'creator-requests') {
+        renderCreatorRequestsTable();
       }
     }
 
@@ -2744,6 +2917,16 @@
                 >
                   ${isVip ? 'VIP Crown 👑' : '+ VIP Plan'}
                 </button>
+
+                <button
+                  onclick="toggleUserAXCreator('${u.uid}', ${!u.isAXCreator})"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                    u.isAXCreator ? 'bg-purple-500/20 text-purple-300 border-purple-400/40' : 'bg-slate-800 text-slate-500 border-bdr'
+                  }"
+                  title="Toggle AX Creator (Esports team creation authorization)"
+                >
+                  ${u.isAXCreator ? 'AX Creator ★' : '+ AX Creator'}
+                </button>
               </div>
             </td>
 
@@ -3056,6 +3239,259 @@
         const { doc, deleteDoc } = window.fsTools;
         await deleteDoc(doc(window.fbDb, 'profile_reports', reportId));
         showAdminToast("Deleted", "Profile report record removed");
+      } catch (err) {
+        showAdminToast("Error", err.message, "error");
+      }
+    }
+
+    // ==========================================
+    // AX CREATOR APPLICATION ADMINISTRATION
+    // ==========================================
+    function updateCreatorRequestsStats() {
+      const pending = rawCreatorRequests.filter((r) => (r.status || 'pending') === 'pending');
+      const badge = $('tabBadgeCreatorRequests');
+      if (badge) {
+        if (pending.length > 0) {
+          badge.textContent = pending.length;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      const countEl = $('creatorRequestsCountBadge');
+      if (countEl) {
+        countEl.textContent = `${rawCreatorRequests.length} Total (${pending.length} Pending)`;
+      }
+    }
+
+    async function refreshCreatorRequests() {
+      try {
+        if (window.fsTools?.getDocs && window.fbDb) {
+          const { collection, getDocs } = window.fsTools;
+          const snap = await getDocs(collection(window.fbDb, 'ax_creator_requests'));
+          const list = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+          rawCreatorRequests = list;
+          updateCreatorRequestsStats();
+          renderCreatorRequestsTable();
+          showAdminToast("Refreshed", "AX Creator applications refreshed successfully.");
+        }
+      } catch (err) {
+        showAdminToast("Error", err.message, "error");
+      }
+    }
+
+    function renderCreatorRequestsTable() {
+      const tbody = $('creatorRequestsTableBody');
+      if (!tbody) return;
+
+      const statusFilter = $('filterCreatorRequestsStatus')?.value || 'pending';
+      let filtered = [...rawCreatorRequests];
+
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter((r) => (r.status || 'pending') === statusFilter);
+      }
+
+      // Sort newest first
+      filtered.sort((a, b) => {
+        const tA = a.requestedAt?.toMillis ? a.requestedAt.toMillis() : (a.requestedAt?.seconds ? a.requestedAt.seconds * 1000 : new Date(a.requestedAt || 0).getTime());
+        const tB = b.requestedAt?.toMillis ? b.requestedAt.toMillis() : (b.requestedAt?.seconds ? b.requestedAt.seconds * 1000 : new Date(b.requestedAt || 0).getTime());
+        return tB - tA;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-12 text-center text-slate-500">
+              <div class="flex flex-col items-center justify-center gap-2">
+                <i class="fas fa-certificate text-3xl text-purple-400/40"></i>
+                <p class="text-sm font-bold text-slate-300">No AX Creator applications found</p>
+                <p class="text-xs text-slate-500">Applications will appear here when players request creator privileges to create teams.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((r) => {
+        const uid = r.uid || '';
+        const user = rawUsers.find((u) => u.uid === uid || u.id === uid) || {};
+        const name = r.name || user.name || user.userName || 'ArenaX Player';
+        const handle = r.handle || user.handle || 'player';
+        const avatar = user.av || user.avatar || r.av || r.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${uid}`;
+        const status = r.status || 'pending';
+        const isCurrentCreator = user.isAXCreator === true;
+
+        // Date formatting
+        let dateStr = 'Recently';
+        if (r.requestedAt) {
+          const dt = r.requestedAt.toDate ? r.requestedAt.toDate() : (r.requestedAt.seconds ? new Date(r.requestedAt.seconds * 1000) : new Date(r.requestedAt));
+          dateStr = dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Status Badge
+        let statusBadge = '';
+        if (status === 'pending') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 justify-center"><i class="fas fa-clock text-[9px]"></i> Pending</span>`;
+        } else if (status === 'approved') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 justify-center"><i class="fas fa-check-circle text-[9px]"></i> Approved</span>`;
+        } else {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 justify-center"><i class="fas fa-times-circle text-[9px]"></i> Rejected</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-cardBgHover/50 transition">
+            <!-- Applicant Profile & View Link -->
+            <td class="p-4">
+              <div class="flex items-center gap-3">
+                <img src="${avatar}" class="w-10 h-10 rounded-xl object-cover bg-slate-800 border border-purple-500/30 cursor-pointer hover:border-purple-400 transition shadow" onclick="openAdminInspectProfileModal('${uid}')" title="Inspect Player Profile" />
+                <div>
+                  <div class="font-black text-white flex items-center gap-1.5">
+                    <span>${name}</span>
+                    ${isCurrentCreator ? '<span class="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-400/40 text-[9px] font-black uppercase">Creator Active</span>' : ''}
+                  </div>
+                  <button onclick="openAdminInspectProfileModal('${uid}')" class="text-[11px] text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 mt-0.5 cursor-pointer font-semibold">
+                    <i class="fas fa-external-link-alt text-[9px]"></i> View Profile
+                  </button>
+                </div>
+              </div>
+            </td>
+
+            <!-- UID & Handle -->
+            <td class="p-4">
+              <div class="text-xs text-slate-300 font-bold">@${handle}</div>
+              <div class="text-[10px] font-mono text-slate-500 select-all">${uid}</div>
+            </td>
+
+            <!-- Requested Date -->
+            <td class="p-4">
+              <div class="text-xs text-slate-300 font-medium">${dateStr}</div>
+              <div class="text-[10px] text-slate-500">Tier: Esports Team Leader</div>
+            </td>
+
+            <!-- Status -->
+            <td class="p-4 text-center">
+              ${statusBadge}
+            </td>
+
+            <!-- Actions -->
+            <td class="p-4 text-right">
+              <div class="flex items-center justify-end gap-2 flex-wrap">
+                ${status === 'pending' ? `
+                  <button onclick="approveCreatorRequest('${r.id}', '${uid}', '${(name).replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer active:scale-95">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                  <button onclick="rejectCreatorRequest('${r.id}', '${uid}', '${(name).replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                ` : status === 'approved' ? `
+                  <button onclick="revokeCreatorStatus('${r.id}', '${uid}', '${(name).replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-xl transition cursor-pointer">
+                    <i class="fas fa-undo mr-1"></i> Revoke Creator
+                  </button>
+                ` : `
+                  <button onclick="approveCreatorRequest('${r.id}', '${uid}', '${(name).replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition cursor-pointer">
+                    <i class="fas fa-redo mr-1"></i> Re-Approve
+                  </button>
+                `}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveCreatorRequest(reqId, uid, name) {
+      if (!confirm(`Grant AX Creator status to ${name}?\\n\\nThis will allow them to establish, customize, and lead esports teams on ArenaX.`)) return;
+      try {
+        const { doc, updateDoc, collection, addDoc, serverTimestamp } = window.fsTools;
+        
+        // 1. Set isAXCreator: true on the user's Firestore document
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          isAXCreator: true
+        });
+
+        // 2. Update the request status to 'approved'
+        await updateDoc(doc(window.fbDb, 'ax_creator_requests', reqId), {
+          status: 'approved',
+          reviewedAt: serverTimestamp ? serverTimestamp() : new Date()
+        });
+
+        // 3. Send official in-game mail notification
+        try {
+          await addDoc(collection(window.fbDb, 'users', uid, 'mails'), {
+            type: 'ax_creator_approval',
+            sender: 'ArenaX Esports Administration',
+            title: 'AX Creator Status Approved! 👑',
+            body: `Congratulations ${name}! Your application for AX Creator status has been approved by the Admin team. You now have official creator privileges to establish, manage, and recruit for your own esports teams!`,
+            createdAt: serverTimestamp ? serverTimestamp() : new Date(),
+            read: false
+          });
+        } catch (mailErr) {
+          console.warn("Could not deliver mail notice:", mailErr);
+        }
+
+        showAdminToast("AX Creator Approved", `🎉 Granted AX Creator status to ${name}!`);
+        // Refresh local cache
+        const localUser = rawUsers.find((u) => u.uid === uid || u.id === uid);
+        if (localUser) localUser.isAXCreator = true;
+        renderUsersTable();
+      } catch (err) {
+        console.error("Failed to approve AX Creator request:", err);
+        showAdminToast("Approval Error", err.message, "error");
+      }
+    }
+
+    async function rejectCreatorRequest(reqId, uid, name) {
+      if (!confirm(`Reject AX Creator application for ${name}?`)) return;
+      try {
+        const { doc, updateDoc, serverTimestamp } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'ax_creator_requests', reqId), {
+          status: 'rejected',
+          reviewedAt: serverTimestamp ? serverTimestamp() : new Date()
+        });
+        showAdminToast("Request Rejected", `Application for ${name} marked as rejected.`);
+      } catch (err) {
+        console.error("Failed to reject AX Creator request:", err);
+        showAdminToast("Rejection Error", err.message, "error");
+      }
+    }
+
+    async function revokeCreatorStatus(reqId, uid, name) {
+      if (!confirm(`Revoke AX Creator status from ${name}? They will no longer be able to create new esports teams.`)) return;
+      try {
+        const { doc, updateDoc, serverTimestamp } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          isAXCreator: false
+        });
+        if (reqId) {
+          await updateDoc(doc(window.fbDb, 'ax_creator_requests', reqId), {
+            status: 'rejected',
+            revokedAt: serverTimestamp ? serverTimestamp() : new Date()
+          });
+        }
+        showAdminToast("Status Revoked", `AX Creator status removed from ${name}.`);
+        const localUser = rawUsers.find((u) => u.uid === uid || u.id === uid);
+        if (localUser) localUser.isAXCreator = false;
+        renderUsersTable();
+      } catch (err) {
+        console.error("Failed to revoke AX Creator status:", err);
+        showAdminToast("Revocation Error", err.message, "error");
+      }
+    }
+
+    async function toggleUserAXCreator(uid, makeCreator) {
+      const user = rawUsers.find((u) => u.uid === uid || u.id === uid);
+      const name = user ? (user.name || user.userName || 'Player') : uid;
+      if (!confirm(`${makeCreator ? 'Grant' : 'Revoke'} AX Creator status ${makeCreator ? 'to' : 'from'} ${name}?`)) return;
+      try {
+        const { doc, updateDoc } = window.fsTools;
+        await updateDoc(doc(window.fbDb, 'users', uid), {
+          isAXCreator: makeCreator
+        });
+        if (user) user.isAXCreator = makeCreator;
+        renderUsersTable();
+        showAdminToast("Updated", `AX Creator status for ${name} is now ${makeCreator ? 'ACTIVE' : 'INACTIVE'}`);
       } catch (err) {
         showAdminToast("Error", err.message, "error");
       }
@@ -3575,6 +4011,67 @@
     function saveSystemSettings() {
       showAdminToast("⚙️ Settings Saved", "Payment numbers and operational preferences updated!");
     }
+
+    // ── APK AUTO-UPDATE CONFIGURATION (app_config/version) ──
+    async function loadApkVersionConfig() {
+      try {
+        const db = window.fbDb || window.db;
+        if (!db || typeof getDoc !== 'function' || typeof doc !== 'function') {
+          showAdminToast("⚠️ Firestore Connecting", "Please wait a moment and try again.");
+          return;
+        }
+        const snap = await getDoc(doc(db, 'app_config', 'version'));
+        if (snap.exists()) {
+          const data = snap.data();
+          if ($('settApkLatestVersion')) $('settApkLatestVersion').value = data.latestVersion || '1.1.0';
+          if ($('settApkDownloadUrl')) $('settApkDownloadUrl').value = data.downloadUrl || '';
+          if ($('settApkReleaseNotes')) $('settApkReleaseNotes').value = data.releaseNotes || '';
+          if ($('settApkMandatory')) $('settApkMandatory').checked = !!data.mandatory;
+          showAdminToast("✅ Config Loaded", `Current release in Firestore is v${data.latestVersion || '1.1.0'}`);
+        } else {
+          showAdminToast("ℹ️ No Config Yet", "app_config/version does not exist yet. Click 'Publish Version Update' to create it.");
+        }
+      } catch (err) {
+        console.error("Error loading APK config:", err);
+        showAdminToast("❌ Load Failed", err.message, "error");
+      }
+    }
+
+    async function saveApkVersionConfig() {
+      try {
+        const db = window.fbDb || window.db;
+        if (!db || typeof setDoc !== 'function' || typeof doc !== 'function') {
+          showAdminToast("⚠️ Firestore Error", "Database not ready yet.");
+          return;
+        }
+        const latestVersion = ($('settApkLatestVersion')?.value || '').trim() || '1.1.0';
+        const downloadUrl = ($('settApkDownloadUrl')?.value || '').trim();
+        const releaseNotes = ($('settApkReleaseNotes')?.value || '').trim();
+        const mandatory = !!$('settApkMandatory')?.checked;
+
+        if (!downloadUrl) {
+          showAdminToast("⚠️ Missing Download URL", "Please provide the APK download URL.", "error");
+          return;
+        }
+
+        await setDoc(doc(db, 'app_config', 'version'), {
+          latestVersion,
+          downloadUrl,
+          releaseNotes,
+          mandatory,
+          updatedAt: new Date().toISOString(),
+          updatedBy: window.currentAdminUser?.email || 'Admin'
+        }, { merge: true });
+
+        showAdminToast("🚀 Release Published", `Version v${latestVersion} is now live for all ArenaX apps!`);
+      } catch (err) {
+        console.error("Error publishing APK version:", err);
+        showAdminToast("❌ Publish Failed", err.message, "error");
+      }
+    }
+
+    window.loadApkVersionConfig = loadApkVersionConfig;
+    window.saveApkVersionConfig = saveApkVersionConfig;
 
     // ── ARENAX ADMIN MODERATION & PUNISHMENT DOSSIER ENGINE ──
     let currentModeratingUid = null;
