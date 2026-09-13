@@ -1449,7 +1449,7 @@ html, body {
     </div>
     <div class="flex items-center gap-2">
       <!-- App Download Button (Direct APK Download) -->
-      <a id="btnDownloadApp" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white border border-emerald-400/40 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-[0_0_12px_rgba(16,185,129,0.25)] hover:shadow-[0_0_20px_rgba(16,185,129,0.45)] active:scale-[0.98] cursor-pointer z-50 no-underline whitespace-nowrap" title="Download ArenaX App (Android APK)">
+      <a id="btnDownloadApp" href="https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk" target="_blank" rel="noopener noreferrer" download="ArenaX.apk" class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white border border-emerald-400/40 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-[0_0_12px_rgba(16,185,129,0.25)] hover:shadow-[0_0_20px_rgba(16,185,129,0.45)] active:scale-[0.98] cursor-pointer z-50 no-underline whitespace-nowrap" title="Download ArenaX App (Android APK)">
         <i class="fab fa-android text-sm text-white"></i>
         <span>Download ArenaX App</span>
       </a>
@@ -1651,9 +1651,12 @@ html, body {
 
           <!-- User Details -->
           <div class="min-w-0 flex-1 space-y-0.5">
-            <h3 id="pName" class="font-display text-xl font-bold text-white leading-tight flex items-center gap-1.5 truncate">
-              Player
-            </h3>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 id="pName" class="font-display text-xl font-bold text-white leading-tight flex items-center gap-1.5 truncate">
+                Player
+              </h3>
+              <span id="pRoleBadge" class="hidden px-2 py-0.5 text-[9px] font-black bg-gold/15 text-gold rounded-full border border-gold/40 uppercase items-center gap-1 shadow-sm"></span>
+            </div>
             <p id="pHandle" class="text-xs text-amber-200/80 font-medium truncate">@player#0000</p>
             
             <button id="btnViewActivity" class="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer">
@@ -1666,6 +1669,9 @@ html, body {
               <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded-full border border-neutral-700 uppercase hidden">Guest</span>
               <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 uppercase hidden">
                 <i class="fas fa-crown mr-1"></i> Premium
+              </span>
+              <span id="pAXCreatorBadge" class="px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-violet-600/25 to-indigo-600/25 text-violet-300 rounded-full border border-violet-400/40 uppercase hidden items-center gap-1 shadow-sm">
+                <i class="fas fa-certificate text-violet-400"></i> AX Creator
               </span>
               <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20 uppercase hidden">
                 <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
@@ -2940,7 +2946,7 @@ html, body {
     </div>
 
     <!-- App Download Card in Menu Hub -->
-    <a id="btnHubInstallApp" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="bg-card hover:bg-ele/60 border border-emerald-500/30 hover:border-emerald-400/50 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] no-underline">
+    <a id="btnHubInstallApp" href="https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk" target="_blank" rel="noopener noreferrer" download="ArenaX.apk" class="bg-card hover:bg-ele/60 border border-emerald-500/30 hover:border-emerald-400/50 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition active:scale-[0.98] no-underline">
       <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-lg flex-shrink-0">
         <i class="fab fa-android"></i>
       </div>
@@ -4336,6 +4342,23 @@ html, body {
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[9px] bg-purple/15 text-purple border border-purple/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            </div>
+          </button>
+
+          <!-- Esports Player Role -->
+          <button id="btnSettingsChangeRole" onclick="if($('mSettings')) $('mSettings').classList.add('hidden'); window.openRoleSelectionModal(true);" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-gold/15 text-gold flex items-center justify-center text-sm flex-shrink-0 border border-gold/30">
+                <i id="icoSettingsRole" class="fas fa-crosshairs"></i>
+              </div>
+              <div>
+                <span class="font-medium text-white group-hover:text-gold transition block">Esports Role</span>
+                <span id="lblSettingsRoleSubtitle" class="text-[10px] text-t3 font-normal">Combat specialization</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="badgeSettingsRole" class="text-[9px] bg-gold/20 text-gold border border-gold/30 px-2 py-0.5 rounded-full font-bold uppercase">Not Set</span>
               <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
             </div>
           </button>
@@ -6108,9 +6131,12 @@ html, body {
 
         <!-- Name & Country on Right Side -->
         <div class="flex-1 pl-2 pt-2">
-          <h2 id="vppName" class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-1.5">
-            Player Name
-          </h2>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 id="vppName" class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-1.5">
+              Player Name
+            </h2>
+            <span id="vppRoleTag" class="hidden px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm items-center gap-1"></span>
+          </div>
           <div id="vppCountryRow" class="flex items-center gap-1.5 text-xs text-gray-500 font-medium mt-0.5">
             <span id="vppCountryFlag" class="text-sm">🇵🇰</span>
             <span id="vppCountryName">Pakistan</span>
@@ -6122,6 +6148,10 @@ html, body {
       <div class="flex items-center gap-2 mt-2 text-xs flex-wrap pb-2">
         <span class="bg-purple-100 text-purple-600 px-2.5 py-0.5 rounded-full font-extrabold" id="vppScoreBadge">
           33
+        </span>
+        <span id="vppRoleBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm items-center gap-1"></span>
+        <span id="vppAXCreatorBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-violet-950 text-violet-300 border border-violet-500/40 shadow-sm items-center gap-1">
+          <i class="fas fa-certificate text-violet-400"></i> AX Creator
         </span>
         <div id="vppUidContainer" class="flex items-center gap-1 text-gray-500 font-mono font-bold bg-gray-100 px-2.5 py-0.5 rounded-lg ml-1">
           <span id="vppGameUID">ID: 199813769</span>
@@ -7370,6 +7400,137 @@ html, body {
   </div>
 </div>
 
+<!-- ==================== ARENAX ESPORTS ROLE SELECTION (FULL-SCREEN) ==================== -->
+<div id="mRoleSelectionModal" class="fixed inset-0 z-[320] bg-[#0a0c12] text-white flex flex-col hidden overflow-y-auto animate-fade-in select-none">
+  <!-- Ambient Top Glow -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-64 bg-gradient-to-b from-gold/10 via-amber-500/5 to-transparent blur-3xl pointer-events-none"></div>
+
+  <!-- Top Bar -->
+  <div class="relative z-10 p-4 sm:p-6 flex items-center justify-between border-b border-bdr/20 bg-[#0a0c12]/80 backdrop-blur-md flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold text-sm shadow-sm">
+        <i class="fas fa-crosshairs"></i>
+      </div>
+      <div>
+        <span class="text-[9px] uppercase tracking-wider font-mono font-bold text-gold block">ARENAX ESPORTS</span>
+        <h2 class="text-sm sm:text-base font-black uppercase text-white tracking-wide">Combat Role System</h2>
+      </div>
+    </div>
+    <button id="btnCloseRoleSelection" type="button" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer border border-white/10" title="Close">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+  </div>
+
+  <!-- Content Body -->
+  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-lg w-full mx-auto p-4 sm:p-6 my-auto">
+    <!-- Header Text -->
+    <div class="text-center mb-6 sm:mb-8 space-y-2">
+      <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gold/15 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1.5">
+        <i class="fas fa-shield-alt text-xs"></i> Select Your Specialization
+      </span>
+      <h1 class="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-display">
+        Choose Your Role
+      </h1>
+      <p class="text-xs sm:text-sm text-t2 max-w-sm mx-auto leading-relaxed">
+        Your role defines your squad position in tournaments and team fights. Tap a box to confirm your archetype.
+      </p>
+    </div>
+
+    <!-- 2x2 Grid of Square Boxes -->
+    <div id="roleSelectionGrid" class="grid grid-cols-2 gap-3 sm:gap-4.5 w-full">
+      <!-- Populated dynamically by window.openRoleSelectionModal() with Rusher, Sniper, Boomer, Supporter -->
+    </div>
+
+    <!-- Bottom note -->
+    <p class="text-center text-[11px] text-t3 mt-6">
+      <i class="fas fa-info-circle text-gold/80 mr-1"></i> You can freely change your chosen role anytime in Profile Settings.
+    </p>
+  </div>
+</div>
+
+<!-- ==================== ARENAX ROLE CONFIRMATION MODAL ==================== -->
+<div id="mRoleConfirmModal" class="fixed inset-0 z-[330] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-fade-in select-none">
+  <div class="relative w-full max-w-sm rounded-3xl bg-[#0e101b] border-2 border-gold/40 p-6 sm:p-7 text-center shadow-[0_0_50px_rgba(240,192,64,0.2)] space-y-5 overflow-hidden">
+    <!-- Subtle Gold Ambient Backlight -->
+    <div class="absolute -top-12 -left-12 w-28 h-28 bg-gold/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute -bottom-12 -right-12 w-28 h-28 bg-gold/10 rounded-full blur-2xl pointer-events-none"></div>
+
+    <!-- Role Icon & Name Preview -->
+    <div id="roleConfirmPreview" class="relative z-10 space-y-1">
+      <!-- Injected by selectRoleForConfirm -->
+    </div>
+
+    <!-- Confirmation Question -->
+    <p id="roleConfirmText" class="relative z-10 text-xs sm:text-sm text-slate-200 leading-relaxed">
+      Select role as your combat archetype? You can change this later in settings.
+    </p>
+
+    <!-- Action Buttons -->
+    <div class="relative z-10 grid grid-cols-2 gap-3 pt-2">
+      <button id="btnRoleConfirmCancel" onclick="window.cancelRoleConfirm()" type="button" class="py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer active:scale-95">
+        Cancel
+      </button>
+      <button id="btnRoleConfirmYes" onclick="window.confirmRoleSelection()" type="button" class="py-3 px-4 rounded-xl bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg font-black text-xs uppercase tracking-wider transition shadow-lg hover:shadow-gold/30 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
+        Yes, Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SMART TEAM RECRUITMENT MODAL ==================== -->
+<div id="mTeamRecruitmentModal" class="fixed inset-0 z-[260] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden animate-fade-in select-none">
+  <div class="relative w-full max-w-lg bg-[#0c0d16] border border-gold/40 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <!-- Header -->
+    <div class="p-4 sm:p-5 border-b border-bdr/30 bg-[#0e101e] flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold text-base shadow-sm">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <div>
+          <span class="text-[9px] uppercase tracking-wider font-mono font-bold text-gold block">SQUAD RECRUITMENT</span>
+          <h3 class="text-sm sm:text-base font-black uppercase text-white tracking-wide">Recruit Team Members</h3>
+        </div>
+      </div>
+      <button onclick="window.closeTeamRecruitmentModal()" type="button" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer border border-white/10">
+        <i class="fas fa-times text-xs"></i>
+      </button>
+    </div>
+
+    <!-- Missing Roles Banner -->
+    <div class="p-4 bg-gradient-to-r from-[#141829] to-[#0d0f1a] border-b border-bdr/20 space-y-2 flex-shrink-0">
+      <div id="recruitMissingRolesDisplay" class="flex items-center gap-2 flex-wrap">
+        <!-- Injected dynamically: "Team Needs: [Boomer] [Supporter]" -->
+      </div>
+      <p class="text-[10px] text-t3 leading-tight">
+        Target 4/4 squad roster. Prioritize players whose roles match your squad's vacancies for maximum tournament synergy.
+      </p>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="p-4 border-b border-bdr/20 space-y-2.5 bg-[#090b12] flex-shrink-0">
+      <div class="relative">
+        <i class="fas fa-search absolute left-3.5 top-3 text-t3 text-xs"></i>
+        <input id="recruitPlayerSearchInput" oninput="window.renderRecruitCandidatesUI()" type="text" placeholder="Search players by name, handle, or role..." class="w-full bg-[#121422] border border-bdr rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-gold transition" />
+      </div>
+
+      <div class="flex items-center justify-between pt-0.5">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input id="chkPrioritizeNeededRoles" onchange="window.renderRecruitCandidatesUI()" type="checkbox" checked class="w-4 h-4 rounded accent-gold cursor-pointer" />
+          <span class="text-xs font-bold text-slate-200">Show players matching our needed roles first</span>
+        </label>
+        <button onclick="window.loadRecruitCandidates()" class="text-[10px] text-gold hover:underline font-bold flex items-center gap-1 cursor-pointer">
+          <i class="fas fa-sync-alt text-[9px]"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Candidate List -->
+    <div id="recruitPlayerListContainer" class="flex-1 overflow-y-auto p-4 space-y-2.5 min-h-[220px] scrollbar-thin">
+      <!-- Populated by loadRecruitCandidates() -->
+    </div>
+  </div>
+</div>
+
 <!-- Firebase Modular SDK Scripts via CDN -->
   <!-- Modularized Application Scripts -->
   <script type="module" src="./js/firebase-config.js"></script>
@@ -7377,6 +7538,7 @@ html, body {
   <script type="module" src="./js/playershow.js"></script>
   <script type="module" src="./js/gifts.js"></script>
   <script type="module" src="./js/chat.js"></script>
+  <script type="module" src="./js/roles.js"></script>
   <script type="module" src="./js/teams.js"></script>
   <script type="module" src="./js/voiceroom.js"></script>
   <script type="module" src="./js/moments.js"></script>
@@ -7701,7 +7863,7 @@ html, body {
             </div>
           </div>
         </div>
-        <a id="btnDownloadApkDirect" href="https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk" target="_blank" rel="noopener noreferrer" download="arenax.apk" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer no-underline">
+        <a id="btnDownloadApkDirect" href="https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk" target="_blank" rel="noopener noreferrer" download="ArenaX.apk" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow-md transition active:scale-[0.98] cursor-pointer no-underline">
           <i class="fab fa-android text-sm"></i> Download ArenaX App
         </a>
       </div>
@@ -7799,7 +7961,7 @@ html, body {
       if (btnDownloadApp) {
         btnDownloadApp.addEventListener('click', (e) => {
           // Open the latest ArenaX Android APK safely
-          const apkUrl = 'https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk';
+          const apkUrl = 'https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk';
           if (!btnDownloadApp.getAttribute('href')) {
             e.preventDefault();
             window.open(apkUrl, '_blank', 'noopener,noreferrer');
