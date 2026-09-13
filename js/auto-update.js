@@ -7,7 +7,7 @@ import { Capacitor } from '@capacitor/core';
 const CONFIG_COLLECTION = 'app_config';
 const CONFIG_DOC_ID = 'version';
 const DEFAULT_LATEST_VERSION = '1.1.0';
-const DEFAULT_DOWNLOAD_URL = 'https://github.com/kpllahore123-maker/arenaX/releases/download/v1.1.0/arenax.apk';
+const DEFAULT_DOWNLOAD_URL = 'https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk';
 const DEFAULT_RELEASE_NOTES = '• One-Tap auto update system with native APK installer integration\n• Enhanced tournament live match sync\n• Performance optimizations & UI polish';
 
 let isDownloading = false;
@@ -98,6 +98,12 @@ async function getRemoteVersionConfig() {
  * Display the Update Available modal
  */
 function showUpdateModal(currentVer, remoteConfig) {
+  // Never show APK update modal in a plain web browser
+  if (!Capacitor.isNativePlatform()) {
+    console.log('[AutoUpdate] Blocked showUpdateModal: running on web browser.');
+    return;
+  }
+
   pendingRemoteConfig = remoteConfig;
   const modal = document.getElementById('apkUpdateModal');
   if (!modal) return;
@@ -242,12 +248,21 @@ async function startUpdateDownload(remoteConfig) {
         console.warn('[AutoUpdate] Progress listener attachment note:', listenerErr);
       }
 
-      // Download APK to Cache directory (guaranteed accessible to FileProvider on modern Android)
-      const fileName = `arenax-v${targetConfig.latestVersion.replace(/\./g, '_')}.apk`;
+      // Clean up previous cached APK if present to ensure fresh download
+      const fileName = 'ArenaX.apk';
+      try {
+        await Filesystem.deleteFile({
+          path: fileName,
+          directory: Directory.Cache
+        });
+      } catch (cleanupErr) {
+        // File may not exist yet in cache, safe to continue
+      }
+
       if (statusText) statusText.innerHTML = '<i class="fas fa-arrow-circle-down fa-bounce text-xs text-emerald-400"></i> <span>Downloading update package...</span>';
 
       const downloadRes = await Filesystem.downloadFile({
-        url: targetConfig.downloadUrl,
+        url: targetConfig.downloadUrl || DEFAULT_DOWNLOAD_URL,
         path: fileName,
         directory: Directory.Cache,
         progress: true
@@ -337,6 +352,22 @@ async function startUpdateDownload(remoteConfig) {
  * Main function: check for update on startup or on demand
  */
 async function checkForUpdate(options = { isManual: false }) {
+  // CRITICAL REQUIREMENT:
+  // Update notifications and version checks must ONLY execute inside the native Capacitor APK.
+  // If running in a plain web browser (Chrome, Safari on arenax.cyou, etc.), skip the entire
+  // version check and update notification logic completely — do not even fetch version info from Firestore.
+  if (!Capacitor.isNativePlatform()) {
+    console.log('[AutoUpdate] Platform is Web / Browser (not native APK) — skipping version check and update notification completely.');
+    if (options.isManual) {
+      if (typeof window.showToastNotification === 'function') {
+        window.showToastNotification('Web Platform', 'Auto-updates are only available when running inside the ArenaX Android APK.');
+      } else {
+        alert('Auto-updates are only available inside the ArenaX Android APK.');
+      }
+    }
+    return { updateAvailable: false, skipped: true, platform: 'web' };
+  }
+
   try {
     const currentVersion = await getInstalledVersion();
     const remoteConfig = await getRemoteVersionConfig();
@@ -459,21 +490,24 @@ if (document.readyState === 'loading') {
 window.addEventListener('load', () => {
   initAutoUpdateUI();
 
-  // Run initial version check after 2 seconds
-  setTimeout(() => {
-    checkForUpdate({ isManual: false });
-  }, 2200);
+  // ONLY schedule version check if running inside native Capacitor Android APK
+  if (Capacitor.isNativePlatform()) {
+    // Run initial version check after 2 seconds
+    setTimeout(() => {
+      checkForUpdate({ isManual: false });
+    }, 2200);
 
-  // Re-check when app returns to foreground on native Android
-  try {
-    if (Capacitor.isNativePlatform()) {
+    // Re-check when app returns to foreground on native Android
+    try {
       App.addListener('appStateChange', (state) => {
         if (state && state.isActive) {
           checkForUpdate({ isManual: false });
         }
       });
+    } catch (e) {
+      // ignore
     }
-  } catch (e) {
-    // ignore
+  } else {
+    console.log('[AutoUpdate] Web platform detected. Automatic version check disabled.');
   }
 });
