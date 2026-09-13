@@ -34,6 +34,37 @@ try {
     adminDb = getAdminFirestore(adminApp);
     adminAuth = getAdminAuth(adminApp);
     console.log("[Firebase Admin] Firestore and Auth initialized successfully for project:", projectId);
+
+    // Ensure app_config/version exists with the latest GitHub releases download link
+    (async () => {
+      try {
+        if (adminDb) {
+          const versionDoc = adminDb.collection("app_config").doc("version");
+          const snap = await versionDoc.get();
+          if (!snap.exists) {
+            await versionDoc.set({
+              latestVersion: "1.1.0",
+              downloadUrl: "https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk",
+              releaseNotes: "• One-Tap auto update system with native APK installer integration\n• Enhanced tournament live match sync\n• Performance optimizations & UI polish",
+              mandatory: false,
+              updatedAt: new Date().toISOString()
+            });
+            console.log("[AutoUpdate] Bootstrapped app_config/version document in Firestore.");
+          } else {
+            const data = snap.data();
+            if (data?.downloadUrl && data.downloadUrl.includes("releases/download/v1.1.0")) {
+              await versionDoc.update({
+                downloadUrl: "https://github.com/kpllahore123-maker/arenaX/releases/latest/download/ArenaX.apk",
+                updatedAt: new Date().toISOString()
+              });
+              console.log("[AutoUpdate] Migrated app_config/version downloadUrl to latest GitHub release URL.");
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[AutoUpdate] Could not verify app_config/version on server startup:", err);
+      }
+    })();
   } else {
     console.warn("[Firebase Admin] Missing clientEmail or privateKey in environment.");
   }
