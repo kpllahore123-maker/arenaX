@@ -4599,11 +4599,11 @@ html, body {
               </div>
               <div>
                 <span class="font-medium text-white group-hover:text-emerald-300 transition block">Check for Updates</span>
-                <span class="text-[10px] text-t3 font-normal">ArenaX Android APK Auto-Update</span>
+                <span id="txtCheckAppUpdatesSub" class="text-[10px] text-t3 font-normal">ArenaX Android APK Auto-Update</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/20">Check</span>
+              <span id="badgeCheckAppUpdates" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/20">Check</span>
               <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
             </div>
           </button>
@@ -4968,6 +4968,236 @@ html, body {
         Cancel
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== 3-MINUTE FREE TOURNAMENT NOTIFICATION POPUP ==================== -->
+<div id="freeTournamentPopup" class="fixed bottom-24 sm:bottom-6 right-4 left-4 sm:left-auto sm:w-[420px] z-[250] hidden animate-slide-up">
+  <div onclick="window.openEventsSectionFromNotif()" class="p-4 bg-gradient-to-r from-[#0e1122] via-[#151936] to-[#0e1122] border-2 border-amber-400/80 hover:border-amber-300 rounded-2xl shadow-[0_10px_35px_rgba(245,158,11,0.35)] cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.99] relative overflow-hidden group">
+    <!-- Ambient glowing accents -->
+    <div class="absolute -top-10 -right-10 w-24 h-24 bg-amber-400/20 rounded-full blur-xl pointer-events-none"></div>
+    <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
+    
+    <div class="flex items-start gap-3.5 relative z-10">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-bg flex items-center justify-center text-xl shadow-lg shrink-0 group-hover:rotate-6 transition-transform">
+        <i class="fas fa-trophy"></i>
+      </div>
+      <div class="flex-1 pr-6">
+        <div class="flex items-center gap-1.5 mb-1">
+          <span class="px-2 py-0.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[9px] font-black uppercase tracking-wider rounded-md animate-pulse">
+            🔥 Special Alert
+          </span>
+          <span class="text-[10px] text-t3 font-medium">Just Now</span>
+        </div>
+        <h4 class="font-display font-black text-white text-sm leading-snug group-hover:text-amber-300 transition-colors">
+          Free tournaments are available!
+        </h4>
+        <p class="text-[11px] text-slate-300 mt-1 leading-normal">
+          Zero entry fee tournaments with real cash & AX Coin prize pools are open. Tap to enter the Events section now!
+        </p>
+      </div>
+    </div>
+
+    <!-- Dismiss Button -->
+    <button onclick="event.stopPropagation(); window.dismissFreeTourNotif();" class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-t3 hover:text-white flex items-center justify-center text-xs transition z-20" title="Dismiss">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Bottom Action Bar -->
+    <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs font-bold text-amber-300">
+      <span class="flex items-center gap-1 text-[11px] text-t2">
+        <i class="fas fa-bolt text-amber-400"></i> Instant Entry
+      </span>
+      <span class="flex items-center gap-1 text-[11px] group-hover:translate-x-1 transition-transform">
+        Open Events Section <i class="fas fa-arrow-right text-[9px]"></i>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOURNAMENT ENTRY DISCORD / WHATSAPP LOGIN GATE MODAL ==================== -->
+<div id="mTournamentEntryLoginGate" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-md z-[265] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0e101c] border border-indigo-500/40 rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/15 rounded-full filter blur-2xl pointer-events-none"></div>
+    <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-emerald-500/10 rounded-full filter blur-2xl pointer-events-none"></div>
+    
+    <div class="flex items-center justify-between border-b border-bdr/60 pb-3 relative z-10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-500/20 border border-indigo-500/40 rounded-xl flex items-center justify-center text-indigo-400 text-lg shadow-sm">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <div>
+          <h3 class="font-display text-base font-black text-white leading-tight">Confirm Tournament Entry</h3>
+          <p class="text-[10px] text-t3">ArenaX Verified Player Verification</p>
+        </div>
+      </div>
+      <button onclick="window.closeTournamentEntryGate()" type="button" class="text-t3 hover:text-white transition p-1 cursor-pointer">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+
+    <div class="p-3.5 bg-indigo-950/30 border border-indigo-500/25 rounded-xl space-y-1.5 relative z-10">
+      <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+        <i class="fas fa-info-circle text-xs text-indigo-400"></i> Login Required
+      </div>
+      <p class="text-xs text-slate-200 leading-relaxed">
+        To confirm your entry in <strong id="gateTourNameDisplay" class="text-amber-300">this tournament</strong> and verify player identity, please login via <strong class="text-indigo-300">Discord</strong> or <strong class="text-emerald-400">WhatsApp</strong>.
+      </p>
+    </div>
+
+    <!-- Login Options -->
+    <div class="space-y-3 relative z-10">
+      <!-- Option 1: Discord Login -->
+      <div class="p-3.5 bg-card/70 border border-bdr hover:border-indigo-500/50 rounded-xl space-y-2.5 transition">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#7289da] flex items-center justify-center text-base">
+              <i class="fab fa-discord"></i>
+            </div>
+            <div>
+              <h5 class="text-xs font-bold text-white leading-none">Option 1: Discord Login</h5>
+              <span class="text-[10px] text-t3">Connect official gamer ID</span>
+            </div>
+          </div>
+          <span id="gateDiscordStatusBadge" class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono font-bold">Unlinked</span>
+        </div>
+        <button onclick="window.handleGateDiscordLogin()" class="w-full py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition flex items-center justify-center gap-2 active:scale-95 shadow-md">
+          <i class="fab fa-discord"></i> Login via Discord
+        </button>
+      </div>
+
+      <!-- Option 2: WhatsApp Login -->
+      <div class="p-3.5 bg-card/70 border border-bdr hover:border-emerald-500/50 rounded-xl space-y-2.5 transition">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-base">
+              <i class="fab fa-whatsapp"></i>
+            </div>
+            <div>
+              <h5 class="text-xs font-bold text-white leading-none">Option 2: WhatsApp Login</h5>
+              <span class="text-[10px] text-t3">Confirm with phone number</span>
+            </div>
+          </div>
+          <span id="gateWhatsappStatusBadge" class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono font-bold">Unlinked</span>
+        </div>
+        
+        <div class="space-y-2">
+          <input id="gateWhatsappInput" type="tel" placeholder="e.g. +92 300 1234567" class="w-full bg-[#090b14] border border-bdr rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400 transition font-mono" />
+          <button onclick="window.handleGateWhatsappLogin()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition flex items-center justify-center gap-2 active:scale-95 shadow-md">
+            <i class="fab fa-whatsapp"></i> Login & Confirm via WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-1 flex gap-3 relative z-10">
+      <button onclick="window.closeTournamentEntryGate()" class="w-full py-2.5 bg-ele border border-bdr text-t2 font-semibold rounded-lg text-xs transition hover:text-white cursor-pointer">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOURNAMENT STARTED CRITICAL ANTI-CHEAT WARNING MODAL ==================== -->
+<div id="mTourHackWarningModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-lg z-[280] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-gradient-to-b from-[#18080a] via-[#100608] to-[#0a0405] border-2 border-red-500/80 rounded-2xl p-6 max-w-[480px] w-full space-y-4 shadow-[0_0_50px_rgba(239,68,68,0.45)] relative overflow-hidden">
+    <!-- Top Hazard Stripes Bar -->
+    <div class="h-2 w-full -mt-6 -mx-6 mb-4 bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_12px,#7f1d1d_12px,#7f1d1d_24px)] opacity-90"></div>
+
+    <div class="text-center space-y-2">
+      <div class="w-16 h-16 rounded-2xl bg-red-500/15 border-2 border-red-500/50 text-red-500 flex items-center justify-center text-3xl mx-auto shadow-[0_0_25px_rgba(239,68,68,0.5)] animate-pulse">
+        <i class="fas fa-shield-virus"></i>
+      </div>
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-widest">
+        <i class="fas fa-exclamation-triangle"></i> Mandatory Fair Play Notice
+      </div>
+      <h3 id="tourHackModalName" class="font-display text-xl font-black text-white uppercase tracking-wide">
+        Tournament Started!
+      </h3>
+      <p class="text-[11px] text-red-300 font-medium">Official Match Is Now Underway</p>
+    </div>
+
+    <!-- Exact Required Anti-Cheat Warning Quote -->
+    <div class="p-4 bg-red-950/50 border border-red-500/50 rounded-xl space-y-2 text-center shadow-inner">
+      <p class="text-xs text-white font-bold leading-relaxed">
+        "If any hack or cheat panel is detected on your account during this tournament, your account will be banned — whether it's a Simple or Blue Tick account — and the ban will apply to the entire team."
+      </p>
+    </div>
+
+    <!-- Security Check Details -->
+    <div class="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1.5 text-[11px] text-t3">
+      <div class="flex items-center justify-between text-t2 font-semibold">
+        <span><i class="fas fa-microchip text-red-400 mr-1.5"></i> Anti-Cheat Telemetry:</span>
+        <span class="text-emerald-400 font-mono">ACTIVE (100%)</span>
+      </div>
+      <div class="flex items-center justify-between text-t2 font-semibold">
+        <span><i class="fas fa-users-slash text-red-400 mr-1.5"></i> Violation Consequence:</span>
+        <span class="text-red-400 font-mono">Full Team Ban + DQ</span>
+      </div>
+    </div>
+
+    <button onclick="window.closeTourHackWarningModal()" class="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xl active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+      <i class="fas fa-shield-alt"></i> I Understand & Agree to Fair Play
+    </button>
+  </div>
+</div>
+
+<!-- ==================== BUY BLUE TICK MODAL ==================== -->
+<div id="mBuyBlueTickModal" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden animate-fade-in">
+  <div class="bg-[#0e101c] border border-blue-500/40 rounded-2xl p-6 max-w-[440px] w-full space-y-4 shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/20 rounded-full filter blur-2xl pointer-events-none"></div>
+
+    <div class="flex items-center justify-between border-b border-bdr/60 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-500/20 border border-blue-500/40 rounded-xl flex items-center justify-center text-blue-400 text-lg shadow-sm">
+          <img src="bluetick.png" class="w-6 h-6 object-contain" alt="Blue Tick" />
+        </div>
+        <div>
+          <h3 class="font-display text-base font-black text-white leading-tight">Get ArenaX Blue Tick</h3>
+          <p class="text-[10px] text-t3">Verified Player & Squad Privilege</p>
+        </div>
+      </div>
+      <button onclick="window.closeBuyBlueTickModal()" type="button" class="text-t3 hover:text-white transition p-1 cursor-pointer">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Blue Tick Benefits List -->
+    <div class="p-4 bg-blue-950/30 border border-blue-500/25 rounded-xl space-y-2.5">
+      <div class="text-[10px] text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+        <i class="fas fa-crown text-amber-400"></i> Exclusive Blue Tick Benefits
+      </div>
+      <ul class="space-y-1.5 text-xs text-slate-200">
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-blue-400 mt-0.5 text-[11px]"></i>
+          <span><strong>100% Free Entry into Select Tournaments:</strong> Get 1 out of every 5 tournaments free, or 3 out of every 10 tournaments free!</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-blue-400 mt-0.5 text-[11px]"></i>
+          <span><strong>Team-Wide Benefit:</strong> If your entire squad has Blue Tick, your team enters select tournaments with Rs. 0 entry fee!</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-blue-400 mt-0.5 text-[11px]"></i>
+          <span><strong>Verified Blue Tick Badge:</strong> Displays next to your name in Global Chat, Voice Rooms, Tournaments, and Leaderboards.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Price & Wallet Check -->
+    <div class="p-3 bg-card border border-bdr rounded-xl flex items-center justify-between">
+      <div>
+        <span class="text-[10px] text-t3 block">One-Time Fee</span>
+        <span class="text-white font-black text-lg font-display">Rs. 99 <span class="text-xs text-t3 font-normal">(99 AX Coins)</span></span>
+      </div>
+      <div class="text-right">
+        <span class="text-[10px] text-t3 block">Your Balance</span>
+        <span id="buyBlueTickUserBalance" class="text-amber-400 font-black text-xs font-mono">0 AX Coins</span>
+      </div>
+    </div>
+
+    <button id="btnConfirmBuyBlueTick" onclick="window.confirmBuyBlueTick()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-xl active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+      <img src="bluetick.png" class="w-4 h-4 object-contain inline-block" /> Buy Blue Tick Now
+    </button>
   </div>
 </div>
 
@@ -7224,6 +7454,127 @@ html, body {
     <!-- List -->
     <div id="whoReactedList" class="overflow-y-auto flex-1 space-y-2.5 pr-1 -mr-1">
       <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ── FULL-PAGE 3D ASSET DOWNLOAD LOADING SCREEN (CAPACITOR ANDROID APK ONLY) ── -->
+<div id="pPlayerShowDownloadScreen" class="fixed inset-0 z-[100060] hidden w-full h-full select-none overflow-hidden bg-black text-white">
+  <style>
+    .ps-bg-slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 1000ms ease-in-out;
+      pointer-events: none;
+      z-index: 1;
+      transform: scale(1.02);
+    }
+    .ps-bg-slide.active {
+      opacity: 1;
+      z-index: 2;
+    }
+  </style>
+
+  <!-- Auto-looping Slideshow Background Images covering ENTIRE screen (ps1.png, ps2.png, ps3.png) -->
+  <div id="psDownloadSlideshow" class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+    <div id="psSlide0" class="ps-bg-slide active" style="background-image: url('ps1.png');"></div>
+    <div id="psSlide1" class="ps-bg-slide" style="background-image: url('ps2.png');"></div>
+    <div id="psSlide2" class="ps-bg-slide" style="background-image: url('ps3.png');"></div>
+  </div>
+
+  <!-- Ambient Dark Vignette & Semi-Transparent Overlay for Legibility -->
+  <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/75 backdrop-blur-[1px] pointer-events-none z-[3]"></div>
+
+  <!-- Close / Cancel Button (top right) -->
+  <button
+    type="button"
+    onclick="window.cancelPlayerShowDownload()"
+    class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 active:scale-95 text-white/80 hover:text-white border border-white/15 backdrop-blur-md flex items-center justify-center transition cursor-pointer shadow-lg"
+    title="Cancel Download"
+  >
+    <i class="fas fa-xmark text-sm"></i>
+  </button>
+
+  <!-- Centered Content / Progress Overlay -->
+  <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center">
+    <!-- Semi-transparent dark gradient panel behind progress text -->
+    <div class="w-full max-w-sm mx-auto px-6 py-8 rounded-3xl bg-black/75 border border-white/15 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col items-center space-y-4">
+      
+      <!-- Icon with Gold Glow Accent -->
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f0c040]/25 to-[#f0c040]/5 border border-[#f0c040]/50 flex items-center justify-center text-[#f0c040] shadow-[0_0_25px_rgba(240,192,64,0.35)]">
+        <i class="fas fa-cube text-2xl animate-pulse"></i>
+      </div>
+
+      <!-- Text: "Downloading 3D Assets" -->
+      <div class="space-y-1">
+        <h3 class="font-display text-lg sm:text-xl font-black text-white uppercase tracking-wider">
+          Downloading 3D Assets
+        </h3>
+        <p id="psDownloadSubText" class="text-xs text-slate-300 font-medium">
+          Loading high-fidelity ArenaX 3D models...
+        </p>
+      </div>
+
+      <!-- Progress Bar (Driven by REAL download progress from @capacitor/filesystem) -->
+      <div class="w-full space-y-2 pt-1">
+        <div class="w-full h-3.5 bg-black/70 rounded-full overflow-hidden p-0.5 border border-white/15 shadow-inner">
+          <div
+            id="psDownloadProgressBar"
+            class="h-full bg-gradient-to-r from-[#f0c040] via-yellow-400 to-amber-500 rounded-full transition-all duration-150 ease-out shadow-[0_0_15px_rgba(240,192,64,0.7)]"
+            style="width: 0%;"
+          ></div>
+        </div>
+
+        <!-- Download Progress in MB and Percentage -->
+        <div class="flex items-center justify-between text-xs font-mono px-0.5">
+          <span id="psDownloadMbText" class="text-slate-200 font-semibold tracking-tight">
+            0.0 MB / 45.0 MB
+          </span>
+          <span id="psDownloadPercentText" class="text-[#f0c040] font-black">
+            0%
+          </span>
+        </div>
+      </div>
+
+      <!-- Status Indicator / Speed -->
+      <div id="psDownloadStatusInfo" class="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 pt-0.5 font-mono">
+        <i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i>
+        <span id="psDownloadStatusLabel">Connecting to asset server...</span>
+      </div>
+
+      <!-- Error Box (hidden unless download fails) -->
+      <div id="psDownloadErrorBox" class="w-full p-3 bg-rose-500/15 border border-rose-500/40 rounded-2xl text-left hidden space-y-2 mt-2">
+        <div class="flex items-center gap-2 text-rose-300 text-xs font-bold">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>Download Interrupted</span>
+        </div>
+        <p id="psDownloadErrorMsg" class="text-[11px] text-slate-300">
+          Could not complete 3D asset download. Please check your internet connection.
+        </p>
+        <div class="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            onclick="window.retryPlayerShowDownload()"
+            class="flex-1 py-2 bg-[#f0c040] hover:bg-[#e8b830] text-slate-950 font-black text-xs uppercase rounded-xl transition cursor-pointer shadow-md"
+          >
+            Retry Download
+          </button>
+          <button
+            type="button"
+            onclick="window.continueWithoutDownload()"
+            class="py-2 px-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase rounded-xl border border-white/10 transition cursor-pointer"
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
