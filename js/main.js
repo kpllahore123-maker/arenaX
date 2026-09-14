@@ -741,6 +741,7 @@ function boot() {
   if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
   if (typeof window.preloadRankingData === 'function') window.preloadRankingData();
   if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI(profile);
+  if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(profile);
 
   // 1. Profile Banner Theme (Premium only)
   const card = $('profileCard');
@@ -1302,6 +1303,7 @@ onAuthStateChanged(auth, async (fireUser) => {
         userProfile = { ...snap.data(), id: fireUser.uid, uid: fireUser.uid };
         window.userProfile = userProfile;
         window.currentUser = userProfile;
+        if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(userProfile);
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
         
@@ -1855,6 +1857,21 @@ function loadTournamentsList() {
       return timeB - timeA;
     });
 
+    // Step 5: Check for tournament start and broadcast hack/cheat panel warning to all players
+    if (!window.knownTournamentStatuses) {
+      window.knownTournamentStatuses = {};
+    }
+    toursData.forEach(t => {
+      const isNowLive = (t.status === 'live' || t.status === 'ongoing');
+      const prevStatus = window.knownTournamentStatuses[t.id];
+      if (isNowLive && prevStatus && prevStatus !== 'live' && prevStatus !== 'ongoing') {
+        if (typeof window.broadcastTournamentStartedHackWarning === 'function') {
+          window.broadcastTournamentStartedHackWarning(t);
+        }
+      }
+      window.knownTournamentStatuses[t.id] = t.status;
+    });
+
     // Automatically enforce 'soccer' accentTheme on any Champions, Soccer, or Football tournaments loaded from database
     toursData.forEach(t => {
       if (t.name && (t.name.toLowerCase().includes('champions') || t.name.toLowerCase().includes('soccer') || t.name.toLowerCase().includes('football'))) {
@@ -2025,9 +2042,12 @@ function renderTournaments() {
     return;
   }
 
-  filtered.forEach(t => {
+  filtered.forEach((t, index) => {
     const reg = userRegs[t.id];
     const borderCls = reg && reg.status === 'approved' ? 'border-green bg-green/5' : reg && reg.status === 'rejected' ? 'border-red/40 bg-red/5' : 'border-bdr';
+
+    const isBlueTickFreeTour = typeof window.isBlueTickSelectTournament === 'function' ? window.isBlueTickSelectTournament(t, index) : false;
+    const isUserEligibleForBlueTickFree = typeof window.isUserOrTeamBlueTickEligible === 'function' ? window.isUserOrTeamBlueTickEligible(userProfile) : false;
 
     let dynamicCardClasses = `p-4 bg-card border ${borderCls} rounded-xl space-y-3 relative transition hover:border-gold duration-200 cursor-pointer`;
     if (t.accentTheme === 'crimson') {
@@ -2077,6 +2097,11 @@ function renderTournaments() {
               <span class="px-2 py-0.5 bg-gold/15 border border-gold/30 text-gold text-[8px] font-black uppercase tracking-widest rounded-md">
                 SPECIAL EVENT
               </span>
+              ${isBlueTickFreeTour ? `
+                <span class="px-2 py-0.5 bg-blue-500/20 border border-blue-400/40 text-blue-300 text-[8px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 shadow-sm">
+                  <img src="bluetick.png" class="w-2.5 h-2.5 object-contain" alt="Blue Tick" /> 100% FREE FOR BLUE TICK
+                </span>
+              ` : ''}
               ${t.isComingSoon ? `
                 <span class="px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[8px] font-black uppercase tracking-widest rounded-md animate-pulse">
                   🔒 COMING SOON
@@ -2105,7 +2130,7 @@ function renderTournaments() {
           </div>
           <div class="text-center">
             <span class="text-[9px] text-emerald-400/60 uppercase font-black tracking-wider block mb-0.5">Entry Fee</span>
-            <span class="text-emerald-300 font-bold font-mono text-sm">${t.isComingSoon ? 'Coming Soon' : (t.entryFee || 'Free')}</span>
+            <span class="text-emerald-300 font-bold font-mono text-sm">${t.isComingSoon ? 'Coming Soon' : (isBlueTickFreeTour && isUserEligibleForBlueTickFree ? `<span class="text-blue-400 font-black">FREE <span class="line-through text-slate-400 text-[9px] font-normal">${t.entryFee}</span></span>` : (t.entryFee || 'Free'))}</span>
           </div>
         </div>
 
@@ -2167,6 +2192,11 @@ function renderTournaments() {
           <div>
             <div class="flex flex-wrap items-center gap-1.5 mb-1">
               <h4 class="font-display font-bold text-base text-white leading-tight">${t.name}</h4>
+              ${isBlueTickFreeTour ? `
+                <span class="px-2 py-0.5 bg-blue-500/20 border border-blue-400/40 text-blue-300 text-[8px] font-black uppercase tracking-wider rounded-md inline-flex items-center gap-1 shadow-sm">
+                  <img src="bluetick.png" class="w-2.5 h-2.5 object-contain" alt="Blue Tick" /> 100% FREE FOR BLUE TICK
+                </span>
+              ` : ''}
               ${t.isComingSoon ? `
                 <span class="px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[8px] font-black uppercase tracking-widest rounded-md">
                   COMING SOON
@@ -2191,7 +2221,7 @@ function renderTournaments() {
           </div>
           <div>
             <span class="text-[9px] text-t3 uppercase font-bold block">Entry Fee</span>
-            <span class="text-gold font-medium">${t.isComingSoon ? 'Coming Soon' : (t.entryFee || 'Free')}</span>
+            <span class="text-gold font-medium">${t.isComingSoon ? 'Coming Soon' : (isBlueTickFreeTour && isUserEligibleForBlueTickFree ? `<span class="text-blue-400 font-black">FREE <span class="line-through text-slate-400 text-[9px] font-normal">${t.entryFee}</span></span>` : (t.entryFee || 'Free'))}</span>
           </div>
         </div>
 
@@ -2343,6 +2373,290 @@ document.querySelectorAll('.fb').forEach(btn => {
   });
 });
 
+// ==================== STEP 2: 3-MINUTE FREE TOURNAMENTS NOTIFICATION ====================
+let freeTourNotifTimer = null;
+
+function initFreeTournamentsNotificationTimer() {
+  if (freeTourNotifTimer) clearTimeout(freeTourNotifTimer);
+  // Exactly 3 minutes after website opens (180,000 ms)
+  freeTourNotifTimer = setTimeout(() => {
+    window.showFreeTournamentsNotification();
+  }, 180000);
+}
+
+// Start the 3-minute timer on script load
+initFreeTournamentsNotificationTimer();
+
+window.showFreeTournamentsNotification = function() {
+  const popup = $('freeTournamentPopup');
+  if (popup) {
+    popup.classList.remove('hidden');
+  }
+};
+
+window.dismissFreeTourNotif = function() {
+  const popup = $('freeTournamentPopup');
+  if (popup) {
+    popup.classList.add('hidden');
+  }
+};
+
+window.openEventsSectionFromNotif = function() {
+  window.dismissFreeTourNotif();
+  // Directly open the Events section
+  const eventsTab = document.querySelector('[data-tab="events"], #tabEvents, [onclick*="events"]');
+  if (eventsTab) {
+    eventsTab.click();
+  } else if (typeof switchTab === 'function') {
+    switchTab('events');
+  } else if (typeof navigateTo === 'function') {
+    navigateTo('events');
+  } else {
+    const sec = $('sec-events') || $('eventsSection');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+// ==================== STEP 3: TOURNAMENT ENTRY LOGIN GATE (DISCORD / WHATSAPP) ====================
+let pendingGateTour = null;
+
+window.openTournamentEntryGate = function(tour) {
+  pendingGateTour = tour;
+  const modal = $('mTournamentEntryLoginGate');
+  if (!modal) return;
+
+  const nameEl = $('gateTourNameDisplay');
+  if (nameEl && tour) {
+    nameEl.textContent = tour.name || 'this tournament';
+  }
+
+  // Update status badges if already linked
+  const profile = userProfile || guestProfile;
+  const discordBadge = $('gateDiscordStatusBadge');
+  const whatsappBadge = $('gateWhatsappStatusBadge');
+
+  if (discordBadge) {
+    if (profile && profile.discordVerified) {
+      discordBadge.textContent = 'Linked ✓';
+      discordBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-mono font-bold';
+    } else {
+      discordBadge.textContent = 'Unlinked';
+      discordBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono font-bold';
+    }
+  }
+
+  if (whatsappBadge) {
+    if (profile && (profile.whatsappVerified || profile.whatsappNumber)) {
+      whatsappBadge.textContent = 'Verified ✓';
+      whatsappBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold';
+    } else {
+      whatsappBadge.textContent = 'Unlinked';
+      whatsappBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono font-bold';
+    }
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.closeTournamentEntryGate = function() {
+  const modal = $('mTournamentEntryLoginGate');
+  if (modal) modal.classList.add('hidden');
+  pendingGateTour = null;
+};
+
+window.handleGateDiscordLogin = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile) {
+    alert('Please sign in to ArenaX first.');
+    return;
+  }
+
+  try {
+    if (userProfile && userProfile.uid) {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        discordVerified: true,
+        entryMethod: 'discord',
+        discordLinkedAt: serverTimestamp()
+      });
+      userProfile.discordVerified = true;
+      userProfile.entryMethod = 'discord';
+    }
+    sessionStorage.setItem('tour_entry_verified', 'true');
+    sessionStorage.setItem('tour_entry_method', 'discord');
+
+    alert('✅ Discord Login Confirmed! Identity verified for tournament entry.');
+    window.closeTournamentEntryGate();
+
+    if (pendingGateTour) {
+      openTournamentRegister(pendingGateTour);
+    }
+  } catch (err) {
+    console.error("Error confirming Discord login gate:", err);
+    alert("Could not complete Discord verification. Please try again.");
+  }
+};
+
+window.handleGateWhatsappLogin = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile) {
+    alert('Please sign in to ArenaX first.');
+    return;
+  }
+
+  const phoneInput = $('gateWhatsappInput');
+  const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
+  if (!phoneNumber || phoneNumber.length < 8) {
+    alert('Please enter a valid WhatsApp phone number with country code (e.g. +92 300 1234567).');
+    return;
+  }
+
+  try {
+    if (userProfile && userProfile.uid) {
+      await updateDoc(doc(db, 'users', userProfile.uid), {
+        whatsappVerified: true,
+        whatsappNumber: phoneNumber,
+        entryMethod: 'whatsapp',
+        whatsappLinkedAt: serverTimestamp()
+      });
+      userProfile.whatsappVerified = true;
+      userProfile.whatsappNumber = phoneNumber;
+      userProfile.entryMethod = 'whatsapp';
+    }
+    sessionStorage.setItem('tour_entry_verified', 'true');
+    sessionStorage.setItem('tour_entry_method', 'whatsapp');
+
+    alert(`✅ WhatsApp Login Confirmed (${phoneNumber})! Identity verified for tournament entry.`);
+    window.closeTournamentEntryGate();
+
+    if (pendingGateTour) {
+      openTournamentRegister(pendingGateTour);
+    }
+  } catch (err) {
+    console.error("Error confirming WhatsApp login gate:", err);
+    alert("Could not complete WhatsApp verification. Please try again.");
+  }
+};
+
+// ==================== STEP 4: BLUE TICK BENEFITS & FREE ENTRY ====================
+window.isBlueTickSelectTournament = function(tour, index) {
+  if (!tour) return false;
+  // If explicitly flagged in tournament doc
+  if (tour.isBlueTickFree === true || tour.blueTickEligible === true) return true;
+  // Standard rule: 1 out of every 5 tournaments free (indices 0, 5, 10...) or 3 out of every 10 (indices 0, 3, 7...)
+  const idx = typeof index === 'number' ? index : (toursData ? toursData.findIndex(t => t.id === tour.id) : 0);
+  if (idx >= 0) {
+    const mod10 = idx % 10;
+    // 3 out of every 10 tournaments free (indices 0, 3, 7)
+    return (mod10 === 0 || mod10 === 3 || mod10 === 7);
+  }
+  return false;
+};
+
+window.isUserOrTeamBlueTickEligible = function(profile) {
+  if (!profile) return false;
+  // 1. User has Blue Tick directly
+  if (profile.hasBlueTick || profile.isVerifiedBadge || profile.blueTick) return true;
+  // 2. Entire team has Blue Tick
+  if (profile.teamId && window.teamsList) {
+    const team = window.teamsList.find(tm => tm.id === profile.teamId);
+    if (team && (team.allMembersHaveBlueTick || team.isBlueTickSquad)) return true;
+  }
+  return false;
+};
+
+window.openBuyBlueTickModal = function() {
+  const modal = $('mBuyBlueTickModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeBuyBlueTickModal = function() {
+  const modal = $('mBuyBlueTickModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.confirmBuyBlueTick = async function() {
+  const profile = userProfile || guestProfile;
+  if (!profile || guestProfile) {
+    alert('Please log in with a registered account to purchase Blue Tick.');
+    return;
+  }
+
+  const BLUE_TICK_PRICE = 99; // 99 AX Coins
+  const currentBalance = profile.balance || 0;
+
+  if (currentBalance < BLUE_TICK_PRICE) {
+    alert(`Insufficient AX Coins! You have ${currentBalance} AX Coins, but Blue Tick costs ${BLUE_TICK_PRICE} AX Coins. Please deposit coins first.`);
+    return;
+  }
+
+  if (confirm(`Purchase ArenaX Blue Tick for ${BLUE_TICK_PRICE} AX Coins?\n\nBenefits:\n• 100% Free entry into select tournaments\n• Official Blue Tick verification badge\n• Priority support & instant slot confirmation`)) {
+    try {
+      const newBal = currentBalance - BLUE_TICK_PRICE;
+      await updateDoc(doc(db, 'users', profile.uid), {
+        hasBlueTick: true,
+        isVerifiedBadge: true,
+        balance: newBal
+      });
+      profile.hasBlueTick = true;
+      profile.isVerifiedBadge = true;
+      profile.balance = newBal;
+
+      // Also record transaction
+      await addDoc(collection(db, 'wallet_transactions'), {
+        userId: profile.uid,
+        userName: profile.name || '',
+        amount: -BLUE_TICK_PRICE,
+        type: 'blue_tick_purchase',
+        status: 'completed',
+        createdAt: serverTimestamp()
+      });
+
+      alert('🎉 Congratulations! ArenaX Blue Tick verified on your account! You now get free entry into select tournaments.');
+      window.closeBuyBlueTickModal();
+      renderTournaments();
+    } catch (err) {
+      console.error("Error purchasing blue tick:", err);
+      alert("Failed to complete Blue Tick purchase: " + err.message);
+    }
+  }
+};
+
+// ==================== STEP 5: TOURNAMENT START ANTI-CHEAT NOTIFICATION ====================
+window.broadcastTournamentStartedHackWarning = function(tour) {
+  const modal = $('mTourHackWarningModal');
+  if (!modal) return;
+
+  const tourNameEl = $('tourHackModalName');
+  if (tourNameEl && tour) {
+    tourNameEl.textContent = `${tour.name || 'Tournament'} Started!`;
+  }
+
+  modal.classList.remove('hidden');
+
+  // Play attention audio alert if Web Audio is available
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(580, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(290, ctx.currentTime + 0.35);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (e) {
+    // Audio optional
+  }
+};
+
+window.closeTourHackWarningModal = function() {
+  const modal = $('mTourHackWarningModal');
+  if (modal) modal.classList.add('hidden');
+};
+
 // Click card tournament detail & rules lock checkers
 function handleTourCardClick(tour) {
   if (tour.isComingSoon) {
@@ -2369,9 +2683,19 @@ function handleTourCardClick(tour) {
     return;
   }
 
-  // 3. DISCORD VERIFICATION GATE: Tournament Participation Gate Check
-  if (profile && !profile.discordVerified) {
-    window.openDiscordVerificationGate(tour);
+  // 3. Step 3: Entry Process Login Gate (Discord or WhatsApp login required)
+  const isEntryVerified = Boolean(
+    profile && (
+      profile.discordVerified || 
+      profile.whatsappVerified || 
+      profile.entryMethod === 'discord' || 
+      profile.entryMethod === 'whatsapp' ||
+      sessionStorage.getItem('tour_entry_verified') === 'true'
+    )
+  );
+
+  if (!isEntryVerified) {
+    window.openTournamentEntryGate(tour);
     return;
   }
 
@@ -2388,8 +2712,18 @@ function openTournamentRegister(tour) {
   }
 
   const profile = userProfile || guestProfile;
-  if (profile && !profile.discordVerified) {
-    window.openDiscordVerificationGate(tour);
+  const isEntryVerified = Boolean(
+    profile && (
+      profile.discordVerified || 
+      profile.whatsappVerified || 
+      profile.entryMethod === 'discord' || 
+      profile.entryMethod === 'whatsapp' ||
+      sessionStorage.getItem('tour_entry_verified') === 'true'
+    )
+  );
+
+  if (!isEntryVerified) {
+    window.openTournamentEntryGate(tour);
     return;
   }
 
@@ -2465,25 +2799,71 @@ $('tregAgree').addEventListener('click', () => {
     if (matches) feeAmount = parseInt(matches[0], 10);
   }
 
+  // Step 4: Blue Tick Free Entry Check
+  const isBlueTickTour = typeof window.isBlueTickSelectTournament === 'function' ? window.isBlueTickSelectTournament(activeRegisterTour) : false;
+  const isBlueTickEligible = typeof window.isUserOrTeamBlueTickEligible === 'function' ? window.isUserOrTeamBlueTickEligible(userProfile) : false;
+  window.activeRegBlueTickFree = false;
+
+  if (isBlueTickTour && isBlueTickEligible && feeAmount > 0) {
+    window.activeRegBlueTickFree = true;
+    feeAmount = 0;
+  }
+
   const balance = userProfile ? (userProfile.balance || 0) : 0;
 
-  $('tregFeeAX').textContent = `${feeAmount} AX Coins`;
-  $('tregBalanceAX').textContent = `${balance} AX Coins`;
-  
-  if (balance < feeAmount) {
-    $('tregBalanceAfterAX').textContent = `Insufficient Balance`;
-    $('tregBalanceAfterAX').className = 'font-bold text-red';
-    $('tregStatusMsg').innerHTML = `<p class="text-red font-semibold">⚠️ Insufficient coins! You need ${feeAmount} AX Coins to register but you only have ${balance} AX Coins. Please deposit coins first.</p>`;
-    $('tregSubmit').disabled = true;
-    $('tregSubmit').classList.add('opacity-50', 'cursor-not-allowed');
-    $('tregSubmit').textContent = 'Insufficient Balance';
-  } else {
-    $('tregBalanceAfterAX').textContent = `${balance - feeAmount} AX Coins`;
-    $('tregBalanceAfterAX').className = 'font-bold text-green';
-    $('tregStatusMsg').innerHTML = `<p class="text-t2 font-medium">✅ You have enough coins. ${feeAmount} AX Coins will be deducted from your ArenaX wallet automatically when the admin approves your registration slot.</p>`;
+  if (window.activeRegBlueTickFree) {
+    $('tregFeeAX').innerHTML = `<span class="text-blue-400 font-bold inline-flex items-center gap-1"><img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline" alt="Blue Tick" /> 0 AX (Blue Tick Privilege)</span>`;
+    $('tregBalanceAX').textContent = `${balance} AX Coins`;
+    $('tregBalanceAfterAX').textContent = `${balance} AX Coins (No deduction)`;
+    $('tregBalanceAfterAX').className = 'font-bold text-blue-400';
+    $('tregStatusMsg').innerHTML = `
+      <div class="p-3 bg-blue-500/15 border border-blue-400/30 rounded-xl space-y-1 text-left">
+        <div class="text-blue-300 font-bold text-xs flex items-center gap-1.5">
+          <img src="bluetick.png" class="w-4 h-4 object-contain inline-block" alt="Blue Tick" /> Blue Tick Free Entry Activated!
+        </div>
+        <p class="text-[11px] text-slate-300 leading-normal">
+          As a verified Blue Tick player or full Blue Tick squad, you get <strong>100% FREE entry</strong> into this select tournament (0 AX deducted from your wallet)!
+        </p>
+      </div>
+    `;
     $('tregSubmit').disabled = false;
     $('tregSubmit').classList.remove('opacity-50', 'cursor-not-allowed');
-    $('tregSubmit').textContent = 'Confirm & Submit Entry';
+    $('tregSubmit').textContent = 'Confirm Free Entry (Blue Tick)';
+  } else {
+    $('tregFeeAX').textContent = `${feeAmount} AX Coins`;
+    $('tregBalanceAX').textContent = `${balance} AX Coins`;
+    
+    let blueTickNotice = '';
+    if (isBlueTickTour && !isBlueTickEligible) {
+      blueTickNotice = `
+        <div class="mt-2 p-2.5 bg-blue-950/40 border border-blue-500/30 rounded-lg flex items-center justify-between text-[11px] text-blue-200">
+          <span class="flex items-center gap-1"><img src="bluetick.png" class="w-3.5 h-3.5 object-contain inline" alt="Blue Tick" /> Blue Tick players & teams get <strong>100% FREE</strong> entry!</span>
+          <button onclick="window.openBuyBlueTickModal()" type="button" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded text-[10px] whitespace-nowrap ml-2 cursor-pointer">Get Blue Tick</button>
+        </div>
+      `;
+    }
+
+    if (balance < feeAmount) {
+      $('tregBalanceAfterAX').textContent = `Insufficient Balance`;
+      $('tregBalanceAfterAX').className = 'font-bold text-red';
+      $('tregStatusMsg').innerHTML = `
+        <p class="text-red font-semibold">⚠️ Insufficient coins! You need ${feeAmount} AX Coins to register but you only have ${balance} AX Coins. Please deposit coins first.</p>
+        ${blueTickNotice}
+      `;
+      $('tregSubmit').disabled = true;
+      $('tregSubmit').classList.add('opacity-50', 'cursor-not-allowed');
+      $('tregSubmit').textContent = 'Insufficient Balance';
+    } else {
+      $('tregBalanceAfterAX').textContent = `${balance - feeAmount} AX Coins`;
+      $('tregBalanceAfterAX').className = 'font-bold text-green';
+      $('tregStatusMsg').innerHTML = `
+        <p class="text-t2 font-medium">✅ You have enough coins. ${feeAmount} AX Coins will be deducted from your ArenaX wallet automatically when the admin approves your registration slot.</p>
+        ${blueTickNotice}
+      `;
+      $('tregSubmit').disabled = false;
+      $('tregSubmit').classList.remove('opacity-50', 'cursor-not-allowed');
+      $('tregSubmit').textContent = 'Confirm & Submit Entry';
+    }
   }
 
   $('tregStep2').classList.add('hidden');
@@ -2496,16 +2876,17 @@ $('tregBack').addEventListener('click', () => {
 });
 
 $('tregSubmit').addEventListener('click', async () => {
+  const isBlueTickFree = Boolean(window.activeRegBlueTickFree);
   // Parse the entry fee again to double check
   const feeString = activeRegisterTour.entryFee || '';
   let feeAmount = 0;
-  if (feeString && !feeString.toLowerCase().includes('free')) {
+  if (!isBlueTickFree && feeString && !feeString.toLowerCase().includes('free')) {
     const matches = feeString.match(/\d+/);
     if (matches) feeAmount = parseInt(matches[0], 10);
   }
 
   const balance = userProfile ? (userProfile.balance || 0) : 0;
-  if (balance < feeAmount) {
+  if (!isBlueTickFree && balance < feeAmount) {
     alert('Insufficient coins! Please deposit more coins to register. ❌');
     return;
   }
@@ -2526,7 +2907,8 @@ $('tregSubmit').addEventListener('click', async () => {
       gameUID: $('tregUID').value.trim(),
       age: $('tregAge').value.trim(),
       txnId: autoTxnId,
-      screenshot: 'Auto-verified ArenaX Wallet Hold',
+      screenshot: isBlueTickFree ? 'Blue Tick Free Entry Privilege' : 'Auto-verified ArenaX Wallet Hold',
+      isBlueTickFree: isBlueTickFree,
       status: 'pending',
       submittedAt: serverTimestamp()
     });
@@ -6668,6 +7050,33 @@ function renderInboxUI() {
             <span class="text-[10px] text-green-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Joined Slot ✔</span>
           </div>`;
       }
+    } else if (mail.type === 'team_invite') {
+      if (mail.status === 'pending') {
+        customActionBlock = `
+          <div class="mt-3 flex items-center gap-2 p-2.5 bg-gold/10 border border-gold/20 rounded-xl justify-between flex-wrap sm:flex-nowrap">
+            <span class="text-[9px] text-gold font-bold uppercase"><i class="fas fa-shield-alt mr-1"></i> Squad Invite</span>
+            <div class="flex gap-2">
+              <button class="b-decline-team-invite px-3 py-1 bg-red-500/20 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-400 font-bold text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-team-id="${mail.teamId}">
+                Decline
+              </button>
+              <button class="b-accept-team-invite px-3 py-1 bg-gold hover:bg-[#e8b830] text-bg font-black text-[10px] rounded-lg transition cursor-pointer" data-mail-id="${mail.id}" data-team-id="${mail.teamId}" data-team-name="${mail.teamName}">
+                Accept & Join Squad
+              </button>
+            </div>
+          </div>`;
+      } else if (mail.status === 'accepted') {
+        customActionBlock = `
+          <div class="mt-3 p-2.5 bg-green-500/5 border border-green-500/20 rounded-xl flex items-center justify-between">
+            <span class="text-[9px] text-t3 font-bold">Status</span>
+            <span class="text-[10px] text-green-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Joined Squad ✔</span>
+          </div>`;
+      } else if (mail.status === 'declined') {
+        customActionBlock = `
+          <div class="mt-3 p-2.5 bg-red-500/5 border border-red-500/20 rounded-xl flex items-center justify-between">
+            <span class="text-[9px] text-t3 font-bold">Status</span>
+            <span class="text-[10px] text-red-400 font-bold flex items-center gap-1"><i class="fas fa-times-circle"></i> Declined ✖</span>
+          </div>`;
+      }
     }
 
     const card = document.createElement('div');
@@ -6732,6 +7141,31 @@ function renderInboxUI() {
         const tourId = btn.dataset.tourId;
         const tourName = btn.dataset.tourName;
         await window.joinTournamentViaInvite(mailId, teamId, tourId, tourName, btn);
+      });
+    }
+
+    const acceptTeamInviteBtn = card.querySelector('.b-accept-team-invite');
+    if (acceptTeamInviteBtn) {
+      acceptTeamInviteBtn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const mailId = btn.dataset.mailId;
+        const teamId = btn.dataset.teamId;
+        const teamName = btn.dataset.teamName;
+        if (typeof window.acceptTeamInvite === 'function') {
+          await window.acceptTeamInvite(mailId, teamId, teamName, btn);
+        }
+      });
+    }
+
+    const declineTeamInviteBtn = card.querySelector('.b-decline-team-invite');
+    if (declineTeamInviteBtn) {
+      declineTeamInviteBtn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const mailId = btn.dataset.mailId;
+        const teamId = btn.dataset.teamId;
+        if (typeof window.declineTeamInvite === 'function') {
+          await window.declineTeamInvite(mailId, teamId, btn);
+        }
       });
     }
 
@@ -6875,7 +7309,13 @@ window.closeGuildsModal = function() {
 window.setTeamsView = function(view) {
   teamsView = view;
   window.teamsView = view;
-  window.renderGuildSystemModalContent();
+  const modal = $('mGuildSystemModal');
+  if (modal && modal.classList.contains('hidden')) {
+    modal.classList.remove('hidden');
+  }
+  if (typeof window.renderGuildSystemModalContent === 'function') {
+    window.renderGuildSystemModalContent();
+  }
 };
 
 window.setTeamsTab = function(tab) {
