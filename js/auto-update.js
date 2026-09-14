@@ -15,44 +15,89 @@ let downloadListener = null;
 let pendingRemoteConfig = null;
 
 /**
- * Parse semver string into array of numbers, e.g. "1.1.0" -> [1, 1, 0]
+ * Parse any version representation (string or number) into numeric segments.
+ * Handles numbers, strings, leading 'v'/'V', whitespace, and prerelease/build suffixes.
+ * E.g. "1.0.10" -> [1, 0, 10], "v1.2" -> [1, 2, 0], 1.5 -> [1, 5, 0], "1.1.0-beta.1" -> [1, 1, 0]
  */
-function parseSemver(v) {
-  if (!v || typeof v !== 'string') return [0, 0, 0];
-  const cleaned = v.trim().replace(/^[^\d]*/, '');
-  const parts = cleaned.split('.').map(p => parseInt(p, 10) || 0);
-  while (parts.length < 3) parts.push(0);
+function parseVersionSegments(v) {
+  if (v === null || v === undefined) return [0, 0, 0];
+  let s = String(v).trim();
+  // Strip leading 'v' or 'V' and non-digit characters
+  s = s.replace(/^[vV\s]+/, '');
+  // Strip prerelease and build metadata suffixes (e.g. -beta, +build123)
+  s = s.split(/[-+]/)[0].trim();
+  if (!s) return [0, 0, 0];
+
+  const parts = s.split('.').map(part => {
+    const n = parseInt(part.trim(), 10);
+    return isNaN(n) ? 0 : n;
+  });
+
+  // Guarantee at least 3 segments (major, minor, patch)
+  while (parts.length < 3) {
+    parts.push(0);
+  }
   return parts;
 }
 
 /**
- * Returns true if remoteVer is strictly newer than currentVer
+ * Compare two semantic version strings segment-by-segment as numbers.
+ * Returns:
+ *   -1 if v1 < v2  (v1 is strictly older than v2 -> update available)
+ *    0 if v1 === v2 (versions are identical)
+ *    1 if v1 > v2  (v1 is newer than v2)
+ */
+function compareSemver(v1, v2) {
+  const segs1 = parseVersionSegments(v1);
+  const segs2 = parseVersionSegments(v2);
+  const maxLen = Math.max(segs1.length, segs2.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const num1 = i < segs1.length ? segs1[i] : 0;
+    const num2 = i < segs2.length ? segs2[i] : 0;
+
+    if (num1 < num2) return -1;
+    if (num1 > num2) return 1;
+  }
+  return 0;
+}
+
+/**
+ * Returns true ONLY if remoteVer is strictly newer than currentVer
  */
 function isOlderVersion(currentVer, remoteVer) {
-  const c = parseSemver(currentVer);
-  const r = parseSemver(remoteVer);
-  for (let i = 0; i < 3; i++) {
-    if (r[i] > c[i]) return true;
-    if (r[i] < c[i]) return false;
-  }
-  return false;
+  return compareSemver(currentVer, remoteVer) === -1;
 }
 
 /**
  * Retrieve installed app version via @capacitor/app plugin
+ * Android OS provides this from `versionName` defined in `android/app/build.gradle`.
  */
 async function getInstalledVersion() {
+  let rawInstalled = null;
   try {
     if (Capacitor.isNativePlatform()) {
       const info = await App.getInfo();
-      if (info && info.version) {
-        return info.version;
+      console.log('[AutoUpdate] [App.getInfo] Raw payload from Android OS:', JSON.stringify(info));
+      if (info) {
+        rawInstalled = info.version;
+        console.log(`[AutoUpdate] [App.getInfo] versionName: "${info.version}", versionCode (build): "${info.build}", id: "${info.id}"`);
+        if (rawInstalled) {
+          const cleaned = String(rawInstalled).trim().replace(/^[vV\s]+/, '');
+          return cleaned || '1.1.0';
+        }
       }
+    } else {
+      console.log('[AutoUpdate] [getInstalledVersion] Non-native web platform detected.');
     }
   } catch (err) {
     console.warn('[AutoUpdate] Error reading App.getInfo():', err);
   }
-  return window.ARENAX_INSTALLED_VERSION || localStorage.getItem('arenax_installed_version') || '1.0.0';
+
+  const fallback = window.ARENAX_INSTALLED_VERSION || localStorage.getItem('arenax_installed_version') || '1.1.0';
+  const cleanedFallback = String(fallback).trim().replace(/^[vV\s]+/, '');
+  console.log('[AutoUpdate] [getInstalledVersion] Fallback installed version:', cleanedFallback);
+  return cleanedFallback || '1.1.0';
 }
 
 /**
@@ -72,15 +117,30 @@ async function getRemoteVersionConfig() {
       const snapshot = await window.getDoc(docRef);
       if (snapshot.exists()) {
         const data = snapshot.data();
+        console.log('[AutoUpdate] [Firestore] app_config/version raw document data:', JSON.stringify(data));
+        
+        // Check all common field naming variations (latestVersion, version, latest_version, appVersion)
+        const rawLatest = data.latestVersion !== undefined ? data.latestVersion :
+          (data.version !== undefined ? data.version :
+          (data.latest_version !== undefined ? data.latest_version :
+          (data.appVersion !== undefined ? data.appVersion : null)));
+
+        const latestVersion = rawLatest !== null && rawLatest !== undefined
+          ? String(rawLatest).trim().replace(/^[vV\s]+/, '')
+          : DEFAULT_LATEST_VERSION;
+
         return {
-          latestVersion: data.latestVersion || DEFAULT_LATEST_VERSION,
-          downloadUrl: data.downloadUrl || DEFAULT_DOWNLOAD_URL,
-          releaseNotes: data.releaseNotes || DEFAULT_RELEASE_NOTES,
-          mandatory: !!data.mandatory
+          latestVersion: latestVersion || DEFAULT_LATEST_VERSION,
+          downloadUrl: data.downloadUrl || data.apkUrl || data.url || DEFAULT_DOWNLOAD_URL,
+          releaseNotes: data.releaseNotes || data.notes || DEFAULT_RELEASE_NOTES,
+          mandatory: !!data.mandatory,
+          fromFirestore: true
         };
       } else {
-        console.log('[AutoUpdate] app_config/version not found in Firestore, using default config.');
+        console.warn('[AutoUpdate] [Firestore] app_config/version document does not exist. Using fallback defaults.');
       }
+    } else {
+      console.warn('[AutoUpdate] Firestore db or getDoc function not accessible at this moment.');
     }
   } catch (err) {
     console.warn('[AutoUpdate] Failed to query Firestore app_config/version:', err);
@@ -90,7 +150,8 @@ async function getRemoteVersionConfig() {
     latestVersion: DEFAULT_LATEST_VERSION,
     downloadUrl: DEFAULT_DOWNLOAD_URL,
     releaseNotes: DEFAULT_RELEASE_NOTES,
-    mandatory: false
+    mandatory: false,
+    fromFirestore: false
   };
 }
 
@@ -352,48 +413,73 @@ async function startUpdateDownload(remoteConfig) {
  * Main function: check for update on startup or on demand
  */
 async function checkForUpdate(options = { isManual: false }) {
+  const isNative = Capacitor.isNativePlatform();
+
   // CRITICAL REQUIREMENT:
-  // Update notifications and version checks must ONLY execute inside the native Capacitor APK.
-  // If running in a plain web browser (Chrome, Safari on arenax.cyou, etc.), skip the entire
-  // version check and update notification logic completely — do not even fetch version info from Firestore.
-  if (!Capacitor.isNativePlatform()) {
-    console.log('[AutoUpdate] Platform is Web / Browser (not native APK) — skipping version check and update notification completely.');
-    if (options.isManual) {
-      if (typeof window.showToastNotification === 'function') {
-        window.showToastNotification('Web Platform', 'Auto-updates are only available when running inside the ArenaX Android APK.');
-      } else {
-        alert('Auto-updates are only available inside the ArenaX Android APK.');
-      }
-    }
+  // On startup/background, update notifications and version checks must ONLY execute inside the native Capacitor APK.
+  // If running in a plain web browser (Chrome, Safari on arenax.cyou, etc.), skip automatic background checks.
+  if (!isNative && !options.isManual) {
+    console.log('[AutoUpdate] Platform is Web / Browser (not native APK) — automatic background version check skipped.');
     return { updateAvailable: false, skipped: true, platform: 'web' };
   }
 
   try {
     const currentVersion = await getInstalledVersion();
     const remoteConfig = await getRemoteVersionConfig();
+    const latestVersion = remoteConfig.latestVersion;
 
-    console.log('[AutoUpdate] Checking update: Installed v' + currentVersion + ' vs Latest v' + remoteConfig.latestVersion);
+    const cmp = compareSemver(currentVersion, latestVersion);
+    const hasNewUpdate = cmp === -1;
 
-    const hasNewUpdate = isOlderVersion(currentVersion, remoteConfig.latestVersion);
+    let comparisonReason = '';
+    if (cmp === -1) {
+      comparisonReason = `Installed version (${currentVersion}) is strictly OLDER than latest version (${latestVersion}) -> UPDATE AVAILABLE`;
+    } else if (cmp === 0) {
+      comparisonReason = `Installed version (${currentVersion}) is EQUAL to latest version (${latestVersion}) -> ALREADY UP TO DATE`;
+    } else {
+      comparisonReason = `Installed version (${currentVersion}) is NEWER than latest version (${latestVersion}) -> ALREADY UP TO DATE (Developer/Pre-release build)`;
+    }
+
+    // Required Debug Logs:
+    // 1) The exact installed version string read from App.getInfo()
+    // 2) The exact latestVersion string read from Firestore
+    // 3) The result of the comparison (true/false, and why)
+    console.log('================== [AutoUpdate] VERSION AUDIT ==================');
+    console.log('[AutoUpdate] 1. Installed Version (App.getInfo):', currentVersion);
+    console.log('[AutoUpdate] 2. Latest Version (Firestore):     ', latestVersion);
+    console.log('[AutoUpdate] 3. Comparison Result (Update?):    ', hasNewUpdate);
+    console.log('[AutoUpdate] 4. Detailed Evaluation:            ', comparisonReason);
+    console.log('================================================================');
 
     if (hasNewUpdate) {
       showUpdateModal(currentVersion, remoteConfig);
-      return { updateAvailable: true, currentVersion, remoteConfig };
+      return { updateAvailable: true, currentVersion, remoteConfig, comparisonReason };
     } else {
       if (options.isManual) {
+        // EXACT MESSAGE REQUIRED: "You are using the latest version"
         if (typeof window.showToastNotification === 'function') {
-          window.showToastNotification('ArenaX Up to Date', `You are already running the latest version (v${currentVersion}).`);
+          window.showToastNotification('ArenaX', 'You are using the latest version');
         } else {
-          alert(`ArenaX is already up to date (v${currentVersion}).`);
+          alert('You are using the latest version');
+        }
+
+        const txtSub = document.getElementById('txtCheckAppUpdatesSub');
+        if (txtSub) txtSub.textContent = `You are using the latest version (v${currentVersion})`;
+        const badge = document.getElementById('badgeCheckAppUpdates');
+        if (badge) {
+          badge.textContent = 'Latest';
+          badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-semibold border border-emerald-500/30';
         }
       }
-      return { updateAvailable: false, currentVersion, remoteConfig };
+      return { updateAvailable: false, currentVersion, remoteConfig, comparisonReason };
     }
   } catch (err) {
     console.error('[AutoUpdate] Error during update check:', err);
     if (options.isManual) {
       if (typeof window.showToastNotification === 'function') {
         window.showToastNotification('Update Check Failed', 'Unable to check for updates. Please verify your connection.');
+      } else {
+        alert('Unable to check for updates. Please verify your connection.');
       }
     }
     return { updateAvailable: false, error: err };
@@ -460,8 +546,17 @@ function initAutoUpdateUI() {
   const btnCheckUpdates = document.getElementById('btnCheckAppUpdates');
   if (btnCheckUpdates && !btnCheckUpdates._bound) {
     btnCheckUpdates._bound = true;
-    btnCheckUpdates.addEventListener('click', () => {
-      checkForUpdate({ isManual: true });
+    btnCheckUpdates.addEventListener('click', async () => {
+      const badge = document.getElementById('badgeCheckAppUpdates');
+      const prevText = badge ? badge.textContent : 'Check';
+      if (badge) badge.textContent = 'Checking...';
+      try {
+        await checkForUpdate({ isManual: true });
+      } finally {
+        if (badge && badge.textContent === 'Checking...') {
+          badge.textContent = prevText;
+        }
+      }
     });
   }
 }
@@ -476,6 +571,8 @@ window.ArenaXUpdate = {
   startUpdateDownload,
   setRemoteVersion,
   isOlderVersion,
+  compareSemver,
+  parseVersionSegments,
   initAutoUpdateUI
 };
 
