@@ -38,8 +38,21 @@ jobs:
       - name: Build web assets
         run: npm run build
 
+      - name: Purge any local .glb 3D models before Capacitor sync
+        run: |
+          echo "Ensuring no .glb models are packaged locally into the APK bundle..."
+          rm -f dist/*.glb dist/**/*.glb public/*.glb public/**/*.glb || true
+          find dist/ -name "*.glb" -delete || true
+          find public/ -name "*.glb" -delete || true
+
       - name: Sync web assets with Capacitor Android platform
         run: npx cap sync android
+
+      - name: Strip any .glb files from Android assets before APK compilation
+        run: |
+          echo "Auditing android assets directory for .glb files..."
+          find android/ -name "*.glb" -delete || true
+          echo "Asset audit complete. Ready for Gradle build."
 
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x android/gradlew
