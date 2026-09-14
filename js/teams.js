@@ -32,24 +32,62 @@ let userGuildUnsub = null;
 let allGuildsUnsub = null;
 let allMembersUnsub = null;
 
+// Helper to safely access current active user profile across modules
+function getActiveUser() {
+  return window.userProfile || (typeof userProfile !== 'undefined' ? userProfile : null);
+}
+
+function getIsGuest() {
+  return Boolean(window.guestProfile || (typeof guestProfile !== 'undefined' ? guestProfile : false));
+}
+
+// Global View Switcher for Teams System
+window.setTeamsView = function(view) {
+  teamsView = view;
+  window.teamsView = view;
+  const modal = $('mGuildSystemModal');
+  if (modal && modal.classList.contains('hidden')) {
+    modal.classList.remove('hidden');
+  }
+  if (typeof window.renderGuildSystemModalContent === 'function') {
+    window.renderGuildSystemModalContent();
+  }
+};
+
 window.showTeamGuide = function() {
   const modal = $('mTeamGuideModal');
   if (modal) modal.classList.remove('hidden');
 };
 
 window.openTeamsModal = function() {
-  if (guestProfile) {
+  if (getIsGuest()) {
     alert("Please log in or register a profile to access Teams!");
     return;
   }
+
+  const curUser = getActiveUser();
+
+  // First-time role selection enforcement
+  const pRole = (curUser && curUser.playerRole);
+  if (!pRole) {
+    if (typeof window.openRoleSelectionModal === 'function') {
+      window.openRoleSelectionModal(false);
+      return;
+    }
+  }
+
   const modal = $('mGuildSystemModal');
   if (modal) modal.classList.remove('hidden');
   
-  if (userGuild) {
+  if (window.teamsView) {
+    teamsView = window.teamsView;
+  } else if (userGuild) {
     selectedTeamData = userGuild;
     teamsView = 'profile';
+    window.teamsView = 'profile';
   } else {
     teamsView = 'list';
+    window.teamsView = 'list';
   }
   
   if (typeof listenToGuilds === 'function') listenToGuilds();
@@ -263,13 +301,15 @@ window.joinTeamDirect = async function(teamId) {
     }
     const tData = snap.data();
     const members = tData.members || [];
-    if (members.length >= (tData.maxMembers || 8)) {
-      alert("This team is already full (maximum 8 members)!");
+    if (members.length >= 4) {
+      alert("This team is already full (maximum 4 members allowed)!");
       return;
     }
+    const myRole = (window.userProfile && window.userProfile.playerRole) || (userProfile && userProfile.playerRole) || 'rusher';
     await updateDoc(teamRef, {
       members: arrayUnion(userProfile.uid),
-      memberCount: increment(1)
+      memberCount: increment(1),
+      [`memberRoles.${userProfile.uid}`]: myRole
     });
     alert(`🎉 Successfully joined "${tData.name}"!`);
     if (typeof listenToGuilds === 'function') listenToGuilds();
@@ -328,13 +368,168 @@ window.registerForTeamFight = async function(tourName, tourId) {
   }
 };
 
-window.createNewTeamSubmit = async function() {
+window.userAXCreatorPending = false;
+
+window.checkUserAXCreatorStatus = async function() {
+  if (!userProfile) return;
+  if (userProfile.isAXCreator || userProfile.isAdmin) {
+    window.userAXCreatorPending = false;
+    return;
+  }
+  try {
+    const fs = window.fsTools || window;
+    const dbInstance = window.db || window.fbDb;
+    if (!dbInstance || !fs.collection) return;
+    const q = fs.query(
+      fs.collection(dbInstance, 'ax_creator_requests'),
+      fs.where('uid', '==', userProfile.uid),
+      fs.where('status', '==', 'pending'),
+      fs.limit(1)
+    );
+    const snap = await fs.getDocs(q);
+    window.userAXCreatorPending = !snap.empty;
+  } catch (err) {
+    console.warn("Could not check AX Creator request status:", err);
+  }
+};
+
+window.applyForAXCreatorSubmit = async function() {
   if (!userProfile) {
+    alert("Please log in first to apply for AX Creator status!");
+    return;
+  }
+  if (userProfile.isAXCreator || userProfile.isAdmin) {
+    alert("You already have Creator privileges!");
+    return;
+  }
+  try {
+    const fs = window.fsTools || window;
+    const dbInstance = window.db || window.fbDb;
+    const q = fs.query(
+      fs.collection(dbInstance, 'ax_creator_requests'),
+      fs.where('uid', '==', userProfile.uid),
+      fs.where('status', '==', 'pending'),
+      fs.limit(1)
+    );
+    const snap = await fs.getDocs(q);
+    if (!snap.empty) {
+      window.userAXCreatorPending = true;
+      alert("Your application is already pending admin review!");
+      window.renderGuildSystemModalContent();
+      return;
+    }
+
+    await fs.addDoc(fs.collection(dbInstance, 'ax_creator_requests'), {
+      uid: userProfile.uid,
+      name: userProfile.name || userProfile.userName || 'ArenaX Player',
+      handle: userProfile.handle || '',
+      av: userProfile.av || userProfile.avatar || '',
+      requestedAt: fs.serverTimestamp ? fs.serverTimestamp() : new Date(),
+      status: 'pending'
+    });
+
+    window.userAXCreatorPending = true;
+    alert("🎉 Application submitted! The Admin team will review your request to unlock team creation.");
+    window.renderGuildSystemModalContent();
+  } catch (err) {
+    console.error("Failed to submit AX Creator application:", err);
+    alert("Failed to submit request: " + err.message);
+  }
+};
+
+window.teamCreationUnlocked = false;
+window.teamCreationPaymentMethod = null;
+window.teamCreationPromoCode = null;
+
+window.handlePayTeamCreationFee = async function() {
+  const activeUser = getActiveUser();
+  if (!activeUser) {
+    alert("Please log in first to create a team!");
+    return;
+  }
+  const currentBalance = Number(activeUser.balance || 0);
+  if (currentBalance < 49) {
+    const confirmDeposit = confirm(`Insufficient balance!\n\nYour balance is Rs. ${currentBalance}, but team creation requires Rs. 49.\n\nTip: You can use Promo Code "ARENAX49" to create your team for 100% FREE!\n\nWould you like to auto-apply promo code "ARENAX49" now?`);
+    if (confirmDeposit) {
+      window.teamCreationUnlocked = true;
+      window.teamCreationPaymentMethod = 'promo_code';
+      window.teamCreationPromoCode = 'ARENAX49';
+      alert('🎉 Promo Code "ARENAX49" applied!\n\nCreation fee is 100% waived. Complete your squad setup below.');
+      if (typeof window.renderGuildSystemModalContent === 'function') {
+        window.renderGuildSystemModalContent();
+      }
+    } else if (typeof window.openDepositModal === 'function') {
+      window.openDepositModal();
+    }
+    return;
+  }
+
+  const confirmed = confirm(`Establish Esports Team:\n\nConfirm payment of Rs. 49 from your ArenaX wallet balance (Current: Rs. ${currentBalance})?`);
+  if (!confirmed) return;
+
+  try {
+    const userRef = doc(db, 'users', activeUser.uid);
+    await updateDoc(userRef, {
+      balance: increment(-49)
+    });
+    activeUser.balance = currentBalance - 49;
+    if (window.userProfile) {
+      window.userProfile.balance = currentBalance - 49;
+    }
+    window.teamCreationUnlocked = true;
+    window.teamCreationPaymentMethod = 'paid_49';
+    alert("🎉 Payment of Rs. 49 successful! Team creation is now unlocked. Enter your team details below.");
+    if (typeof window.renderGuildSystemModalContent === 'function') {
+      window.renderGuildSystemModalContent();
+    }
+  } catch (err) {
+    console.error("Payment error:", err);
+    alert("Error processing payment: " + (err.message || err));
+  }
+};
+
+window.handleApplyTeamPromoCode = async function() {
+  const activeUser = getActiveUser();
+  if (!activeUser) {
+    alert("Please log in first to create a team!");
+    return;
+  }
+  const promoInput = $('ctPromoCodeInput');
+  const code = (promoInput ? promoInput.value : '').trim().toUpperCase();
+  if (!code) {
+    alert("Please enter a promo code! (e.g. ARENAX49)");
+    return;
+  }
+
+  // Accepted valid promo codes for team creation waiver
+  const validCodes = ['ARENAX49', 'CREATOR', 'FREE49', 'ESPORTS', 'VIP49', 'ARENAX', 'FREE', 'WELCOME50', 'TEAM49', 'SQUAD49'];
+  const isValid = validCodes.includes(code);
+
+  if (isValid) {
+    window.teamCreationUnlocked = true;
+    window.teamCreationPaymentMethod = 'promo_code';
+    window.teamCreationPromoCode = code;
+    alert(`🎉 Promo code "${code}" applied successfully!\n\nThe Rs. 49 team creation fee has been 100% waived. Enter your team details below.`);
+    if (typeof window.renderGuildSystemModalContent === 'function') {
+      window.renderGuildSystemModalContent();
+    }
+  } else {
+    alert(`Invalid promo code "${code}".\n\nTip: You can use code "ARENAX49" for free access, or pay Rs. 49 from wallet.`);
+  }
+};
+
+window.createNewTeamSubmit = async function() {
+  const activeUser = getActiveUser();
+  if (!activeUser) {
     alert("Please log in first!");
     return;
   }
+  if (!window.teamCreationUnlocked && !activeUser.isAdmin) {
+    alert("Please choose an option to create a team: Pay Rs. 49 OR Enter a Promo Code!");
+    return;
+  }
   if (userGuild) {
-    alert("You are already a member/leader of a team! Leave your current team first.");
+    alert(`You are already in a team ("${userGuild.name}")! Leave your current team first.`);
     return;
   }
   const nameInput = $('ctNameInput');
@@ -361,31 +556,53 @@ window.createNewTeamSubmit = async function() {
       announcement: desc || `Welcome to ${name}! Participate in Team Fights & donate to Treasury to rank up!`,
       logoUrl: logo,
       joinType: joinType,
-      leaderId: userProfile.uid,
-      leaderName: userProfile.name || 'Leader',
-      members: [userProfile.uid],
+      leaderId: activeUser.uid,
+      leaderName: activeUser.name || 'Leader',
+      members: [activeUser.uid],
       guards: [],
       memberCount: 1,
-      maxMembers: 8,
+      maxMembers: 4,
+      memberRoles: { [activeUser.uid]: (activeUser && activeUser.playerRole) || 'rusher' },
       treasury: 0,
       exp: 0,
       level: 1,
       rank: 1,
       registeredFights: [],
+      paymentMethod: window.teamCreationPaymentMethod || 'paid_49',
+      promoCode: window.teamCreationPromoCode || null,
       createdAt: serverTimestamp()
     });
     
+    // Update user profile record if possible
+    try {
+      await updateDoc(doc(db, 'users', activeUser.uid), {
+        teamId: docRef.id,
+        teamName: name
+      });
+      activeUser.teamId = docRef.id;
+      activeUser.teamName = name;
+    } catch(e) {
+      console.warn("Could not sync user teamId to user doc:", e);
+    }
+
     alert(`🎉 TEAM CREATED SUCCESSFULLY!\n\nYour team "${name}" [${tag}] is established!`);
+    window.teamCreationUnlocked = false;
+    window.teamCreationPaymentMethod = null;
+    window.teamCreationPromoCode = null;
     customTeamLogoDataUrl = '';
     selectedTeamData = {
       id: docRef.id,
       name, tag, description: desc, logoUrl: logo, joinType,
-      leaderId: userProfile.uid, leaderName: userProfile.name,
-      members: [userProfile.uid], guards: [], memberCount: 1, maxMembers: 8,
+      leaderId: activeUser.uid, leaderName: activeUser.name,
+      members: [activeUser.uid], guards: [], memberCount: 1, maxMembers: 4,
+      memberRoles: { [activeUser.uid]: (activeUser && activeUser.playerRole) || 'rusher' },
       treasury: 0, exp: 0, level: 1, rank: 1
     };
     userGuild = selectedTeamData;
+    window.userGuild = userGuild;
+    window.selectedTeamData = selectedTeamData;
     teamsView = 'profile';
+    window.teamsView = 'profile';
     currentGuildTab = 'profile';
     window.renderGuildSystemModalContent();
   } catch (err) {
@@ -470,6 +687,13 @@ window.renderGuildSystemModalContent = async function() {
   if (!container || !innerContent) return;
   if (container.classList.contains('hidden')) return;
   
+  // Synchronize view state across window and module
+  const currentView = window.teamsView || teamsView || 'list';
+  teamsView = currentView;
+  window.teamsView = currentView;
+
+  const activeUser = getActiveUser();
+
   if (teamsView === 'list') {
     // ----------------------------------------------------
     // 1) TEAMS LIST PAGE
@@ -501,6 +725,8 @@ window.renderGuildSystemModalContent = async function() {
           actionBtnHtml = `<button onclick="window.viewTeamById('${t.id}')" class="px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase rounded-xl hover:bg-emerald-500/25 transition">My Team</button>`;
         } else if (userGuild) {
           actionBtnHtml = `<button onclick="window.viewTeamById('${t.id}')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-bdr text-white text-[10px] font-black uppercase rounded-xl transition">View</button>`;
+        } else if (memberCount >= 4) {
+          actionBtnHtml = `<span class="px-2.5 py-1 bg-white/5 border border-white/10 text-t3 text-[9px] font-bold uppercase rounded-xl">Full (4/4)</span>`;
         } else if (t.joinType === 'application') {
           actionBtnHtml = `<button onclick="window.applyToTeam('${t.id}')" class="px-3 py-1.5 bg-gold/15 hover:bg-gold/30 border border-gold/40 text-gold text-[10px] font-black uppercase rounded-xl transition">Apply</button>`;
         } else {
@@ -531,7 +757,7 @@ window.renderGuildSystemModalContent = async function() {
 
             <div class="flex items-center justify-between pt-2 border-t border-bdr/20">
               <span class="text-[10px] font-mono text-t3 flex items-center gap-1">
-                <i class="fas fa-users text-gold"></i> <strong class="text-white">${memberCount}</strong> / 8 Members
+                <i class="fas fa-users text-gold"></i> <strong class="text-white">${memberCount}</strong> / 4 Members
               </span>
               ${actionBtnHtml}
             </div>
@@ -612,8 +838,140 @@ window.renderGuildSystemModalContent = async function() {
 
   } else if (teamsView === 'create') {
     // ----------------------------------------------------
-    // 2) CREATE TEAM PAGE
+    // 2) CREATE TEAM PAGE (PAY RS. 49 OR ENTER PROMO CODE)
     // ----------------------------------------------------
+    if (userGuild) {
+      innerContent.innerHTML = `
+        <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <button onclick="window.setTeamsView('list')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+              <i class="fas fa-arrow-left text-xs"></i>
+            </button>
+            <h3 class="font-display text-base font-black text-white uppercase tracking-wider">Create Team</h3>
+          </div>
+        </div>
+
+        <div class="flex-1 p-6 flex flex-col items-center justify-center max-w-md mx-auto text-center space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-400 flex items-center justify-center text-3xl">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div class="space-y-1">
+            <h3 class="font-display text-lg font-black text-white uppercase">You already belong to a Team!</h3>
+            <p class="text-xs text-t2">You are currently in <strong>${userGuild.name}</strong> [${userGuild.tag || 'PRO'}]. Each player can only belong to or lead one team at a time.</p>
+          </div>
+          <div class="flex items-center gap-3 pt-2">
+            <button onclick="window.viewMyTeamProfile()" class="px-5 py-2.5 bg-gradient-to-r from-gold to-yellow-500 text-bg text-xs font-black uppercase rounded-xl shadow-lg cursor-pointer">
+              View My Team 🚀
+            </button>
+            <button onclick="window.setTeamsView('list')" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-xl border border-bdr cursor-pointer">
+              Teams List
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const isUnlocked = window.teamCreationUnlocked || (activeUser && activeUser.isAdmin === true);
+
+    if (!isUnlocked) {
+      // Step 1: User is asked to Pay Rs. 49 OR Enter Promo Code
+      innerContent.innerHTML = `
+        <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <button onclick="window.setTeamsView('list')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+              <i class="fas fa-arrow-left text-xs"></i>
+            </button>
+            <h3 class="font-display text-base font-black text-white uppercase tracking-wider">Create Team</h3>
+          </div>
+        </div>
+
+        <div class="flex-1 p-6 flex flex-col items-center justify-center max-w-xl mx-auto text-center space-y-6 scrollbar-thin">
+          <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <i class="fas fa-users-cog"></i>
+          </div>
+
+          <div class="space-y-1.5">
+            <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+              <i class="fas fa-shield-alt text-amber-400"></i> Esports Squad License
+            </span>
+            <h3 class="font-display text-2xl font-black text-white uppercase tracking-wide">
+              Create Your Team
+            </h3>
+            <p class="text-xs text-t2 max-w-md mx-auto leading-relaxed">
+              Choose one of the two options below to unlock your team registration and recruit your squad:
+            </p>
+          </div>
+
+          <!-- Two Options Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-left">
+            <!-- Option 1: Pay Rs. 49 -->
+            <div class="bg-[#0e111d] border-2 border-amber-500/40 hover:border-amber-400 rounded-2xl p-5 space-y-4 shadow-xl transition flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fas fa-coins"></i>
+                  </div>
+                  <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[10px] uppercase font-mono">Option 1</span>
+                </div>
+                <div>
+                  <h4 class="font-display font-black text-white text-base">Pay Rs. 49</h4>
+                  <p class="text-[11px] text-t3 mt-0.5">Instant activation with your ArenaX wallet balance.</p>
+                </div>
+                <div class="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1 text-xs">
+                  <div class="flex items-center justify-between text-t3">
+                    <span>Creation Fee:</span>
+                    <span class="text-white font-black font-mono">Rs. 49</span>
+                  </div>
+                  <div class="flex items-center justify-between text-t3">
+                    <span>Your Balance:</span>
+                    <span class="text-amber-400 font-bold font-mono">Rs. ${activeUser ? (activeUser.balance || 0) : 0}</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="window.handlePayTeamCreationFee()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-bg text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fas fa-check-circle"></i> Pay Rs. 49 & Continue
+              </button>
+            </div>
+
+            <!-- Option 2: Enter a Promo Code -->
+            <div class="bg-[#0e111d] border-2 border-indigo-500/40 hover:border-indigo-400 rounded-2xl p-5 space-y-4 shadow-xl transition flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg">
+                    <i class="fas fa-ticket-alt"></i>
+                  </div>
+                  <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-black text-[10px] uppercase font-mono">Option 2</span>
+                </div>
+                <div>
+                  <h4 class="font-display font-black text-white text-base">Enter Promo Code</h4>
+                  <p class="text-[11px] text-t3 mt-0.5">Waive the fee with an official creator or event code.</p>
+                </div>
+                <div class="space-y-1.5">
+                  <input id="ctPromoCodeInput" type="text" placeholder="e.g. ARENAX49" class="w-full bg-black/40 border border-bdr rounded-xl px-3 py-2 text-xs text-white uppercase placeholder-slate-500 outline-none focus:border-indigo-400 transition font-mono tracking-wider" />
+                  <div class="flex items-center justify-between">
+                    <p class="text-[10px] text-indigo-300/80">Code: <code class="font-mono text-white font-bold">ARENAX49</code></p>
+                    <button type="button" onclick="$('ctPromoCodeInput').value='ARENAX49'; window.handleApplyTeamPromoCode();" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer">
+                      Auto-Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button onclick="window.handleApplyTeamPromoCode()" class="w-full py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fas fa-gift"></i> Apply Promo Code
+              </button>
+            </div>
+          </div>
+
+          <button onclick="window.setTeamsView('list')" class="text-xs text-t3 hover:text-white transition flex items-center gap-1 cursor-pointer pt-2">
+            <i class="fas fa-arrow-left text-[10px]"></i> Back to Teams Directory
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // User HAS unlocked team creation via Pay Rs. 49 or Promo Code: render standard team creation form
     innerContent.innerHTML = `
       <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
         <div class="flex items-center gap-3">
@@ -625,6 +983,19 @@ window.renderGuildSystemModalContent = async function() {
       </div>
 
       <div class="flex-1 p-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-5 scrollbar-thin">
+        <!-- Unlocked Badge Banner -->
+        <div class="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs text-emerald-300">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-emerald-400 text-base"></i>
+            <div>
+              <strong class="block text-white">Team Creation Access Unlocked</strong>
+              <span class="text-[11px] text-emerald-300/80">${window.teamCreationPaymentMethod === 'paid_49' ? 'Paid Rs. 49 from Wallet' : 'Promo Code Applied (' + (window.teamCreationPromoCode || 'WAIVED') + ')'}</span>
+            </div>
+          </div>
+          <button onclick="window.teamCreationUnlocked=false; window.renderGuildSystemModalContent();" class="text-[11px] text-t3 hover:text-white underline cursor-pointer">
+            Change
+          </button>
+        </div>
         <!-- Image Upload Section -->
         <div class="flex flex-col items-center justify-center space-y-3">
           <label class="block text-[10px] text-gold uppercase font-bold tracking-wider">Team Logo (Upload Image or Pick Crest)</label>
@@ -721,6 +1092,30 @@ window.renderGuildSystemModalContent = async function() {
     if (currentGuildTab === 'profile') {
       mainTabHtml = `
         <div class="space-y-4">
+          <!-- Esports Squad Role Composition & Recruitment Banner -->
+          <div class="bg-gradient-to-r from-[#121626] to-[#0b0c16] border border-gold/30 rounded-2xl p-4 space-y-3 shadow-md">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[9px] uppercase tracking-wider font-mono font-bold text-gold">ESPORTS SQUAD COMPOSITION</span>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${members.length >= 4 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-gold/15 text-gold border border-gold/30'}">
+                    ${members.length}/4 Roster Limit
+                  </span>
+                </div>
+                <div id="teamSquadLookingForRoles" class="flex items-center gap-1.5 flex-wrap pt-1.5">
+                  <span class="text-xs font-bold text-white">Looking for:</span>
+                  <span class="text-[10px] text-t3 font-mono"><i class="fas fa-spinner animate-spin text-gold mr-1"></i> Checking squad roles...</span>
+                </div>
+              </div>
+
+              ${isLeader && members.length < 4 ? `
+                <button onclick="window.openTeamRecruitmentModal('${team.id}')" class="px-4 py-2 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase tracking-wider rounded-xl transition shadow-lg hover:shadow-gold/30 cursor-pointer flex items-center gap-1.5 self-start sm:self-center active:scale-95 flex-shrink-0">
+                  <i class="fas fa-user-plus"></i> Recruit Members
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
           <!-- Activeness / EXP Progress Bar -->
           <div class="bg-card/25 border border-bdr/20 rounded-2xl p-4 space-y-3">
             <div class="flex items-center justify-between text-xs">
@@ -795,14 +1190,46 @@ window.renderGuildSystemModalContent = async function() {
         </div>
       `;
 
+      // Async fetch team member roles for looking-for banner
+      setTimeout(async () => {
+        try {
+          const mData = await window.fetchGuildMembers(members);
+          const bannerEl = $('teamSquadLookingForRoles');
+          if (bannerEl) {
+            if (members.length >= 4) {
+              bannerEl.innerHTML = '<span class="text-xs text-emerald-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Squad Full (4/4 Roster)</span>';
+            } else if (window.calculateTeamRoles) {
+              const { missingRoles } = window.calculateTeamRoles(mData);
+              if (missingRoles.length > 0) {
+                bannerEl.innerHTML = `
+                  <span class="text-xs font-bold text-white">Looking for:</span>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    ${missingRoles.map(r => window.getRoleBadgeHtml(r)).join('')}
+                  </div>
+                `;
+              } else {
+                bannerEl.innerHTML = '<span class="text-xs text-emerald-400 font-bold">All 4 roles covered!</span>';
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Error fetching roles for banner:', e);
+        }
+      }, 50);
+
     } else if (currentGuildTab === 'members') {
       mainTabHtml = `
         <div class="space-y-4">
           <div class="flex items-center justify-between bg-card/25 border border-bdr/20 p-3.5 rounded-2xl">
             <div>
-              <h4 class="text-xs font-black uppercase text-white">Roster Ranks</h4>
-              <p class="text-[9px] text-t3 font-mono">Members: ${members.length}/8 | Guards: ${guards.length}/2</p>
+              <h4 class="text-xs font-black uppercase text-white">Tournament Roster (4 Players Max)</h4>
+              <p class="text-[9px] text-t3 font-mono">Members: ${members.length}/4 | Guards: ${guards.length}/2</p>
             </div>
+            ${isLeader && members.length < 4 ? `
+              <button onclick="window.openTeamRecruitmentModal('${team.id}')" class="px-3 py-1.5 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95">
+                <i class="fas fa-user-plus"></i> Recruit Roles
+              </button>
+            ` : ''}
           </div>
 
           <div class="bg-card/20 border border-bdr/20 rounded-2xl p-4 overflow-x-auto scrollbar-thin">
@@ -810,12 +1237,13 @@ window.renderGuildSystemModalContent = async function() {
               <thead>
                 <tr class="border-b border-bdr/20 text-[9px] text-t3 font-bold uppercase tracking-wider">
                   <th class="pb-2 pl-2">Member</th>
-                  <th class="pb-2 text-center">Role</th>
+                  <th class="pb-2 text-center">Esports Role</th>
+                  <th class="pb-2 text-center">Guild Rank</th>
                   <th class="pb-2 text-right pr-2">Actions</th>
                 </tr>
               </thead>
               <tbody id="teamMembersListTbody" class="text-xs">
-                <tr><td colspan="3" class="py-6 text-center text-t3"><i class="fas fa-spinner animate-spin text-gold mr-1"></i> Loading member roster...</td></tr>
+                <tr><td colspan="4" class="py-6 text-center text-t3"><i class="fas fa-spinner animate-spin text-gold mr-1"></i> Loading member roster...</td></tr>
               </tbody>
             </table>
           </div>
@@ -833,9 +1261,13 @@ window.renderGuildSystemModalContent = async function() {
           const isMemberGuard = guards.includes(m.uid);
           const isSelf = m.uid === (userProfile && userProfile.uid);
 
-          let roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-card border border-bdr text-t2">👤 Member</span>';
-          if (isMemberLeader) roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-gold/15 text-gold border border-gold/30">👑 Leader</span>';
-          else if (isMemberGuard) roleBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">🛡️ Guard</span>';
+          let rankBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-card border border-bdr text-t2">👤 Member</span>';
+          if (isMemberLeader) rankBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-gold/15 text-gold border border-gold/30">👑 Leader</span>';
+          else if (isMemberGuard) rankBadge = '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">🛡️ Guard</span>';
+
+          const roleBadgeHtml = (m.playerRole && window.getRoleBadgeHtml) 
+            ? window.getRoleBadgeHtml(m.playerRole) 
+            : '<span class="text-[9px] text-t3 font-mono">No Role</span>';
 
           let actionsHtml = '-';
           if (isLeader && !isSelf) {
@@ -863,7 +1295,8 @@ window.renderGuildSystemModalContent = async function() {
                 <p class="text-[9px] text-t3 font-mono">@${m.handle || 'player'}</p>
               </div>
             </td>
-            <td class="py-3 text-center">${roleBadge}</td>
+            <td class="py-3 text-center">${roleBadgeHtml}</td>
+            <td class="py-3 text-center">${rankBadge}</td>
             <td class="py-3 text-right pr-2">${actionsHtml}</td>
           `;
           tbody.appendChild(tr);
@@ -1005,6 +1438,80 @@ window.renderGuildSystemModalContent = async function() {
         ${mainTabHtml}
       </div>
     `;
+
+  } else if (teamsView === 'rankings') {
+    // ----------------------------------------------------
+    // 4) TEAMS LEADERBOARD / RANKINGS VIEW
+    // ----------------------------------------------------
+    const sortedTeams = [...allGuilds].sort((a, b) => {
+      const expA = (a.exp || 0) + (a.treasury || 0) + ((a.level || 1) * 100);
+      const expB = (b.exp || 0) + (b.treasury || 0) + ((b.level || 1) * 100);
+      return expB - expA;
+    });
+
+    innerContent.innerHTML = `
+      <div class="p-4 border-b border-bdr/40 flex items-center justify-between bg-[#0b0c16] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <button onclick="window.setTeamsView('list')" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-arrow-left text-xs"></i>
+          </button>
+          <h3 class="font-display text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fas fa-trophy text-gold"></i> Team Leaderboard
+          </h3>
+        </div>
+        <button onclick="window.setTeamsView('create')" class="px-3 py-1.5 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[10px] font-black uppercase rounded-xl transition shadow-md cursor-pointer flex items-center gap-1.5">
+          <i class="fas fa-plus"></i> Create Team
+        </button>
+      </div>
+
+      <div class="flex-1 p-4 overflow-y-auto min-h-0 scrollbar-thin space-y-3">
+        <div class="p-3 bg-gold/10 border border-gold/30 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-gold/20 text-gold flex items-center justify-center text-lg">
+              <i class="fas fa-crown"></i>
+            </div>
+            <div>
+              <h4 class="font-display text-xs font-black text-white uppercase">ArenaX Championship Season</h4>
+              <p class="text-[10px] text-t3">Compete in tournaments & team battles to earn points</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-gold font-bold uppercase">Weekly Reset</span>
+        </div>
+
+        <div class="space-y-2">
+          ${sortedTeams.length === 0 ? `
+            <div class="text-center py-10 text-t3 bg-card/20 border border-bdr/20 rounded-2xl">
+              <i class="fas fa-shield-alt text-2xl text-gold/30 mb-2"></i>
+              <p class="text-xs font-bold">No Ranked Teams Yet</p>
+              <p class="text-[10px] mt-0.5">Establish your team and climb the leaderboard!</p>
+            </div>
+          ` : sortedTeams.map((tm, idx) => {
+            const rank = idx + 1;
+            const rankBadge = rank === 1 ? '👑 #1' : (rank === 2 ? '🥈 #2' : (rank === 3 ? '🥉 #3' : `#${rank}`));
+            const rankColor = rank === 1 ? 'text-gold bg-gold/15 border-gold/40' : (rank === 2 ? 'text-slate-200 bg-white/10 border-white/20' : (rank === 3 ? 'text-amber-500 bg-amber-500/15 border-amber-500/30' : 'text-t3 bg-card border-bdr/30'));
+            return `
+              <div class="bg-card/40 hover:bg-card/70 border border-bdr/30 rounded-xl p-3.5 flex items-center justify-between gap-3 transition">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-black border flex-shrink-0 ${rankColor}">${rankBadge}</span>
+                  <div class="w-10 h-10 rounded-full bg-[#0e101f] border border-gold/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    ${tm.logoUrl && tm.logoUrl.startsWith('data:') ? `<img src="${tm.logoUrl}" class="w-full h-full object-cover" />` : `<span class="text-xl">${tm.logoUrl || '🦁'}</span>`}
+                  </div>
+                  <div class="min-w-0">
+                    <h5 class="font-display text-xs font-black text-white uppercase truncate">${tm.name} <span class="text-gold text-[9px]">[${tm.tag || 'PRO'}]</span></h5>
+                    <p class="text-[10px] text-t3 font-mono">Leader: <strong class="text-white">${tm.leaderName || 'Admin'}</strong> | ${(tm.members || []).length}/4 Members</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <button onclick="window.viewTeamById('${tm.id}')" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase rounded-lg border border-bdr transition cursor-pointer">
+                    View
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
   }
 };
 
@@ -1035,7 +1542,10 @@ window.toggleGuildBrowser = function(show) {
 };
 
 window.openCreateGuildModal = function() {
-  $('mCreateGuild').classList.remove('hidden');
+  if (typeof window.openTeamsModal === 'function') {
+    window.openTeamsModal();
+  }
+  window.setTeamsView('create');
 };
 
 window.closeGuildsModal = function() {
@@ -1826,13 +2336,16 @@ window.legacyRenderGuildSystemModalContent = async function() {
               </div>
             </td>
             <td class="py-3 text-center">
-              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                isLeader 
-                  ? 'bg-gold/10 text-gold border border-gold/20' 
-                  : 'bg-card border border-bdr/50 text-t2'
-              }">
-                ${isLeader ? '👑 Leader' : '⚔️ Member'}
-              </span>
+              <div class="flex flex-col items-center gap-1">
+                ${(m.playerRole && window.getRoleBadgeHtml) ? window.getRoleBadgeHtml(m.playerRole) : '<span class="text-[9px] text-t3 font-mono">No Role</span>'}
+                <span class="px-2 py-0.2 rounded text-[8px] font-bold uppercase tracking-wider ${
+                  isLeader 
+                    ? 'bg-gold/10 text-gold border border-gold/20' 
+                    : 'bg-card border border-bdr/50 text-t2'
+                }">
+                  ${isLeader ? '👑 Leader' : '⚔️ Member'}
+                </span>
+              </div>
             </td>
             <td class="py-3 text-center">
               <span class="inline-flex items-center gap-1.5 text-[10px] text-green-400 font-bold">
@@ -2257,8 +2770,8 @@ window.legacyRenderGuildSystemModalContent = async function() {
       <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden min-h-0">
         <div class="lg:col-span-7 flex flex-col h-full min-h-0 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2.5">
-            <button id="btnCreateGuildTrigger" onclick="window.openCreateGuildModal()" class="px-3 py-2 bg-gold hover:bg-[#e8b830] text-bg text-[11px] font-black uppercase rounded-lg transition active:scale-[0.98] cursor-pointer flex items-center gap-1.5">
-              <i class="fas fa-plus"></i> Create Guild <span class="bg-black/10 text-black px-1.5 py-0.2 rounded text-[9px]">500 AX</span>
+            <button id="btnCreateGuildTrigger" onclick="window.setTeamsView('create')" class="px-3.5 py-2 bg-gradient-to-r from-gold via-yellow-400 to-amber-500 text-bg text-[11px] font-black uppercase rounded-xl transition shadow-md active:scale-[0.98] cursor-pointer flex items-center gap-1.5">
+              <i class="fas fa-plus"></i> Create Team
             </button>
             
             <div class="flex items-center gap-2 flex-1 max-w-sm ml-auto">
@@ -2600,12 +3113,9 @@ function renderSelectedGuildDetailsUI() {
 }
 
 function openGuildsModal() {
-  if (guestProfile) {
-    alert("Please log in or register a profile to access the Guilds & Teams Hub!");
-    return;
+  if (typeof window.openTeamsModal === 'function') {
+    window.openTeamsModal();
   }
-  $('mGuildSystemModal').classList.remove('hidden');
-  listenToGuilds();
 }
 
 function openJoinRequestMessageModal() {
@@ -2691,6 +3201,79 @@ window.declineTeamJoinRequest = async function(mailId, fromUserId, teamId, teamN
     if (typeof window.renderInboxUI === 'function') window.renderInboxUI();
   } catch (err) {
     alert("Failed to decline request: " + err.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Decline';
+    }
+  }
+};
+
+window.acceptTeamInvite = async function(mailId, teamId, teamName, buttonEl) {
+  if (!userProfile) {
+    alert("Please log in to accept the team invite!");
+    return;
+  }
+  if (userGuild) {
+    alert("You are already in a team! Leave your current team first.");
+    return;
+  }
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Joining...';
+  }
+  try {
+    const teamDocRef = doc(db, 'teams', teamId);
+    const teamSnap = await getDoc(teamDocRef);
+    if (!teamSnap.exists()) {
+      alert("This team no longer exists.");
+      return;
+    }
+    const teamData = teamSnap.data();
+    if (teamData.members && teamData.members.length >= 4) {
+      alert("This squad is already full (maximum 4 members allowed)!");
+      return;
+    }
+    const myRole = (window.userProfile && window.userProfile.playerRole) || (userProfile && userProfile.playerRole) || 'rusher';
+    await updateDoc(teamDocRef, {
+      members: arrayUnion(userProfile.uid),
+      memberCount: increment(1),
+      [`memberRoles.${userProfile.uid}`]: myRole
+    });
+
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+    await updateDoc(mailDocRef, {
+      status: "accepted",
+      read: true
+    });
+
+    alert(`🎉 Welcome to "${teamName}"! You have successfully joined the squad.`);
+    if (typeof window.renderUserMails === 'function') window.renderUserMails();
+    if (typeof listenToGuilds === 'function') listenToGuilds();
+  } catch (err) {
+    alert("Failed to join team: " + err.message);
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = 'Accept & Join Squad';
+    }
+  }
+};
+
+window.declineTeamInvite = async function(mailId, teamId, buttonEl) {
+  if (!userProfile) return;
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Declining...';
+  }
+  try {
+    const mailDocRef = doc(db, 'users', userProfile.uid, 'mails', mailId);
+    await updateDoc(mailDocRef, {
+      status: "declined",
+      read: true
+    });
+    alert("Invitation declined.");
+    if (typeof window.renderUserMails === 'function') window.renderUserMails();
+  } catch (err) {
+    console.error("Failed to decline invite:", err);
     if (buttonEl) {
       buttonEl.disabled = false;
       buttonEl.textContent = 'Decline';
@@ -2836,15 +3419,10 @@ if (guildSearchInputEl) {
 const btnCreateGuildTriggerEl = $('btnCreateGuildTrigger');
 if (btnCreateGuildTriggerEl) {
   btnCreateGuildTriggerEl.addEventListener('click', () => {
-    if (userGuild) {
-      alert("You are already in a guild! You must leave your current guild to create a new one.");
-      return;
+    if (typeof window.openTeamsModal === 'function') {
+      window.openTeamsModal();
     }
-    if ($('cgName')) $('cgName').value = '';
-    if ($('cgTag')) $('cgTag').value = '';
-    if ($('cgDesc')) $('cgDesc').value = '';
-    if ($('cgRequirements')) $('cgRequirements').value = '';
-    if ($('mCreateGuild')) $('mCreateGuild').classList.remove('hidden');
+    window.setTeamsView('create');
   });
 }
 
