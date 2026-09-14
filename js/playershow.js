@@ -139,6 +139,9 @@ async function resolveModelCandidateUrls(cleanFileName) {
     candidateUrls.push(`${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`);
   }
 
+  // High-reliability raw GitHub fallback where model files are guaranteed to exist
+  candidateUrls.push(`https://raw.githubusercontent.com/kpllahore123-maker/arenaX/main/public/${cleanFileName}`);
+
   if (typeof window.getAppBasePath === 'function') {
     try {
       const b = window.getAppBasePath();
@@ -687,7 +690,7 @@ window.selectPlayerShowModel = async function(modelId) {
   loadPlayerShowModelFile(model.fileName);
 };
 
-function openPlayerShowViewer() {
+function openPlayerShowViewerDirect() {
   console.log("[PlayerShow] openPlayerShowViewer initiated...");
   const modal = document.getElementById('pPlayerShowViewerPage');
   if (!modal) {
@@ -1050,25 +1053,43 @@ export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
   }
 
   const remoteBase = window.ARENAX_3D_ASSET_BASE_URL || 'https://arenax.cyou';
-  const downloadUrl = `${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`;
+  const primaryUrl = `${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`;
+  const githubRawUrl = `https://raw.githubusercontent.com/kpllahore123-maker/arenaX/main/public/${cleanFileName}`;
+  const candidateDownloadUrls = [primaryUrl, githubRawUrl];
 
-  try {
-    console.log(`[PlayerShow Download] Starting download: ${downloadUrl} -> Directory.Data/${cleanFileName}...`);
+  let downloadSucceeded = false;
+  let lastError = null;
 
-    const downloadRes = await Filesystem.downloadFile({
-      url: downloadUrl,
-      path: cleanFileName,
-      directory: Directory.Data,
-      progress: true
-    });
+  for (let i = 0; i < candidateDownloadUrls.length; i++) {
+    const downloadUrl = candidateDownloadUrls[i];
+    try {
+      console.log(`[PlayerShow Download] Attempting download (${i + 1}/${candidateDownloadUrls.length}): ${downloadUrl} -> Directory.Data/${cleanFileName}...`);
 
-    console.log('[PlayerShow Download] Download successfully saved:', downloadRes);
+      const downloadRes = await Filesystem.downloadFile({
+        url: downloadUrl,
+        path: cleanFileName,
+        directory: Directory.Data,
+        progress: true
+      });
 
-    if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
-      try { await currentDownloadListener.remove(); } catch(e) {}
-      currentDownloadListener = null;
+      console.log('[PlayerShow Download] Download successfully saved:', downloadRes);
+      downloadSucceeded = true;
+      break;
+    } catch (err) {
+      console.warn(`[PlayerShow Download] Attempt ${i + 1} failed for ${downloadUrl}:`, err);
+      lastError = err;
+      if (statusLabel && i < candidateDownloadUrls.length - 1) {
+        statusLabel.innerHTML = '<i class="fas fa-rotate text-[#f0c040] animate-spin"></i> <span>Connecting to alternate asset server...</span>';
+      }
     }
+  }
 
+  if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+    try { await currentDownloadListener.remove(); } catch(e) {}
+    currentDownloadListener = null;
+  }
+
+  if (downloadSucceeded) {
     const finalTotalMb = (totalBytesExpected / (1024 * 1024)).toFixed(1);
     if (progressBar) progressBar.style.width = '100%';
     if (percentText) percentText.textContent = '100%';
@@ -1084,19 +1105,13 @@ export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
         onComplete();
       }
     }, 450);
-
-  } catch (downloadErr) {
-    console.error('[PlayerShow Download] Download failed:', downloadErr);
-    if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
-      try { await currentDownloadListener.remove(); } catch(e) {}
-      currentDownloadListener = null;
-    }
-
+  } else {
+    console.error('[PlayerShow Download] All download candidates failed:', lastError);
     if (errorBox) {
       errorBox.classList.remove('hidden');
       const errEl = document.getElementById('psDownloadErrorMsg');
       if (errEl) {
-        errEl.textContent = `Download failed: ${downloadErr?.message || 'Server unavailable or network offline.'}`;
+        errEl.textContent = `Download failed: ${lastError?.message || 'Server unavailable or network offline.'}`;
       }
     }
     if (statusLabel) {
@@ -1139,7 +1154,7 @@ window.testPlayerShowDownloadScreen = function(simulated = true) {
         }
         setTimeout(() => {
           hidePlayerShowDownloadScreen();
-          openPlayerShowViewer();
+          openPlayerShowViewerDirect();
         }, 500);
       }
     }, 200);
@@ -1159,7 +1174,7 @@ window.openPlayerShowViewer = async function() {
   // since the on-demand 3D asset download system only applies to the APK."
   // "In the web browser version, keep the existing behavior unchanged (no full-screen download screen, just load the model normally over network)"
   if (!isNative) {
-    openPlayerShowViewer();
+    openPlayerShowViewerDirect();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
     return;
   }
@@ -1173,7 +1188,7 @@ window.openPlayerShowViewer = async function() {
   const alreadyCached = await isModelCachedLocally(cleanFileName);
   if (alreadyCached) {
     console.log(`[PlayerShow] Model "${cleanFileName}" is already cached in local filesystem. Opening viewer directly.`);
-    openPlayerShowViewer();
+    openPlayerShowViewerDirect();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
     return;
   }
@@ -1181,7 +1196,7 @@ window.openPlayerShowViewer = async function() {
   // "This full-page loading screen appears the moment the user taps 'Player Show' if the 3D model isn't already cached locally (APK only)"
   // "Once download reaches 100%, automatically transition to the actual Player Show 3D viewer"
   startPlayerShowOnDemandDownload(cleanFileName, () => {
-    openPlayerShowViewer();
+    openPlayerShowViewerDirect();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
   });
 };
