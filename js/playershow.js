@@ -2,6 +2,40 @@
 // ARENAX 3D PLAYER SHOW / THREE.JS ENGINE
 // ==========================================
 
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
+// Helper: Check if running inside native Capacitor Android APK
+export function isNativeCapacitor() {
+  try {
+    if (typeof Capacitor !== 'undefined' && typeof Capacitor.isNativePlatform === 'function') {
+      return Capacitor.isNativePlatform();
+    }
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
+      return window.Capacitor.isNativePlatform();
+    }
+  } catch (e) {}
+  return false;
+}
+window.isNativeCapacitor = isNativeCapacitor;
+
+// Helper: Check if a 3D model is already downloaded & cached in local Directory.Data
+export async function isModelCachedLocally(fileName) {
+  if (!isNativeCapacitor()) return false;
+  const cleanFileName = String(fileName || '').replace(/^(\.\/|\/)/, '');
+  if (!cleanFileName) return false;
+  try {
+    const stat = await Filesystem.stat({
+      path: cleanFileName,
+      directory: Directory.Data
+    });
+    return !!(stat && (stat.size > 0 || stat.uri));
+  } catch (e) {
+    return false;
+  }
+}
+window.isModelCachedLocally = isModelCachedLocally;
+
 // Module variables
 let playerShow3DModel = null;
 let playerShowCoinGroup = null;
@@ -66,6 +100,57 @@ function cloneArenaXGltf(gltf) {
   return clone;
 }
 
+// Resolves candidate URLs to load a model from, prioritizing native local cached files in Capacitor APK
+async function resolveModelCandidateUrls(cleanFileName) {
+  const candidateUrls = [];
+  
+  // In native Capacitor APK, check if file is cached in Directory.Data
+  if (isNativeCapacitor()) {
+    try {
+      const stat = await Filesystem.stat({
+        path: cleanFileName,
+        directory: Directory.Data
+      });
+      if (stat && (stat.size > 0 || stat.uri)) {
+        let uri = stat.uri;
+        if (!uri) {
+          const uRes = await Filesystem.getUri({ path: cleanFileName, directory: Directory.Data });
+          uri = uRes.uri;
+        }
+        if (uri) {
+          const converted = Capacitor.convertFileSrc(uri);
+          console.log(`[ArenaX 3D] Using native local cached model for "${cleanFileName}":`, converted);
+          candidateUrls.push(converted);
+        }
+      }
+    } catch (e) {
+      // Not cached in Directory.Data
+    }
+  }
+
+  // Standard web & relative paths
+  candidateUrls.push('/' + cleanFileName);
+  candidateUrls.push('./' + cleanFileName);
+  candidateUrls.push(cleanFileName);
+
+  // Fallback to production origin if available
+  const remoteBase = window.ARENAX_3D_ASSET_BASE_URL || 'https://arenax.cyou';
+  if (remoteBase) {
+    candidateUrls.push(`${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`);
+  }
+
+  if (typeof window.getAppBasePath === 'function') {
+    try {
+      const b = window.getAppBasePath();
+      if (b && b !== '/' && b !== './') {
+        candidateUrls.push(b.endsWith('/') ? b + cleanFileName : b + '/' + cleanFileName);
+      }
+    } catch(e) {}
+  }
+
+  return Array.from(new Set(candidateUrls));
+}
+
 // Loads and caches a 3D model asset silently in the background
 function preloadArenaX3DModel(fileName) {
   if (!fileName) return Promise.resolve(null);
@@ -94,68 +179,56 @@ function preloadArenaX3DModel(fileName) {
     }
   }
 
-  const candidateUrls = [
-    '/' + cleanFileName,
-    './' + cleanFileName,
-    cleanFileName
-  ];
-  if (typeof window.getAppBasePath === 'function') {
-    try {
-      const b = window.getAppBasePath();
-      if (b && b !== '/' && b !== './') {
-        candidateUrls.push(b.endsWith('/') ? b + cleanFileName : b + '/' + cleanFileName);
-      }
-    } catch(e) {}
-  }
-  const urlsToTry = Array.from(new Set(candidateUrls));
-
-  const promise = new Promise((resolve) => {
-    const tryLoad = (idx) => {
-      if (idx >= urlsToTry.length) {
-        console.warn(`[ArenaX 3D] Failed to load model "${cleanFileName}" from any candidate URL (${urlsToTry.join(', ')}). Using procedural fallback.`);
-        resolve(null);
-        return;
-      }
-      const targetUrl = urlsToTry[idx];
-      loader.load(
-        targetUrl,
-        (gltf) => {
-          console.log(`[ArenaX 3D] Successfully loaded model "${cleanFileName}" from ${targetUrl}`);
-          // Prepare textures
-          if (gltf && gltf.scene) {
-            gltf.scene.traverse((child) => {
-              if (child.isMesh && child.material) {
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.forEach((mat) => {
-                  if (mat.map) {
-                    if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
-                    mat.map.flipY = false;
-                    mat.map.needsUpdate = true;
-                  }
-                  if (mat.emissiveMap) {
-                    if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                    if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
-                    mat.emissiveMap.flipY = false;
-                    mat.emissiveMap.needsUpdate = true;
-                  }
-                  mat.needsUpdate = true;
-                });
-              }
-            });
-          }
-          window.ARENAX_3D_CACHE.parsedGltf[cleanFileName] = gltf;
-          resolve(gltf);
-        },
-        undefined,
-        (err) => {
-          console.warn(`[ArenaX 3D] Attempt ${idx + 1}/${urlsToTry.length} failed for "${targetUrl}":`, err?.message || err);
-          tryLoad(idx + 1);
+  const promise = (async () => {
+    const urlsToTry = await resolveModelCandidateUrls(cleanFileName);
+    return new Promise((resolve) => {
+      const tryLoad = (idx) => {
+        if (idx >= urlsToTry.length) {
+          console.warn(`[ArenaX 3D] Failed to load model "${cleanFileName}" from any candidate URL (${urlsToTry.join(', ')}). Using procedural fallback.`);
+          resolve(null);
+          return;
         }
-      );
-    };
-    tryLoad(0);
-  });
+        const targetUrl = urlsToTry[idx];
+        loader.load(
+          targetUrl,
+          (gltf) => {
+            console.log(`[ArenaX 3D] Successfully loaded model "${cleanFileName}" from ${targetUrl}`);
+            // Prepare textures
+            if (gltf && gltf.scene) {
+              gltf.scene.traverse((child) => {
+                if (child.isMesh && child.material) {
+                  const materials = Array.isArray(child.material) ? child.material : [child.material];
+                  materials.forEach((mat) => {
+                    if (mat.map) {
+                      if (THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+                      if (THREE.sRGBEncoding) mat.map.encoding = THREE.sRGBEncoding;
+                      mat.map.flipY = false;
+                      mat.map.needsUpdate = true;
+                    }
+                    if (mat.emissiveMap) {
+                      if (THREE.SRGBColorSpace) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                      if (THREE.sRGBEncoding) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+                      mat.emissiveMap.flipY = false;
+                      mat.emissiveMap.needsUpdate = true;
+                    }
+                    mat.needsUpdate = true;
+                  });
+                }
+              });
+            }
+            window.ARENAX_3D_CACHE.parsedGltf[cleanFileName] = gltf;
+            resolve(gltf);
+          },
+          undefined,
+          (err) => {
+            console.warn(`[ArenaX 3D] Attempt ${idx + 1}/${urlsToTry.length} failed for "${targetUrl}":`, err?.message || err);
+            tryLoad(idx + 1);
+          }
+        );
+      };
+      tryLoad(0);
+    });
+  })();
 
   window.ARENAX_3D_CACHE.loadingPromises[cleanFileName] = promise;
   return promise;
@@ -163,6 +236,12 @@ function preloadArenaX3DModel(fileName) {
 
 // Background preloader: runs silently during splash screen without creating any canvas/DOM elements
 function initArenaX3DBackgroundPreload() {
+  // In native Capacitor Android APK, on-demand download applies when user taps Player Show,
+  // so skip heavy bulk network download during app startup
+  if (isNativeCapacitor()) {
+    console.log('[ArenaX 3D] APK detected: skipping bulk background preload; on-demand download active.');
+    return;
+  }
   const models = [
     'character_boy_1_fbx.glb',
     'Convert_Waving.glb',
@@ -587,11 +666,24 @@ function loadPlayerShowModelFile(fileName) {
   }
 }
 
-window.selectPlayerShowModel = function(modelId) {
+window.selectPlayerShowModel = async function(modelId) {
   const model = CHARACTER_3D_MODELS_DATA.find(m => m.id === modelId);
   if (!model) return;
   currentSelected3DModelId = model.id;
   renderPlayerShowSelectorUI();
+
+  // If in native Capacitor Android APK, check if model file needs to be downloaded first
+  if (isNativeCapacitor()) {
+    const cleanFileName = String(model.fileName).replace(/^(\.\/|\/)/, '');
+    const isCached = await isModelCachedLocally(cleanFileName);
+    if (!isCached) {
+      startPlayerShowOnDemandDownload(cleanFileName, () => {
+        loadPlayerShowModelFile(model.fileName);
+      });
+      return;
+    }
+  }
+
   loadPlayerShowModelFile(model.fileName);
 };
 
@@ -804,10 +896,296 @@ function closePlayerShowViewer() {
   if (modal) modal.classList.add('hidden');
 }
 
-window.openPlayerShowViewer = function() {
-  openPlayerShowViewer();
-  if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
+// ── FULL-PAGE 3D ASSET DOWNLOAD LOADING SCREEN CONTROLLER (CAPACITOR ANDROID APK ONLY) ──
+let psSlideshowInterval = null;
+let psCurrentSlideIndex = 0;
+let currentDownloadTarget = null;
+let currentDownloadOnComplete = null;
+let currentDownloadListener = null;
+
+// Starts auto-looping background slideshow (ps1.png -> ps2.png -> ps3.png -> ps1.png...)
+export function startPlayerShowSlideshow() {
+  stopPlayerShowSlideshow();
+  const slides = document.querySelectorAll('.ps-bg-slide');
+  if (!slides || slides.length === 0) return;
+
+  psCurrentSlideIndex = 0;
+  slides.forEach((s, idx) => {
+    if (idx === 0) {
+      s.classList.add('active');
+    } else {
+      s.classList.remove('active');
+    }
+  });
+
+  // Cycle every 3.5 seconds (auto-swap between 3 images every 3-4s with smooth 1s CSS crossfade)
+  psSlideshowInterval = setInterval(() => {
+    const allSlides = document.querySelectorAll('.ps-bg-slide');
+    if (!allSlides || allSlides.length === 0) return;
+    const prevIdx = psCurrentSlideIndex;
+    psCurrentSlideIndex = (psCurrentSlideIndex + 1) % allSlides.length;
+
+    allSlides[prevIdx].classList.remove('active');
+    allSlides[psCurrentSlideIndex].classList.add('active');
+  }, 3500);
+}
+window.startPlayerShowSlideshow = startPlayerShowSlideshow;
+
+export function stopPlayerShowSlideshow() {
+  if (psSlideshowInterval) {
+    clearInterval(psSlideshowInterval);
+    psSlideshowInterval = null;
+  }
+}
+window.stopPlayerShowSlideshow = stopPlayerShowSlideshow;
+
+export function hidePlayerShowDownloadScreen() {
+  stopPlayerShowSlideshow();
+  const screen = document.getElementById('pPlayerShowDownloadScreen');
+  if (screen) {
+    screen.classList.add('hidden');
+  }
+}
+window.hidePlayerShowDownloadScreen = hidePlayerShowDownloadScreen;
+
+export function cancelPlayerShowDownload() {
+  if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+    try { currentDownloadListener.remove(); } catch(e) {}
+    currentDownloadListener = null;
+  }
+  hidePlayerShowDownloadScreen();
+}
+window.cancelPlayerShowDownload = cancelPlayerShowDownload;
+
+export function retryPlayerShowDownload() {
+  if (currentDownloadTarget) {
+    startPlayerShowOnDemandDownload(currentDownloadTarget, currentDownloadOnComplete);
+  }
+}
+window.retryPlayerShowDownload = retryPlayerShowDownload;
+
+export function continueWithoutDownload() {
+  hidePlayerShowDownloadScreen();
+  if (typeof currentDownloadOnComplete === 'function') {
+    currentDownloadOnComplete();
+  }
+}
+window.continueWithoutDownload = continueWithoutDownload;
+
+// Starts on-demand download task with real-time @capacitor/filesystem progress listener
+export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
+  const cleanFileName = String(fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
+  currentDownloadTarget = cleanFileName;
+  currentDownloadOnComplete = onComplete;
+
+  const screen = document.getElementById('pPlayerShowDownloadScreen');
+  if (!screen) {
+    console.warn('[PlayerShow Download] #pPlayerShowDownloadScreen not found in DOM');
+    if (typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  const progressBar = document.getElementById('psDownloadProgressBar');
+  const mbText = document.getElementById('psDownloadMbText');
+  const percentText = document.getElementById('psDownloadPercentText');
+  const statusLabel = document.getElementById('psDownloadStatusLabel');
+  const errorBox = document.getElementById('psDownloadErrorBox');
+  const subText = document.getElementById('psDownloadSubText');
+
+  // Reset UI components
+  if (errorBox) errorBox.classList.add('hidden');
+  if (progressBar) progressBar.style.width = '0%';
+  if (percentText) percentText.textContent = '0%';
+  if (mbText) mbText.textContent = '0.0 MB / 45.0 MB';
+  if (subText) subText.textContent = `Downloading ${cleanFileName}...`;
+  if (statusLabel) statusLabel.textContent = 'Connecting to asset server...';
+
+  // Make full screen visible and launch slideshow
+  screen.classList.remove('hidden');
+  startPlayerShowSlideshow();
+
+  // Clean up any stale listener
+  if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+    try { await currentDownloadListener.remove(); } catch(e) {}
+    currentDownloadListener = null;
+  }
+
+  let totalBytesExpected = 45 * 1024 * 1024; // 45.0 MB benchmark default
+  let lastLoadedBytes = 0;
+  let lastProgressTime = Date.now();
+
+  try {
+    // Real download progress tracking via Capacitor Filesystem progress event
+    currentDownloadListener = await Filesystem.addListener('progress', (progress) => {
+      if (progress) {
+        const bytes = progress.bytes || 0;
+        const contentLength = progress.contentLength || 0;
+        if (contentLength > 0) {
+          totalBytesExpected = contentLength;
+        }
+        const curMb = (bytes / (1024 * 1024)).toFixed(1);
+        const totalMb = (totalBytesExpected / (1024 * 1024)).toFixed(1);
+        const percent = contentLength > 0
+          ? Math.min(100, Math.round((bytes / contentLength) * 100))
+          : Math.min(99, Math.round((bytes / totalBytesExpected) * 100));
+
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (percentText) percentText.textContent = `${percent}%`;
+        if (mbText) mbText.textContent = `${curMb} MB / ${totalMb} MB`;
+
+        const now = Date.now();
+        const dt = (now - lastProgressTime) / 1000;
+        if (dt >= 0.4) {
+          const speed = ((bytes - lastLoadedBytes) / dt / (1024 * 1024)).toFixed(1);
+          if (statusLabel) {
+            statusLabel.innerHTML = `<i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i> <span>Downloading ${cleanFileName} (${speed} MB/s)...</span>`;
+          }
+          lastLoadedBytes = bytes;
+          lastProgressTime = now;
+        }
+      }
+    });
+  } catch (listenerErr) {
+    console.warn('[PlayerShow Download] Filesystem.addListener error:', listenerErr);
+  }
+
+  const remoteBase = window.ARENAX_3D_ASSET_BASE_URL || 'https://arenax.cyou';
+  const downloadUrl = `${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`;
+
+  try {
+    console.log(`[PlayerShow Download] Starting download: ${downloadUrl} -> Directory.Data/${cleanFileName}...`);
+
+    const downloadRes = await Filesystem.downloadFile({
+      url: downloadUrl,
+      path: cleanFileName,
+      directory: Directory.Data,
+      progress: true
+    });
+
+    console.log('[PlayerShow Download] Download successfully saved:', downloadRes);
+
+    if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+      try { await currentDownloadListener.remove(); } catch(e) {}
+      currentDownloadListener = null;
+    }
+
+    const finalTotalMb = (totalBytesExpected / (1024 * 1024)).toFixed(1);
+    if (progressBar) progressBar.style.width = '100%';
+    if (percentText) percentText.textContent = '100%';
+    if (mbText) mbText.textContent = `${finalTotalMb} MB / ${finalTotalMb} MB`;
+    if (statusLabel) {
+      statusLabel.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> <span>Download complete! Loading 3D model...</span>';
+    }
+
+    // Automatically transition to the 3D viewer upon 100% completion
+    setTimeout(() => {
+      hidePlayerShowDownloadScreen();
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
+    }, 450);
+
+  } catch (downloadErr) {
+    console.error('[PlayerShow Download] Download failed:', downloadErr);
+    if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+      try { await currentDownloadListener.remove(); } catch(e) {}
+      currentDownloadListener = null;
+    }
+
+    if (errorBox) {
+      errorBox.classList.remove('hidden');
+      const errEl = document.getElementById('psDownloadErrorMsg');
+      if (errEl) {
+        errEl.textContent = `Download failed: ${downloadErr?.message || 'Server unavailable or network offline.'}`;
+      }
+    }
+    if (statusLabel) {
+      statusLabel.innerHTML = '<i class="fas fa-circle-exclamation text-rose-400"></i> <span class="text-rose-300">Download interrupted</span>';
+    }
+  }
+}
+window.startPlayerShowOnDemandDownload = startPlayerShowOnDemandDownload;
+
+// Visual test runner for preview / browser testing without requiring native Android APK
+window.testPlayerShowDownloadScreen = function(simulated = true) {
+  const screen = document.getElementById('pPlayerShowDownloadScreen');
+  if (!screen) return;
+  screen.classList.remove('hidden');
+  startPlayerShowSlideshow();
+  const progressBar = document.getElementById('psDownloadProgressBar');
+  const mbText = document.getElementById('psDownloadMbText');
+  const percentText = document.getElementById('psDownloadPercentText');
+  const statusLabel = document.getElementById('psDownloadStatusLabel');
+  const errorBox = document.getElementById('psDownloadErrorBox');
+  if (errorBox) errorBox.classList.add('hidden');
+
+  if (simulated) {
+    let p = 0;
+    const totalMb = 45.0;
+    const timer = setInterval(() => {
+      p += 5;
+      if (p > 100) p = 100;
+      const curMb = ((p / 100) * totalMb).toFixed(1);
+      if (progressBar) progressBar.style.width = `${p}%`;
+      if (percentText) percentText.textContent = `${p}%`;
+      if (mbText) mbText.textContent = `${curMb} MB / ${totalMb.toFixed(1)} MB`;
+      if (statusLabel) {
+        statusLabel.innerHTML = `<i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i> <span>Downloading 3D Assets (4.2 MB/s)...</span>`;
+      }
+      if (p >= 100) {
+        clearInterval(timer);
+        if (statusLabel) {
+          statusLabel.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> <span>Download complete! Loading 3D Viewer...</span>';
+        }
+        setTimeout(() => {
+          hidePlayerShowDownloadScreen();
+          openPlayerShowViewer();
+        }, 500);
+      }
+    }, 200);
+  }
 };
+
+// ── OPEN PLAYER SHOW VIEWER ENTRY POINT ──
+window.openPlayerShowViewer = async function() {
+  const isNative = isNativeCapacitor();
+  console.log('[PlayerShow] openPlayerShowViewer invoked. isNativePlatform:', isNative);
+
+  // CRITICAL REQUIREMENT:
+  // "This entire full-page loading screen (with the looping ps1.png/ps2.png/ps3.png images 
+  // and download progress) should ONLY appear when the app is running inside the native 
+  // Capacitor Android APK — use Capacitor.isNativePlatform() to check this. 
+  // This screen should NEVER show in the regular web browser version (arenax.cyou via Chrome/Safari), 
+  // since the on-demand 3D asset download system only applies to the APK."
+  // "In the web browser version, keep the existing behavior unchanged (no full-screen download screen, just load the model normally over network)"
+  if (!isNative) {
+    openPlayerShowViewer();
+    if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
+    return;
+  }
+
+  // Running inside Native Capacitor Android APK:
+  const profile = window.userProfile || window.currentUser || (typeof window.getActiveUserProfile === 'function' ? window.getActiveUserProfile() : null);
+  const activeFileName = getActive3DModelFileName(profile) || 'character_boy_1_fbx.glb';
+  const cleanFileName = String(activeFileName).replace(/^(\.\/|\/)/, '');
+
+  // "If already cached (previously downloaded), skip this loading screen entirely and go straight to the 3D viewer"
+  const alreadyCached = await isModelCachedLocally(cleanFileName);
+  if (alreadyCached) {
+    console.log(`[PlayerShow] Model "${cleanFileName}" is already cached in local filesystem. Opening viewer directly.`);
+    openPlayerShowViewer();
+    if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
+    return;
+  }
+
+  // "This full-page loading screen appears the moment the user taps 'Player Show' if the 3D model isn't already cached locally (APK only)"
+  // "Once download reaches 100%, automatically transition to the actual Player Show 3D viewer"
+  startPlayerShowOnDemandDownload(cleanFileName, () => {
+    openPlayerShowViewer();
+    if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
+  });
+};
+
 window.closePlayerShowViewer = closePlayerShowViewer;
 
 window.addEventListener('open-player-show-viewer', window.openPlayerShowViewer);
