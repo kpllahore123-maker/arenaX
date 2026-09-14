@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && mkdir -p dist/js && cp -r js/* dist/js/ && mkdir -p public/js && cp -r js/* public/js/",
+    "build": "vite build && mkdir -p dist/js && cp -r js/* dist/js/ && mkdir -p public/js && cp -r js/* public/js/ && rm -f dist/*.glb dist/**/*.glb public/*.glb public/**/*.glb",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "echo \"No tests\" && exit 0",
