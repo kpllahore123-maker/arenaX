@@ -7459,7 +7459,7 @@ html, body {
 </div>
 
 <!-- ── FULL-PAGE 3D ASSET DOWNLOAD LOADING SCREEN (CAPACITOR ANDROID APK ONLY) ── -->
-<div id="pPlayerShowDownloadScreen" class="fixed inset-0 z-[100060] hidden w-full h-full select-none overflow-hidden bg-black text-white">
+<div id="pPlayerShowDownloadScreen" class="fixed inset-0 z-[100060] hidden w-full h-full select-none overflow-hidden bg-slate-950 text-white">
   <style>
     .ps-bg-slide {
       position: absolute;
@@ -7470,14 +7470,16 @@ html, body {
       background-position: center;
       background-repeat: no-repeat;
       opacity: 0;
-      transition: opacity 1000ms ease-in-out;
+      transition: opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1), transform 6000ms ease-out;
       pointer-events: none;
       z-index: 1;
-      transform: scale(1.02);
+      transform: scale(1.0);
+      will-change: opacity, transform;
     }
     .ps-bg-slide.active {
       opacity: 1;
       z-index: 2;
+      transform: scale(1.05);
     }
   </style>
 
@@ -7488,14 +7490,14 @@ html, body {
     <div id="psSlide2" class="ps-bg-slide" style="background-image: url('ps3.png');"></div>
   </div>
 
-  <!-- Ambient Dark Vignette & Semi-Transparent Overlay for Legibility -->
-  <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/75 backdrop-blur-[1px] pointer-events-none z-[3]"></div>
+  <!-- Soft Ambient Transparent Dark Overlay: clean, high visibility of background artwork without harsh solid black boxes -->
+  <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/55 backdrop-blur-[0.5px] pointer-events-none z-[3]"></div>
 
   <!-- Close / Cancel Button (top right) -->
   <button
     type="button"
     onclick="window.cancelPlayerShowDownload()"
-    class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 active:scale-95 text-white/80 hover:text-white border border-white/15 backdrop-blur-md flex items-center justify-center transition cursor-pointer shadow-lg"
+    class="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 active:scale-95 text-white/80 hover:text-white border border-white/15 backdrop-blur-md flex items-center justify-center transition cursor-pointer shadow-lg"
     title="Cancel Download"
   >
     <i class="fas fa-xmark text-sm"></i>
@@ -7503,27 +7505,27 @@ html, body {
 
   <!-- Centered Content / Transparent Floating Overlay directly over background -->
   <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center">
-    <!-- Floating Transparent Progress Container: No solid black box, subtle soft vignette gradient for maximum background visibility -->
-    <div class="w-full max-w-sm mx-auto px-4 py-6 flex flex-col items-center space-y-4">
+    <!-- Floating Transparent Progress Container: No solid black box, sleek transparent glass overlay -->
+    <div class="w-full max-w-sm mx-auto px-2 py-4 flex flex-col items-center space-y-4">
       
       <!-- Icon with Gold Glow Accent -->
-      <div class="w-14 h-14 rounded-2xl bg-black/40 border border-[#f0c040]/40 backdrop-blur-md flex items-center justify-center text-[#f0c040] shadow-[0_0_25px_rgba(240,192,64,0.35)]">
-        <i class="fas fa-cube text-xl animate-pulse"></i>
+      <div class="w-14 h-14 rounded-2xl bg-black/30 border border-[#f0c040]/50 backdrop-blur-md flex items-center justify-center text-[#f0c040] shadow-[0_0_30px_rgba(240,192,64,0.4)]">
+        <i class="fas fa-cube text-2xl animate-pulse"></i>
       </div>
 
-      <!-- Text: "Downloading 3D Assets" with subtle soft gradient backdrop behind text for crisp legibility -->
-      <div class="space-y-1 px-4 py-2 rounded-2xl bg-black/35 backdrop-blur-sm border border-white/10 shadow-lg">
+      <!-- Text: "Downloading 3D Assets" with transparent glass backdrop -->
+      <div class="space-y-1 px-4 py-2 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 shadow-lg">
         <h3 class="font-display text-lg sm:text-xl font-black text-white uppercase tracking-wider drop-shadow-md">
           Downloading 3D Assets
         </h3>
         <p id="psDownloadSubText" class="text-xs text-slate-200 font-medium drop-shadow">
-          Loading high-fidelity ArenaX 3D models...
+          Preparing ArenaX 3D character assets...
         </p>
       </div>
 
-      <!-- Progress Bar (Driven by REAL download progress from @capacitor/filesystem) -->
-      <div class="w-full space-y-2 pt-1 px-3 py-3 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 shadow-xl">
-        <div class="w-full h-3 bg-black/60 rounded-full overflow-hidden p-0.5 border border-white/20 shadow-inner">
+      <!-- Progress Bar (Driven by REAL combined download progress from @capacitor/filesystem) -->
+      <div class="w-full space-y-2 pt-1 px-4 py-3.5 rounded-2xl bg-black/30 backdrop-blur-md border border-white/10 shadow-xl">
+        <div class="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-white/20 shadow-inner">
           <div
             id="psDownloadProgressBar"
             class="h-full bg-gradient-to-r from-[#f0c040] via-yellow-400 to-amber-500 rounded-full transition-all duration-150 ease-out shadow-[0_0_15px_rgba(240,192,64,0.7)]"
@@ -7534,7 +7536,7 @@ html, body {
         <!-- Download Progress in MB and Percentage -->
         <div class="flex items-center justify-between text-xs font-mono px-0.5">
           <span id="psDownloadMbText" class="text-slate-100 font-semibold tracking-tight drop-shadow">
-            0.0 MB / 45.0 MB
+            0.0 MB / 65.9 MB
           </span>
           <span id="psDownloadPercentText" class="text-[#f0c040] font-black drop-shadow">
             0%
@@ -7542,14 +7544,14 @@ html, body {
         </div>
       </div>
 
-      <!-- Status Indicator / Speed -->
-      <div id="psDownloadStatusInfo" class="text-[11px] text-slate-200 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow flex items-center justify-center gap-1.5 pt-0.5 font-mono">
+      <!-- Status Indicator / Current model & Speed -->
+      <div id="psDownloadStatusInfo" class="text-[11px] text-slate-200 px-3.5 py-1.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10 shadow flex items-center justify-center gap-1.5 pt-0.5 font-mono">
         <i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i>
         <span id="psDownloadStatusLabel">Connecting to asset server...</span>
       </div>
 
       <!-- Error Box (hidden unless download fails) -->
-      <div id="psDownloadErrorBox" class="w-full p-3.5 bg-black/80 backdrop-blur-xl border border-rose-500/50 rounded-2xl text-left hidden space-y-2 mt-2 shadow-2xl">
+      <div id="psDownloadErrorBox" class="w-full p-3.5 bg-black/75 backdrop-blur-xl border border-rose-500/50 rounded-2xl text-left hidden space-y-2 mt-2 shadow-2xl">
         <div class="flex items-center gap-2 text-rose-300 text-xs font-bold">
           <i class="fas fa-triangle-exclamation"></i>
           <span>Download Interrupted</span>
