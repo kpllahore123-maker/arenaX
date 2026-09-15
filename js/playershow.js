@@ -36,6 +36,28 @@ export async function isModelCachedLocally(fileName) {
 }
 window.isModelCachedLocally = isModelCachedLocally;
 
+// All required GLB 3D models for ArenaX Player Show
+export const ALL_CHARACTER_GLB_FILES = [
+  'character_boy_1_fbx.glb',
+  'Convert_Waving.glb',
+  'model3.glb',
+  'model4.glb',
+  'model5.glb',
+  'model6.glb'
+];
+window.ALL_CHARACTER_GLB_FILES = ALL_CHARACTER_GLB_FILES;
+
+// Helper: Check if all required Player Show GLB 3D models are cached locally
+export async function areAllRequiredModelsCached() {
+  if (!isNativeCapacitor()) return true;
+  for (const fileName of ALL_CHARACTER_GLB_FILES) {
+    const cached = await isModelCachedLocally(fileName);
+    if (!cached) return false;
+  }
+  return true;
+}
+window.areAllRequiredModelsCached = areAllRequiredModelsCached;
+
 // Module variables
 let playerShow3DModel = null;
 let playerShowCoinGroup = null;
@@ -675,12 +697,12 @@ window.selectPlayerShowModel = async function(modelId) {
   currentSelected3DModelId = model.id;
   renderPlayerShowSelectorUI();
 
-  // If in native Capacitor Android APK, check if model file needs to be downloaded first
+  // If in native Capacitor Android APK, verify if model file needs to be downloaded
   if (isNativeCapacitor()) {
     const cleanFileName = String(model.fileName).replace(/^(\.\/|\/)/, '');
     const isCached = await isModelCachedLocally(cleanFileName);
     if (!isCached) {
-      startPlayerShowOnDemandDownload(cleanFileName, () => {
+      startPlayerShowCombinedDownload(() => {
         loadPlayerShowModelFile(model.fileName);
       });
       return;
@@ -902,9 +924,20 @@ function closePlayerShowViewer() {
 // ── FULL-PAGE 3D ASSET DOWNLOAD LOADING SCREEN CONTROLLER (CAPACITOR ANDROID APK ONLY) ──
 let psSlideshowInterval = null;
 let psCurrentSlideIndex = 0;
-let currentDownloadTarget = null;
 let currentDownloadOnComplete = null;
 let currentDownloadListener = null;
+let isCombinedDownloadRunning = false;
+let isCombinedDownloadCancelled = false;
+
+// Approximate file sizes for accurate combined progress calculation (~65.9 MB total)
+export const GLB_MODEL_FILE_SIZES = {
+  'character_boy_1_fbx.glb': 43.7 * 1024 * 1024,
+  'Convert_Waving.glb': 2.7 * 1024 * 1024,
+  'model3.glb': 5.8 * 1024 * 1024,
+  'model4.glb': 4.1 * 1024 * 1024,
+  'model5.glb': 4.9 * 1024 * 1024,
+  'model6.glb': 4.7 * 1024 * 1024
+};
 
 // Starts auto-looping background slideshow (ps1.png -> ps2.png -> ps3.png -> ps1.png...)
 export function startPlayerShowSlideshow() {
@@ -921,7 +954,7 @@ export function startPlayerShowSlideshow() {
     }
   });
 
-  // Cycle every 3.5 seconds (auto-swap between 3 images every 3-4s with smooth 1s CSS crossfade)
+  // Smooth continuous cycling between ps1, ps2, ps3 every 3.5 seconds
   psSlideshowInterval = setInterval(() => {
     const allSlides = document.querySelectorAll('.ps-bg-slide');
     if (!allSlides || allSlides.length === 0) return;
@@ -952,6 +985,7 @@ export function hidePlayerShowDownloadScreen() {
 window.hidePlayerShowDownloadScreen = hidePlayerShowDownloadScreen;
 
 export function cancelPlayerShowDownload() {
+  isCombinedDownloadCancelled = true;
   if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
     try { currentDownloadListener.remove(); } catch(e) {}
     currentDownloadListener = null;
@@ -961,13 +995,12 @@ export function cancelPlayerShowDownload() {
 window.cancelPlayerShowDownload = cancelPlayerShowDownload;
 
 export function retryPlayerShowDownload() {
-  if (currentDownloadTarget) {
-    startPlayerShowOnDemandDownload(currentDownloadTarget, currentDownloadOnComplete);
-  }
+  startPlayerShowCombinedDownload(currentDownloadOnComplete);
 }
 window.retryPlayerShowDownload = retryPlayerShowDownload;
 
 export function continueWithoutDownload() {
+  isCombinedDownloadCancelled = true;
   hidePlayerShowDownloadScreen();
   if (typeof currentDownloadOnComplete === 'function') {
     currentDownloadOnComplete();
@@ -975,15 +1008,80 @@ export function continueWithoutDownload() {
 }
 window.continueWithoutDownload = continueWithoutDownload;
 
-// Starts on-demand download task with real-time @capacitor/filesystem progress listener
-export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
-  const cleanFileName = String(fileName || 'character_boy_1_fbx.glb').replace(/^(\.\/|\/)/, '');
-  currentDownloadTarget = cleanFileName;
+// Download a single GLB file with fallback URLs and progress forwarding
+async function downloadSingleGlbFile(cleanFileName, onFileProgress) {
+  const remoteBase = window.ARENAX_3D_ASSET_BASE_URL || 'https://arenax.cyou';
+  const primaryUrl = `${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`;
+  const githubRawUrl = `https://raw.githubusercontent.com/kpllahore123-maker/arenaX/main/public/${cleanFileName}`;
+  const candidateDownloadUrls = [primaryUrl, githubRawUrl];
+
+  let lastError = null;
+
+  for (let i = 0; i < candidateDownloadUrls.length; i++) {
+    if (isCombinedDownloadCancelled) throw new Error('Download cancelled by user');
+    const downloadUrl = candidateDownloadUrls[i];
+    try {
+      console.log(`[PlayerShow Download] Downloading file (${i + 1}/${candidateDownloadUrls.length}): ${downloadUrl} -> ${cleanFileName}`);
+
+      // Set up listener for this individual download file
+      if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+        try { await currentDownloadListener.remove(); } catch (e) {}
+        currentDownloadListener = null;
+      }
+
+      try {
+        currentDownloadListener = await Filesystem.addListener('progress', (progress) => {
+          if (progress && typeof onFileProgress === 'function') {
+            onFileProgress(progress.bytes || 0, progress.contentLength || 0);
+          }
+        });
+      } catch (listenerErr) {
+        console.warn('[PlayerShow Download] Filesystem listener attach warning:', listenerErr);
+      }
+
+      const downloadRes = await Filesystem.downloadFile({
+        url: downloadUrl,
+        path: cleanFileName,
+        directory: Directory.Data,
+        progress: true
+      });
+
+      if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+        try { await currentDownloadListener.remove(); } catch (e) {}
+        currentDownloadListener = null;
+      }
+
+      console.log(`[PlayerShow Download] File "${cleanFileName}" successfully saved:`, downloadRes);
+      return downloadRes;
+    } catch (err) {
+      console.warn(`[PlayerShow Download] Failed attempt for ${downloadUrl}:`, err);
+      lastError = err;
+      if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
+        try { await currentDownloadListener.remove(); } catch (e) {}
+        currentDownloadListener = null;
+      }
+    }
+  }
+
+  throw lastError || new Error(`Failed to download ${cleanFileName}`);
+}
+
+// ── COMBINED ASSET-DOWNLOAD PROCESS FOR ALL REQUIRED 3D MODELS ──
+// Downloads ALL required GLB 3D models together as ONE combined asset-download process before Player Show becomes ready
+export async function startPlayerShowCombinedDownload(onComplete) {
+  if (isCombinedDownloadRunning) {
+    console.log('[PlayerShow Download] Combined download already in progress.');
+    return;
+  }
+
+  isCombinedDownloadRunning = true;
+  isCombinedDownloadCancelled = false;
   currentDownloadOnComplete = onComplete;
 
   const screen = document.getElementById('pPlayerShowDownloadScreen');
   if (!screen) {
     console.warn('[PlayerShow Download] #pPlayerShowDownloadScreen not found in DOM');
+    isCombinedDownloadRunning = false;
     if (typeof onComplete === 'function') onComplete();
     return;
   }
@@ -995,107 +1093,116 @@ export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
   const errorBox = document.getElementById('psDownloadErrorBox');
   const subText = document.getElementById('psDownloadSubText');
 
+  // Identify which models actually need downloading (reuse locally cached assets)
+  const modelsToDownload = [];
+  for (const fileName of ALL_CHARACTER_GLB_FILES) {
+    const isCached = await isModelCachedLocally(fileName);
+    if (!isCached) {
+      modelsToDownload.push(fileName);
+    }
+  }
+
+  // If all models are already cached locally, skip loading screen immediately!
+  if (modelsToDownload.length === 0) {
+    console.log('[PlayerShow Download] All 3D models already cached locally! Opening Player Show directly.');
+    isCombinedDownloadRunning = false;
+    hidePlayerShowDownloadScreen();
+    if (typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Calculate total expected bytes across all required models (~65.9 MB)
+  let totalOverallBytes = 0;
+  modelsToDownload.forEach((f) => {
+    totalOverallBytes += GLB_MODEL_FILE_SIZES[f] || (5 * 1024 * 1024);
+  });
+  const totalOverallMb = (totalOverallBytes / (1024 * 1024)).toFixed(1);
+
   // Reset UI components
   if (errorBox) errorBox.classList.add('hidden');
   if (progressBar) progressBar.style.width = '0%';
   if (percentText) percentText.textContent = '0%';
-  if (mbText) mbText.textContent = '0.0 MB / 45.0 MB';
-  if (subText) subText.textContent = `Downloading ${cleanFileName}...`;
-  if (statusLabel) statusLabel.textContent = 'Connecting to asset server...';
+  if (mbText) mbText.textContent = `0.0 MB / ${totalOverallMb} MB`;
+  if (subText) subText.textContent = 'Preparing ArenaX 3D character assets...';
+  if (statusLabel) {
+    statusLabel.innerHTML = '<i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i> <span>Connecting to asset server...</span>';
+  }
 
-  // Make full screen visible and launch slideshow
+  // Make full screen visible and launch smooth slideshow
   screen.classList.remove('hidden');
   startPlayerShowSlideshow();
 
-  // Clean up any stale listener
-  if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
-    try { await currentDownloadListener.remove(); } catch(e) {}
-    currentDownloadListener = null;
-  }
+  let completedBytesBeforeCurrent = 0;
+  let lastSpeedTime = Date.now();
+  let lastSpeedBytes = 0;
+  let downloadFailed = false;
+  let failureError = null;
 
-  let totalBytesExpected = 45 * 1024 * 1024; // 45.0 MB benchmark default
-  let lastLoadedBytes = 0;
-  let lastProgressTime = Date.now();
+  for (let idx = 0; idx < modelsToDownload.length; idx++) {
+    if (isCombinedDownloadCancelled) {
+      console.log('[PlayerShow Download] Download stopped due to cancellation');
+      isCombinedDownloadRunning = false;
+      return;
+    }
 
-  try {
-    // Real download progress tracking via Capacitor Filesystem progress event
-    currentDownloadListener = await Filesystem.addListener('progress', (progress) => {
-      if (progress) {
-        const bytes = progress.bytes || 0;
-        const contentLength = progress.contentLength || 0;
-        if (contentLength > 0) {
-          totalBytesExpected = contentLength;
-        }
-        const curMb = (bytes / (1024 * 1024)).toFixed(1);
-        const totalMb = (totalBytesExpected / (1024 * 1024)).toFixed(1);
-        const percent = contentLength > 0
-          ? Math.min(100, Math.round((bytes / contentLength) * 100))
-          : Math.min(99, Math.round((bytes / totalBytesExpected) * 100));
+    const currentModelFile = modelsToDownload[idx];
+    const estimatedFileSize = GLB_MODEL_FILE_SIZES[currentModelFile] || (5 * 1024 * 1024);
+    let actualFileSize = estimatedFileSize;
 
-        if (progressBar) progressBar.style.width = `${percent}%`;
-        if (percentText) percentText.textContent = `${percent}%`;
-        if (mbText) mbText.textContent = `${curMb} MB / ${totalMb} MB`;
+    if (subText) {
+      subText.textContent = `Downloading 3D Assets (${idx + 1}/${modelsToDownload.length})...`;
+    }
+
+    try {
+      await downloadSingleGlbFile(currentModelFile, (curFileBytes, fileContentLength) => {
+        if (fileContentLength > 0) actualFileSize = fileContentLength;
+        const currentOverallBytes = Math.min(totalOverallBytes, completedBytesBeforeCurrent + curFileBytes);
+        const overallPercent = Math.min(99, Math.round((currentOverallBytes / totalOverallBytes) * 100));
+        const overallMb = (currentOverallBytes / (1024 * 1024)).toFixed(1);
+
+        if (progressBar) progressBar.style.width = `${overallPercent}%`;
+        if (percentText) percentText.textContent = `${overallPercent}%`;
+        if (mbText) mbText.textContent = `${overallMb} MB / ${totalOverallMb} MB`;
 
         const now = Date.now();
-        const dt = (now - lastProgressTime) / 1000;
+        const dt = (now - lastSpeedTime) / 1000;
         if (dt >= 0.4) {
-          const speed = ((bytes - lastLoadedBytes) / dt / (1024 * 1024)).toFixed(1);
+          const speed = Math.max(0, ((currentOverallBytes - lastSpeedBytes) / dt / (1024 * 1024))).toFixed(1);
           if (statusLabel) {
-            statusLabel.innerHTML = `<i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i> <span>Downloading ${cleanFileName} (${speed} MB/s)...</span>`;
+            statusLabel.innerHTML = `<i class="fas fa-cloud-arrow-down text-[#f0c040] animate-bounce"></i> <span>Downloading 3D Assets (${speed} MB/s)...</span>`;
           }
-          lastLoadedBytes = bytes;
-          lastProgressTime = now;
+          lastSpeedBytes = currentOverallBytes;
+          lastSpeedTime = now;
         }
-      }
-    });
-  } catch (listenerErr) {
-    console.warn('[PlayerShow Download] Filesystem.addListener error:', listenerErr);
-  }
-
-  const remoteBase = window.ARENAX_3D_ASSET_BASE_URL || 'https://arenax.cyou';
-  const primaryUrl = `${remoteBase.replace(/\/+$/, '')}/${cleanFileName}`;
-  const githubRawUrl = `https://raw.githubusercontent.com/kpllahore123-maker/arenaX/main/public/${cleanFileName}`;
-  const candidateDownloadUrls = [primaryUrl, githubRawUrl];
-
-  let downloadSucceeded = false;
-  let lastError = null;
-
-  for (let i = 0; i < candidateDownloadUrls.length; i++) {
-    const downloadUrl = candidateDownloadUrls[i];
-    try {
-      console.log(`[PlayerShow Download] Attempting download (${i + 1}/${candidateDownloadUrls.length}): ${downloadUrl} -> Directory.Data/${cleanFileName}...`);
-
-      const downloadRes = await Filesystem.downloadFile({
-        url: downloadUrl,
-        path: cleanFileName,
-        directory: Directory.Data,
-        progress: true
       });
 
-      console.log('[PlayerShow Download] Download successfully saved:', downloadRes);
-      downloadSucceeded = true;
-      break;
+      completedBytesBeforeCurrent += actualFileSize;
     } catch (err) {
-      console.warn(`[PlayerShow Download] Attempt ${i + 1} failed for ${downloadUrl}:`, err);
-      lastError = err;
-      if (statusLabel && i < candidateDownloadUrls.length - 1) {
-        statusLabel.innerHTML = '<i class="fas fa-rotate text-[#f0c040] animate-spin"></i> <span>Connecting to alternate asset server...</span>';
+      if (isCombinedDownloadCancelled) {
+        isCombinedDownloadRunning = false;
+        return;
       }
+      console.error(`[PlayerShow Download] Failed to download model: ${currentModelFile}`, err);
+      downloadFailed = true;
+      failureError = err;
+      break;
     }
   }
 
+  isCombinedDownloadRunning = false;
+
   if (currentDownloadListener && typeof currentDownloadListener.remove === 'function') {
-    try { await currentDownloadListener.remove(); } catch(e) {}
+    try { await currentDownloadListener.remove(); } catch (e) {}
     currentDownloadListener = null;
   }
 
-  if (downloadSucceeded) {
-    const finalTotalMb = (totalBytesExpected / (1024 * 1024)).toFixed(1);
+  if (!downloadFailed && !isCombinedDownloadCancelled) {
     if (progressBar) progressBar.style.width = '100%';
     if (percentText) percentText.textContent = '100%';
-    if (mbText) mbText.textContent = `${finalTotalMb} MB / ${finalTotalMb} MB`;
+    if (mbText) mbText.textContent = `${totalOverallMb} MB / ${totalOverallMb} MB`;
+    if (subText) subText.textContent = 'All 3D assets ready!';
     if (statusLabel) {
-      statusLabel.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> <span>Download complete! Loading 3D model...</span>';
+      statusLabel.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> <span>Download complete! Launching Player Show...</span>';
     }
 
     // Automatically transition to the 3D viewer upon 100% completion
@@ -1105,19 +1212,25 @@ export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
         onComplete();
       }
     }, 450);
-  } else {
-    console.error('[PlayerShow Download] All download candidates failed:', lastError);
+  } else if (!isCombinedDownloadCancelled) {
+    console.error('[PlayerShow Download] Combined download interrupted:', failureError);
     if (errorBox) {
       errorBox.classList.remove('hidden');
       const errEl = document.getElementById('psDownloadErrorMsg');
       if (errEl) {
-        errEl.textContent = `Download failed: ${lastError?.message || 'Server unavailable or network offline.'}`;
+        errEl.textContent = `Download failed: ${failureError?.message || 'Server unavailable or network offline.'}`;
       }
     }
     if (statusLabel) {
       statusLabel.innerHTML = '<i class="fas fa-circle-exclamation text-rose-400"></i> <span class="text-rose-300">Download interrupted</span>';
     }
   }
+}
+window.startPlayerShowCombinedDownload = startPlayerShowCombinedDownload;
+
+// Backward-compatible alias
+export async function startPlayerShowOnDemandDownload(fileName, onComplete) {
+  return startPlayerShowCombinedDownload(onComplete);
 }
 window.startPlayerShowOnDemandDownload = startPlayerShowOnDemandDownload;
 
@@ -1131,14 +1244,16 @@ window.testPlayerShowDownloadScreen = function(simulated = true) {
   const mbText = document.getElementById('psDownloadMbText');
   const percentText = document.getElementById('psDownloadPercentText');
   const statusLabel = document.getElementById('psDownloadStatusLabel');
+  const subText = document.getElementById('psDownloadSubText');
   const errorBox = document.getElementById('psDownloadErrorBox');
   if (errorBox) errorBox.classList.add('hidden');
+  if (subText) subText.textContent = 'Preparing ArenaX 3D character assets...';
 
   if (simulated) {
     let p = 0;
-    const totalMb = 45.0;
+    const totalMb = 65.9;
     const timer = setInterval(() => {
-      p += 5;
+      p += 4;
       if (p > 100) p = 100;
       const curMb = ((p / 100) * totalMb).toFixed(1);
       if (progressBar) progressBar.style.width = `${p}%`;
@@ -1157,7 +1272,7 @@ window.testPlayerShowDownloadScreen = function(simulated = true) {
           openPlayerShowViewerDirect();
         }, 500);
       }
-    }, 200);
+    }, 150);
   }
 };
 
@@ -1180,22 +1295,18 @@ window.openPlayerShowViewer = async function() {
   }
 
   // Running inside Native Capacitor Android APK:
-  const profile = window.userProfile || window.currentUser || (typeof window.getActiveUserProfile === 'function' ? window.getActiveUserProfile() : null);
-  const activeFileName = getActive3DModelFileName(profile) || 'character_boy_1_fbx.glb';
-  const cleanFileName = String(activeFileName).replace(/^(\.\/|\/)/, '');
-
-  // "If already cached (previously downloaded), skip this loading screen entirely and go straight to the 3D viewer"
-  const alreadyCached = await isModelCachedLocally(cleanFileName);
-  if (alreadyCached) {
-    console.log(`[PlayerShow] Model "${cleanFileName}" is already cached in local filesystem. Opening viewer directly.`);
+  // "when a user opens Player Show for the FIRST TIME, automatically download ALL required GLB 3D models together as one combined asset-download process before Player Show becomes ready."
+  // "after the first successful download, reuse the locally cached GLB assets so they do not download again unless they are missing or need updating."
+  const allCached = await areAllRequiredModelsCached();
+  if (allCached) {
+    console.log('[PlayerShow] All 3D models are already cached in local filesystem. Opening viewer directly.');
     openPlayerShowViewerDirect();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
     return;
   }
 
-  // "This full-page loading screen appears the moment the user taps 'Player Show' if the 3D model isn't already cached locally (APK only)"
-  // "Once download reaches 100%, automatically transition to the actual Player Show 3D viewer"
-  startPlayerShowOnDemandDownload(cleanFileName, () => {
+  // Start the combined asset-download process for all required GLB models together
+  startPlayerShowCombinedDownload(() => {
     openPlayerShowViewerDirect();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI();
   });
