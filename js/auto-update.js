@@ -322,8 +322,19 @@ async function startUpdateDownload(remoteConfig) {
 
       if (statusText) statusText.innerHTML = '<i class="fas fa-arrow-circle-down fa-bounce text-xs text-emerald-400"></i> <span>Downloading update package...</span>';
 
+      // Construct cache-busted download URL to ensure fresh download from server/CDN
+      let apkDownloadUrl = targetConfig.downloadUrl || DEFAULT_DOWNLOAD_URL;
+      try {
+        const urlObj = new URL(apkDownloadUrl);
+        urlObj.searchParams.set('t', Date.now().toString());
+        apkDownloadUrl = urlObj.toString();
+      } catch (urlErr) {
+        // Fallback for relative or malformed URLs
+        apkDownloadUrl += (apkDownloadUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+      }
+
       const downloadRes = await Filesystem.downloadFile({
-        url: targetConfig.downloadUrl || DEFAULT_DOWNLOAD_URL,
+        url: apkDownloadUrl,
         path: fileName,
         directory: Directory.Cache,
         progress: true
@@ -337,6 +348,20 @@ async function startUpdateDownload(remoteConfig) {
         }
       }
 
+      // Verify file integrity & size
+      try {
+        const fileStat = await Filesystem.stat({
+          path: fileName,
+          directory: Directory.Cache
+        });
+        console.log('[AutoUpdate] Downloaded APK size on device:', fileStat?.size, 'bytes');
+        if (fileStat && fileStat.size < 1000000) { // Less than 1MB is almost certainly an error/stub response
+          throw new Error(`Downloaded APK appears incomplete or corrupted (${(fileStat.size / 1024).toFixed(0)} KB).`);
+        }
+      } catch (statErr) {
+        console.warn('[AutoUpdate] Stat verification note:', statErr);
+      }
+
       if (progressBar) progressBar.style.width = '100%';
       if (percentText) percentText.textContent = '100%';
       if (statusText) statusText.innerHTML = '<i class="fas fa-check-circle text-emerald-400 text-xs"></i> <span>Download complete. Opening installer...</span>';
@@ -344,9 +369,25 @@ async function startUpdateDownload(remoteConfig) {
       // Brief delay for file write flush
       await new Promise(r => setTimeout(r, 600));
 
-      console.log('[AutoUpdate] Triggering FileOpener for APK:', downloadRes.path);
+      // Resolve absolute file path for FileOpener
+      let installPath = downloadRes.path;
+      if (!installPath || !installPath.startsWith('content://')) {
+        try {
+          const uriResult = await Filesystem.getUri({
+            path: fileName,
+            directory: Directory.Cache
+          });
+          if (uriResult?.uri) {
+            installPath = uriResult.uri;
+          }
+        } catch (uriErr) {
+          console.warn('[AutoUpdate] getUri fallback note:', uriErr);
+        }
+      }
+
+      console.log('[AutoUpdate] Triggering FileOpener for APK:', installPath);
       await FileOpener.open({
-        filePath: downloadRes.path,
+        filePath: installPath,
         contentType: 'application/vnd.android.package-archive',
         openWithDefault: true
       });
