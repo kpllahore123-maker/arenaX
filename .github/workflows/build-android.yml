@@ -57,6 +57,26 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x android/gradlew
 
+      - name: Setup persistent signing keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'arenaxdebug' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'arenaxkey' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'arenaxdebug' }}
+        run: |
+          mkdir -p android/keystores
+          if [ -n "$SIGNING_KEYSTORE_BASE64" ]; then
+            echo "Decoding persistent signing keystore from GitHub secrets..."
+            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > android/keystores/signing.keystore
+          else
+            echo "SIGNING_KEYSTORE_BASE64 secret not yet set. Generating deterministic repository keystore..."
+            keytool -genkey -v -keystore android/keystores/signing.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=ArenaX, OU=Esports, O=ArenaX, C=PK"
+          fi
+          echo "DEBUG_STORE_FILE=../keystores/signing.keystore" >> android/gradle.properties
+          echo "DEBUG_STORE_PASSWORD=$KEYSTORE_PASSWORD" >> android/gradle.properties
+          echo "DEBUG_KEY_ALIAS=$KEY_ALIAS" >> android/gradle.properties
+          echo "DEBUG_KEY_PASSWORD=$KEY_PASSWORD" >> android/gradle.properties
+
       - name: Build Android APK (assembleDebug)
         run: |
           cd android
