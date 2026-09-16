@@ -1059,10 +1059,14 @@ html, body {
     _tryFinish: function(){
       if (this.isFinished) return;
       if (!this.assetsReady || !this.appReady) return;
+      if (this._finishingTimeout) {
+        clearTimeout(this._finishingTimeout);
+        this._finishingTimeout = null;
+      }
       var elapsed = Date.now() - this.startTime;
       var remaining = Math.max(0, this.minDuration - elapsed);
       var self = this;
-      setTimeout(function(){ self._doFinish(); }, remaining);
+      this._finishingTimeout = setTimeout(function(){ self._doFinish(); }, remaining);
     },
     _doFinish: function(){
       if (this.isFinished) return;
@@ -1071,15 +1075,21 @@ html, body {
       var self = this;
       setTimeout(function(){
         document.body.classList.add('done');
-        // Ensure at least one main screen is revealed (prevent black screen)
+        // Only unhide sLogin if initial auth check has finished AND no user is logged in
         var sLogin = document.getElementById('sLogin');
         var sDash = document.getElementById('sDash');
         if (sLogin && sDash && sLogin.classList.contains('hidden') && sDash.classList.contains('hidden')) {
-          sLogin.classList.remove('hidden');
+          if (window.__authInitialCheckDone && !window.currentUser && !window.userProfile) {
+            sLogin.classList.remove('hidden');
+          }
         }
         setTimeout(function(){
           var splash = document.getElementById('sSplash');
-          if (splash) { splash.style.pointerEvents = 'none'; splash.style.display = 'none'; }
+          if (splash) {
+            splash.style.pointerEvents = 'none';
+            splash.style.display = 'none';
+            splash.style.visibility = 'hidden';
+          }
         }, 650);
       }, 350);
     },
@@ -1097,9 +1107,10 @@ html, body {
   // Auto safety trigger: ensures splash exits cleanly even if auth or network takes time
   setTimeout(function(){
     if (window.ArenaSplash && !window.ArenaSplash.isFinished) {
+      // Fallback: if auth has resolved or if maximum startup time reached
       window.ArenaSplash.finish(true);
     }
-  }, 3200);
+  }, 4000);
 
   // Early detection of password reset or 2FA login verification token on root URL (GitHub Pages SPA)
   (function() {
@@ -1901,8 +1912,10 @@ html, body {
       if ($('iPass')) $('iPass').value = pass;
       if ($('termsCheckbox')) $('termsCheckbox').checked = true;
 
-      // Ensure mode is set to login
-      if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'login') {
+      // Ensure mode is set to login reliably
+      if (typeof window.setLoginMode === 'function') {
+        window.setLoginMode('login');
+      } else if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'login') {
         $('lnkSignup')?.click();
       }
 
@@ -1944,8 +1957,10 @@ html, body {
       if ($('iPass')) $('iPass').value = pass;
       if ($('termsCheckbox')) $('termsCheckbox').checked = true;
 
-      // Ensure mode is set to signup
-      if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'signup') {
+      // Ensure mode is set to signup reliably
+      if (typeof window.setLoginMode === 'function') {
+        window.setLoginMode('signup');
+      } else if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'signup') {
         $('lnkSignup')?.click();
       }
 
