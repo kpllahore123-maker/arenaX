@@ -1130,89 +1130,869 @@ html, body {
   })();
 </script>
 
-<!-- ==================== SIGN IN SCREEN ==================== -->
-<div id="sLogin" class="fixed inset-0 bg-[#0a0c12] z-[100] flex items-center justify-center p-4 hidden">
-  <div class="absolute inset-0 pointer-events-none overflow-hidden">
-    <div class="absolute top-[-25%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gradient-to-b from-[#f0c040]/10 to-transparent rounded-full filter blur-[130px]"></div>
-    <div class="absolute bottom-[-15%] right-[-15%] w-[450px] h-[450px] bg-[#f0c040]/5 rounded-full filter blur-[110px]"></div>
-    <!-- Pitch graphic markings in background with low opacity -->
-    <div class="absolute inset-10 border border-[#f0c040]/10 rounded-3xl pointer-events-none select-none"></div>
-  </div>
-  <div class="relative w-full max-w-[400px] space-y-6">
-    <div class="text-center">
-      <div class="w-24 h-24 mx-auto flex items-center justify-center">
-        <img src="arenaX.png" alt="ArenaX Logo" class="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(240,192,64,0.3)]" referrerPolicy="no-referrer" />
+<!-- ==================== SIGN IN / SIGN UP SCREEN (ARENAX CORAL DESIGN) ==================== -->
+<div id="sLogin" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#FFF9F7] text-[#241B18] hidden select-none">
+  <style>
+    :root {
+      --ax-coral-1: #F4A090;
+      --ax-coral-2: #EE8272;
+      --ax-coral-3: #E86C5C;
+      --ax-coral-deep: #D85F4F;
+      --ax-ink: #241B18;
+      --ax-ink-soft: #8A7A75;
+      --ax-paper: #FFF9F7;
+      --ax-line: #F0DEDA;
+    }
+    .ax-auth-phone {
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      min-height: 100vh;
+      background: var(--ax-paper);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .ax-auth-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(24px);
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--ax-paper);
+      z-index: 10;
+    }
+    .ax-auth-screen.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+      z-index: 20;
+    }
+    .ax-auth-top {
+      position: relative;
+      background: linear-gradient(160deg, var(--ax-coral-1), var(--ax-coral-3));
+      padding: 48px 32px 85px;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ax-auth-top::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-radial-gradient(circle at 20% 30%, rgba(255,255,255,0.10) 0 2px, transparent 2px 60px),
+        repeating-radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08) 0 2px, transparent 2px 50px);
+      opacity: 0.6;
+    }
+    .ax-auth-wave {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -2px;
+      width: 100%;
+      height: 56px;
+      display: block;
+      z-index: 1;
+    }
+    .ax-auth-brand {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      font-size: 15px;
+      text-transform: uppercase;
+    }
+    .ax-auth-brand .ax-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.25);
+    }
+    #axWelcome .ax-auth-top {
+      padding-bottom: 120px;
+    }
+    #axWelcome .ax-auth-art {
+      position: relative;
+      z-index: 2;
+      margin-top: 24px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #axWelcome .ax-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35);
+    }
+    #axWelcome .ax-ring.r1 { width: 140px; height: 140px; }
+    #axWelcome .ax-ring.r2 { width: 102px; height: 102px; border-color: rgba(255,255,255,0.55); }
+    #axWelcome .ax-glyph {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      background: #fff;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 14px 24px rgba(180,60,40,0.35);
+    }
+    .ax-auth-body-wrap {
+      flex: 1;
+      padding: 36px 32px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    #axWelcome .ax-auth-body-wrap {
+      padding-top: 18px;
+    }
+    .ax-auth-headline {
+      font-size: 29px;
+      font-weight: 800;
+      color: var(--ax-ink);
+      line-height: 1.16;
+      margin-bottom: 14px;
+      letter-spacing: -0.5px;
+    }
+    .ax-auth-sub {
+      font-size: 14.5px;
+      color: var(--ax-ink-soft);
+      line-height: 1.6;
+      max-width: 300px;
+    }
+    .ax-auth-row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 28px;
+    }
+    .ax-auth-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .ax-auth-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ax-line);
+      display: inline-block;
+      transition: all 0.2s ease;
+    }
+    .ax-auth-dots span.on {
+      background: var(--ax-coral-3);
+      width: 20px;
+      border-radius: 4px;
+    }
+    .ax-auth-fab {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--ax-coral-3);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 12px 20px rgba(216,95,79,0.45);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .ax-auth-fab:hover {
+      transform: translateX(3px);
+      background: var(--ax-coral-deep);
+    }
+    .ax-form-top {
+      padding: 38px 28px 52px;
+    }
+    .ax-form-title {
+      position: relative;
+      z-index: 2;
+      font-size: 27px;
+      font-weight: 800;
+      margin-top: 20px;
+      letter-spacing: -0.3px;
+    }
+    .ax-form-sub {
+      position: relative;
+      z-index: 2;
+      font-size: 13px;
+      color: rgba(255,255,255,0.88);
+      margin-top: 5px;
+      max-width: 260px;
+      line-height: 1.45;
+    }
+    .ax-form-body {
+      flex: 1;
+      padding: 16px 28px 28px;
+      display: flex;
+      flex-direction: column;
+    }
+    .ax-field {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .ax-field label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: var(--ax-ink-soft);
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+    .ax-field .ax-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1.5px solid var(--ax-line);
+      padding-bottom: 8px;
+      transition: border-color 0.2s ease;
+    }
+    .ax-field .ax-input-wrap:focus-within {
+      border-color: var(--ax-coral-3);
+    }
+    .ax-field .ax-icon {
+      font-size: 15px;
+      color: var(--ax-coral-3);
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .ax-field input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14.5px;
+      color: var(--ax-ink);
+      background: transparent;
+      font-family: inherit;
+    }
+    .ax-field input::placeholder {
+      color: #C9B9B4;
+    }
+    .ax-toggle-eye {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ax-ink-soft);
+      cursor: pointer;
+      user-select: none;
+      padding: 2px 4px;
+    }
+    .ax-toggle-eye:hover {
+      color: var(--ax-coral-3);
+    }
+    .ax-row-fine {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--ax-ink-soft);
+      margin: 2px 0 22px;
+    }
+    .ax-check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .ax-check input {
+      accent-color: var(--ax-coral-3);
+      cursor: pointer;
+    }
+    .ax-row-fine a {
+      color: var(--ax-coral-3);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .ax-row-fine a:hover {
+      text-decoration: underline;
+    }
+    .ax-btn-primary {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(120deg, var(--ax-coral-2), var(--ax-coral-deep));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      box-shadow: 0 14px 24px rgba(216,95,79,0.35);
+      transition: transform 0.12s ease, filter 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .ax-btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+    .ax-btn-primary:active {
+      transform: translateY(0);
+      filter: brightness(0.97);
+    }
+    .ax-switch-line {
+      text-align: center;
+      font-size: 13px;
+      color: var(--ax-ink-soft);
+      margin-top: auto;
+      padding-top: 18px;
+    }
+    .ax-switch-line a {
+      color: var(--ax-coral-3);
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .ax-switch-line a:hover {
+      text-decoration: underline;
+    }
+    .ax-divider-or {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #C9B9B4;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      margin: 18px 0;
+      text-transform: uppercase;
+    }
+    .ax-divider-or::before,
+    .ax-divider-or::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--ax-line);
+    }
+    .ax-socials {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .ax-social-btn {
+      flex: 1;
+      padding: 12px 10px;
+      border-radius: 12px;
+      border: 1.5px solid var(--ax-line);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ax-ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+    }
+    .ax-social-btn:hover {
+      border-color: var(--ax-coral-2);
+      background: #FFFDFD;
+    }
+    .ax-social-btn:active {
+      transform: scale(0.98);
+    }
+    .ax-back-btn {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: background 0.15s ease;
+    }
+    .ax-back-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    .ax-guest-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 12px;
+      border: 1.5px dashed var(--ax-line);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ax-ink-soft);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-top: 10px;
+      transition: all 0.15s ease;
+    }
+    .ax-guest-btn:hover {
+      border-color: var(--ax-coral-2);
+      color: var(--ax-coral-3);
+      background: #fff;
+    }
+    .ax-err-box {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #FFF0ED;
+      border: 1px solid rgba(232, 108, 92, 0.4);
+      color: #D85F4F;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.4;
+    }
+    @media (max-width: 420px) {
+      .ax-auth-top { padding-left: 24px; padding-right: 24px; }
+      .ax-form-top { padding-left: 24px; padding-right: 24px; }
+      .ax-form-body { padding-left: 24px; padding-right: 24px; }
+      .ax-auth-body-wrap { padding-left: 24px; padding-right: 24px; }
+    }
+  </style>
+
+  <!-- Phone frame wrapper -->
+  <div class="ax-auth-phone">
+
+    <!-- ============ 1. WELCOME SCREEN ============ -->
+    <div class="ax-auth-screen active" id="axWelcome">
+      <div class="ax-auth-top">
+        <div class="ax-auth-brand"><span class="ax-dot"></span> ARENAX</div>
+        <div class="ax-auth-art">
+          <div class="ax-ring r1"></div>
+          <div class="ax-ring r2"></div>
+          <div class="ax-glyph">🎮</div>
+        </div>
+        <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+        </svg>
       </div>
-      <div class="flex items-center justify-center leading-none mt-4">
-        <span class="font-display text-4xl font-extrabold tracking-wider text-white">Arena</span>
-        <img src="AX.png" alt="X" class="h-11 w-auto object-contain inline-block -ml-2.5" referrerPolicy="no-referrer" />
+      <div class="ax-auth-body-wrap">
+        <div class="ax-auth-headline">Your next<br>tournament starts here</div>
+        <div class="ax-auth-sub">Join squads, climb the leaderboard, and get matched into competitive lobbies built for your rank.</div>
+        <div class="ax-auth-row-between">
+          <div class="ax-auth-dots">
+            <span class="on"></span>
+            <span></span>
+            <span></span>
+          </div>
+          <button class="ax-auth-fab" onclick="window.showAxAuthScreen('axSignin')" title="Continue to Sign In">→</button>
+        </div>
       </div>
-      <p class="text-[11px] text-[#f0c040] tracking-[3px] uppercase mt-1 font-semibold">COMPETE · RISE · DOMINATE</p>
     </div>
 
-    <!-- Main custom styled form container -->
-    <div class="bg-panel border border-bdr rounded-2xl p-6 shadow-xl space-y-5">
-      <p id="loginTitle" class="text-center font-display text-2xl font-extrabold text-white tracking-wide">Welcome back</p>
-      
-      <div id="loginErr" class="p-3 bg-red/10 border border-red/30 rounded-lg text-xs text-red text-center hidden"></div>
-      <button id="btnResendVerifyLogin" type="button" class="hidden text-xs text-amber-400 font-bold hover:underline w-full text-center py-1 cursor-pointer bg-amber-400/10 border border-amber-400/20 rounded-lg transition">✉️ Resend Verification Email</button>
+    <!-- ============ 2. SIGN IN SCREEN ============ -->
+    <div class="ax-auth-screen" id="axSignin">
+      <div class="ax-auth-top ax-form-top">
+        <button class="ax-back-btn" onclick="window.showAxAuthScreen('axWelcome')">←</button>
+        <div class="ax-form-title">Sign in</div>
+        <div class="ax-form-sub">Enter your credentials to access your tournament account.</div>
+        <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+        </svg>
+      </div>
 
-      <!-- Main Login/Register Form -->
-      <div class="space-y-4">
-        <input type="text" id="iUsername" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3 hidden" placeholder="Username">
-        <input type="email" id="iEmail" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Email">
-        <input type="password" id="iPass" class="w-full bg-card border border-bdr rounded-full px-5 py-3 text-sm outline-none focus:border-gold transition text-white placeholder-t3" placeholder="Password">
-        
-        <p class="text-right">
-          <span id="lnkForgot" class="cursor-pointer text-[10px] text-t3 hover:text-white font-bold uppercase tracking-wider underline">Forgot Password?</span>
-        </p>
+      <div class="ax-form-body">
+        <!-- Error & Notice Banner -->
+        <div id="axSigninErr" class="ax-err-box hidden"></div>
+        <button id="axBtnResendVerify" type="button" class="hidden text-xs text-[#E86C5C] font-bold hover:underline w-full text-center py-1.5 cursor-pointer bg-[#FFF0ED] border border-[#F0DEDA] rounded-xl mb-3 transition">
+          ✉️ Resend Verification Email
+        </button>
 
-        <!-- Terms & Conditions and Privacy Policy agreement -->
-        <div class="flex items-start gap-2.5 p-3 bg-[#0d1612] border border-bdr/40 rounded-xl">
-          <input id="termsCheckbox" type="checkbox" checked class="mt-0.5 w-4 h-4 accent-gold rounded border-bdr bg-bg cursor-pointer" />
-          <label for="termsCheckbox" class="text-[10px] text-t2 leading-normal cursor-pointer select-none">
-            I agree to the <span class="text-white font-semibold hover:underline cursor-pointer" id="lnkTerms">Terms</span> & <span class="text-white font-semibold hover:underline cursor-pointer" id="lnkPrivacy">Privacy Policy</span>.
+        <div class="ax-field">
+          <label>Email Address</label>
+          <div class="ax-input-wrap">
+            <span class="ax-icon">✉</span>
+            <input type="email" id="axInputSigninEmail" placeholder="you@arenax.cyou" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="ax-field">
+          <label>Password</label>
+          <div class="ax-input-wrap">
+            <span class="ax-icon">🔒</span>
+            <input type="password" id="axInputSigninPass" placeholder="••••••••" autocomplete="current-password">
+            <span class="ax-toggle-eye" onclick="window.toggleAxPasswordVisibility('axInputSigninPass', this)">Show</span>
+          </div>
+        </div>
+
+        <div class="ax-row-fine">
+          <label class="ax-check">
+            <input type="checkbox" id="axSigninRemember" checked> Remember me
+          </label>
+          <a href="#" id="axLnkForgotPass">Forgot password?</a>
+        </div>
+
+        <!-- Terms Agreement Checkbox -->
+        <div class="flex items-start gap-2 p-2.5 bg-[#FFF0ED]/60 border border-[#F0DEDA] rounded-xl mb-4 text-left">
+          <input id="axSigninTerms" type="checkbox" checked class="mt-0.5 w-3.5 h-3.5 accent-[#E86C5C] rounded cursor-pointer" />
+          <label for="axSigninTerms" class="text-[11px] text-[#8A7A75] leading-normal cursor-pointer select-none">
+            I agree to the <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mTerms')?.classList.remove('hidden')">Terms</span> & <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mPrivacy')?.classList.remove('hidden')">Privacy Policy</span>.
           </label>
         </div>
 
-        <button id="bEmail" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:brightness-110 text-white font-bold rounded-full text-sm transition active:scale-[0.98] shadow-lg shadow-emerald-500/10">Log in</button>
-      </div>
+        <!-- Primary Sign In Button -->
+        <button id="axBtnSigninSubmit" class="ax-btn-primary">
+          <i class="fas fa-arrow-right-to-bracket text-xs"></i>
+          <span>Sign in</span>
+        </button>
 
-      <p class="text-center text-[10px] text-t3 font-medium uppercase tracking-wider">
-        <span id="txtTogglePrompt">Don't have an account?</span> <span id="lnkSignup" class="text-emerald-400 font-bold underline cursor-pointer">Sign up</span>
-      </p>
+        <div class="ax-divider-or">OR CONTINUE WITH</div>
 
-      <div class="flex items-center gap-3 text-xs text-t3">
-        <div class="flex-1 h-[1px] bg-bdr"></div>
-        <span>or</span>
-        <div class="flex-1 h-[1px] bg-bdr"></div>
-      </div>
-
-      <div class="space-y-3">
-        <!-- Google Login -->
-        <div id="bGoogle" class="w-full py-3 bg-neutral-900 border border-bdr hover:border-white/20 text-white rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2.5 transition active:scale-[0.98] cursor-pointer shadow-md">
-          <svg stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" x="0px" y="0px" class="w-4 h-4 shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
-	c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24
-	c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
-            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657
-	C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
-            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36
-	c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
-            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571
-	c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
-          </svg>
-          <span>Log in with Google</span>
+        <!-- Social Logins (Discord & Google wired to real auth) -->
+        <div class="ax-socials">
+          <button id="axBtnSocialDiscord" type="button" class="ax-social-btn text-[#5865F2]">
+            <i class="fab fa-discord text-base"></i>
+            <span>Discord</span>
+          </button>
+          <button id="axBtnSocialGoogle" type="button" class="ax-social-btn">
+            <svg class="w-4 h-4" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            <span>Google</span>
+          </button>
         </div>
 
-        <!-- Guest Login -->
-        <button id="bGuest" class="w-full py-3 bg-transparent hover:bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2.5 transition active:scale-[0.98] cursor-pointer">
+        <!-- Optional Guest Access -->
+        <button id="axBtnGuestAccess" type="button" class="ax-guest-btn">
           <i class="fas fa-user-secret"></i> Continue as Guest
         </button>
+
+        <div class="ax-switch-line">
+          Don't have an account? <a href="#" onclick="window.showAxAuthScreen('axSignup'); return false;">Sign up</a>
+        </div>
       </div>
     </div>
+
+    <!-- ============ 3. SIGN UP SCREEN ============ -->
+    <div class="ax-auth-screen" id="axSignup">
+      <div class="ax-auth-top ax-form-top">
+        <button class="ax-back-btn" onclick="window.showAxAuthScreen('axSignin')">←</button>
+        <div class="ax-form-title">Create account</div>
+        <div class="ax-form-sub">Sign up to claim your player tag and join tournaments.</div>
+        <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+        </svg>
+      </div>
+
+      <div class="ax-form-body">
+        <!-- Error Banner -->
+        <div id="axSignupErr" class="ax-err-box hidden"></div>
+
+        <div class="ax-field">
+          <label>Gamer tag / Username</label>
+          <div class="ax-input-wrap">
+            <span class="ax-icon">👤</span>
+            <input type="text" id="axInputSignupTag" placeholder="Choose a display name" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="ax-field">
+          <label>Email</label>
+          <div class="ax-input-wrap">
+            <span class="ax-icon">✉</span>
+            <input type="email" id="axInputSignupEmail" placeholder="you@arenax.cyou" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="ax-field">
+          <label>Password</label>
+          <div class="ax-input-wrap">
+            <span class="ax-icon">🔒</span>
+            <input type="password" id="axInputSignupPass" placeholder="At least 6 characters" autocomplete="new-password">
+            <span class="ax-toggle-eye" onclick="window.toggleAxPasswordVisibility('axInputSignupPass', this)">Show</span>
+          </div>
+        </div>
+
+        <div class="ax-row-fine">
+          <label class="ax-check">
+            <input type="checkbox" id="axSignupTerms" checked> I agree to the <span class="text-[#E86C5C] font-semibold hover:underline" onclick="document.getElementById('mTerms')?.classList.remove('hidden')">Terms</span> & <span class="text-[#E86C5C] font-semibold hover:underline" onclick="document.getElementById('mPrivacy')?.classList.remove('hidden')">Privacy Policy</span>
+          </label>
+        </div>
+
+        <!-- Primary Sign Up Button -->
+        <button id="axBtnSignupSubmit" class="ax-btn-primary">
+          <i class="fas fa-user-plus text-xs"></i>
+          <span>Create account</span>
+        </button>
+
+        <div class="ax-divider-or">OR SIGN UP WITH</div>
+
+        <!-- Social Sign Up -->
+        <div class="ax-socials">
+          <button id="axBtnSignupDiscord" type="button" class="ax-social-btn text-[#5865F2]">
+            <i class="fab fa-discord text-base"></i>
+            <span>Discord</span>
+          </button>
+          <button id="axBtnSignupGoogle" type="button" class="ax-social-btn">
+            <svg class="w-4 h-4" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            <span>Google</span>
+          </button>
+        </div>
+
+        <div class="ax-switch-line">
+          Already have an account? <a href="#" onclick="window.showAxAuthScreen('axSignin'); return false;">Sign in</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hidden proxy elements maintaining 100% backward compatibility with legacy scripts and IDs -->
+  <div class="hidden" style="display:none !important;" aria-hidden="true">
+    <p id="loginTitle">Welcome back</p>
+    <div id="loginErr"></div>
+    <button id="btnResendVerifyLogin" type="button"></button>
+    <input type="text" id="iUsername">
+    <input type="email" id="iEmail">
+    <input type="password" id="iPass">
+    <span id="lnkForgot">Forgot Password?</span>
+    <input id="termsCheckbox" type="checkbox" checked />
+    <span id="lnkTerms">Terms</span>
+    <span id="lnkPrivacy">Privacy Policy</span>
+    <button id="bEmail">Log in</button>
+    <span id="txtTogglePrompt">Don't have an account?</span>
+    <span id="lnkSignup">Sign up</span>
+    <div id="bGoogle"></div>
+    <button id="bGuest"></button>
   </div>
 </div>
+
+<script>
+  // ── SCREEN NAVIGATION & PASSWORD VISIBILITY CONTROLLER ──
+  window.showAxAuthScreen = function(screenId) {
+    document.querySelectorAll('.ax-auth-screen').forEach(function(s) {
+      s.classList.remove('active');
+    });
+    var target = document.getElementById(screenId);
+    if (target) target.classList.add('active');
+  };
+
+  window.toggleAxPasswordVisibility = function(inputId, triggerEl) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (triggerEl) triggerEl.textContent = 'Hide';
+    } else {
+      input.type = 'password';
+      if (triggerEl) triggerEl.textContent = 'Show';
+    }
+  };
+
+  // ── SYNC & EVENT DELEGATION BRIDGE TO FIREBASE AUTH LOGIC ──
+  (function initCoralAuthBridge() {
+    function $(id) { return document.getElementById(id); }
+
+    function setAuthError(screen, msg) {
+      var errBox = $(screen === 'signup' ? 'axSignupErr' : 'axSigninErr');
+      if (!errBox) return;
+      if (!msg) {
+        errBox.classList.add('hidden');
+        errBox.textContent = '';
+      } else {
+        errBox.textContent = msg;
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    // 1. Google OAuth2
+    function handleGoogleLogin() {
+      var agreed = $('axSigninTerms')?.checked || $('axSignupTerms')?.checked;
+      if (!agreed) {
+        setAuthError('signin', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        setAuthError('signup', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        return;
+      }
+      var legacyGoogle = $('bGoogle');
+      if (legacyGoogle) legacyGoogle.click();
+    }
+    $('axBtnSocialGoogle')?.addEventListener('click', handleGoogleLogin);
+    $('axBtnSignupGoogle')?.addEventListener('click', handleGoogleLogin);
+
+    // 2. Discord OAuth2 Flow
+    function handleDiscordLogin() {
+      var agreed = $('axSigninTerms')?.checked || $('axSignupTerms')?.checked;
+      if (!agreed) {
+        setAuthError('signin', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        setAuthError('signup', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        return;
+      }
+      // Discord OAuth authorization flow with scope=identify
+      const clientId = window.DISCORD_CLIENT_ID || '1524144298289791127';
+      const redirectUri = encodeURIComponent('https://arenax.cyou/discord-callback');
+      const randomState = 'ax_auth_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+      try {
+        sessionStorage.setItem('ax_discord_oauth_state', JSON.stringify({
+          token: randomState,
+          source: 'auth_login',
+          timestamp: Date.now()
+        }));
+      } catch (e) {}
+      window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=' + clientId + '&redirect_uri=' + redirectUri + '&response_type=code&scope=identify&state=' + encodeURIComponent(randomState);
+    }
+    $('axBtnSocialDiscord')?.addEventListener('click', handleDiscordLogin);
+    $('axBtnSignupDiscord')?.addEventListener('click', handleDiscordLogin);
+
+    // 3. Guest Access
+    $('axBtnGuestAccess')?.addEventListener('click', function() {
+      var agreed = $('axSigninTerms')?.checked;
+      if (!agreed) {
+        setAuthError('signin', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        return;
+      }
+      var legacyGuest = $('bGuest');
+      if (legacyGuest) legacyGuest.click();
+    });
+
+    // 4. Sign In Submission
+    $('axBtnSigninSubmit')?.addEventListener('click', function() {
+      setAuthError('signin', '');
+      var email = ($('axInputSigninEmail')?.value || '').trim();
+      var pass = ($('axInputSigninPass')?.value || '').trim();
+      var agreed = $('axSigninTerms')?.checked;
+
+      if (!agreed) {
+        setAuthError('signin', '⚠️ You must agree to the Terms & Conditions and Privacy Policy to sign in.');
+        return;
+      }
+      if (!email || !pass) {
+        setAuthError('signin', '⚠️ Please enter both your email address and password.');
+        return;
+      }
+      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+        setAuthError('signin', '⚠️ Please enter a valid email address (e.g. name@example.com).');
+        return;
+      }
+
+      // Sync into legacy fields and trigger native login handler
+      if ($('iEmail')) $('iEmail').value = email;
+      if ($('iPass')) $('iPass').value = pass;
+      if ($('termsCheckbox')) $('termsCheckbox').checked = true;
+
+      // Ensure mode is set to login
+      if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'login') {
+        $('lnkSignup')?.click();
+      }
+
+      $('bEmail')?.click();
+    });
+
+    // 5. Sign Up Submission with existing validation and email verification flow
+    $('axBtnSignupSubmit')?.addEventListener('click', function() {
+      setAuthError('signup', '');
+      var tag = ($('axInputSignupTag')?.value || '').trim();
+      var email = ($('axInputSignupEmail')?.value || '').trim();
+      var pass = ($('axInputSignupPass')?.value || '').trim();
+      var agreed = $('axSignupTerms')?.checked;
+
+      if (!agreed) {
+        setAuthError('signup', '⚠️ You must agree to the Terms & Conditions and Privacy Policy.');
+        return;
+      }
+      if (!tag) {
+        setAuthError('signup', '⚠️ Please choose a gamer tag / display name.');
+        return;
+      }
+      if (!email || !pass) {
+        setAuthError('signup', '⚠️ Please enter both your email and a secure password.');
+        return;
+      }
+      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+        setAuthError('signup', '⚠️ Please enter a valid email address (e.g. name@example.com).');
+        return;
+      }
+      if (pass.length < 6) {
+        setAuthError('signup', '⚠️ Password must be at least 6 characters.');
+        return;
+      }
+
+      // Sync into legacy fields and trigger native signup handler
+      if ($('iUsername')) $('iUsername').value = tag;
+      if ($('iEmail')) $('iEmail').value = email;
+      if ($('iPass')) $('iPass').value = pass;
+      if ($('termsCheckbox')) $('termsCheckbox').checked = true;
+
+      // Ensure mode is set to signup
+      if (typeof window.currentLoginMode !== 'undefined' && window.currentLoginMode !== 'signup') {
+        $('lnkSignup')?.click();
+      }
+
+      $('bEmail')?.click();
+    });
+
+    // 6. Forgot Password Custom Link
+    $('axLnkForgotPass')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      var email = ($('axInputSigninEmail')?.value || '').trim();
+      if (!email) {
+        setAuthError('signin', '⚠️ Please enter your email address above first, then click "Forgot password?".');
+        return;
+      }
+      if ($('iEmail')) $('iEmail').value = email;
+      $('lnkForgot')?.click();
+    });
+
+    // 7. Resend Verification Email Button
+    $('axBtnResendVerify')?.addEventListener('click', function() {
+      var email = ($('axInputSigninEmail')?.value || '').trim();
+      var pass = ($('axInputSigninPass')?.value || '').trim();
+      if ($('iEmail')) $('iEmail').value = email;
+      if ($('iPass')) $('iPass').value = pass;
+      $('btnResendVerifyLogin')?.click();
+    });
+
+    // Observer: reflect legacy login errors into Coral Auth UI banners
+    var legacyErr = $('loginErr');
+    if (legacyErr) {
+      var observer = new MutationObserver(function() {
+        var msg = legacyErr.textContent || '';
+        if (legacyErr.classList.contains('hidden') || !msg) {
+          setAuthError('signin', '');
+          setAuthError('signup', '');
+        } else {
+          setAuthError('signin', msg);
+          setAuthError('signup', msg);
+          if (msg.includes('Email Not Verified') || msg.includes('verification link')) {
+            $('axBtnResendVerify')?.classList.remove('hidden');
+          }
+        }
+      });
+      observer.observe(legacyErr, { childList: true, characterData: true, subtree: true, attributes: true });
+    }
+  })();
+</script>
 
 <!-- ==================== GUEST ACCOUNT WARNING ==================== -->
 <div id="mGuest" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
