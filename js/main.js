@@ -27,7 +27,9 @@ const googleProvider = window.googleProvider || (window.GoogleAuthProvider ? new
 // Register Service Worker for FCM dynamically with directory path context
 let messaging = null;
 
-if ('serviceWorker' in navigator) {
+const isCapacitorNative = (typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) || (typeof window.isNativeCapacitor === 'function' && window.isNativeCapacitor());
+
+if ('serviceWorker' in navigator && !isCapacitorNative) {
   // PWA Update flow functions
   function setupPwaUpdateDetection(reg) {
     // Only activate in PWA mode
@@ -154,6 +156,7 @@ if ('serviceWorker' in navigator) {
         clearInterval(interval);
         
         // Perform the update swap
+        window.__userTriggeredSwUpdate = true;
         setTimeout(() => {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -171,13 +174,15 @@ if ('serviceWorker' in navigator) {
     }, 150);
   }
 
-  // Controller change listener to reload page when a new SW takes control
+  // Controller change listener to reload page ONLY when explicitly requested by user update
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
+    if (window.__userTriggeredSwUpdate && !refreshing) {
       refreshing = true;
-      console.log('[SW Lifecycle] Service Worker controller changed. Reloading page...');
+      console.log('[SW Lifecycle] Service Worker controller changed via user update. Reloading page...');
       window.location.reload();
+    } else {
+      console.log('[SW Lifecycle] Background controllerchange detected. Auto-reload suppressed to prevent app reset.');
     }
   });
 
@@ -229,21 +234,15 @@ if ('serviceWorker' in navigator) {
       }
       console.log('Service Worker registered successfully with scope:', reg.scope);
 
-      // Force activation immediately if worker is waiting
-      if (reg.waiting) {
-        console.log('[SW Lifecycle] Waiting worker detected. Sending SKIP_WAITING signal...');
-        reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
-      }
-
-      // Listen for updatefound and force activation as soon as installed
+      // Only show update modal or wait for user approval instead of abruptly restarting the app
       reg.addEventListener('updatefound', () => {
         const installingWorker = reg.installing;
         if (installingWorker) {
           installingWorker.addEventListener('statechange', () => {
-            if (installingWorker.state === 'installed') {
-              console.log('[SW Lifecycle] New service worker installed. Forcing immediate skipWaiting...');
-              if (reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING', action: 'skipWaiting' });
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[SW Lifecycle] New service worker installed and waiting.');
+              if (typeof showPwaUpdateModal === 'function') {
+                showPwaUpdateModal(reg);
               }
             }
           });
@@ -722,127 +721,140 @@ window.updateAllAvatarFrames = function() {
   });
 };
 
-// Lauch Dashboard
+// Launch Dashboard
 function boot() {
-  const profile = userProfile || guestProfile;
-  const numId = 'ID: ' + getNumericPlayerId(profile.uid, profile.handle);
-  $('pName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
-  $('pHandle').textContent = numId;
-  $('pAv').src = profile.av;
-  $('avImg').src = profile.av;
-  if ($('homeAvImg')) $('homeAvImg').src = profile.av;
-  if ($('homeCoinsVal')) $('homeCoinsVal').textContent = (profile.balance || 0).toLocaleString();
-  if ($('setName')) $('setName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
-  if ($('setHandle')) $('setHandle').textContent = numId;
-  if ($('setAv')) $('setAv').src = profile.av;
-  $('wBal').textContent = (profile.balance || 0).toLocaleString();
-  $('pPopularityVal').textContent = profile.popularity || 0;
-
-  if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
-  if (typeof window.preloadRankingData === 'function') window.preloadRankingData();
-  if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI(profile);
-  if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(profile);
-
-  // 1. Profile Banner Theme (Premium only)
-  const card = $('profileCard');
-  if (profile.premium && profile.bannerTheme) {
-    const gradients = {
-      red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
-      gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
-      blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
-      purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
-      green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
-      sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
-      ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
-      dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
-    };
-    card.style.background = gradients[profile.bannerTheme] || '';
-  } else {
-    card.style.background = '';
-  }
-
-  // 2. Username Color (Premium only)
-  const pNameEl = $('pName');
-  if (pNameEl) {
-    if (profile.premium && (profile.goldenNameEnabled !== false)) {
-      pNameEl.classList.add('golden-name-shimmer');
-      pNameEl.style.background = '';
-      pNameEl.style.webkitBackgroundClip = '';
-      pNameEl.style.webkitTextFillColor = '';
-      pNameEl.style.fontWeight = '';
-      pNameEl.style.fontStyle = 'italic';
-      pNameEl.style.color = '';
-    } else if (profile.premium && profile.nameColor) {
-      pNameEl.classList.remove('golden-name-shimmer');
-      pNameEl.style.background = 'none';
-      pNameEl.style.webkitBackgroundClip = 'initial';
-      pNameEl.style.webkitTextFillColor = 'initial';
-      pNameEl.style.color = profile.nameColor;
-      pNameEl.style.fontWeight = '';
-      pNameEl.style.fontStyle = '';
-    } else {
-      pNameEl.classList.remove('golden-name-shimmer');
-      pNameEl.style.background = 'none';
-      pNameEl.style.webkitBackgroundClip = 'initial';
-      pNameEl.style.webkitTextFillColor = 'initial';
-      pNameEl.style.color = '';
-      pNameEl.style.fontWeight = '';
-      pNameEl.style.fontStyle = '';
+  try {
+    const profile = userProfile || guestProfile;
+    if (!profile) {
+      console.warn('[Boot] No profile available to boot.');
+      return;
     }
+    const numId = 'ID: ' + getNumericPlayerId(profile.uid, profile.handle);
+    if ($('pName')) $('pName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
+    if ($('pHandle')) $('pHandle').textContent = numId;
+    if ($('pAv')) $('pAv').src = profile.av || 'av1.png';
+    if ($('avImg')) $('avImg').src = profile.av || 'av1.png';
+    if ($('homeAvImg')) $('homeAvImg').src = profile.av || 'av1.png';
+    if ($('homeCoinsVal')) $('homeCoinsVal').textContent = (profile.balance || 0).toLocaleString();
+    if ($('setName')) $('setName').innerHTML = `${profile.name || 'Player'}${window.getBlueTickBadgeHtml(profile)}`;
+    if ($('setHandle')) $('setHandle').textContent = numId;
+    if ($('setAv')) $('setAv').src = profile.av || 'av1.png';
+    if ($('wBal')) $('wBal').textContent = (profile.balance || 0).toLocaleString();
+    if ($('pPopularityVal')) $('pPopularityVal').textContent = profile.popularity || 0;
 
-    // Apply VIP Custom Font to pName and setName
-    const allFontClasses = [
-      'font-poppins', 'font-orbitron', 'font-luckiest-guy', 'font-fredoka',
-      'font-bungee', 'font-chakra', 'font-press-start', 'font-cinzel',
-      'font-rajdhani', 'font-unifraktur', 'font-permanent-marker', 'font-pacifico'
-    ];
-    allFontClasses.forEach(cls => pNameEl.classList.remove(cls));
-    if ((profile.premium || profile.isVIP || profile.isPremium) && profile.selectedFont) {
-      pNameEl.classList.add(profile.selectedFont);
-    }
-    if ($('setName')) {
-      allFontClasses.forEach(cls => $('setName').classList.remove(cls));
-      if ((profile.premium || profile.isVIP || profile.isPremium) && profile.selectedFont) {
-        $('setName').classList.add(profile.selectedFont);
+    if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+    if (typeof window.preloadRankingData === 'function') window.preloadRankingData();
+    if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI(profile);
+    if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(profile);
+
+    // 1. Profile Banner Theme (Premium only)
+    const card = $('profileCard');
+    if (card) {
+      if (profile.premium && profile.bannerTheme) {
+        const gradients = {
+          red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+          gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
+          blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+          purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+          green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+          sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+          ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+          dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+        };
+        card.style.background = gradients[profile.bannerTheme] || '';
+      } else {
+        card.style.background = '';
       }
     }
-  }
 
-  // 3. Avatar Frame / Border Glow (Premium only)
-  const avImg = $('pAv');
-  if (profile.premium && profile.avatarFrame && profile.avatarFrame !== 'none') {
-    const frameColors = {
-      gold: '#c0a030',
-      fire: '#ff4500',
-      ice: '#00bfff',
-      royal: '#8b5cf6'
-    };
-    const color = frameColors[profile.avatarFrame];
-    avImg.style.boxShadow = `0 0 12px ${color}`;
-    avImg.style.borderColor = color;
-  } else {
-    avImg.style.boxShadow = '';
-    avImg.style.borderColor = '';
-  }
+    // 2. Username Color (Premium only)
+    const pNameEl = $('pName');
+    if (pNameEl) {
+      if (profile.premium && (profile.goldenNameEnabled !== false)) {
+        pNameEl.classList.add('golden-name-shimmer');
+        pNameEl.style.background = '';
+        pNameEl.style.webkitBackgroundClip = '';
+        pNameEl.style.webkitTextFillColor = '';
+        pNameEl.style.fontWeight = '';
+        pNameEl.style.fontStyle = 'italic';
+        pNameEl.style.color = '';
+      } else if (profile.premium && profile.nameColor) {
+        pNameEl.classList.remove('golden-name-shimmer');
+        pNameEl.style.background = 'none';
+        pNameEl.style.webkitBackgroundClip = 'initial';
+        pNameEl.style.webkitTextFillColor = 'initial';
+        pNameEl.style.color = profile.nameColor;
+        pNameEl.style.fontWeight = '';
+        pNameEl.style.fontStyle = '';
+      } else {
+        pNameEl.classList.remove('golden-name-shimmer');
+        pNameEl.style.background = 'none';
+        pNameEl.style.webkitBackgroundClip = 'initial';
+        pNameEl.style.webkitTextFillColor = 'initial';
+        pNameEl.style.color = '';
+        pNameEl.style.fontWeight = '';
+        pNameEl.style.fontStyle = '';
+      }
 
-  // 4. Custom Badge Display (Read-only)
-  if (profile.badge) {
-    $('pBadgeText').textContent = profile.badge;
-    $('pBadge').classList.remove('hidden');
-  } else {
-    $('pBadge').classList.add('hidden');
-  }
+      // Apply VIP Custom Font to pName and setName
+      const allFontClasses = [
+        'font-poppins', 'font-orbitron', 'font-luckiest-guy', 'font-fredoka',
+        'font-bungee', 'font-chakra', 'font-press-start', 'font-cinzel',
+        'font-rajdhani', 'font-unifraktur', 'font-permanent-marker', 'font-pacifico'
+      ];
+      allFontClasses.forEach(cls => pNameEl.classList.remove(cls));
+      if ((profile.premium || profile.isVIP || profile.isPremium) && profile.selectedFont) {
+        pNameEl.classList.add(profile.selectedFont);
+      }
+      if ($('setName')) {
+        allFontClasses.forEach(cls => $('setName').classList.remove(cls));
+        if ((profile.premium || profile.isVIP || profile.isPremium) && profile.selectedFont) {
+          $('setName').classList.add(profile.selectedFont);
+        }
+      }
+    }
 
-  // Render player-owned custom premium badges
-  renderEarnedBadgesUI();
+    // 3. Avatar Frame / Border Glow (Premium only)
+    const avImg = $('pAv');
+    if (avImg) {
+      if (profile.premium && profile.avatarFrame && profile.avatarFrame !== 'none') {
+        const frameColors = {
+          gold: '#c0a030',
+          fire: '#ff4500',
+          ice: '#00bfff',
+          royal: '#8b5cf6'
+        };
+        const color = frameColors[profile.avatarFrame];
+        avImg.style.boxShadow = `0 0 12px ${color}`;
+        avImg.style.borderColor = color;
+      } else {
+        avImg.style.boxShadow = '';
+        avImg.style.borderColor = '';
+      }
+    }
 
-  // 5. Bio Description
-  if (profile.bio) {
-    $('pBio').textContent = profile.bio;
-    $('pBio').classList.remove('hidden');
-  } else {
-    $('pBio').classList.add('hidden');
-  }
+    // 4. Custom Badge Display (Read-only)
+    if ($('pBadgeText') && $('pBadge')) {
+      if (profile.badge) {
+        $('pBadgeText').textContent = profile.badge;
+        $('pBadge').classList.remove('hidden');
+      } else {
+        $('pBadge').classList.add('hidden');
+      }
+    }
+
+    // Render player-owned custom premium badges
+    if (typeof renderEarnedBadgesUI === 'function') renderEarnedBadgesUI();
+
+    // 5. Bio Description
+    if ($('pBio')) {
+      if (profile.bio) {
+        $('pBio').textContent = profile.bio;
+        $('pBio').classList.remove('hidden');
+      } else {
+        $('pBio').classList.add('hidden');
+      }
+    }
 
   // 6. Game Info & Socials Details Card
   let hasDetails = false;
@@ -953,73 +965,87 @@ function boot() {
     }
   }
 
-  // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
-  if (userProfile) {
-    $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
-  } else {
-    $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
-  }
-
-  loadTournamentsList();
-  // Auto refresh live tournament stats every 3 seconds
-  if (!window.tournamentAutoRefreshInterval) {
-    window.tournamentAutoRefreshInterval = setInterval(() => {
-      if (typeof renderTournaments === 'function') {
-        renderTournaments();
+    // Set referral link for logged-in users (Production-ready GitHub Pages URL as requested)
+    if ($('referralLinkInput')) {
+      if (userProfile) {
+        $('referralLinkInput').value = window.location.origin + window.location.pathname + '?ref=' + userProfile.uid;
+      } else {
+        $('referralLinkInput').value = 'Link restricted. Please authenticate fully to get a referral code!';
       }
-    }, 3000);
-  }
-  loadLiveNotifications();
-  if (typeof window.initGlobalChat === 'function') {
-    window.initGlobalChat();
-  }
-  
-  if (window.ArenaSplash) {
-    window.ArenaSplash.status('Ready');
-    window.ArenaSplash.finish();
-  }
-
-  goTo('sDash');
-
-  if (!devPopupShownThisSession) {
-    $('mUnderDevPopup').classList.remove('hidden');
-    devPopupShownThisSession = true;
-  }
-  if (typeof initVoiceRoomsSystem === 'function') {
-    initVoiceRoomsSystem();
-  }
-  if (typeof renderProfileMomentsSection === 'function') {
-    renderProfileMomentsSection();
-  }
-  syncPremiumModalState();
-  if (typeof window.updateDiscordSecurityUI === 'function') {
-    window.updateDiscordSecurityUI();
-  }
-  if (typeof window.checkDiscordJustLinked === 'function') {
-    window.checkDiscordJustLinked();
-  }
-  if (typeof window.checkAndProcessDiscordCallback === 'function') {
-    window.checkAndProcessDiscordCallback();
-  }
-
-  // Initialize device recognition and session tracking
-  if (profile && profile.uid && auth.currentUser) {
-    if (typeof window.initUserSessionAndDevice === 'function') {
-      window.initUserSessionAndDevice(auth.currentUser, profile);
     }
-  }
 
-  // Handle URL deep link to open Logged-in Devices (?open=security-devices)
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('open') === 'security-devices' || window.pendingOpenSecurityDevices) {
-      window.pendingOpenSecurityDevices = false;
-      setTimeout(() => {
-        if (typeof window.openAxSecurityModal === 'function') window.openAxSecurityModal();
-        if (typeof window.showLoggedInDevicesView === 'function') window.showLoggedInDevicesView();
-      }, 500);
+    if (typeof loadTournamentsList === 'function') loadTournamentsList();
+    // Auto refresh live tournament stats every 3 seconds
+    if (!window.tournamentAutoRefreshInterval) {
+      window.tournamentAutoRefreshInterval = setInterval(() => {
+        if (typeof renderTournaments === 'function') {
+          renderTournaments();
+        }
+      }, 3000);
     }
-  } catch(e) {}
+    if (typeof loadLiveNotifications === 'function') loadLiveNotifications();
+    if (typeof window.initGlobalChat === 'function') {
+      window.initGlobalChat();
+    }
+    
+    console.log('[Auth Step 4/4] Finalizing boot sequence and directing user to Dashboard (sDash)...');
+    window.__authInitialCheckDone = true;
+
+    if (window.ArenaSplash) {
+      window.ArenaSplash.status('Ready');
+      window.ArenaSplash.finish(true);
+    }
+
+    goTo('sDash');
+
+    if (!devPopupShownThisSession) {
+      if ($('mUnderDevPopup')) $('mUnderDevPopup').classList.remove('hidden');
+      devPopupShownThisSession = true;
+    }
+    if (typeof initVoiceRoomsSystem === 'function') {
+      initVoiceRoomsSystem();
+    }
+    if (typeof renderProfileMomentsSection === 'function') {
+      renderProfileMomentsSection();
+    }
+    syncPremiumModalState();
+    if (typeof window.updateDiscordSecurityUI === 'function') {
+      window.updateDiscordSecurityUI();
+    }
+    if (typeof window.checkDiscordJustLinked === 'function') {
+      window.checkDiscordJustLinked();
+    }
+    if (typeof window.checkAndProcessDiscordCallback === 'function') {
+      window.checkAndProcessDiscordCallback();
+    }
+
+    // Initialize device recognition and session tracking
+    if (profile && profile.uid && auth.currentUser) {
+      if (typeof window.initUserSessionAndDevice === 'function') {
+        window.initUserSessionAndDevice(auth.currentUser, profile);
+      }
+    }
+
+    // Handle URL deep link to open Logged-in Devices (?open=security-devices)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('open') === 'security-devices' || window.pendingOpenSecurityDevices) {
+        window.pendingOpenSecurityDevices = false;
+        setTimeout(() => {
+          if (typeof window.openAxSecurityModal === 'function') window.openAxSecurityModal();
+          if (typeof window.showLoggedInDevicesView === 'function') window.showLoggedInDevicesView();
+        }, 500);
+      }
+    } catch(e) {}
+  } catch (bootErr) {
+    console.error('[Boot Error] Exception caught during boot:', bootErr);
+    // Ensure user still reaches dashboard without being trapped
+    window.__authInitialCheckDone = true;
+    if (window.ArenaSplash) {
+      window.ArenaSplash.finish(true);
+    }
+    goTo('sDash');
+  }
 }
 
 function syncPremiumModalState() {
@@ -1227,17 +1253,37 @@ function cleanupAllUserListeners() {
 onAuthStateChanged(auth, async (fireUser) => {
   cleanupAllUserListeners();
   if (fireUser && !guestProfile) {
+    console.log('[Auth Step 1/4] Active user session detected in onAuthStateChanged for UID:', fireUser.uid, 'Email:', fireUser.email || 'None');
+    
+    // Ensure login/welcome screens stay hidden while loading profile
+    if ($('sLogin')) $('sLogin').classList.add('hidden');
+
     // Check email verification for password auth users
     const isPasswordUser = fireUser.providerData.some(p => p.providerId === 'password') || (fireUser.email && !fireUser.providerData.some(p => p.providerId === 'google.com'));
     if (isPasswordUser) {
+      console.log('[Auth Step 2/4] Verifying email status for password auth user...');
       try {
         await fireUser.reload();
       } catch (e) {}
-      if (!fireUser.emailVerified) {
+
+      let isVerified = fireUser.emailVerified;
+      if (!isVerified) {
+        try {
+          const checkDoc = await getDoc(doc(db, 'users', fireUser.uid));
+          if (checkDoc.exists() && checkDoc.data()?.emailVerified === true) {
+            isVerified = true;
+          }
+        } catch (verErr) {
+          console.warn('[Auth Step 2/4] Firestore email verification fallback check warning:', verErr);
+        }
+      }
+
+      if (!isVerified) {
         console.warn("[Auth Engine] Unverified email. Access blocked until verified.");
         userProfile = null;
         cleanupAllUserListeners();
         await signOut(auth);
+        window.__authInitialCheckDone = true;
         if ($('loginErr')) {
           $('loginErr').textContent = '⚠️ Email Not Verified! A verification link was sent to ' + (fireUser.email || '') + '. Please verify your email in your inbox before entering ArenaX.';
           $('loginErr').classList.remove('hidden');
@@ -1248,7 +1294,10 @@ onAuthStateChanged(auth, async (fireUser) => {
         goTo('sLogin');
         return;
       }
+      console.log('[Auth Step 2/4] Email verification confirmed.');
     }
+
+    console.log('[Auth Step 3/4] Initializing real-time listeners and Firestore profile subscription for UID:', fireUser.uid);
 
     // Start real-time submissions listener
     if (typeof window.startUserSubmissionsListener === 'function') {
@@ -1373,6 +1422,7 @@ onAuthStateChanged(auth, async (fireUser) => {
           }
         }
 
+        console.log('[Auth Step 4/4] Profile validated from Firestore. Invoking boot() for player:', userProfile.name);
         boot();
       } else {
         // Bootstrap new user in Firestore
@@ -1456,6 +1506,7 @@ onAuthStateChanged(auth, async (fireUser) => {
               }
             }
 
+            console.log('[Auth Step 4/4] Bootstrapped new profile in Firestore. Invoking boot() for player:', userProfile.name);
             boot();
           })
           .catch(err => console.error('Bootstrap profile error: ', err));
@@ -1472,6 +1523,8 @@ onAuthStateChanged(auth, async (fireUser) => {
       }
     });
   } else if (!guestProfile) {
+    console.log('[Auth Step 1/4] No active user session detected (fireUser is null). Directing to Welcome/Sign In screen.');
+    window.__authInitialCheckDone = true;
     if (window.unsubReferrals) {
       try { window.unsubReferrals(); } catch (e) {}
       window.unsubReferrals = null;
@@ -1500,10 +1553,19 @@ $('bGoogle').addEventListener('click', async () => {
 });
 
 let currentLoginMode = 'login';
+window.currentLoginMode = currentLoginMode;
+window.setLoginMode = function(mode) {
+  if (mode === 'signup' && currentLoginMode !== 'signup') {
+    $('lnkSignup')?.click();
+  } else if (mode === 'login' && currentLoginMode !== 'login') {
+    $('lnkSignup')?.click();
+  }
+};
 
 $('lnkSignup').addEventListener('click', () => {
   if (currentLoginMode === 'login') {
     currentLoginMode = 'signup';
+    window.currentLoginMode = 'signup';
     $('loginTitle').textContent = 'Create Account';
     $('iUsername').classList.remove('hidden');
     $('bEmail').textContent = 'Sign up';
@@ -1513,6 +1575,7 @@ $('lnkSignup').addEventListener('click', () => {
     $('loginErr').classList.add('hidden');
   } else {
     currentLoginMode = 'login';
+    window.currentLoginMode = 'login';
     $('loginTitle').textContent = 'Welcome back';
     $('iUsername').classList.add('hidden');
     $('bEmail').textContent = 'Log in';
@@ -1604,7 +1667,9 @@ $('bEmail').addEventListener('click', async () => {
   } else {
     $('loginErr').classList.add('hidden');
     try {
+      console.log('[Auth Action] Initiating signInWithEmailAndPassword for email:', em);
       const cred = await signInWithEmailAndPassword(auth, em, pw);
+      console.log('[Auth Action] signInWithEmailAndPassword approved for UID:', cred.user.uid);
 
       // Check email verification status and 2FA status in Firebase Auth OR Firestore profile
       let isVerified = cred.user.emailVerified;
@@ -1623,6 +1688,7 @@ $('bEmail').addEventListener('click', async () => {
 
       // Block unverified logins with clear prompt
       if (!isVerified) {
+        console.warn('[Auth Action] Sign-in blocked: email is not verified.');
         await signOut(auth);
         $('loginErr').textContent = '⚠️ Email Not Verified! Please check your inbox for ' + em + ' and click the verification link before logging in.';
         $('loginErr').classList.remove('hidden');
@@ -1633,12 +1699,14 @@ $('bEmail').addEventListener('click', async () => {
       if (userData && userData.twoFactorEnabled === true) {
         const is2FaVerified = sessionStorage.getItem('ax_2fa_verified_' + cred.user.uid) === 'true';
         if (!is2FaVerified) {
+          console.log('[Auth Action] 2FA required. Launching 2FA verification flow.');
           if (typeof window.startTwoFactorLoginFlow === 'function') {
             await window.startTwoFactorLoginFlow(cred.user, userData);
           }
           return;
         }
       }
+      console.log('[Auth Action] Sign-in flow completed. Waiting for onAuthStateChanged and Firestore profile...');
     } catch (err) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         $('loginErr').textContent = '⚠️ Incorrect email or password. Please try again or click Forgot Password!';
