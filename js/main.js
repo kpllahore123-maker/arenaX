@@ -6141,6 +6141,9 @@ function openSettingsPage() {
   }
 
   $('mSettings').classList.remove('hidden');
+  if (typeof window.syncThemeUI === 'function') {
+    window.syncThemeUI();
+  }
   if (typeof window.updateDiagnosticUI === 'function') {
     window.updateDiagnosticUI();
   }
