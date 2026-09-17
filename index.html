@@ -21,6 +21,20 @@
 <link rel="apple-touch-icon" href="/icon-192.png" id="staticAppleIconLink" />
 
 <script>
+// Early Theme Initialization: Dark by default, light only if user explicitly selected light
+(function() {
+  try {
+    const saved = localStorage.getItem('ax_theme');
+    if (saved === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch(e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+
 window.$ = function(id) {
   return typeof id === 'string' ? document.getElementById(id) : id;
 };
@@ -235,19 +249,19 @@ if (typeof tailwind !== 'undefined') {
     theme: {
       extend: {
         colors: {
-          bg: '#0a0c12',
-          panel: '#111420',
-          card: '#171b2e',
-          ele: '#1e2340',
-          gold: '#f0c040',
+          bg: 'var(--bg)',
+          panel: 'var(--panel)',
+          card: 'var(--panel-2)',
+          ele: 'var(--panel-2)',
+          gold: 'var(--gold)',
           red: '#e8404a',
           blue: '#4f9eff',
           green: '#3ddc84',
           purple: '#a78bfa',
-          t1: '#f0f2ff',
-          t2: '#8890b0',
-          t3: '#4a5070',
-          bdr: '#252a45',
+          t1: 'var(--text)',
+          t2: 'var(--text-dim)',
+          t3: 'var(--text-dim)',
+          bdr: '#222842',
         },
         fontFamily: {
           sans: ['Inter', 'sans-serif'],
@@ -261,10 +275,94 @@ if (typeof tailwind !== 'undefined') {
 }
 </script>
 <style>
+/* Default Theme: Authentic ArenaX Dark Theme (Original) */
+:root {
+  --bg: #090b11;
+  --panel: #121624;
+  --panel-2: #181d2f;
+  --text: #f4f6fb;
+  --text-dim: #8b93a7;
+  --border: #222842;
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --gold: #f0c040;
+}
+
+[data-theme="dark"], :root[data-theme="dark"], html[data-theme="dark"], body[data-theme="dark"] {
+  --bg: #090b11;
+  --panel: #121624;
+  --panel-2: #181d2f;
+  --text: #f4f6fb;
+  --text-dim: #8b93a7;
+  --border: #222842;
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --gold: #f0c040;
+}
+
+[data-theme="light"], :root[data-theme="light"], html[data-theme="light"], body[data-theme="light"] {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --panel-2: #f1f5f9;
+  --text: #0f172a;
+  --text-dim: #64748b;
+  --border: #e2e8f0;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --gold: #f0c040;
+}
+
+/* Universal fix: Completely eliminate white divider lines and borders across the entire app */
+.divide-bdr > :not([hidden]) ~ :not([hidden]),
+.divide-bdr\/40 > :not([hidden]) ~ :not([hidden]),
+.divide-bdr\/30 > :not([hidden]) ~ :not([hidden]),
+.divide-bdr\/20 > :not([hidden]) ~ :not([hidden]),
+.divide-bdr\/60 > :not([hidden]) ~ :not([hidden]),
+[class*="divide-bdr"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.05)) !important;
+}
+
+.border-bdr {
+  border-color: var(--border, #222842) !important;
+}
+.border-bdr\/10 {
+  border-color: rgba(34, 40, 66, 0.2) !important;
+}
+.border-bdr\/20 {
+  border-color: rgba(34, 40, 66, 0.3) !important;
+}
+.border-bdr\/30 {
+  border-color: rgba(34, 40, 66, 0.45) !important;
+}
+.border-bdr\/40 {
+  border-color: rgba(34, 40, 66, 0.6) !important;
+}
+.border-bdr\/50 {
+  border-color: rgba(34, 40, 66, 0.7) !important;
+}
+.border-bdr\/60 {
+  border-color: #222842 !important;
+}
+.border-bdr\/80 {
+  border-color: #2b3354 !important;
+}
+
+[data-theme="light"] .border-bdr {
+  border-color: var(--border, #e2e8f0) !important;
+}
+[data-theme="light"] [class*="border-bdr\/"] {
+  border-color: rgba(226, 232, 240, 0.8) !important;
+}
+[data-theme="light"] [class*="divide-bdr"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
 html, body {
-  background-color: #0a0c12;
-  color: #f0f2ff;
+  background-color: var(--bg);
+  color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.bg-gold.text-bg, [class*="bg-gold"][class*="text-bg"], button.bg-gold.text-bg {
+  color: #0d0f14 !important;
 }
 
 .golden-name-shimmer {
@@ -412,9 +510,9 @@ html, body {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #0a0c12; }
-::-webkit-scrollbar-thumb { background: #252a45; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #f0c040; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
 /* Moments Heart Like Button Styles */
 .heart-container {
@@ -780,14 +878,10 @@ html, body {
   100% { transform: translateX(100%); }
 }
 
-  /* ── ArenaX Splash Screen Styles ── */
-  :root{
-    --violet:#9B7BFF; --magenta:#FF5CB0; --cyan:#3DD8FF; --mint:#2EE8B4;
-    --text:#F4F6FB; --muted:#8B93A7;
-  }
-
-  /* ── stage ─────────────────────────────────────────── */
+  /* ── ArenaX Splash Screen Styles (Dark Theme Preserved) ── */
   .splash{
+    --violet:#9B7BFF; --magenta:#FF5CB0; --cyan:#3DD8FF; --mint:#2EE8B4;
+    --text:#F4F6FB !important; --muted:#8B93A7 !important;
     position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;
     z-index:9999999 !important;
     display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;
@@ -1142,17 +1236,17 @@ html, body {
 </script>
 
 <!-- ==================== SIGN IN / SIGN UP SCREEN (ARENAX CORAL DESIGN) ==================== -->
-<div id="sLogin" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#FFF9F7] text-[#241B18] hidden select-none">
+<div id="sLogin" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[var(--bg)] text-[var(--text)] hidden select-none">
   <style>
     :root {
       --ax-coral-1: #F4A090;
       --ax-coral-2: #EE8272;
       --ax-coral-3: #E86C5C;
       --ax-coral-deep: #D85F4F;
-      --ax-ink: #241B18;
-      --ax-ink-soft: #8A7A75;
-      --ax-paper: #FFF9F7;
-      --ax-line: #F0DEDA;
+      --ax-ink: var(--text);
+      --ax-ink-soft: var(--text-dim);
+      --ax-paper: var(--bg);
+      --ax-line: var(--border);
     }
     .ax-auth-phone {
       width: 100%;
@@ -2033,39 +2127,39 @@ html, body {
 </div>
 
 <!-- ==================== CUSTOM 6-DIGIT EMAIL VERIFICATION MODAL ==================== -->
-<div id="mEmailVerification" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[250] flex items-center justify-center p-4 hidden">
-  <div class="bg-[#0a0c12] border border-[#232a3e] rounded-3xl p-7 max-w-[440px] w-full text-center shadow-2xl space-y-5 relative">
-    <div class="w-16 h-16 bg-[#161c2b] border border-[#2e3a54] text-[#f0c040] rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-lg shadow-[#f0c040]/10">
+<div id="mEmailVerification" class="fixed inset-0 bg-black/50 backdrop-filter backdrop-blur-md z-[250] flex items-center justify-center p-4 hidden">
+  <div class="bg-[var(--bg)] border border-[var(--border)] rounded-3xl p-7 max-w-[440px] w-full text-center shadow-2xl space-y-5 relative">
+    <div class="w-16 h-16 bg-[var(--panel)] border border-[var(--border)] text-[#f0c040] rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-lg shadow-[#f0c040]/10">
       <i class="fas fa-envelope-open-text"></i>
     </div>
 
     <div>
-      <h3 class="font-display text-2xl font-black text-white tracking-wide">Verify Your Account</h3>
-      <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+      <h3 class="font-display text-2xl font-black text-[var(--text)] tracking-wide">Verify Your Account</h3>
+      <p class="text-xs text-[var(--text-dim)] mt-2 leading-relaxed">
         We sent a 6-digit verification code to<br/>
-        <strong id="txtVerifyEmailTarget" class="text-white font-bold">your email</strong>.
+        <strong id="txtVerifyEmailTarget" class="text-[var(--text)] font-bold">your email</strong>.
       </p>
     </div>
 
-    <div id="verifyCodeErr" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 hidden"></div>
-    <div id="verifyCodeSuccess" class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 hidden"></div>
+    <div id="verifyCodeErr" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 hidden"></div>
+    <div id="verifyCodeSuccess" class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-600 hidden"></div>
 
     <div class="space-y-4">
       <div>
-        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Enter 6-Digit Code</label>
-        <input type="text" id="iVerificationCode" maxlength="6" inputmode="numeric" pattern="[0-9]*" class="w-full bg-[#101420] border-2 border-[#2b354d] focus:border-[#f0c040] rounded-2xl py-3.5 text-center text-3xl font-black tracking-[8px] text-[#f0c040] outline-none transition font-mono placeholder:text-slate-600 placeholder:text-xl placeholder:tracking-normal" placeholder="123456" autocomplete="one-time-code" />
-        <p class="text-[11px] text-slate-500 mt-1.5">Code expires in 5 minutes</p>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-dim)] mb-2">Enter 6-Digit Code</label>
+        <input type="text" id="iVerificationCode" maxlength="6" inputmode="numeric" pattern="[0-9]*" class="w-full bg-[var(--panel)] border-2 border-[var(--border)] focus:border-[#f0c040] rounded-2xl py-3.5 text-center text-3xl font-black tracking-[8px] text-[#f0c040] outline-none transition font-mono placeholder:text-gray-400 placeholder:text-xl placeholder:tracking-normal" placeholder="123456" autocomplete="one-time-code" />
+        <p class="text-[11px] text-[var(--text-dim)] mt-1.5">Code expires in 5 minutes</p>
       </div>
 
-      <button id="btnSubmitVerificationCode" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#d4a017] hover:brightness-110 text-black font-extrabold rounded-full text-sm transition uppercase tracking-wider shadow-lg shadow-[#f0c040]/20 active:scale-[0.98]">
+      <button id="btnSubmitVerificationCode" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#d4a017] hover:brightness-105 text-[#1a1a1a] font-extrabold rounded-full text-sm transition uppercase tracking-wider shadow-lg shadow-[#f0c040]/20 active:scale-[0.98] cursor-pointer">
         Verify Account
       </button>
 
       <div class="flex items-center justify-between text-xs pt-1 px-1">
-        <button id="btnResendVerificationCode" type="button" class="text-[#f0c040] hover:underline font-bold">
+        <button id="btnResendVerificationCode" type="button" class="text-[#f0c040] hover:underline font-bold cursor-pointer">
           Resend Code
         </button>
-        <button id="btnCloseVerificationModal" type="button" class="text-slate-500 hover:text-white">
+        <button id="btnCloseVerificationModal" type="button" class="text-[var(--text-dim)] hover:text-[var(--text)] cursor-pointer">
           Back to Login
         </button>
       </div>
@@ -2074,42 +2168,42 @@ html, body {
 </div>
 
 <!-- ==================== CUSTOM PASSWORD RESET SCREEN / MODAL ==================== -->
-<div id="mResetPassword" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
-  <div class="bg-[#0a0c12] border border-[#232a3e] rounded-3xl p-7 max-w-[440px] w-full shadow-2xl space-y-5 relative">
+<div id="mResetPassword" class="fixed inset-0 bg-black/50 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
+  <div class="bg-[var(--bg)] border border-[var(--border)] rounded-3xl p-7 max-w-[440px] w-full shadow-2xl space-y-5 relative">
     <div class="text-center">
-      <div class="w-14 h-14 bg-[#161c2b] border border-[#2e3a54] text-[#f0c040] rounded-2xl flex items-center justify-center text-xl mx-auto mb-3 shadow-lg shadow-[#f0c040]/10">
+      <div class="w-14 h-14 bg-[var(--panel)] border border-[var(--border)] text-[#f0c040] rounded-2xl flex items-center justify-center text-xl mx-auto mb-3 shadow-lg shadow-[#f0c040]/10">
         <i class="fas fa-key"></i>
       </div>
-      <h3 class="font-display text-2xl font-black text-white tracking-wide">Set New Password</h3>
-      <p id="txtResetPasswordEmail" class="text-xs text-slate-400 mt-1">Enter your new ArenaX account password</p>
+      <h3 class="font-display text-2xl font-black text-[var(--text)] tracking-wide">Set New Password</h3>
+      <p id="txtResetPasswordEmail" class="text-xs text-[var(--text-dim)] mt-1">Enter your new ArenaX account password</p>
     </div>
 
-    <div id="resetPasswordErr" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 hidden"></div>
-    <div id="resetPasswordSuccess" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 hidden text-center space-y-3">
+    <div id="resetPasswordErr" class="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 hidden"></div>
+    <div id="resetPasswordSuccess" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-600 hidden text-center space-y-3">
       <p class="font-bold text-sm">✅ Password Reset Successfully!</p>
-      <p class="text-slate-300">You can now sign in with your new password.</p>
-      <button id="btnProceedToLogin" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full text-xs uppercase tracking-wider">
+      <p class="text-[var(--text-dim)]">You can now sign in with your new password.</p>
+      <button id="btnProceedToLogin" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full text-xs uppercase tracking-wider cursor-pointer">
         Go to Login
       </button>
     </div>
 
     <form id="formResetPassword" class="space-y-4">
       <div>
-        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">New Password</label>
-        <input type="password" id="iResetNewPass" required minlength="6" class="w-full bg-[#101420] border border-[#2b354d] focus:border-[#f0c040] rounded-full px-5 py-3 text-sm text-white outline-none transition placeholder-slate-600" placeholder="At least 6 characters" />
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-dim)] mb-1.5">New Password</label>
+        <input type="password" id="iResetNewPass" required minlength="6" class="w-full bg-[var(--panel)] border border-[var(--border)] focus:border-[#f0c040] rounded-full px-5 py-3 text-sm text-[var(--text)] outline-none transition placeholder-gray-400" placeholder="At least 6 characters" />
       </div>
 
       <div>
-        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Confirm New Password</label>
-        <input type="password" id="iResetConfirmPass" required minlength="6" class="w-full bg-[#101420] border border-[#2b354d] focus:border-[#f0c040] rounded-full px-5 py-3 text-sm text-white outline-none transition placeholder-slate-600" placeholder="Re-enter new password" />
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-dim)] mb-1.5">Confirm New Password</label>
+        <input type="password" id="iResetConfirmPass" required minlength="6" class="w-full bg-[var(--panel)] border border-[var(--border)] focus:border-[#f0c040] rounded-full px-5 py-3 text-sm text-[var(--text)] outline-none transition placeholder-gray-400" placeholder="Re-enter new password" />
       </div>
 
-      <button type="submit" id="btnSubmitNewPassword" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#d4a017] hover:brightness-110 text-black font-extrabold rounded-full text-sm transition uppercase tracking-wider shadow-lg shadow-[#f0c040]/20 active:scale-[0.98]">
+      <button type="submit" id="btnSubmitNewPassword" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#d4a017] hover:brightness-105 text-[#1a1a1a] font-extrabold rounded-full text-sm transition uppercase tracking-wider shadow-lg shadow-[#f0c040]/20 active:scale-[0.98] cursor-pointer">
         Save New Password
       </button>
 
       <div class="text-center pt-2">
-        <button type="button" id="btnCancelResetPassword" class="text-xs text-slate-500 hover:text-white">
+        <button type="button" id="btnCancelResetPassword" class="text-xs text-[var(--text-dim)] hover:text-[var(--text)] cursor-pointer">
           Back to Login
         </button>
       </div>
@@ -2118,8 +2212,8 @@ html, body {
 </div>
 
 <!-- ==================== 2FA LOGIN VERIFICATION WAITING MODAL ==================== -->
-<div id="mTwoFactorWaitingModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
-  <div class="bg-[#0c0d12] border border-[#f0c040]/30 rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
+<div id="mTwoFactorWaitingModal" class="fixed inset-0 bg-black/50 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
+  <div class="bg-[var(--bg)] border border-[var(--border)] rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
     <!-- Glowing background accent -->
     <div class="absolute -top-20 -right-20 w-44 h-44 bg-[#f0c040]/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -2127,41 +2221,41 @@ html, body {
     <!-- Pulsing Radar Shield Icon -->
     <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
       <div class="absolute inset-0 rounded-full bg-[#f0c040]/25 animate-ping opacity-60"></div>
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#1b1c24] to-[#0c0d12] border border-[#f0c040]/50 flex items-center justify-center text-[#f0c040] text-2xl shadow-lg relative z-10">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--panel-2)] to-[var(--panel)] border border-[#f0c040]/50 flex items-center justify-center text-[#f0c040] text-2xl shadow-lg relative z-10">
         <i class="fas fa-shield-halved"></i>
       </div>
     </div>
 
     <!-- Text Header -->
     <div class="space-y-1.5">
-      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#f0c040]/15 border border-[#f0c040]/30 text-[#f0c040] text-[10px] font-bold uppercase tracking-wider">
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#f0c040]/15 border border-[#f0c040]/30 text-amber-600 text-[10px] font-bold uppercase tracking-wider">
         <i class="fas fa-lock"></i> 2FA Security Check
       </div>
-      <h3 class="font-display text-xl font-bold text-white tracking-tight">Confirm Your Login</h3>
-      <p class="text-xs text-slate-300 leading-relaxed px-1">
+      <h3 class="font-display text-xl font-bold text-[var(--text)] tracking-tight">Confirm Your Login</h3>
+      <p class="text-xs text-[var(--text-dim)] leading-relaxed px-1">
         Two-Factor Authentication is enabled on your account. We sent a secure confirmation link to:
       </p>
-      <div id="txt2FaWaitingEmail" class="text-xs font-mono font-bold text-[#f0c040] bg-[#f0c040]/10 border border-[#f0c040]/30 rounded-xl py-2 px-3 truncate max-w-full inline-block mt-1">
+      <div id="txt2FaWaitingEmail" class="text-xs font-mono font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-2 px-3 truncate max-w-full inline-block mt-1">
         player@example.com
       </div>
     </div>
 
     <!-- Live Status Indicator -->
-    <div class="p-3 bg-[#151722] border border-white/10 rounded-xl flex items-center justify-center gap-2.5 text-xs text-slate-300 shadow-inner">
+    <div class="p-3 bg-[var(--panel)] border border-[var(--border)] rounded-xl flex items-center justify-center gap-2.5 text-xs text-[var(--text)] shadow-inner">
       <i class="fas fa-circle-notch animate-spin text-[#f0c040] text-sm"></i>
       <span id="txt2FaWaitingStatus">Waiting for email confirmation...</span>
     </div>
 
-    <p class="text-[11px] text-slate-400 leading-normal px-2">
-      Click the <strong class="text-white">"Login"</strong> button in the email on this or any device. This window will automatically finish logging you in once confirmed.
+    <p class="text-[11px] text-[var(--text-dim)] leading-normal px-2">
+      Click the <strong class="text-[var(--text)]">"Login"</strong> button in the email on this or any device. This window will automatically finish logging you in once confirmed.
     </p>
 
     <!-- Actions -->
-    <div class="space-y-2 pt-1 border-t border-white/5">
-      <button id="btnResend2FaEmail" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition border border-slate-700 active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+    <div class="space-y-2 pt-1 border-t border-[var(--border)]">
+      <button id="btnResend2FaEmail" class="w-full py-2.5 bg-[var(--panel)] hover:bg-[var(--panel-2)] text-[var(--text)] text-xs font-bold uppercase tracking-wider rounded-xl transition border border-[var(--border)] active:scale-98 cursor-pointer flex items-center justify-center gap-2">
         <i class="fas fa-envelope"></i> Resend Verification Email
       </button>
-      <button id="btnCancel2FaWaiting" class="w-full py-2 text-xs text-slate-400 hover:text-rose-400 transition cursor-pointer">
+      <button id="btnCancel2FaWaiting" class="w-full py-2 text-xs text-[var(--text-dim)] hover:text-rose-500 transition cursor-pointer">
         Cancel / Sign Out
       </button>
     </div>
@@ -2169,8 +2263,8 @@ html, body {
 </div>
 
 <!-- ==================== 2FA EMAIL CONFIRMATION MODAL ==================== -->
-<div id="mLoginVerifyModal" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
-  <div class="bg-[#0c0d12] border border-[#f0c040]/30 rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
+<div id="mLoginVerifyModal" class="fixed inset-0 bg-black/50 backdrop-filter backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden">
+  <div class="bg-[var(--bg)] border border-[var(--border)] rounded-3xl p-6 sm:p-7 max-w-[420px] w-full space-y-5 shadow-2xl relative overflow-hidden text-center animate-fade-in">
     <!-- Glowing background accent -->
     <div class="absolute -top-20 -right-20 w-44 h-44 bg-[#f0c040]/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -2181,42 +2275,42 @@ html, body {
         <i class="fas fa-circle-notch animate-spin"></i>
       </div>
       <div class="space-y-1">
-        <h3 class="text-xl font-bold text-white font-display">Verifying Login Link...</h3>
-        <p class="text-xs text-slate-400">Validating your one-time 2FA authorization token.</p>
+        <h3 class="text-xl font-bold text-[var(--text)] font-display">Verifying Login Link...</h3>
+        <p class="text-xs text-[var(--text-dim)]">Validating your one-time 2FA authorization token.</p>
       </div>
     </div>
 
     <!-- State 2: Success State -->
     <div id="loginVerifyStateSuccess" class="space-y-4 hidden">
-      <div class="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 text-2xl shadow-lg shadow-emerald-950/50">
+      <div class="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-500 text-2xl shadow-lg shadow-emerald-500/20">
         <i class="fas fa-check"></i>
       </div>
       <div class="space-y-1.5">
-        <h3 class="text-xl font-bold text-white font-display tracking-tight">Login Verified!</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
+        <h3 class="text-xl font-bold text-[var(--text)] font-display tracking-tight">Login Verified!</h3>
+        <p class="text-xs text-[var(--text-dim)] leading-relaxed">
           You can now continue to ArenaX. Your sign-in attempt has been safely authorized.
         </p>
-        <p class="text-[11px] text-emerald-400 font-medium">
+        <p class="text-[11px] text-emerald-600 font-medium">
           If you are waiting on another device, that session has also automatically logged in!
         </p>
       </div>
-      <button id="btnContinueToArenaX" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#e5a820] hover:from-[#f5c952] hover:to-[#f0b030] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-gold/20 active:scale-98 cursor-pointer flex items-center justify-center gap-2">
+      <button id="btnContinueToArenaX" class="w-full py-3.5 bg-gradient-to-r from-[#f0c040] to-[#e5a820] hover:from-[#f5c952] hover:to-[#f0b030] text-[#1a1a1a] font-extrabold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-gold/20 active:scale-98 cursor-pointer flex items-center justify-center gap-2">
         <i class="fas fa-arrow-right"></i> Continue to ArenaX
       </button>
     </div>
 
     <!-- State 3: Error State -->
     <div id="loginVerifyStateError" class="space-y-4 hidden">
-      <div class="w-16 h-16 mx-auto rounded-full bg-rose-500/15 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 text-2xl shadow-lg shadow-rose-950/50">
+      <div class="w-16 h-16 mx-auto rounded-full bg-rose-500/15 border-2 border-rose-500/50 flex items-center justify-center text-rose-500 text-2xl shadow-lg shadow-rose-500/20">
         <i class="fas fa-triangle-exclamation"></i>
       </div>
       <div class="space-y-1.5">
-        <h3 class="text-lg font-bold text-white font-display">Verification Failed</h3>
-        <p id="txtLoginVerifyErrorMsg" class="text-xs text-rose-300 leading-relaxed">
+        <h3 class="text-lg font-bold text-[var(--text)] font-display">Verification Failed</h3>
+        <p id="txtLoginVerifyErrorMsg" class="text-xs text-rose-500 leading-relaxed">
           This login verification link is invalid, has expired, or has already been used.
         </p>
       </div>
-      <button id="btnRetryLogin2Fa" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition border border-slate-700 active:scale-98 cursor-pointer">
+      <button id="btnRetryLogin2Fa" class="w-full py-2.5 bg-[var(--panel)] hover:bg-[var(--panel-2)] text-[var(--text)] text-xs font-bold uppercase tracking-wider rounded-xl transition border border-[var(--border)] active:scale-98 cursor-pointer">
         Back to Login
       </button>
     </div>
@@ -2239,7 +2333,7 @@ html, body {
   
   <!-- TOPBAR -->
   <nav class="h-[56px] bg-panel border-b border-bdr flex items-center justify-between px-4 flex-shrink-0 z-50">
-    <div class="font-display text-xl font-bold tracking-wider text-white flex items-center">
+    <div class="font-display text-xl font-bold tracking-wider text-t1 flex items-center">
       <img src="arenax_logo_user_1783946436893.jpg"  alt="ArenaX Logo" class="w-6 h-6 object-cover mr-2 rounded-lg border border-gold/20" referrerPolicy="no-referrer" />Arena<span class="text-gold">X</span>
     </div>
     <div class="flex items-center gap-2">
@@ -2283,13 +2377,13 @@ html, body {
     <!-- ── HOME TAB ── -->
     <section id="tHome" class="tab space-y-4 max-w-md mx-auto">
       <!-- Top Interface Header Card matching User Image -->
-      <div class="relative overflow-hidden rounded-2xl bg-[#1d2238] p-4 shadow-xl bg-cover bg-center bg-no-repeat" style="background-image: url('/bg.png');">
-        <!-- Overlay to ensure readability if image is bright -->
-        <div class="absolute inset-0 bg-black/25 pointer-events-none"></div>
+      <div class="relative overflow-hidden rounded-2xl bg-panel border border-bdr p-4 shadow-sm bg-cover bg-center bg-no-repeat" style="background-image: url('/bg.png');">
+        <!-- Overlay to ensure readability in light theme -->
+        <div class="absolute inset-0 bg-white/75 pointer-events-none"></div>
 
         <!-- Background Mosque Silhouette & Ambient Glow -->
-        <div class="absolute inset-0 opacity-15 pointer-events-none flex items-end justify-center">
-          <svg viewBox="0 0 500 150" class="w-full h-full text-[#4a5580] fill-current">
+        <div class="absolute inset-0 opacity-10 pointer-events-none flex items-end justify-center">
+          <svg viewBox="0 0 500 150" class="w-full h-full text-slate-700 fill-current">
             <path d="M50,150 L50,80 L60,80 L60,150 M440,150 L440,80 L450,80 L450,150 M250,150 C200,150 190,70 250,50 C310,70 300,150 250,150 Z M190,150 L190,100 L200,100 L200,150 M300,150 L300,100 L310,100 L310,150" />
           </svg>
         </div>
@@ -2298,26 +2392,26 @@ html, body {
         <div class="relative z-10 flex items-center justify-between gap-3 mb-6">
           <div class="flex items-center gap-3">
             <!-- User Avatar -->
-            <div onclick="switchTab('Profile')" class="w-12 h-12 rounded-full overflow-hidden border-2 border-[#3d4566] cursor-pointer hover:scale-105 transition shadow-md flex-shrink-0">
+            <div onclick="switchTab('Profile')" class="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-300 cursor-pointer hover:scale-105 transition shadow-sm flex-shrink-0">
               <img id="homeAvImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover"/>
             </div>
 
             <!-- AX Coins Pill (Click to open Wallet tab) -->
-            <div onclick="switchTab('Wallet')" class="flex items-center gap-2 bg-[#23273e]/90 hover:bg-[#2c324e] border border-[#383f60] px-3.5 py-1.5 rounded-full cursor-pointer transition shadow-inner">
+            <div onclick="switchTab('Wallet')" class="flex items-center gap-2 bg-white/95 hover:bg-white border border-slate-200/90 px-3.5 py-1.5 rounded-full cursor-pointer transition shadow-sm">
               <div class="w-6 h-6 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-xs font-black shadow">
                 <i class="fas fa-coins"></i>
               </div>
-              <span id="homeCoinsVal" class="font-extrabold text-sm text-white tracking-wide">225</span>
-              <span class="text-[#d4a017] font-bold text-sm ml-0.5">+</span>
+              <span id="homeCoinsVal" class="font-extrabold text-sm text-t1 tracking-wide">225</span>
+              <span class="text-amber-600 font-bold text-sm ml-0.5">+</span>
             </div>
           </div>
 
           <!-- Events Star Button -->
           <button onclick="alert('Events section coming soon!')" class="flex flex-col items-center justify-center transition group cursor-pointer">
-            <div class="w-9 h-9 rounded-full bg-[#17253d] border border-[#2dd4bf]/40 flex items-center justify-center text-[#2dd4bf] text-base shadow group-hover:scale-110 transition">
+            <div class="w-9 h-9 rounded-full bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center text-base shadow-sm group-hover:scale-110 transition">
               <i class="fas fa-star"></i>
             </div>
-            <span class="text-[11px] font-medium text-[#a0a8c8] group-hover:text-white transition mt-0.5">Events</span>
+            <span class="text-[11px] font-medium text-t2 group-hover:text-teal-600 transition mt-0.5">Events</span>
           </button>
         </div>
 
@@ -2325,47 +2419,47 @@ html, body {
         <div class="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
           <!-- Ranking -->
           <div onclick="openRankingModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-[#2a1b4e] to-[#161228] border-2 border-[#a78bfa] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="absolute -top-1 -left-1 text-[#f0c040] text-xs drop-shadow">
+            <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-purple-100 to-purple-50 border-2 border-purple-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
+              <div class="absolute -top-1 -left-1 text-gold text-xs drop-shadow">
                 <i class="fas fa-crown"></i>
               </div>
               <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover pointer-events-none"/>
             </div>
-            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Ranking</span>
+            <span class="text-[11px] font-semibold text-t2 group-hover:text-t1 transition mt-1.5">Ranking</span>
           </div>
 
           <!-- Tasks -->
           <div onclick="openTasksModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#1b3a5d] to-[#0f2138] border-2 border-[#38bdf8] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="w-10 h-10 bg-[#2563eb]/20 rounded-xl flex items-center justify-center text-xl">
-                <i class="fas fa-clipboard-check text-[#ef4444]"></i>
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-sky-100 to-sky-50 border-2 border-sky-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
+              <div class="w-10 h-10 bg-white/80 rounded-xl flex items-center justify-center text-xl shadow-xs">
+                <i class="fas fa-clipboard-check text-rose-500"></i>
               </div>
             </div>
-            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Tasks</span>
+            <span class="text-[11px] font-semibold text-t2 group-hover:text-t1 transition mt-1.5">Tasks</span>
           </div>
 
           <!-- Friends -->
           <div onclick="switchTab('Chat')" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-[#064e3b] to-[#022c22] border-2 border-[#10b981] p-0.5 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
-              <div class="w-10 h-10 bg-[#10b981]/20 rounded-xl flex items-center justify-center text-xl">
-                <i class="fas fa-user-alt text-[#34d399]"></i>
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-emerald-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
+              <div class="w-10 h-10 bg-white/80 rounded-xl flex items-center justify-center text-xl shadow-xs">
+                <i class="fas fa-user-alt text-emerald-600"></i>
               </div>
             </div>
-            <span class="text-[11px] font-semibold text-[#a0a8c8] group-hover:text-white transition mt-1.5">Friends</span>
+            <span class="text-[11px] font-semibold text-t2 group-hover:text-t1 transition mt-1.5">Friends</span>
           </div>
         </div>
       </div>
 
       <!-- Featured Event Card -->
-      <div class="p-4 bg-gradient-to-r from-gold/15 via-panel to-gold/5 border border-gold/30 rounded-2xl flex items-center justify-between gap-4 shadow-lg">
+      <div class="p-4 bg-gradient-to-r from-amber-500/10 via-panel to-amber-500/5 border border-gold/40 rounded-2xl flex items-center justify-between gap-4 shadow-sm">
         <div class="space-y-1">
-          <span class="text-[10px] font-extrabold uppercase tracking-wider text-gold bg-gold/10 px-2 py-0.5 rounded border border-gold/20">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-gold/20 px-2 py-0.5 rounded border border-gold/40">
             Featured Championship
           </span>
-          <h3 class="font-display text-lg font-extrabold text-white">ArenaX Champions Cup</h3>
+          <h3 class="font-display text-lg font-extrabold text-t1">ArenaX Champions Cup</h3>
           <p class="text-xs text-t2">Assemble or claim a spot in a 4-Player squad! 50,000 AX prize pool.</p>
         </div>
-        <button onclick="switchTab('Tour')" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-bg text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95 cursor-pointer">
+        <button onclick="switchTab('Tour')" class="px-4 py-2 bg-gold hover:bg-[#e8b830] text-[#1a1a1a] text-xs font-extrabold rounded-xl transition whitespace-nowrap shadow-md active:scale-95 cursor-pointer">
           Join Now
         </button>
       </div>
@@ -2373,39 +2467,39 @@ html, body {
       <!-- Explore Section -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="font-display text-base font-extrabold text-white flex items-center gap-2">
+          <h3 class="font-display text-base font-extrabold text-t1 flex items-center gap-2">
             <i class="fas fa-compass text-gold"></i> Explore
           </h3>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <!-- Message Card -->
-          <div onclick="switchTab('Chat')" class="p-3.5 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md">
+          <div onclick="switchTab('Chat')" class="p-3.5 bg-card hover:bg-panel border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-sm">
             <div class="flex items-center gap-3.5">
-              <div class="w-11 h-11 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+              <div class="w-11 h-11 bg-sky-500/10 border border-sky-500/30 text-sky-500 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
                 <i class="fas fa-comments"></i>
               </div>
               <div>
-                <h4 class="font-bold text-white text-sm group-hover:text-gold transition">Message</h4>
+                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-600 transition">Message</h4>
                 <p class="text-xs text-t2">chat with your friend</p>
               </div>
             </div>
-            <div class="w-8 h-8 rounded-full bg-ele border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-white transition text-xs">
+            <div class="w-8 h-8 rounded-full bg-panel border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-t1 transition text-xs">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
 
           <!-- Moments Card -->
-          <div onclick="openMomentsFeedModal()" class="p-3.5 bg-card hover:bg-card/80 border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-md">
+          <div onclick="openMomentsFeedModal()" class="p-3.5 bg-card hover:bg-panel border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-sm">
             <div class="flex items-center gap-3.5">
-              <div class="w-11 h-11 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
-                <i class="fas fa-camera text-amber-400"></i>
+              <div class="w-11 h-11 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                <i class="fas fa-camera text-amber-500"></i>
               </div>
               <div>
-                <h4 class="font-bold text-white text-sm group-hover:text-gold transition">Moments</h4>
+                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-600 transition">Moments</h4>
                 <p class="text-xs text-t2">Watch highlights & posts</p>
               </div>
             </div>
-            <div class="w-8 h-8 rounded-full bg-ele border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-white transition text-xs">
+            <div class="w-8 h-8 rounded-full bg-panel border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-t1 transition text-xs">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
@@ -2416,28 +2510,28 @@ html, body {
     <!-- ── PROFILE TAB ── -->
     <section id="tProfile" class="tab space-y-4 max-w-md mx-auto hidden">
       <!-- Section Title & Top Right Settings Button -->
-      <div class="font-display text-xl font-bold flex items-center justify-between text-white px-1">
+      <div class="font-display text-xl font-bold flex items-center justify-between text-t1 px-1">
         <span class="flex items-center gap-2">
-          <i class="fas fa-user-circle text-amber-400"></i> Profile
+          <i class="fas fa-user-circle text-amber-500"></i> Profile
         </span>
-        <button id="bSettingsTop" title="Settings" class="text-xs text-t2 hover:text-amber-400 transition flex items-center gap-1.5 bg-card hover:bg-slate-800/90 px-3 py-1.5 rounded-xl border border-bdr/80 cursor-pointer shadow-sm group">
-          <i class="fas fa-cog text-amber-400 group-hover:rotate-45 transition-transform duration-300"></i>
-          <span class="font-semibold text-slate-200">Settings</span>
+        <button id="bSettingsTop" title="Settings" class="text-xs text-t2 hover:text-amber-500 transition flex items-center gap-1.5 bg-card hover:bg-panel px-3 py-1.5 rounded-xl border border-bdr cursor-pointer shadow-sm group">
+          <i class="fas fa-cog text-amber-500 group-hover:rotate-45 transition-transform duration-300"></i>
+          <span class="font-semibold text-t1">Settings</span>
         </button>
       </div>
 
       <!-- GOLD PREMIUM PROFILE CARD -->
-      <div id="profileCard" class="relative rounded-2xl p-5 overflow-hidden border border-amber-500/35 bg-gradient-to-br from-[#1d1912] via-[#14151a] to-[#0c0d12] shadow-xl shadow-amber-500/5 transition-all">
+      <div id="profileCard" class="relative rounded-2xl p-5 overflow-hidden border border-amber-400/40 bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 shadow-md transition-all">
         <!-- Subtle Pattern Overlay & Geometric Accents -->
-        <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-400/5 rounded-full blur-xl pointer-events-none"></div>
 
         <!-- TOP PART: Avatar + User Details -->
         <div class="relative z-10 flex items-center gap-4">
           <!-- Avatar Container -->
           <div class="relative flex-shrink-0">
             <div class="p-0.5 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 shadow-md shadow-amber-500/20">
-              <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-16 h-16 rounded-full object-cover bg-slate-900"/>
+              <img id="pAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-16 h-16 rounded-full object-cover bg-slate-100"/>
             </div>
             <button id="btnChangeAv" title="Change Avatar" class="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition cursor-pointer">
               <i class="fas fa-camera"></i>
@@ -2447,57 +2541,57 @@ html, body {
           <!-- User Details -->
           <div class="min-w-0 flex-1 space-y-0.5">
             <div class="flex items-center gap-2 flex-wrap">
-              <h3 id="pName" class="font-display text-xl font-bold text-white leading-tight flex items-center gap-1.5 truncate">
+              <h3 id="pName" class="font-display text-xl font-bold text-t1 leading-tight flex items-center gap-1.5 truncate">
                 Player
               </h3>
               <span id="pRoleBadge" class="hidden px-2 py-0.5 text-[9px] font-black bg-gold/15 text-gold rounded-full border border-gold/40 uppercase items-center gap-1 shadow-sm"></span>
             </div>
-            <p id="pHandle" class="text-xs text-amber-200/80 font-medium truncate">@player#0000</p>
+            <p id="pHandle" class="text-xs text-amber-800/80 font-medium truncate">@player#0000</p>
             
-            <button id="btnViewActivity" class="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer">
+            <button id="btnViewActivity" class="text-[11px] text-amber-600 hover:text-amber-500 font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer">
               <span>View activity</span>
               <i class="fas fa-chevron-right text-[9px]"></i>
             </button>
 
             <!-- Badges & Popularity -->
             <div class="flex flex-wrap gap-1 pt-1">
-              <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-800 text-neutral-400 rounded-full border border-neutral-700 uppercase hidden">Guest</span>
-              <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 uppercase hidden">
+              <span id="badgeGuest" class="px-2 py-0.5 text-[9px] font-bold bg-neutral-200 text-neutral-600 rounded-full border border-neutral-300 uppercase hidden">Guest</span>
+              <span id="badgePrm" class="px-2 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-800 rounded-full border border-amber-300 uppercase hidden">
                 <i class="fas fa-crown mr-1"></i> Premium
               </span>
-              <span id="pAXCreatorBadge" class="px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-violet-600/25 to-indigo-600/25 text-violet-300 rounded-full border border-violet-400/40 uppercase hidden items-center gap-1 shadow-sm">
-                <i class="fas fa-certificate text-violet-400"></i> AX Creator
+              <span id="pAXCreatorBadge" class="px-2 py-0.5 text-[9px] font-black bg-violet-100 text-violet-700 rounded-full border border-violet-300 uppercase hidden items-center gap-1 shadow-sm">
+                <i class="fas fa-certificate text-violet-500"></i> AX Creator
               </span>
-              <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20 uppercase hidden">
+              <span id="pBadge" class="px-2 py-0.5 text-[9px] font-bold bg-blue-100 text-blue-700 rounded-full border border-blue-200 uppercase hidden">
                 <i class="fas fa-award mr-1"></i> <span id="pBadgeText">Champion</span>
               </span>
-              <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-500/15 text-rose-300 rounded-full border border-rose-500/30 uppercase flex items-center gap-1">
+              <span class="px-2 py-0.5 text-[9px] font-bold bg-rose-100 text-rose-700 rounded-full border border-rose-200 uppercase flex items-center gap-1">
                 <img src="heart.png" class="w-3 h-3 object-contain inline-block" alt="Heart"/> <span id="pPopularityVal">0</span>
               </span>
             </div>
             
-            <p id="pBio" class="text-[11px] text-slate-300 italic hidden"></p>
+            <p id="pBio" class="text-[11px] text-t2 italic hidden"></p>
             <div id="userEarnedBadges" class="flex flex-wrap gap-1 mt-1 w-full"></div>
           </div>
         </div>
 
         <!-- DIVIDER INSIDE CARD -->
-        <div class="relative z-10 border-t border-amber-500/20 my-3.5"></div>
+        <div class="relative z-10 border-t border-amber-300/40 my-3.5"></div>
 
         <!-- BOTTOM BAR INSIDE CARD: Gold Member Status + Offer Pill -->
         <div class="relative z-10 flex items-center justify-between gap-2">
           <!-- Gold Member / Status -->
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-xs flex-shrink-0 shadow-inner">
+            <div class="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 text-amber-600 flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
               <i class="fas fa-crown"></i>
             </div>
-            <span class="text-sm font-bold text-amber-100 tracking-wide">
+            <span class="text-sm font-bold text-t1 tracking-wide">
               Gold member
             </span>
           </div>
 
           <!-- Offer / Pass Button Pill -->
-          <button id="bOpenPremium" class="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/10 hover:from-amber-500/30 hover:to-yellow-500/20 border border-amber-400/40 text-amber-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+          <button id="bOpenPremium" class="px-3 py-1.5 rounded-full bg-amber-100/90 hover:bg-amber-200/90 border border-amber-300 text-amber-800 hover:text-amber-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs">
             <span>1 new offer</span>
             <i class="fas fa-chevron-right text-[10px]"></i>
           </button>
@@ -2505,9 +2599,9 @@ html, body {
       </div>
 
       <!-- MOMENT BUTTON CONTAINER WITH IMAGE ON TOP -->
-      <div id="pMomentContainer" class="relative rounded-2xl p-4 overflow-hidden border border-amber-500/30 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] shadow-xl space-y-3">
+      <div id="pMomentContainer" class="relative rounded-2xl p-4 overflow-hidden border border-bdr bg-panel shadow-sm space-y-3">
         <!-- Moment image on top of the button -->
-        <div id="btnOpenMomentsProfile" onclick="openMomentsProfileModal()" class="relative w-full h-36 rounded-xl overflow-hidden border border-white/10 shadow-md group cursor-pointer">
+        <div id="btnOpenMomentsProfile" onclick="openMomentsProfileModal()" class="relative w-full h-36 rounded-xl overflow-hidden border border-bdr shadow-sm group cursor-pointer">
           <img
             id="imgProfileMoment"
             src="moment.png"
@@ -2531,7 +2625,7 @@ html, body {
             id="btnShareMomentsProfile"
             type="button"
             onclick="openUploadMomentModal()"
-            class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition cursor-pointer tracking-wide uppercase"
+            class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-105 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/15 active:scale-95 transition cursor-pointer tracking-wide uppercase"
           >
             <i class="fas fa-camera text-sm"></i> Share your moments!
           </button>
@@ -2542,18 +2636,18 @@ html, body {
       <div 
         id="pPlayerShowCard" 
         onclick="if(window.openPlayerShowViewer){window.openPlayerShowViewer();}else{window.dispatchEvent(new CustomEvent('open-player-show-viewer'));}"
-        class="relative rounded-2xl p-4 overflow-hidden border border-amber-500/30 hover:border-amber-500/60 bg-gradient-to-br from-[#1b1e2e] via-[#141724] to-[#0c0e17] shadow-xl flex items-center justify-between gap-3 my-3 cursor-pointer group transition"
+        class="relative rounded-2xl p-4 overflow-hidden border border-bdr hover:border-amber-400/60 bg-panel shadow-sm flex items-center justify-between gap-3 my-3 cursor-pointer group transition"
       >
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl shrink-0 shadow-inner group-hover:scale-105 transition">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 text-xl shrink-0 shadow-xs group-hover:scale-105 transition">
             <i class="fas fa-cube"></i>
           </div>
           <div class="min-w-0">
-            <h4 class="font-bold text-white text-xs sm:text-sm truncate flex items-center gap-1.5">
+            <h4 class="font-bold text-t1 text-xs sm:text-sm truncate flex items-center gap-1.5">
               Player Show
-              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">3D Store</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-700 border border-amber-200 font-bold">3D Store</span>
             </h4>
-            <p id="pPlayerShowDesc" class="text-[10px] text-gray-400 truncate">3D Character Avatars • From 7,000 AX</p>
+            <p id="pPlayerShowDesc" class="text-[10px] text-t2 truncate">3D Character Avatars • From 7,000 AX</p>
           </div>
         </div>
 
@@ -2562,7 +2656,7 @@ html, body {
             id="btnPlayerShowStore"
             type="button"
             onclick="event.stopPropagation(); if(window.openPlayerShowViewer){window.openPlayerShowViewer();}else{window.dispatchEvent(new CustomEvent('open-player-show-viewer'));}"
-            class="px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer uppercase tracking-wider"
+            class="px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:brightness-105 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer uppercase tracking-wider"
           >
             <i class="fas fa-cubes text-xs"></i>
             <span>3D Store</span>
@@ -2608,7 +2702,7 @@ html, body {
 
       <!-- ── ORIGINAL TOURNAMENTS WRAPPER ── -->
       <div id="toursWrapper" class="space-y-4">
-        <div class="font-display text-base font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+        <div class="font-display text-base font-black uppercase tracking-wider text-t1 flex items-center gap-1.5">
           <i class="fas fa-gamepad text-gold"></i> Live Tournaments
         </div>
 
@@ -2770,7 +2864,7 @@ html, body {
             <span id="subGlobalIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold"></span>
             <span id="subGlobalDot" class="absolute top-0 right-[-10px] w-1.5 h-1.5 rounded-full bg-gold animate-pulse hidden"></span>
           </button>
-          <button id="btnSubDM" class="pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-white relative transition cursor-pointer">
+          <button id="btnSubDM" class="pb-2 text-xs font-bold uppercase tracking-wider text-t2 hover:text-t1 relative transition cursor-pointer">
             Direct Messages
             <span id="subDMIndicator" class="absolute bottom-[-9px] left-0 right-0 h-0.5 bg-gold hidden"></span>
           </button>
@@ -2792,7 +2886,7 @@ html, body {
       </div>
 
       <!-- Global Chat Room Window -->
-      <div id="globalChatWindow" class="flex-1 flex flex-col min-h-0 bg-panel border border-bdr rounded-xl overflow-hidden">
+      <div id="globalChatWindow" class="flex-1 flex flex-col min-h-0 bg-panel border border-bdr rounded-xl overflow-hidden shadow-xs">
         <!-- Chat messages list -->
         <div id="globalChatMsgs" class="flex-1 overflow-y-auto p-4 space-y-3">
           <div class="h-full flex flex-col items-center justify-center text-t3 text-center p-6 animate-pulse">
@@ -2802,7 +2896,7 @@ html, body {
         </div>
 
         <!-- Typing indicators and form -->
-        <div class="p-3 bg-panel/80 border-t border-bdr shrink-0">
+        <div class="p-3 bg-panel border-t border-bdr shrink-0">
           <!-- Typing users text -->
           <div id="globalTypingIndicator" class="flex items-center gap-2 text-[10px] text-gold px-1 pb-2 hidden">
             <div class="flex gap-1 items-center">
@@ -2814,7 +2908,7 @@ html, body {
           </div>
 
           <form id="globalChatForm" class="flex gap-2">
-            <input id="globalChatInput" type="text" placeholder="Type a message to ArenaX players..." class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-xs outline-none focus:border-gold transition text-white">
+            <input id="globalChatInput" type="text" placeholder="Type a message to ArenaX players..." class="flex-1 bg-card border border-bdr rounded-lg px-3 py-2 text-xs outline-none focus:border-gold transition text-t1 placeholder:text-t2">
             <button type="submit" class="w-8 h-8 bg-red hover:bg-red/80 text-white rounded-lg flex items-center justify-center text-xs transition shrink-0 cursor-pointer">
               <i class="fas fa-paper-plane"></i>
             </button>
@@ -2861,29 +2955,29 @@ html, body {
         <div class="flex gap-2 shrink-0">
           <div class="relative flex-1">
             <i class="fas fa-search absolute left-3 top-2.5 text-t3 text-xs"></i>
-            <input id="voiceSearchInput" type="text" placeholder="Search voice rooms by title, tag or host..." class="w-full bg-card/60 border border-bdr/80 rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-emerald-500/50 focus:bg-card transition text-white">
+            <input id="voiceSearchInput" type="text" placeholder="Search voice rooms by title, tag or host..." class="w-full bg-card border border-bdr rounded-xl pl-9 pr-3 py-2 text-xs outline-none focus:border-emerald-500/50 focus:bg-card transition text-t1 placeholder:text-t2">
           </div>
-          <button id="btnRefreshVoiceLobby" class="w-8 h-8 bg-card/60 border border-bdr/80 hover:bg-card text-t2 hover:text-emerald-400 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
+          <button id="btnRefreshVoiceLobby" class="w-8 h-8 bg-card border border-bdr hover:bg-panel text-t2 hover:text-emerald-600 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
             <i class="fas fa-sync-alt"></i>
           </button>
         </div>
 
         <!-- Category Tag Filter Pills matching Reference Image 1 -->
         <div class="flex gap-1.5 overflow-x-auto pb-1.5 shrink-0 no-scrollbar">
-          <button class="game-filter-pill px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:text-white rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="All">🌟 All Rooms</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-300 hover:border-emerald-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Talk">💬 Talk</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-purple-300 hover:border-purple-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Game">🎮 Game</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-cyan-300 hover:border-cyan-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Music">🎵 Music</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-rose-300 hover:border-rose-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Friends">👥 Friends</button>
-          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-amber-300 hover:border-amber-500/20 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Family">🏠 Family</button>
+          <button class="game-filter-pill px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-600 hover:text-emerald-700 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="All">🌟 All Rooms</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-emerald-600 hover:border-emerald-300 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Talk">💬 Talk</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-purple-600 hover:border-purple-300 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Game">🎮 Game</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-cyan-600 hover:border-cyan-300 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Music">🎵 Music</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-rose-600 hover:border-rose-300 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Friends">👥 Friends</button>
+          <button class="game-filter-pill px-3 py-1 bg-card border border-bdr text-t2 hover:text-amber-600 hover:border-amber-300 rounded-full text-[10px] font-bold tracking-wide transition cursor-pointer shrink-0" data-game="Family">🏠 Family</button>
         </div>
 
         <!-- Welcome Voice Banner -->
-        <div id="welcomeVoiceBanner" class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-card/30 border border-bdr/50 rounded-2xl gap-6 shrink-0">
+        <div id="welcomeVoiceBanner" class="flex flex-col md:flex-row items-center justify-between text-center md:text-left p-6 bg-panel border border-bdr rounded-2xl gap-6 shrink-0 shadow-xs">
           <div class="flex-1 flex flex-col items-center md:items-start justify-center">
-            <i class="fas fa-microphone-alt text-3xl text-emerald-500/40 mb-3 animate-pulse"></i>
-            <p class="text-sm text-white font-semibold">Ready to Hang Out?</p>
-            <p class="text-xs text-t3 max-w-[240px] mt-1.5 leading-relaxed">Create a voice room with custom background, chat, seats, and send gifts to friends in real time!</p>
+            <i class="fas fa-microphone-alt text-3xl text-emerald-600 mb-3 animate-pulse"></i>
+            <p class="text-sm text-t1 font-bold">Ready to Hang Out?</p>
+            <p class="text-xs text-t2 max-w-[240px] mt-1.5 leading-relaxed">Create a voice room with custom background, chat, seats, and send gifts to friends in real time!</p>
           </div>
           <div class="w-full md:w-64 h-36 shrink-0 flex items-center justify-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10 relative overflow-hidden">
             <lottie-player src="./animation.json" background="transparent" speed="1.0" style="width: 240px; height: 160px;" loop autoplay></lottie-player>
@@ -3064,15 +3158,15 @@ html, body {
     </section>
 
     <!-- Create Room Dialog Backdrop -->
-    <div id="mCreateVoiceRoom" class="fixed inset-0 bg-black/85 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-      <div class="bg-panel border border-emerald-500/30 rounded-2xl p-5 max-w-[420px] w-full space-y-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] relative overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-xl"></div>
+    <div id="mCreateVoiceRoom" class="fixed inset-0 bg-black/60 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+      <div class="bg-card border border-emerald-500/30 rounded-2xl p-5 max-w-[420px] w-full space-y-4 shadow-xl relative overflow-hidden max-h-[90vh] overflow-y-auto text-t1">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-full filter blur-xl pointer-events-none"></div>
         
-        <div class="flex justify-between items-center pb-2 border-b border-bdr/50">
-          <h3 class="font-display text-lg font-black uppercase text-white tracking-wide flex items-center gap-2">
-            <i class="fas fa-microphone-alt text-emerald-400"></i> Create Voice Room
+        <div class="flex justify-between items-center pb-2 border-b border-bdr">
+          <h3 class="font-display text-lg font-black uppercase text-t1 tracking-wide flex items-center gap-2">
+            <i class="fas fa-microphone-alt text-emerald-600"></i> Create Voice Room
           </h3>
-          <button id="bCloseCreateVoiceRoom" class="text-t3 hover:text-white transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
+          <button id="bCloseCreateVoiceRoom" class="text-t2 hover:text-t1 transition cursor-pointer text-xs p-1"><i class="fas fa-times"></i></button>
         </div>
 
         <form id="createVoiceRoomForm" class="space-y-3.5 text-xs">
@@ -3080,14 +3174,14 @@ html, body {
           <div>
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Cover Background</label>
             <input id="cvCoverInput" type="file" accept="image/*" class="hidden">
-            <div id="cvCoverBox" class="w-full h-28 rounded-xl border-2 border-dashed border-bdr hover:border-emerald-500/50 bg-card/50 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden group">
+            <div id="cvCoverBox" class="w-full h-28 rounded-xl border-2 border-dashed border-bdr hover:border-emerald-500/50 bg-panel flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden group">
               <img id="cvCoverPreview" src="" class="absolute inset-0 w-full h-full object-cover hidden">
               <div id="cvCoverPlaceholder" class="flex flex-col items-center gap-1.5 text-center p-2 z-10">
-                <div class="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-sm group-hover:scale-110 transition">
+                <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm group-hover:scale-110 transition">
                   <i class="fas fa-camera"></i>
                 </div>
-                <span class="text-[10px] font-bold text-gray-300">Upload Custom Room Background</span>
-                <span class="text-[8px] text-gray-500">JPG or PNG (Tap to choose)</span>
+                <span class="text-[10px] font-bold text-t1">Upload Custom Room Background</span>
+                <span class="text-[8px] text-t2">JPG or PNG (Tap to choose)</span>
               </div>
             </div>
           </div>
@@ -3095,18 +3189,18 @@ html, body {
           <!-- Room Title -->
           <div>
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Title</label>
-            <input id="cvName" type="text" required placeholder="e.g. HOT VIBEs 🔥" class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+            <input id="cvName" type="text" required placeholder="e.g. HOT VIBEs 🔥" class="w-full bg-panel border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-t1 placeholder:text-t2">
           </div>
 
           <!-- Category Tag Badges -->
           <div>
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Category Tag</label>
             <div class="flex flex-wrap gap-2" id="cvTagContainer">
-              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-emerald-500/20 text-emerald-300 border-emerald-500/50" data-tag="Talk">💬 Talk</button>
-              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-purple-500/50" data-tag="Game">🎮 Game</button>
-              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-cyan-500/50" data-tag="Music">🎵 Music</button>
-              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-rose-500/50" data-tag="Friends">👥 Friends</button>
-              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-card text-t2 border-bdr hover:border-amber-500/50" data-tag="Family">🏠 Family</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-emerald-50 text-emerald-600 border-emerald-300" data-tag="Talk">💬 Talk</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-panel text-t2 border-bdr hover:border-purple-300" data-tag="Game">🎮 Game</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-panel text-t2 border-bdr hover:border-cyan-300" data-tag="Music">🎵 Music</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-panel text-t2 border-bdr hover:border-rose-300" data-tag="Friends">👥 Friends</button>
+              <button type="button" class="cv-tag-pill px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer bg-panel text-t2 border-bdr hover:border-amber-300" data-tag="Family">🏠 Family</button>
             </div>
           </div>
 
@@ -3114,10 +3208,10 @@ html, body {
           <div>
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Available Seats</label>
             <div class="grid grid-cols-4 gap-2" id="cvSeatsContainer">
-              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="6">6 Seats</button>
-              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-emerald-500/20 border-emerald-500/50 text-emerald-300" data-seats="8">8 Seats</button>
-              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="10">10 Seats</button>
-              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-card border-bdr text-t2" data-seats="12">12 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-panel border-bdr text-t2" data-seats="6">6 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-emerald-50 border-emerald-300 text-emerald-600" data-seats="8">8 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-panel border-bdr text-t2" data-seats="10">10 Seats</button>
+              <button type="button" class="cv-seat-pill py-1.5 rounded-lg text-center font-bold text-xs border transition cursor-pointer bg-panel border-bdr text-t2" data-seats="12">12 Seats</button>
             </div>
           </div>
 
@@ -3125,14 +3219,14 @@ html, body {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Privacy Mode</label>
-              <select id="cvType" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+              <select id="cvType" class="w-full bg-panel border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-t1">
                 <option value="public">🌐 Public (Open)</option>
                 <option value="private">🔒 Private (Password)</option>
               </select>
             </div>
             <div>
               <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Region</label>
-              <select id="cvRegion" class="w-full bg-card border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+              <select id="cvRegion" class="w-full bg-panel border border-bdr rounded-lg px-2.5 py-2 outline-none focus:border-emerald-500/50 transition text-t1">
                 <option value="South Asia">South Asia</option>
                 <option value="Middle East">Middle East</option>
                 <option value="Global">Global</option>
@@ -3142,10 +3236,10 @@ html, body {
 
           <div id="cvPasswordWrap" class="hidden">
             <label class="block text-t2 font-bold uppercase text-[9px] mb-1.5 tracking-wider">Room Password</label>
-            <input id="cvPassword" type="password" placeholder="Enter password..." class="w-full bg-card border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-white">
+            <input id="cvPassword" type="password" placeholder="Enter password..." class="w-full bg-panel border border-bdr rounded-lg px-3 py-2 outline-none focus:border-emerald-500/50 transition text-t1 placeholder:text-t2">
           </div>
 
-          <button type="submit" class="w-full py-2.5 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 transition shadow-lg cursor-pointer">
+          <button type="submit" class="w-full py-2.5 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold uppercase tracking-wider rounded-xl border border-emerald-500/30 transition shadow-md cursor-pointer">
             Create Room Now 🚀
           </button>
         </form>
@@ -3573,37 +3667,37 @@ html, body {
   </div>
 
   <!-- BOTTOM FOOTER NAVIGATION (Curved Dock with Raised Center Blue Circle Button) -->
-  <nav class="fixed bottom-0 left-0 right-0 h-[68px] bg-[#0c0d12]/95 backdrop-blur-xl border-t border-bdr/60 flex items-center justify-around z-45 px-2 shadow-[0_-8px_30px_rgba(0,0,0,0.6)]">
+  <nav class="fixed bottom-0 left-0 right-0 h-[68px] bg-panel/95 backdrop-blur-xl border-t border-bdr flex items-center justify-around z-45 px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
     <!-- Left 1: Home -->
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-white group" data-t="Home">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-t1 group" data-t="Home">
       <i class="fas fa-home text-lg group-hover:scale-110 transition-transform"></i>
       <span id="navHomeText" class="font-medium">Home</span>
     </button>
 
     <!-- Left 2: Wallet -->
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-white group" data-t="Wallet">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-t1 group" data-t="Wallet">
       <i class="fas fa-wallet text-lg group-hover:scale-110 transition-transform"></i>
       <span id="navWalletText" class="font-medium">Wallet</span>
     </button>
 
     <!-- CENTER: Events (Raised Blue Circle Button with event.png) -->
     <button class="ni flex-1 flex flex-col items-center justify-center text-[10px] text-t3 transition duration-200 relative -mt-5 group" data-t="Tour">
-      <div id="centerEventBtnCircle" class="w-13 h-13 rounded-full bg-gradient-to-tr from-[#4F46E5] via-[#5551FF] to-[#6366F1] text-white flex items-center justify-center shadow-[0_8px_25px_rgba(79,70,229,0.55)] border-4 border-[#0c0d12] transition-all duration-200 group-hover:scale-110 group-active:scale-95 group-hover:shadow-[0_10px_30px_rgba(79,70,229,0.75)]">
+      <div id="centerEventBtnCircle" class="w-13 h-13 rounded-full bg-gradient-to-tr from-[#4F46E5] via-[#5551FF] to-[#6366F1] text-white flex items-center justify-center shadow-[0_8px_25px_rgba(79,70,229,0.35)] border-4 border-panel transition-all duration-200 group-hover:scale-110 group-active:scale-95 group-hover:shadow-[0_10px_30px_rgba(79,70,229,0.5)]">
         <img src="event.png" class="w-7 h-7 object-contain drop-shadow" alt="Events" />
         <i class="fas fa-th-large text-xl text-white hidden"></i>
       </div>
-      <span id="navEventsText" class="font-bold text-[10px] text-t3 group-hover:text-indigo-400 transition-colors mt-0.5">Events</span>
+      <span id="navEventsText" class="font-bold text-[10px] text-t3 group-hover:text-indigo-600 transition-colors mt-0.5">Events</span>
     </button>
 
     <!-- Right 1: Voice -->
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-white group" data-t="Voice">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-t1 group" data-t="Voice">
       <i class="fas fa-microphone text-lg group-hover:scale-110 transition-transform"></i>
       <span id="navVoiceText" class="font-medium">Voice</span>
       <span id="voiceDot" class="absolute top-1 right-5 w-2 h-2 rounded-full bg-emerald-500 hidden animate-pulse"></span>
     </button>
 
     <!-- Right 2: Profile -->
-    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-white group" data-t="Profile">
+    <button class="ni flex-1 flex flex-col items-center justify-center gap-1 text-[10px] text-t3 transition duration-200 relative py-1 hover:text-t1 group" data-t="Profile">
       <i class="fas fa-user-circle text-lg group-hover:scale-110 transition-transform"></i>
       <span id="navProfileText" class="font-medium">Profile</span>
     </button>
@@ -5079,18 +5173,18 @@ html, body {
 </div>
 
 <!-- ==================== FULL PAGE SETTINGS VIEW ==================== -->
-<div id="mSettings" class="fixed inset-0 bg-[#0c0d12] z-[250] overflow-y-auto hidden animate-fade-in">
+<div id="mSettings" class="fixed inset-0 bg-bg text-t1 z-[250] overflow-y-auto hidden animate-fade-in">
   <div class="max-w-md w-full mx-auto min-h-screen p-4 space-y-5 pb-24 flex flex-col justify-between">
     <div class="space-y-5">
       <!-- Top Navigation Header -->
-      <div class="flex items-center justify-between pt-2 pb-1 border-b border-bdr/40">
+      <div class="flex items-center justify-between pt-2 pb-1 border-b border-[#222842]">
         <div class="flex items-center gap-3">
-          <button id="bCloseSettingsCross" class="w-9 h-9 rounded-full bg-card border border-bdr/80 flex items-center justify-center text-white hover:text-amber-400 hover:bg-slate-800 transition cursor-pointer active:scale-95 shadow-sm">
+          <button id="bCloseSettingsCross" class="w-9 h-9 rounded-full bg-card border border-bdr flex items-center justify-center text-t1 hover:text-amber-500 hover:bg-panel transition cursor-pointer active:scale-95 shadow-sm">
             <i class="fas fa-chevron-left text-sm"></i>
           </button>
-          <span class="font-display text-lg font-bold text-white">Profile Settings</span>
+          <span class="font-display text-lg font-bold text-t1">Profile Settings</span>
         </div>
-        <button id="bCloseSettings" class="text-xs text-t3 hover:text-amber-400 font-medium px-2 py-1 rounded-lg transition cursor-pointer">
+        <button id="bCloseSettings" class="text-xs text-t2 hover:text-amber-500 font-semibold px-2 py-1 rounded-lg transition cursor-pointer">
           Done
         </button>
       </div>
@@ -5099,155 +5193,155 @@ html, body {
       <div class="flex flex-col items-center justify-center text-center py-2 space-y-2">
         <div class="relative group">
           <div class="p-1 rounded-full bg-gradient-to-tr from-amber-500 via-amber-300 to-amber-600 shadow-xl shadow-amber-500/10">
-            <img id="setAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="User Avatar" class="w-20 h-20 rounded-full object-cover bg-slate-900 border-2 border-slate-950"/>
+            <img id="setAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="User Avatar" class="w-20 h-20 rounded-full object-cover bg-[#121624] border-2 border-[#181d2f]"/>
           </div>
           <button id="btnSettingsChangeAv" onclick="if($('mSettings')) $('mSettings').classList.add('hidden'); if($('btnCustomize')) $('btnCustomize').click();" title="Change Avatar" class="absolute bottom-0 right-0 w-7 h-7 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center text-xs font-bold shadow-md hover:bg-amber-300 transition cursor-pointer">
             <i class="fas fa-camera"></i>
           </button>
         </div>
         <div>
-          <h3 id="setName" class="font-display text-xl font-bold text-white leading-tight flex items-center justify-center gap-1.5">Player Name</h3>
+          <h3 id="setName" class="font-display text-xl font-bold text-t1 leading-tight flex items-center justify-center gap-1.5">Player Name</h3>
           <p id="setHandle" class="text-xs text-t2 font-medium mt-0.5">@player#0000</p>
         </div>
       </div>
 
       <!-- ACCOUNT SECTION -->
       <div class="space-y-1.5">
-        <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Account</div>
-        <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+        <div class="text-[11px] font-bold text-t2 uppercase tracking-wider px-1">Account</div>
+        <div class="bg-card border border-bdr rounded-2xl divide-y divide-[#222842] overflow-hidden shadow-sm">
           
           <!-- Edit Display Name -->
-          <button id="btnEditProfile" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnEditProfile" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-pen"></i>
               </div>
-              <span id="lblEditDisplayName" class="font-medium text-white group-hover:text-amber-300 transition">Edit Display Name</span>
+              <span id="lblEditDisplayName" class="font-medium text-t1 group-hover:text-amber-500 transition">Edit Display Name</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Customize Profile -->
-          <button id="btnCustomize" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnCustomize" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-palette"></i>
               </div>
-              <span id="lblCustomizeProfile" class="font-medium text-white group-hover:text-amber-300 transition">Customize Profile</span>
+              <span id="lblCustomizeProfile" class="font-medium text-t1 group-hover:text-amber-500 transition">Customize Profile</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[9px] bg-purple/15 text-purple border border-purple/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <span class="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold uppercase">Premium</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
           <!-- Esports Player Role -->
-          <button id="btnSettingsChangeRole" onclick="if($('mSettings')) $('mSettings').classList.add('hidden'); window.openRoleSelectionModal(true);" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnSettingsChangeRole" onclick="if($('mSettings')) $('mSettings').classList.add('hidden'); window.openRoleSelectionModal(true);" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-gold/15 text-gold flex items-center justify-center text-sm flex-shrink-0 border border-gold/30">
+              <div class="w-8 h-8 rounded-full bg-gold/15 text-amber-500 flex items-center justify-center text-sm flex-shrink-0 border border-gold/30">
                 <i id="icoSettingsRole" class="fas fa-crosshairs"></i>
               </div>
               <div>
-                <span class="font-medium text-white group-hover:text-gold transition block">Esports Role</span>
-                <span id="lblSettingsRoleSubtitle" class="text-[10px] text-t3 font-normal">Combat specialization</span>
+                <span class="font-medium text-t1 group-hover:text-amber-500 transition block">Esports Role</span>
+                <span id="lblSettingsRoleSubtitle" class="text-[10px] text-t2 font-normal">Combat specialization</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span id="badgeSettingsRole" class="text-[9px] bg-gold/20 text-gold border border-gold/30 px-2 py-0.5 rounded-full font-bold uppercase">Not Set</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <span id="badgeSettingsRole" class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase">Not Set</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
           <!-- VIP Custom Fonts -->
-          <button id="btnSettingsChooseFont" onclick="window.openFontPickerModal()" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnSettingsChooseFont" onclick="window.openFontPickerModal()" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-font"></i>
               </div>
-              <span id="lblChooseFontSettings" class="font-medium text-white group-hover:text-blue-300 transition">VIP Custom Font</span>
+              <span id="lblChooseFontSettings" class="font-medium text-t1 group-hover:text-blue-500 transition">VIP Custom Font</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold uppercase">12 Fonts</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <span class="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold uppercase">12 Fonts</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
           <!-- Direct Messages -->
-          <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnPlayerChat" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-comments"></i>
               </div>
-              <span id="lblDirectMessages" class="font-medium text-white group-hover:text-blue-300 transition">Direct Messages</span>
+              <span id="lblDirectMessages" class="font-medium text-t1 group-hover:text-blue-500 transition">Direct Messages</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Premium Passes -->
-          <button id="btnPremium" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnPremium" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-crown"></i>
               </div>
-              <span id="lblPremiumPasses" class="font-medium text-white group-hover:text-amber-300 transition">Premium Passes</span>
+              <span id="lblPremiumPasses" class="font-medium text-t1 group-hover:text-amber-500 transition">Premium Passes</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- AX Security (Discord OAuth2 & Security Gate) -->
-          <button id="btnAxSecurity" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnAxSecurity" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center p-1.5 overflow-hidden flex-shrink-0 shadow-sm">
+              <div class="w-8 h-8 rounded-full bg-panel border border-bdr flex items-center justify-center p-1.5 overflow-hidden flex-shrink-0 shadow-sm">
                 <img src="/arenax-mark.svg" alt="AX Security" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='./arenax-mark.svg'">
               </div>
               <div>
-                <span class="font-medium text-white group-hover:text-indigo-300 transition block">AX Security</span>
-                <span id="lblAxSecuritySubtitle" class="text-[10px] text-t3 font-normal">Discord verification & safety status</span>
+                <span class="font-medium text-t1 group-hover:text-indigo-600 transition block">AX Security</span>
+                <span id="lblAxSecuritySubtitle" class="text-[10px] text-t2 font-normal">Discord verification & safety status</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span id="badgeAxSecurityStatus" class="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase">Unlinked</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <span id="badgeAxSecurityStatus" class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase">All Good</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
           <!-- Security & Privacy -->
-          <button id="btnProfileSecurity" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileSecurity" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-shield-alt"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Security & Privacy</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Security & Privacy</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Email Verification -->
-          <button id="btnResendVerifyEmail" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnResendVerifyEmail" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-envelope-circle-check"></i>
               </div>
               <div>
-                <span class="font-medium text-white group-hover:text-emerald-300 transition block">Verify Email Address</span>
-                <span id="lblVerifyStatus" class="text-[10px] text-t3 font-normal">Send verification link to inbox</span>
+                <span class="font-medium text-t1 group-hover:text-emerald-600 transition block">Verify Email Address</span>
+                <span id="lblVerifyStatus" class="text-[10px] text-t2 font-normal">Send verification link to inbox</span>
               </div>
             </div>
-            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Password Reset Link -->
-          <button id="btnSendResetPassword" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnSendResetPassword" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-key"></i>
               </div>
               <div>
-                <span class="font-medium text-white group-hover:text-amber-300 transition block">Reset Password</span>
-                <span class="text-[10px] text-t3 font-normal">Send password reset email</span>
+                <span class="font-medium text-t1 group-hover:text-amber-500 transition block">Reset Password</span>
+                <span class="text-[10px] text-t2 font-normal">Send password reset email</span>
               </div>
             </div>
-            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-paper-plane text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
         </div>
@@ -5255,81 +5349,84 @@ html, body {
 
       <!-- PREFERENCES SECTION -->
       <div class="space-y-1.5">
-        <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Preferences</div>
-        <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+        <div class="text-[11px] font-bold text-t2 uppercase tracking-wider px-1">Preferences</div>
+        <div class="bg-card border border-bdr rounded-2xl divide-y divide-[#222842] overflow-hidden shadow-sm">
           
           <!-- Notifications -->
-          <button id="btnProfileNotifications" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileNotifications" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-bell"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Notifications</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Notifications</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Notification Toggles Box -->
-          <div class="p-3 bg-bg/40 space-y-2.5">
+          <div class="p-3 bg-panel/50 space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-slate-200">Announcement Alerts</span>
+              <span class="text-xs font-medium text-t1">Announcement Alerts</span>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input id="setNotifAnnounce" type="checkbox" checked class="sr-only peer" />
-                <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400"></div>
+                <div class="w-9 h-5 bg-slate-700/80 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
               </label>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-slate-200">Friend Request Alerts</span>
+              <span class="text-xs font-medium text-t1">Friend Request Alerts</span>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input id="setNotifFriends" type="checkbox" checked class="sr-only peer" />
-                <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400"></div>
+                <div class="w-9 h-5 bg-slate-700/80 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
               </label>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-slate-200">Tournament Updates</span>
+              <span class="text-xs font-medium text-t1">Tournament Updates</span>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input id="setNotifTours" type="checkbox" checked class="sr-only peer" />
-                <div class="w-9 h-5 bg-[#252a45] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400"></div>
+                <div class="w-9 h-5 bg-slate-700/80 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
               </label>
             </div>
           </div>
 
-          <!-- Dark Mode Toggle -->
-          <div class="w-full px-4 py-3.5 text-sm flex items-center justify-between">
+          <!-- Theme Mode Switch (Default Dark, switches to Light if user clicks) -->
+          <div id="rowSettingsThemeMode" class="w-full px-4 py-3.5 text-sm flex items-center justify-between hover:bg-panel transition cursor-pointer select-none">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
-                <i class="fas fa-moon"></i>
+              <div id="icoThemeModeWrapper" class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0 transition">
+                <i id="icoThemeMode" class="fas fa-moon"></i>
               </div>
-              <span class="font-medium text-white">Dark Mode</span>
+              <div>
+                <span class="font-medium text-t1 block">Theme Mode</span>
+                <span id="lblThemeSub" class="text-[10px] text-t2 font-normal">Dark (Default)</span>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-amber-400 font-semibold">Dark</span>
-              <label class="relative inline-flex items-center cursor-pointer select-none">
-                <input type="checkbox" checked disabled class="sr-only peer" />
-                <div class="w-9 h-5 bg-amber-500 rounded-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-slate-950 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+            <div class="flex items-center gap-2.5">
+              <span id="lblThemeModeValue" class="text-xs font-semibold text-indigo-400">Dark</span>
+              <label class="relative inline-flex items-center cursor-pointer select-none" onclick="event.stopPropagation();">
+                <input id="toggleThemeSwitch" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-slate-700/80 rounded-full peer peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all shadow-sm"></div>
               </label>
             </div>
           </div>
 
           <!-- Language -->
-          <button id="btnProfileLanguage" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileLanguage" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-globe"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Language</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Language</span>
             </div>
             <div class="flex items-center gap-2">
               <span id="pLangVal" class="text-xs text-t2 font-medium">English</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
-          <div class="p-3 bg-bg/40 flex gap-2">
-            <button id="btnSettingsLangEn" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-xl text-xs font-semibold transition hover:border-amber-400/50 flex items-center justify-center gap-1.5 cursor-pointer">
+          <div class="p-3 bg-panel/50 flex gap-2">
+            <button id="btnSettingsLangEn" class="flex-1 py-2 px-3 bg-card border border-bdr text-t1 rounded-xl text-xs font-semibold transition hover:border-amber-400 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
               🇺🇸 English
             </button>
-            <button id="btnSettingsLangUr" class="flex-1 py-2 px-3 bg-card border border-bdr text-white rounded-xl text-xs font-semibold transition hover:border-amber-400/50 flex items-center justify-center gap-1.5 cursor-pointer">
+            <button id="btnSettingsLangUr" class="flex-1 py-2 px-3 bg-card border border-bdr text-t1 rounded-xl text-xs font-semibold transition hover:border-amber-400 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
               🇵🇰 Urdu / Roman Urdu
             </button>
           </div>
@@ -5339,67 +5436,67 @@ html, body {
 
       <!-- SUPPORT SECTION -->
       <div class="space-y-1.5">
-        <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1">Support</div>
-        <div class="bg-card border border-bdr/80 rounded-2xl divide-y divide-bdr/40 overflow-hidden shadow-md">
+        <div class="text-[11px] font-bold text-t2 uppercase tracking-wider px-1">Support</div>
+        <div class="bg-card border border-bdr rounded-2xl divide-y divide-[#222842] overflow-hidden shadow-sm">
           
           <!-- Help Center -->
-          <button id="btnProfileHelp" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileHelp" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-question-circle"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Help Center</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Help Center</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Terms & Policies -->
-          <button id="btnProfileTerms" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileTerms" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-book"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Terms & Policies</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Terms & Policies</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Privacy Policy -->
-          <button id="bViewPrivacy" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="bViewPrivacy" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-user-shield"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">Privacy Policy</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">Privacy Policy</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- About Us -->
-          <button id="btnProfileAbout" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnProfileAbout" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-info-circle"></i>
               </div>
-              <span class="font-medium text-white group-hover:text-amber-300 transition">About Us</span>
+              <span class="font-medium text-t1 group-hover:text-amber-500 transition">About Us</span>
             </div>
-            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+            <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
           </button>
 
           <!-- Check for Updates -->
-          <button id="btnCheckAppUpdates" type="button" class="w-full px-4 py-3.5 hover:bg-slate-800/80 text-sm flex items-center justify-between transition cursor-pointer group text-left">
+          <button id="btnCheckAppUpdates" type="button" class="w-full px-4 py-3.5 hover:bg-panel text-sm flex items-center justify-between transition cursor-pointer group text-left">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-sm flex-shrink-0">
                 <i class="fas fa-sync-alt"></i>
               </div>
               <div>
-                <span class="font-medium text-white group-hover:text-emerald-300 transition block">Check for Updates</span>
-                <span id="txtCheckAppUpdatesSub" class="text-[10px] text-t3 font-normal">ArenaX Android APK Auto-Update</span>
+                <span class="font-medium text-t1 group-hover:text-emerald-500 transition block">Check for Updates</span>
+                <span id="txtCheckAppUpdatesSub" class="text-[10px] text-t2 font-normal">ArenaX Android APK Auto-Update</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span id="badgeCheckAppUpdates" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/20">Check</span>
-              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-white transition"></i>
+              <span id="badgeCheckAppUpdates" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono font-semibold border border-emerald-500/30">Check</span>
+              <i class="fas fa-chevron-right text-xs text-t2 group-hover:text-t1 transition"></i>
             </div>
           </button>
 
@@ -5408,16 +5505,16 @@ html, body {
 
       <!-- REDEEM PROMO CODE SECTION -->
       <div class="space-y-1.5">
-        <div class="text-[11px] font-bold text-t3 uppercase tracking-wider px-1 flex items-center gap-1.5">
-          <i class="fas fa-ticket-alt text-amber-400"></i> Redeem Promo Code
+        <div class="text-[11px] font-bold text-t2 uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <i class="fas fa-ticket-alt text-amber-500"></i> Redeem Promo Code
         </div>
-        <div class="space-y-2.5 bg-card border border-bdr/80 p-4 rounded-2xl text-xs shadow-md">
-          <p class="text-[11px] text-t3 leading-normal">
+        <div class="space-y-2.5 bg-card border border-bdr p-4 rounded-2xl text-xs shadow-sm">
+          <p class="text-[11px] text-t2 leading-normal">
             Enter an active promo code below to claim exclusive AX Coins instantly credited to your wallet balance.
           </p>
           <div class="flex gap-2">
-            <input id="inpPromoCode" type="text" placeholder="e.g. WELCOME50" class="flex-1 bg-bg border border-bdr text-xs px-3.5 py-2.5 rounded-xl text-white font-mono uppercase tracking-wider focus:outline-none focus:border-amber-400/50" />
-            <button id="btnRedeemPromo" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
+            <input id="inpPromoCode" type="text" placeholder="e.g. WELCOME50" class="flex-1 bg-panel border border-bdr text-xs px-3.5 py-2.5 rounded-xl text-t1 font-mono uppercase tracking-wider focus:outline-none focus:border-amber-400" />
+            <button id="btnRedeemPromo" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
               Apply
             </button>
           </div>
@@ -5427,33 +5524,33 @@ html, body {
 
       <!-- SIGN OUT BUTTON -->
       <div class="pt-1">
-        <button id="bLogout" class="w-full bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-md text-left">
+        <button id="bLogout" class="w-full bg-card hover:bg-rose-500/10 border border-bdr hover:border-rose-500/30 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-sm text-left">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
+            <div class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center text-sm">
               <i class="fas fa-sign-out-alt"></i>
             </div>
-            <span id="lblSignOut" class="text-sm font-semibold text-rose-400 group-hover:text-rose-300">Sign Out</span>
+            <span id="lblSignOut" class="text-sm font-semibold text-rose-500 group-hover:text-rose-400">Sign Out</span>
           </div>
-          <i class="fas fa-chevron-right text-xs text-rose-400/60"></i>
+          <i class="fas fa-chevron-right text-xs text-rose-400"></i>
         </button>
       </div>
 
       <!-- DELETE ACCOUNT BUTTON -->
       <div class="pt-1">
-        <button id="bDeleteAccount" class="w-full bg-card hover:bg-red-950/30 border border-red-500/30 hover:border-red-500/60 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-md text-left">
+        <button id="bDeleteAccount" class="w-full bg-card hover:bg-red-500/10 border border-red-500/30 hover:border-red-500/50 rounded-2xl p-3.5 flex items-center justify-between transition cursor-pointer group shadow-sm text-left">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-sm">
               <i class="fas fa-trash-alt"></i>
             </div>
             <span class="text-sm font-semibold text-red-500 group-hover:text-red-400">Delete Account</span>
           </div>
-          <i class="fas fa-chevron-right text-xs text-red-500/60"></i>
+          <i class="fas fa-chevron-right text-xs text-red-400"></i>
         </button>
       </div>
 
       <!-- Footer Save Button -->
       <div class="pt-2">
-        <button id="bSaveSettings" class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-2xl transition cursor-pointer shadow-lg shadow-amber-500/10">Save Settings</button>
+        <button id="bSaveSettings" class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-2xl transition cursor-pointer shadow-sm">Save Settings</button>
       </div>
 
     </div>
@@ -5604,7 +5701,7 @@ html, body {
           <lottie-player src="./play.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay class="mx-auto"></lottie-player>
         </div>
         <div>
-          <h3 id="tdetName" class="font-display text-2xl font-black text-white leading-tight">Tournament</h3>
+          <h3 id="tdetName" class="font-display text-2xl font-black text-t1 leading-tight">Tournament</h3>
           <p id="tdetGame" class="text-xs text-t3 mt-0.5">Grand RP Mobile</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 pt-2">
@@ -5667,7 +5764,7 @@ html, body {
           </label>
           <label class="flex items-start gap-2.5 text-[11px] text-t2 leading-relaxed cursor-pointer">
             <input id="tregCheckRules" type="checkbox" class="mt-0.5 accent-gold"/>
-            <span class="text-white font-bold">I have read the rules and agree to follow them. *</span>
+            <span class="text-t1 font-bold">I have read the rules and agree to follow them. *</span>
           </label>
         </div>
       </div>
@@ -5997,22 +6094,22 @@ html, body {
 </div>
 
 <!-- ==================== AX SECURITY (ACCOUNT STANDING & SAFETY) MODAL ==================== -->
-<div id="mAxSecurityModal" class="fixed inset-0 bg-[#0c0d12]/95 backdrop-filter backdrop-blur-md z-[260] overflow-y-auto hidden animate-fade-in">
+<div id="mAxSecurityModal" class="fixed inset-0 bg-bg text-t1 z-[260] overflow-y-auto hidden animate-fade-in">
   <div class="max-w-lg w-full mx-auto min-h-screen p-4 sm:p-5 space-y-5 pb-24 flex flex-col justify-between">
     <div class="space-y-5">
       
       <!-- Top Navigation Header -->
       <div class="flex items-center justify-between pt-2 pb-1 border-b border-bdr/40">
         <div class="flex items-center gap-3">
-          <button id="bCloseAxSecurityCross" class="w-9 h-9 rounded-full bg-card border border-bdr/80 flex items-center justify-center text-white hover:text-indigo-400 hover:bg-slate-800 transition cursor-pointer active:scale-95 shadow-sm">
+          <button id="bCloseAxSecurityCross" class="w-9 h-9 rounded-full bg-card border border-bdr flex items-center justify-center text-t1 hover:text-indigo-600 hover:bg-panel transition cursor-pointer active:scale-95 shadow-sm">
             <i class="fas fa-chevron-left text-sm"></i>
           </button>
           <div>
-            <span id="axSecurityModalTitle" class="font-display text-lg font-bold text-white block leading-tight">AX Security</span>
-            <span id="axSecurityModalSubtitle" class="text-[10px] text-t3 font-mono">Standing & Account Safety Hub</span>
+            <span id="axSecurityModalTitle" class="font-display text-lg font-bold text-t1 block leading-tight">AX Security</span>
+            <span id="axSecurityModalSubtitle" class="text-[10px] text-t2 font-mono">Standing & Account Safety Hub</span>
           </div>
         </div>
-        <button id="bCloseAxSecurity" class="text-xs text-t3 hover:text-indigo-400 font-medium px-2.5 py-1 rounded-lg transition cursor-pointer bg-slate-800/40 hover:bg-slate-800">
+        <button id="bCloseAxSecurity" class="text-xs text-t2 hover:text-indigo-600 font-semibold px-2.5 py-1 rounded-lg transition cursor-pointer bg-panel hover:bg-card border border-bdr">
           Done
         </button>
       </div>
@@ -6021,18 +6118,18 @@ html, body {
       <div id="axSecurityMainView" class="space-y-4">
 
         <!-- Security Hub Header Banner -->
-        <div class="p-4 bg-gradient-to-r from-indigo-950/40 via-card/80 to-card border border-indigo-500/20 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+        <div class="p-4 bg-panel border border-indigo-500/20 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
           <div class="flex items-center gap-3.5">
-            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 flex-shrink-0 shadow-inner">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-500 flex-shrink-0 shadow-inner">
               <i class="fas fa-shield-halved text-lg"></i>
             </div>
             <div>
-              <h3 class="text-sm font-bold text-white leading-tight">Security & Account Protection</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">Manage trust standing, active hardware, and login security</p>
+              <h3 class="text-sm font-bold text-t1 leading-tight">Security & Account Protection</h3>
+              <p class="text-[11px] text-t2 mt-0.5">Manage trust standing, active hardware, and login security</p>
             </div>
           </div>
-          <div id="axMainSecurityStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold flex-shrink-0">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div id="axMainSecurityStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-mono font-bold flex-shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Protected</span>
           </div>
         </div>
@@ -6041,111 +6138,111 @@ html, body {
         <div class="space-y-2.5">
           
           <!-- 1. Account Standing Button -->
-          <button id="btnAxNavStanding" onclick="window.showAxSecuritySubView('standing')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-emerald-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500/40" aria-label="Open Account Standing">
+          <button id="btnAxNavStanding" onclick="window.showAxSecuritySubView('standing')" type="button" class="w-full flex items-center justify-between p-4 bg-card hover:bg-panel active:scale-[0.99] border border-bdr hover:border-emerald-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40" aria-label="Open Account Standing">
             <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-105 group-hover:bg-emerald-500/20 transition flex-shrink-0 shadow-inner">
+              <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 group-hover:scale-105 group-hover:bg-emerald-500/20 transition flex-shrink-0 shadow-inner">
                 <i class="fas fa-shield-check text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-white group-hover:text-emerald-300 transition">Account Standing</span>
-                  <span id="axBtnBadgeStanding" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9px] font-mono font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span class="text-sm font-bold text-t1 group-hover:text-emerald-600 transition">Account Standing</span>
+                  <span id="axBtnBadgeStanding" class="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[9px] font-mono font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     <span id="axBtnBadgeStandingText">All Good</span>
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Standing rating, community guidelines health, and fair-play status</p>
+                <p class="text-xs text-t2 mt-0.5 leading-snug">Standing rating, community guidelines health, and fair-play status</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">View</span>
+            <div class="flex items-center gap-2 text-t2 group-hover:text-t1 transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-t2 group-hover:text-t1">View</span>
               <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
 
           <!-- 2. Account Activity Button -->
-          <button id="btnAxNavActivity" onclick="window.showAxSecuritySubView('activity')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-indigo-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500/40" aria-label="Open Account Activity">
+          <button id="btnAxNavActivity" onclick="window.showAxSecuritySubView('activity')" type="button" class="w-full flex items-center justify-between p-4 bg-card hover:bg-panel active:scale-[0.99] border border-bdr hover:border-indigo-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40" aria-label="Open Account Activity">
             <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 group-hover:scale-105 group-hover:bg-indigo-500/20 transition flex-shrink-0 shadow-inner">
+              <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-600 group-hover:scale-105 group-hover:bg-indigo-500/20 transition flex-shrink-0 shadow-inner">
                 <i class="fas fa-clock-rotate-left text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-white group-hover:text-indigo-300 transition">Account Activity</span>
-                  <span id="axBtnBadgeActivity" class="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[9px] font-mono font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                  <span class="text-sm font-bold text-t1 group-hover:text-indigo-600 transition">Account Activity</span>
+                  <span id="axBtnBadgeActivity" class="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-600 text-[9px] font-mono font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                     <span id="axBtnBadgeActivityText">1 Active Device</span>
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Monitor login sessions, active hardware, and security audit log</p>
+                <p class="text-xs text-t2 mt-0.5 leading-snug">Monitor login sessions, active hardware, and security audit log</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">View</span>
+            <div class="flex items-center gap-2 text-t2 group-hover:text-t1 transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-t2 group-hover:text-t1">View</span>
               <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
 
           <!-- 3. Link Accounts Button -->
-          <button id="btnAxNavLinkAccounts" onclick="window.showAxSecuritySubView('link-accounts')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-[#5865F2]/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-[#5865F2]/40" aria-label="Open Link Accounts">
+          <button id="btnAxNavLinkAccounts" onclick="window.showAxSecuritySubView('link-accounts')" type="button" class="w-full flex items-center justify-between p-4 bg-card hover:bg-panel active:scale-[0.99] border border-bdr hover:border-[#5865F2]/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5865F2]/40" aria-label="Open Link Accounts">
             <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
               <div class="w-12 h-12 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/25 flex items-center justify-center text-[#5865F2] group-hover:scale-105 group-hover:bg-[#5865F2]/20 transition flex-shrink-0 shadow-inner">
                 <i class="fa-brands fa-discord text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-white group-hover:text-[#7289da] transition">Link Accounts</span>
-                  <span id="axBtnBadgeDiscord" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold">
+                  <span class="text-sm font-bold text-t1 group-hover:text-[#5865F2] transition">Link Accounts</span>
+                  <span id="axBtnBadgeDiscord" class="px-2 py-0.5 rounded-full bg-panel border border-bdr text-t2 text-[9px] font-mono font-bold">
                     <span id="axBtnBadgeDiscordText">Not Linked</span>
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Connect Discord account for verified tournaments, anti-smurf & roles</p>
+                <p class="text-xs text-t2 mt-0.5 leading-snug">Connect Discord account for verified tournaments, anti-smurf & roles</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Configure</span>
+            <div class="flex items-center gap-2 text-t2 group-hover:text-t1 transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-t2 group-hover:text-t1">Configure</span>
               <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
 
           <!-- 4. 2 Factor Authentication Button -->
-          <button id="btnAxNav2Fa" onclick="window.showAxSecuritySubView('2fa')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open 2 Factor Authentication">
+          <button id="btnAxNav2Fa" onclick="window.showAxSecuritySubView('2fa')" type="button" class="w-full flex items-center justify-between p-4 bg-card hover:bg-panel active:scale-[0.99] border border-bdr hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open 2 Factor Authentication">
             <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
+              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
                 <i class="fas fa-key text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-white group-hover:text-amber-300 transition">2 Factor Authentication</span>
-                  <span id="axBtnBadge2Fa" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px] font-mono font-bold">
+                  <span class="text-sm font-bold text-t1 group-hover:text-amber-500 transition">2 Factor Authentication</span>
+                  <span id="axBtnBadge2Fa" class="px-2 py-0.5 rounded-full bg-panel border border-bdr text-t2 text-[9px] font-mono font-bold">
                     <span id="axBtnBadge2FaText">Disabled</span>
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Require approval on sign-in to protect against unauthorized access</p>
+                <p class="text-xs text-t2 mt-0.5 leading-snug">Require approval on sign-in to protect against unauthorized access</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Configure</span>
+            <div class="flex items-center gap-2 text-t2 group-hover:text-t1 transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-t2 group-hover:text-t1">Configure</span>
               <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
 
           <!-- Customize Profile Action Button -->
-          <button id="btnAxNavCustomizeProfile" onclick="window.openCustomizeProfilePage('axSecurity')" type="button" class="w-full flex items-center justify-between p-4 bg-[#141824] hover:bg-[#1b2032] active:scale-[0.99] border border-bdr/80 hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open Customize Profile">
+          <button id="btnAxNavCustomizeProfile" onclick="window.openCustomizeProfilePage('axSecurity')" type="button" class="w-full flex items-center justify-between p-4 bg-card hover:bg-panel active:scale-[0.99] border border-bdr hover:border-amber-500/50 rounded-2xl transition-all duration-200 cursor-pointer group text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40" aria-label="Open Customize Profile">
             <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
+              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500 group-hover:scale-105 group-hover:bg-amber-500/20 transition flex-shrink-0 shadow-inner">
                 <i class="fas fa-palette text-xl"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-white group-hover:text-amber-300 transition">Customize Profile</span>
-                  <span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[9px] font-mono font-bold">Edit</span>
+                  <span class="text-sm font-bold text-t1 group-hover:text-amber-500 transition">Customize Profile</span>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-mono font-bold">Edit</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5 leading-snug">Avatar photo, display name, golden name, country, effects & signature</p>
+                <p class="text-xs text-t2 mt-0.5 leading-snug">Avatar photo, display name, golden name, country, effects & signature</p>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-slate-400 group-hover:text-white transition flex-shrink-0 pl-2">
-              <span class="text-xs font-semibold hidden sm:inline text-slate-400 group-hover:text-slate-200">Edit</span>
+            <div class="flex items-center gap-2 text-t2 group-hover:text-t1 transition flex-shrink-0 pl-2">
+              <span class="text-xs font-semibold hidden sm:inline text-t2 group-hover:text-t1">Edit</span>
               <i class="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </div>
           </button>
@@ -6153,8 +6250,8 @@ html, body {
         </div>
 
         <!-- Trust Note -->
-        <div class="p-3.5 bg-bg/50 border border-bdr/40 rounded-xl flex items-center gap-3 text-[11px] text-slate-400">
-          <i class="fas fa-lock text-indigo-400 text-sm flex-shrink-0"></i>
+        <div class="p-3.5 bg-panel border border-bdr rounded-xl flex items-center gap-3 text-[11px] text-t2 shadow-sm">
+          <i class="fas fa-lock text-indigo-500 text-sm flex-shrink-0"></i>
           <span>ArenaX Zero-Trust Security Protocol actively guards your credentials, matchmaking rankings, and tournament earnings.</span>
         </div>
 
@@ -8085,30 +8182,30 @@ html, body {
 </div>
 
 <!-- ==================== TOURNAMENT LEADERBOARD MODAL ==================== -->
-<div id="mTournamentLeaderboard" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-2xl relative overflow-hidden">
+<div id="mTournamentLeaderboard" class="fixed inset-0 bg-black/60 backdrop-filter backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+  <div class="bg-panel border border-bdr rounded-2xl p-5 max-w-[480px] w-full max-h-[85vh] flex flex-col space-y-4 shadow-xl relative overflow-hidden">
     
     <!-- Title / Header -->
-    <div class="flex items-center justify-between border-b border-bdr/40 pb-2.5 flex-shrink-0">
+    <div class="flex items-center justify-between border-b border-bdr pb-2.5 flex-shrink-0">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center text-gold text-base"><i class="fas fa-trophy"></i></div>
         <div>
-          <h3 class="font-display text-lg font-bold text-white leading-tight">Match Leaderboard</h3>
+          <h3 class="font-display text-lg font-bold text-t1 leading-tight">Match Leaderboard</h3>
           <p id="leadTourName" class="text-[10px] text-t3 font-medium">Tournament Name</p>
         </div>
       </div>
-      <button id="bCloseLeaderboard" class="text-t3 hover:text-white transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
+      <button id="bCloseLeaderboard" class="text-t2 hover:text-t1 transition p-1 cursor-pointer"><i class="fas fa-times"></i></button>
     </div>
 
     <!-- Podium Visual Section (Optional but looks insanely polished) -->
-    <div id="leaderboardPodium" class="flex justify-center items-end gap-3 px-2 py-4 bg-card/40 rounded-xl border border-bdr/40 flex-shrink-0 hidden">
+    <div id="leaderboardPodium" class="flex justify-center items-end gap-3 px-2 py-4 bg-card rounded-xl border border-bdr flex-shrink-0 hidden">
       <!-- 2nd Place -->
       <div class="flex flex-col items-center w-[110px] text-center">
         <div class="relative mb-1">
           <img id="podium2Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p2"/>
-          <div class="absolute -top-1.5 -right-1 bg-slate-400 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">2</div>
+          <div class="absolute -top-1.5 -right-1 bg-slate-400 text-white text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">2</div>
         </div>
-        <div id="podium2Name" class="text-[10px] font-bold text-white truncate w-full">Player 2</div>
+        <div id="podium2Name" class="text-[10px] font-bold text-t1 truncate w-full">Player 2</div>
         <div id="podium2Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
       </div>
       
@@ -8119,7 +8216,7 @@ html, body {
           <img src="avframe-1.png" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='avframe-1.svg';}" alt="Rank 1 Frame" class="absolute -inset-[23%] w-[146%] h-[146%] pointer-events-none z-20 max-w-none object-contain drop-shadow-[0_2px_8px_rgba(240,192,64,0.5)]" />
           <div class="absolute -bottom-1 -right-1 bg-gold text-bg text-[9px] font-extrabold w-5 h-5 rounded-full border border-gold flex items-center justify-center z-30">1</div>
         </div>
-        <div id="podium1Name" class="text-xs font-bold text-white truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
+        <div id="podium1Name" class="text-xs font-bold text-t1 truncate w-full flex items-center justify-center gap-0.5">Player 1</div>
         <div id="podium1Score" class="text-[10px] text-gold font-mono font-black mt-0.5">Stats</div>
       </div>
 
@@ -8127,9 +8224,9 @@ html, body {
       <div class="flex flex-col items-center w-[110px] text-center">
         <div class="relative mb-1">
           <img id="podium3Av" class="w-12 h-12 rounded-full border border-bdr object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=p3"/>
-          <div class="absolute -top-1.5 -right-1 bg-amber-700 text-bg text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">3</div>
+          <div class="absolute -top-1.5 -right-1 bg-amber-700 text-white text-[8px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border border-bdr font-mono">3</div>
         </div>
-        <div id="podium3Name" class="text-[10px] font-bold text-white truncate w-full">Player 3</div>
+        <div id="podium3Name" class="text-[10px] font-bold text-t1 truncate w-full">Player 3</div>
         <div id="podium3Score" class="text-[9px] text-gold font-mono font-bold mt-0.5">Stats</div>
       </div>
     </div>
@@ -8149,9 +8246,9 @@ html, body {
 </div>
 
 <!-- ── FULL MOMENTS PAGE MODAL (USER PROFILE MOMENTS) ── -->
-<div id="mMomentsProfileModal" class="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto hidden">
+<div id="mMomentsProfileModal" class="fixed inset-0 z-[100010] bg-bg text-t1 flex flex-col overflow-y-auto hidden">
   <!-- TOP SECTION: Curved gold gradient header area -->
-  <div class="relative bg-gradient-to-b from-[#f0c040] via-[#d97706] to-[#0a0c12] px-5 pt-5 pb-10 rounded-b-[2.5rem] shadow-2xl text-slate-950 overflow-hidden shrink-0">
+  <div class="relative bg-gradient-to-b from-[#f0c040] via-[#d97706] to-[#b45309] px-5 pt-5 pb-8 rounded-b-[2.5rem] shadow-md text-slate-950 overflow-hidden shrink-0">
     <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/20 rounded-full blur-xl pointer-events-none"></div>
     <div class="relative flex items-center justify-between">
       <button onclick="closeMomentsProfileModal()" class="w-10 h-10 rounded-full bg-slate-950/20 hover:bg-slate-950/40 text-slate-950 flex items-center justify-center transition cursor-pointer">
@@ -8176,13 +8273,13 @@ html, body {
 </div>
 
 <!-- ── MOMENTS FEED PAGE MODAL (EXPLORE) ── -->
-<div id="mMomentsFeedModal" class="fixed inset-0 z-[100010] bg-[#0a0c12] text-white flex flex-col overflow-y-auto hidden">
+<div id="mMomentsFeedModal" class="fixed inset-0 z-[100010] bg-bg text-t1 flex flex-col overflow-y-auto hidden">
   <!-- Sticky Header -->
-  <div class="sticky top-0 z-20 bg-[#121526]/90 backdrop-blur-md px-4 py-3 border-b border-[#252a45] flex items-center justify-between">
-    <button onclick="closeMomentsFeedModal()" class="w-9 h-9 rounded-full bg-[#1b1e32] hover:bg-[#252a45] text-white flex items-center justify-center transition cursor-pointer">
+  <div class="sticky top-0 z-20 bg-panel/90 backdrop-blur-md px-4 py-3 border-b border-bdr flex items-center justify-between">
+    <button onclick="closeMomentsFeedModal()" class="w-9 h-9 rounded-full bg-card hover:bg-panel text-t1 border border-bdr flex items-center justify-center transition cursor-pointer">
       <i class="fas fa-arrow-left"></i>
     </button>
-    <h2 class="font-display text-base font-extrabold text-white flex items-center gap-2">
+    <h2 class="font-display text-base font-extrabold text-t1 flex items-center gap-2">
       <i class="fas fa-camera text-[#f0c040]"></i> Community Moments
     </h2>
     <button onclick="openUploadMomentModal()" class="px-3 py-1.5 bg-gradient-to-r from-[#f0c040] to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer">
@@ -8626,26 +8723,26 @@ html, body {
 </div>
 
 <!-- ==================== SMART TEAM RECRUITMENT MODAL ==================== -->
-<div id="mTeamRecruitmentModal" class="fixed inset-0 z-[260] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden animate-fade-in select-none">
-  <div class="relative w-full max-w-lg bg-[#0c0d16] border border-gold/40 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+<div id="mTeamRecruitmentModal" class="fixed inset-0 z-[260] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden animate-fade-in select-none">
+  <div class="relative w-full max-w-lg bg-panel border border-gold/40 rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden text-t1">
     <!-- Header -->
-    <div class="p-4 sm:p-5 border-b border-bdr/30 bg-[#0e101e] flex items-center justify-between flex-shrink-0">
+    <div class="p-4 sm:p-5 border-b border-bdr bg-card flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold text-base shadow-sm">
           <i class="fas fa-user-plus"></i>
         </div>
         <div>
           <span class="text-[9px] uppercase tracking-wider font-mono font-bold text-gold block">SQUAD RECRUITMENT</span>
-          <h3 class="text-sm sm:text-base font-black uppercase text-white tracking-wide">Recruit Team Members</h3>
+          <h3 class="text-sm sm:text-base font-black uppercase text-t1 tracking-wide">Recruit Team Members</h3>
         </div>
       </div>
-      <button onclick="window.closeTeamRecruitmentModal()" type="button" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-t2 hover:text-white flex items-center justify-center transition cursor-pointer border border-white/10">
+      <button onclick="window.closeTeamRecruitmentModal()" type="button" class="w-8 h-8 rounded-lg bg-panel hover:bg-card text-t2 hover:text-t1 flex items-center justify-center transition cursor-pointer border border-bdr">
         <i class="fas fa-times text-xs"></i>
       </button>
     </div>
 
     <!-- Missing Roles Banner -->
-    <div class="p-4 bg-gradient-to-r from-[#141829] to-[#0d0f1a] border-b border-bdr/20 space-y-2 flex-shrink-0">
+    <div class="p-4 bg-card border-b border-bdr space-y-2 flex-shrink-0">
       <div id="recruitMissingRolesDisplay" class="flex items-center gap-2 flex-wrap">
         <!-- Injected dynamically: "Team Needs: [Boomer] [Supporter]" -->
       </div>
@@ -8655,16 +8752,16 @@ html, body {
     </div>
 
     <!-- Search & Filter Controls -->
-    <div class="p-4 border-b border-bdr/20 space-y-2.5 bg-[#090b12] flex-shrink-0">
+    <div class="p-4 border-b border-bdr space-y-2.5 bg-panel flex-shrink-0">
       <div class="relative">
         <i class="fas fa-search absolute left-3.5 top-3 text-t3 text-xs"></i>
-        <input id="recruitPlayerSearchInput" oninput="window.renderRecruitCandidatesUI()" type="text" placeholder="Search players by name, handle, or role..." class="w-full bg-[#121422] border border-bdr rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-gold transition" />
+        <input id="recruitPlayerSearchInput" oninput="window.renderRecruitCandidatesUI()" type="text" placeholder="Search players by name, handle, or role..." class="w-full bg-card border border-bdr rounded-xl pl-9 pr-4 py-2 text-xs text-t1 outline-none focus:border-gold transition placeholder:text-t2" />
       </div>
 
       <div class="flex items-center justify-between pt-0.5">
         <label class="flex items-center gap-2 cursor-pointer select-none">
           <input id="chkPrioritizeNeededRoles" onchange="window.renderRecruitCandidatesUI()" type="checkbox" checked class="w-4 h-4 rounded accent-gold cursor-pointer" />
-          <span class="text-xs font-bold text-slate-200">Show players matching our needed roles first</span>
+          <span class="text-xs font-bold text-t1">Show players matching our needed roles first</span>
         </label>
         <button onclick="window.loadRecruitCandidates()" class="text-[10px] text-gold hover:underline font-bold flex items-center gap-1 cursor-pointer">
           <i class="fas fa-sync-alt text-[9px]"></i> Refresh
@@ -9158,6 +9255,83 @@ html, body {
         });
       }
     });
+
+    // Theme Management System: Dark default, Light only if user explicitly selects it
+    window.syncThemeUI = function() {
+      const isLight = (localStorage.getItem('ax_theme') === 'light');
+      const toggle = document.getElementById('toggleThemeSwitch');
+      const label = document.getElementById('lblThemeModeValue');
+      const sub = document.getElementById('lblThemeSub');
+      const icon = document.getElementById('icoThemeMode');
+      const iconWrap = document.getElementById('icoThemeModeWrapper');
+
+      if (toggle) toggle.checked = isLight;
+      if (label) {
+        label.textContent = isLight ? 'Light' : 'Dark';
+        label.className = isLight ? 'text-xs font-semibold text-amber-600' : 'text-xs font-semibold text-indigo-400';
+      }
+      if (sub) {
+        sub.textContent = isLight ? 'Light mode enabled' : 'Dark (Default)';
+      }
+      if (icon) {
+        icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+      }
+      if (iconWrap) {
+        iconWrap.className = isLight
+          ? 'w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm flex-shrink-0 transition'
+          : 'w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-sm flex-shrink-0 transition';
+      }
+    };
+
+    window.setAxTheme = function(theme, save = true) {
+      const isLight = theme === 'light';
+      const effectiveTheme = isLight ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
+      if (document.body) document.body.setAttribute('data-theme', effectiveTheme);
+
+      if (save) {
+        try {
+          localStorage.setItem('ax_theme', effectiveTheme);
+        } catch (e) {}
+      }
+
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isLight ? '#f5f5f7' : '#0a0b10');
+      }
+
+      window.syncThemeUI();
+    };
+
+    function setupThemeInteractions() {
+      const current = localStorage.getItem('ax_theme') === 'light' ? 'light' : 'dark';
+      window.setAxTheme(current, false);
+
+      const toggle = document.getElementById('toggleThemeSwitch');
+      const row = document.getElementById('rowSettingsThemeMode');
+
+      if (toggle) {
+        toggle.onchange = function() {
+          window.setAxTheme(this.checked ? 'light' : 'dark', true);
+        };
+      }
+
+      if (row) {
+        row.onclick = function(e) {
+          if (e.target.closest('label') || e.target.closest('input')) return;
+          if (toggle) {
+            toggle.checked = !toggle.checked;
+            window.setAxTheme(toggle.checked ? 'light' : 'dark', true);
+          }
+        };
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupThemeInteractions);
+    } else {
+      setupThemeInteractions();
+    }
   })();
 </script>
 </body>
