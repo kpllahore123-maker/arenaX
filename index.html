@@ -10,7 +10,7 @@
 <meta property="og:description" content="Register, compete in elite matches, earn AX coins, chat live, and dominate the gaming leaderboard!"/>
 <meta property="og:image" content="/arenax_logo.jpg"/>
 <!-- PWA (Progressive Web App) Meta Tags & Manifest -->
-<meta name="theme-color" content="#f0c040"/>
+<meta name="theme-color" content="#05070C"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="ArenaX"/>
@@ -248,6 +248,9 @@ if (typeof tailwind !== 'undefined') {
   tailwind.config = {
     theme: {
       extend: {
+        borderColor: {
+          DEFAULT: '#222842',
+        },
         colors: {
           bg: 'var(--bg)',
           panel: 'var(--panel)',
@@ -310,13 +313,45 @@ if (typeof tailwind !== 'undefined') {
 }
 
 /* Universal fix: Completely eliminate white divider lines and borders across the entire app */
+*, ::before, ::after {
+  border-color: var(--border, #222842);
+}
+
+hr {
+  border-color: var(--border, #222842) !important;
+  opacity: 0.6;
+}
+
+.divide-y > :not([hidden]) ~ :not([hidden]),
+.divide-x > :not([hidden]) ~ :not([hidden]),
 .divide-bdr > :not([hidden]) ~ :not([hidden]),
 .divide-bdr\/40 > :not([hidden]) ~ :not([hidden]),
 .divide-bdr\/30 > :not([hidden]) ~ :not([hidden]),
 .divide-bdr\/20 > :not([hidden]) ~ :not([hidden]),
+.divide-bdr\/50 > :not([hidden]) ~ :not([hidden]),
 .divide-bdr\/60 > :not([hidden]) ~ :not([hidden]),
-[class*="divide-bdr"] > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--border-subtle, rgba(255, 255, 255, 0.05)) !important;
+[class*="divide-bdr"] > :not([hidden]) ~ :not([hidden]),
+.divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+.divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border, #222842) !important;
+}
+
+/* Eliminate frosty white borders in dark mode */
+[data-theme="dark"] .border-white\/10,
+[data-theme="dark"] .border-white\/15,
+[data-theme="dark"] .border-white\/20,
+[data-theme="dark"] .border-white\/25,
+[data-theme="dark"] .border-white\/30,
+:root:not([data-theme="light"]) .border-white\/10,
+:root:not([data-theme="light"]) .border-white\/15,
+:root:not([data-theme="light"]) .border-white\/20,
+:root:not([data-theme="light"]) .border-white\/25,
+:root:not([data-theme="light"]) .border-white\/30 {
+  border-color: var(--border, #222842) !important;
+}
+
+table, tr, td, th {
+  border-color: var(--border, #222842);
 }
 
 .border-bdr {
@@ -344,6 +379,15 @@ if (typeof tailwind !== 'undefined') {
   border-color: #2b3354 !important;
 }
 
+[data-theme="light"] *, [data-theme="light"] ::before, [data-theme="light"] ::after {
+  border-color: var(--border, #e2e8f0);
+}
+[data-theme="light"] hr {
+  border-color: var(--border, #e2e8f0) !important;
+}
+[data-theme="light"] table, [data-theme="light"] tr, [data-theme="light"] td, [data-theme="light"] th {
+  border-color: var(--border, #e2e8f0);
+}
 [data-theme="light"] .border-bdr {
   border-color: var(--border, #e2e8f0) !important;
 }
@@ -878,162 +922,43 @@ html, body {
   100% { transform: translateX(100%); }
 }
 
-  /* ── ArenaX Splash Screen Styles (Dark Theme Preserved) ── */
+  /* ═══════════════════════════════════════════════
+     ArenaX · Splash — static logo → 3s → Rolling Draw (loops forever)
+     Pure CSS/SMIL · only JS is the 3s switch
+     ═══════════════════════════════════════════════ */
   .splash{
-    --violet:#9B7BFF; --magenta:#FF5CB0; --cyan:#3DD8FF; --mint:#2EE8B4;
-    --text:#F4F6FB !important; --muted:#8B93A7 !important;
     position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;
     z-index:9999999 !important;
-    display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;
-    background:radial-gradient(130% 100% at 50% 0%,#12172A 0%,#05070C 70%) !important;
-    transition:opacity .6s cubic-bezier(0.4, 0, 0.2, 1),transform .6s cubic-bezier(0.4, 0, 0.2, 1),visibility .6s ease;
+    display:flex !important;align-items:center !important;justify-content:center !important;
+    background:radial-gradient(130% 100% at 50% 0%,#12172A 0%,#05070C 65%) !important;
+    transition:opacity .5s cubic-bezier(0.4, 0, 0.2, 1), visibility .5s ease !important;
     opacity:1;
     pointer-events:auto;
     user-select:none;
     overflow:hidden;
   }
+
   body.done .splash{
     opacity:0 !important;
-    transform:scale(1.06) !important;
     pointer-events:none !important;
     visibility:hidden !important;
   }
 
-  .glow{
-    position:absolute;width:min(65vw,320px);height:min(65vw,320px);border-radius:50%;
-    background:radial-gradient(circle,rgba(124,77,255,.42),rgba(255,46,158,.18) 52%,transparent 72%);
-    filter:blur(16px);opacity:1;
-    pointer-events:none;
-    animation:glowIn 1.4s ease forwards, glowFloat 3s ease-in-out 1.4s infinite alternate;
-  }
-  @keyframes glowIn{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:scale(1)}}
-  @keyframes glowFloat{0%{transform:scale(0.95);opacity:0.8}100%{transform:scale(1.05);opacity:1}}
+  .mark{width:min(42vw,190px);aspect-ratio:1;position:relative}
+  .mark svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 
-  /* ── logo group (mark + wordmark + tagline) ────────── */
-  .logo{
-    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    z-index:2;
-    animation:floatLogo 3.2s ease-in-out infinite;
-  }
-  @keyframes floatLogo{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  /* phase 1 — static logo (0 → 3s) */
+  .mark-static{opacity:1;transition:opacity .3s ease}
 
-  .mark{
-    position:relative;width:min(28vw,120px);height:min(28vw,120px);aspect-ratio:1;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .mark svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  /* phase 2 — rolling draw (3s → ∞) */
+  .mark-draw{opacity:0;transition:opacity .3s ease}
 
-  /* 4 distinct colored arms with stroke draw & continuous pinwheel pulse */
-  .arm{
-    stroke-linecap:round;stroke-width:72;fill:none;opacity:1;
-  }
-  .arm-1{
-    stroke:#9B7BFF;
-    animation:drawArm1 .55s cubic-bezier(.4,0,.2,1) .05s both, pinwheelPulse 1.4s ease-in-out 1.6s infinite;
-  }
-  .arm-2{
-    stroke:#FF5CB0;
-    animation:drawArm2 .55s cubic-bezier(.4,0,.2,1) .22s both, pinwheelPulse 1.4s ease-in-out 1.95s infinite;
-  }
-  .arm-3{
-    stroke:#3DD8FF;
-    animation:drawArm3 .55s cubic-bezier(.4,0,.2,1) .39s both, pinwheelPulse 1.4s ease-in-out 2.30s infinite;
-  }
-  .arm-4{
-    stroke:#2EE8B4;
-    animation:drawArm4 .55s cubic-bezier(.4,0,.2,1) .56s both, pinwheelPulse 1.4s ease-in-out 2.65s infinite;
-  }
+  body.draw .mark-static{opacity:0}
+  body.draw .mark-draw{opacity:1}
 
-  @keyframes drawArm1{
-    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
-    30%{opacity:1}
-    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
-  }
-  @keyframes drawArm2{
-    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
-    30%{opacity:1}
-    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
-  }
-  @keyframes drawArm3{
-    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
-    30%{opacity:1}
-    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
-  }
-  @keyframes drawArm4{
-    0%{stroke-dasharray:140;stroke-dashoffset:140;opacity:0}
-    30%{opacity:1}
-    100%{stroke-dasharray:140;stroke-dashoffset:0;opacity:1}
-  }
-
-  @keyframes pinwheelPulse{
-    0%,100%{opacity:1}
-    50%{opacity:0.18}
-  }
-
-  /* ── wordmark: "Arena" + custom woven X glyph ──────── */
-  .wordmark{
-    margin-top:24px;font-size:clamp(32px,7.5vw,46px);font-weight:800;letter-spacing:-.02em;
-    color:var(--text);display:flex;align-items:center;justify-content:center;line-height:1;
-    opacity:1;transform:translateY(0);
-    animation:riseWordmark .6s ease .6s both;
-  }
-  @keyframes riseWordmark{
-    0%{opacity:0;transform:translateY(12px)}
-    100%{opacity:1;transform:translateY(0)}
-  }
-
-  .x-glyph{
-    height:0.76em;width:0.72em;min-width:24px;min-height:24px;
-    margin-left:2px;display:inline-block;vertical-align:middle;overflow:visible;flex-shrink:0;
-  }
-
-  .tagline{
-    margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
-    color:var(--muted);text-align:center;
-    opacity:1;transform:translateY(0);
-    animation:riseTagline .6s ease .8s both;
-  }
-  @keyframes riseTagline{
-    0%{opacity:0;transform:translateY(10px)}
-    100%{opacity:1;transform:translateY(0)}
-  }
-
-  /* ── status + progress ─────────────────────────────── */
-  .loader-row{
-    display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:36px;
-    z-index:2;
-    opacity:1;transform:translateY(0);
-    animation:riseLoader .6s ease 1.0s both;
-  }
-  @keyframes riseLoader{
-    0%{opacity:0;transform:translateY(10px)}
-    100%{opacity:1;transform:translateY(0)}
-  }
-
-  .status{color:var(--muted);font-size:13px;font-weight:500;min-height:18px;letter-spacing:.04em;text-align:center}
-  .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite}
-  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
-
-  .track{width:min(45vw,190px);height:4px;border-radius:999px;background:#1C2233;overflow:hidden;position:relative}
-  .fill{
-    height:100%;width:100%;border-radius:999px;
-    background:linear-gradient(90deg,#7C4DFF,#FF2E9E,#00C8FF);
-    transform-origin:left center;
-    animation:fillProgress 2.2s cubic-bezier(.3,0,.2,1) 1.0s both;
-  }
-  @keyframes fillProgress{
-    0%{transform:scaleX(0)}
-    100%{transform:scaleX(1)}
-  }
-
-  .foot{position:absolute;bottom:22px;font-size:11px;color:#565E72;letter-spacing:.08em;text-align:center;font-weight:500;z-index:2}
-
-  /* ── accessibility ─────────────────────────────────── */
   @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0ms !important;animation-iteration-count:1 !important}
-    .arm-1,.arm-2,.arm-3,.arm-4{stroke-dasharray:none !important;stroke-dashoffset:0 !important;opacity:1 !important}
-    .wordmark,.tagline,.loader-row,.glow{opacity:1 !important;transform:none !important}
-    .fill{transform:scaleX(1) !important}
+    .mark-draw{opacity:0 !important}
+    .mark-static{opacity:1 !important}
   }
 </style>
 
@@ -1046,174 +971,207 @@ html, body {
 
 <!-- ==================== ARENAX SPLASH / LOADING SCREEN ==================== -->
 <div class="splash" id="sSplash">
-  <div class="glow"></div>
+  <div class="mark">
 
-  <div class="logo">
-    <!-- the 4-blade X mark -->
-    <div class="mark">
-      <svg viewBox="0 0 512 512" aria-label="ArenaX Logo">
-        <g>
-          <line class="arm arm-1" x1="316.8" y1="246.1" x2="401.7" y2="161.2"/>
-          <line class="arm arm-2" x1="265.9" y1="316.8" x2="350.8" y2="401.7"/>
-          <line class="arm arm-3" x1="195.2" y1="265.9" x2="110.3" y2="350.8"/>
-          <line class="arm arm-4" x1="246.1" y1="195.2" x2="161.2" y2="110.3"/>
-        </g>
-      </svg>
-    </div>
+    <!-- static ArenaX logo -->
+    <svg class="mark-static" viewBox="0 0 512 512" aria-label="ArenaX">
+      <g stroke-linecap="round" stroke-width="72" fill="none">
+        <line x1="316.8" y1="246.1" x2="401.7" y2="161.2" stroke="#7C4DFF"/>
+        <line x1="265.9" y1="316.8" x2="350.8" y2="401.7" stroke="#FF2E9E"/>
+        <line x1="195.2" y1="265.9" x2="110.3" y2="350.8" stroke="#00C8FF"/>
+        <line x1="246.1" y1="195.2" x2="161.2" y2="110.3" stroke="#00D99E"/>
+      </g>
+    </svg>
 
-    <div class="wordmark">
-      <span>Arena</span><svg class="x-glyph" viewBox="0 0 104 112" aria-hidden="true">
-        <defs>
-          <linearGradient id="wxa" x1="12" y1="100" x2="92" y2="12" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#9B7BFF"/>
-            <stop offset="100%" stop-color="#3DD8FF"/>
-          </linearGradient>
-          <linearGradient id="wxb" x1="12" y1="12" x2="92" y2="100" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#FF5CB0"/>
-            <stop offset="100%" stop-color="#FF9A66"/>
-          </linearGradient>
-          <mask id="wxm" maskUnits="userSpaceOnUse" x="0" y="0" width="104" height="112">
-            <rect width="104" height="112" fill="#ffffff"/>
-            <line x1="12" y1="12" x2="92" y2="100" stroke="#000000" stroke-width="43" stroke-linecap="round"/>
-          </mask>
-        </defs>
-        <g stroke-linecap="round" fill="none">
-          <g mask="url(#wxm)">
-            <line x1="12" y1="100" x2="92" y2="12" stroke="url(#wxa)" stroke-width="30"/>
-          </g>
-          <line x1="12" y1="12" x2="92" y2="100" stroke="url(#wxb)" stroke-width="30"/>
-        </g>
-      </svg>
-    </div>
+    <!-- rolling draw animation (same mark, blades redraw from center in a wave) -->
+    <svg class="mark-draw" viewBox="0 0 512 512" id="drawSvg">
+      <g stroke-linecap="round" stroke-width="72" fill="none">
+        <line x1="316.8" y1="246.1" x2="401.7" y2="161.2" stroke="#7C4DFF" stroke-dasharray="121" stroke-dashoffset="121">
+          <animate attributeName="stroke-dashoffset" values="121;0;0" keyTimes="0;0.3;1" dur="2.8s" begin="0s" repeatCount="indefinite"/>
+        </line>
+        <line x1="265.9" y1="316.8" x2="350.8" y2="401.7" stroke="#FF2E9E" stroke-dasharray="121" stroke-dashoffset="121">
+          <animate attributeName="stroke-dashoffset" values="121;0;0" keyTimes="0;0.3;1" dur="2.8s" begin="-2.1s" repeatCount="indefinite"/>
+        </line>
+        <line x1="195.2" y1="265.9" x2="110.3" y2="350.8" stroke="#00C8FF" stroke-dasharray="121" stroke-dashoffset="121">
+          <animate attributeName="stroke-dashoffset" values="121;0;0" keyTimes="0;0.3;1" dur="2.8s" begin="-1.4s" repeatCount="indefinite"/>
+        </line>
+        <line x1="246.1" y1="195.2" x2="161.2" y2="110.3" stroke="#00D99E" stroke-dasharray="121" stroke-dashoffset="121">
+          <animate attributeName="stroke-dashoffset" values="121;0;0" keyTimes="0;0.3;1" dur="2.8s" begin="-0.7s" repeatCount="indefinite"/>
+        </line>
+      </g>
+    </svg>
 
-    <div class="tagline">ENTER THE ARENA</div>
   </div>
-
-  <div class="loader-row">
-    <div class="status dots" id="splashStatus">Preparing the arena</div>
-    <div class="track"><div class="fill"></div></div>
-  </div>
-
-  <div class="foot">© 2026 ArenaX</div>
 </div>
 
 <script>
-  /* ── ArenaX Splash Controller API (asset-aware) ── */
+  /* ═══════════════════════════════════════════════════════════
+     ArenaX Splash Controller — Robust Asset & Auth Preloader
+     - Static logo (0 → 3s)
+     - Rolling draw animation starts at 3s and loops continuously
+     - Mandatory internal background image preload ('/bg.png' / 'public/bg.png')
+     - Auth verification completion gate
+     - Smooth fade out with single execution guard
+     ═══════════════════════════════════════════════════════════ */
   var ArenaSplash = {
     startTime: Date.now(),
-    minDuration: 2800,
+    minDuration: 3000,
     isFinished: false,
-    appReady: false,
-    assetsReady: false,
-    _assetsPromise: null,
+    authReady: false,
+    bgReady: false,
+    bgSuccess: false,
+    _finishingTimeout: null,
+
+    // Status reporter helper
     status: function(text){
-      var el = document.getElementById('splashStatus');
-      if (el) {
-        if (text === 'Ready') {
-          el.textContent = 'Ready';
-          el.classList.remove('dots');
-        } else {
-          el.textContent = text;
-          el.classList.add('dots');
-        }
-      }
+      // Kept for backward compatibility with existing main.js calls
     },
-    _setProgress: function(pct){
-      var fill = document.querySelector && document.querySelector('#sSplash .fill');
-      if (!fill) return;
-      fill.style.animation = 'none';
-      fill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, pct)) + ')';
-    },
-    preloadAssets: function(assetUrls){
-      var self = this;
-      assetUrls = assetUrls || [
-        'arenaX.png', 'AX.png', 'event.png', 'heart.png',
-        'rose.png', 'rocket.png', 'poptrophy.png', 'moment.png'
-      ];
-      var total = assetUrls.length;
-      var done = 0;
-      self.status('Loading assets');
 
-      var loaders = assetUrls.map(function(url){
-        return new Promise(function(resolve){
-          var img = new Image();
-          img.onload  = function(){ done++; self._setProgress(done / total); resolve(); };
-          img.onerror = function(){ done++; self._setProgress(done / total); resolve(); };
-          img.src = url;
-        });
-      });
-
-      self._assetsPromise = Promise.all(loaders).then(function(){
-        self.assetsReady = true;
-        self._setProgress(1);
-        self._tryFinish();
-      });
-      return self._assetsPromise;
-    },
+    // Evaluate all completion gates
     _tryFinish: function(){
       if (this.isFinished) return;
-      if (!this.assetsReady || !this.appReady) return;
-      if (this._finishingTimeout) {
-        clearTimeout(this._finishingTimeout);
-        this._finishingTimeout = null;
-      }
+      // Splash cannot finish while required image is still downloading OR auth is pending
+      if (!this.bgReady || !this.authReady) return;
+
       var elapsed = Date.now() - this.startTime;
       var remaining = Math.max(0, this.minDuration - elapsed);
       var self = this;
-      this._finishingTimeout = setTimeout(function(){ self._doFinish(); }, remaining);
+
+      if (this._finishingTimeout) {
+        clearTimeout(this._finishingTimeout);
+      }
+
+      this._finishingTimeout = setTimeout(function(){
+        self._doFinish();
+      }, remaining);
     },
+
     _doFinish: function(){
       if (this.isFinished) return;
       this.isFinished = true;
-      this.status('Ready');
-      var self = this;
-      setTimeout(function(){
-        document.body.classList.add('done');
-        // Only unhide sLogin if initial auth check has finished AND no user is logged in
-        var sLogin = document.getElementById('sLogin');
-        var sDash = document.getElementById('sDash');
-        if (sLogin && sDash && sLogin.classList.contains('hidden') && sDash.classList.contains('hidden')) {
-          if (window.__authInitialCheckDone && !window.currentUser && !window.userProfile) {
-            sLogin.classList.remove('hidden');
+
+      // Determine authenticated status securely
+      var hasActiveSession = !!(
+        (window.currentUser && window.userProfile) ||
+        (window.firebase && window.firebase.auth && window.firebase.auth().currentUser && window.__authInitialCheckDone)
+      );
+
+      var sLogin = document.getElementById('sLogin');
+      var sDash = document.getElementById('sDash');
+
+      if (hasActiveSession) {
+        // Authenticated user routes directly into application dashboard
+        if (sLogin) sLogin.classList.add('hidden');
+        if (sDash) sDash.classList.remove('hidden');
+      } else {
+        // Unauthenticated visitor routes directly to existing Login Page (no extra welcome/intermediate screen)
+        if (sDash) sDash.classList.add('hidden');
+        if (sLogin) {
+          sLogin.classList.remove('hidden');
+          if (typeof window.showAxAuthScreen === 'function') {
+            window.showAxAuthScreen('axSignin');
           }
         }
-        setTimeout(function(){
-          var splash = document.getElementById('sSplash');
-          if (splash) {
-            splash.style.pointerEvents = 'none';
-            splash.style.display = 'none';
-            splash.style.visibility = 'hidden';
-          }
-        }, 650);
-      }, 350);
+      }
+
+      // Smoothly fade out splash screen
+      document.body.classList.add('done');
+
+      setTimeout(function(){
+        var splash = document.getElementById('sSplash');
+        if (splash) {
+          splash.style.pointerEvents = 'none';
+          splash.style.display = 'none';
+          splash.style.visibility = 'hidden';
+        }
+        document.body.style.overflow = '';
+      }, 550);
     },
+
     finish: function(force){
-      this.appReady = true;
-      if (force) { this.assetsReady = true; }
+      this.authReady = true;
+      if (force) {
+        // If force requested by an immediate modal (e.g. 2FA or password reset), mark bg as ready
+        this.bgReady = true;
+      }
       this._tryFinish();
     }
   };
+
   window.ArenaSplash = ArenaSplash;
 
-  // Kick off asset preloading immediately
-  ArenaSplash.preloadAssets();
+  // 1. Rolling draw switch at exactly 3 seconds
+  setTimeout(function(){
+    document.body.classList.add('draw');
+    var drawSvg = document.getElementById('drawSvg');
+    if (drawSvg) {
+      try {
+        if (typeof drawSvg.setCurrentTime === 'function') {
+          drawSvg.setCurrentTime(0);
+        }
+      } catch (e) {}
+    }
+    // Check if gates are already met when 3s mark passes
+    ArenaSplash._tryFinish();
+  }, 3000);
 
-  // Auto safety trigger: ensures splash exits cleanly even if auth or network takes time
+  // 2. Preload required "public/bg.png" (served via Vite as "/bg.png")
+  (function startBgPreload() {
+    var img = new Image();
+    var settled = false;
+
+    function onComplete(success, path) {
+      if (settled) return;
+      settled = true;
+      ArenaSplash.bgReady = true;
+      ArenaSplash.bgSuccess = success;
+      console.log('[ArenaSplash] Background asset preload:', success ? 'Loaded (' + path + ')' : 'Safe fallback applied (' + path + ')');
+      ArenaSplash._tryFinish();
+    }
+
+    img.onload = function() {
+      onComplete(true, img.src);
+    };
+
+    img.onerror = function() {
+      // If absolute root path failed, attempt relative path
+      if (img.src.indexOf('/bg.png') !== -1 && img.src.indexOf('./bg.png') === -1) {
+        var relImg = new Image();
+        relImg.onload = function() { onComplete(true, 'bg.png'); };
+        relImg.onerror = function() { onComplete(false, 'bg.png (error)'); };
+        relImg.src = 'bg.png';
+      } else {
+        onComplete(false, img.src + ' (error)');
+      }
+    };
+
+    // Safe error recovery timeout (8 seconds): prevents permanent freeze if network drops
+    setTimeout(function() {
+      if (!settled) {
+        console.warn('[ArenaSplash] Background asset network timeout (8s). Proceeding with safe error-handling fallback.');
+        onComplete(false, 'timeout');
+      }
+    }, 8000);
+
+    // Initiate download immediately
+    img.src = '/bg.png';
+  })();
+
+  // 3. Safety trigger: if auth listener takes an extraordinarily long time, allow startup to conclude safely
   setTimeout(function(){
     if (window.ArenaSplash && !window.ArenaSplash.isFinished) {
-      // Fallback: if auth has resolved or if maximum startup time reached
+      console.log('[ArenaSplash] Startup safety trigger fired at 6s');
       window.ArenaSplash.finish(true);
     }
-  }, 4000);
+  }, 6000);
 
-  // Early detection of password reset or 2FA login verification token on root URL (GitHub Pages SPA)
+  // 4. Early detection of password reset or 2FA login verification token on root URL (GitHub Pages SPA)
   (function() {
     try {
       var searchParams = new URLSearchParams(window.location.search);
       var rToken = searchParams.get('resetToken') || searchParams.get('token');
       var lvToken = searchParams.get('loginVerify');
       if (rToken) {
-        // Fast-track splash dismissal so reset password screen opens immediately
         if (window.ArenaSplash) {
           window.ArenaSplash.finish(true);
         }
@@ -1222,7 +1180,6 @@ html, body {
           mReset.classList.remove('hidden');
         }
       } else if (lvToken) {
-        // Fast-track splash dismissal so 2FA verification screen opens immediately
         if (window.ArenaSplash) {
           window.ArenaSplash.finish(true);
         }
@@ -1305,6 +1262,11 @@ html, body {
       height: 56px;
       display: block;
       z-index: 1;
+      pointer-events: none;
+    }
+    .ax-auth-wave path {
+      fill: var(--ax-paper, var(--bg, #090b11)) !important;
+      transition: fill 0.2s ease;
     }
     .ax-auth-brand {
       position: relative;
@@ -1531,28 +1493,34 @@ html, body {
     .ax-btn-primary {
       width: 100%;
       padding: 15px;
-      border: none;
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 14px;
-      background: linear-gradient(120deg, var(--ax-coral-2), var(--ax-coral-deep));
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
+      background: linear-gradient(125deg, #FF7B6B 0%, #E86C5C 45%, #C94A38 100%);
+      color: #ffffff !important;
+      font-size: 15.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
       cursor: pointer;
-      box-shadow: 0 14px 24px rgba(216,95,79,0.35);
-      transition: transform 0.12s ease, filter 0.15s ease;
+      box-shadow: 0 10px 24px rgba(232, 108, 92, 0.45);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 9px;
+    }
+    .ax-btn-primary span,
+    .ax-btn-primary i {
+      color: #ffffff !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
     .ax-btn-primary:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.03);
+      transform: translateY(-1.5px);
+      filter: brightness(1.06);
+      box-shadow: 0 14px 28px rgba(232, 108, 92, 0.6);
     }
     .ax-btn-primary:active {
       transform: translateY(0);
-      filter: brightness(0.97);
+      filter: brightness(0.95);
     }
     .ax-switch-line {
       text-align: center;
@@ -1574,12 +1542,13 @@ html, body {
       display: flex;
       align-items: center;
       gap: 12px;
-      color: #C9B9B4;
+      color: var(--ax-ink-soft);
       font-size: 11px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       font-weight: 700;
       margin: 18px 0;
       text-transform: uppercase;
+      opacity: 0.75;
     }
     .ax-divider-or::before,
     .ax-divider-or::after {
@@ -1587,34 +1556,51 @@ html, body {
       flex: 1;
       height: 1px;
       background: var(--ax-line);
+      opacity: 0.8;
     }
     .ax-socials {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 8px;
     }
     .ax-social-btn {
       flex: 1;
-      padding: 12px 10px;
+      padding: 12px 14px;
       border-radius: 12px;
       border: 1.5px solid var(--ax-line);
-      background: #fff;
-      font-size: 13px;
+      background: var(--panel, #121624);
+      font-size: 13.5px;
       font-weight: 700;
       color: var(--ax-ink);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
-      transition: all 0.15s ease;
+      gap: 9px;
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
     .ax-social-btn:hover {
       border-color: var(--ax-coral-2);
-      background: #FFFDFD;
+      background: var(--panel-2, #181d2f);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
     .ax-social-btn:active {
       transform: scale(0.98);
+    }
+    .ax-social-btn span {
+      color: var(--ax-ink) !important;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .ax-social-btn i.fa-discord,
+    .ax-social-btn .fa-discord {
+      color: #5865F2 !important;
+      font-size: 17px;
+    }
+    .ax-social-btn svg {
+      flex-shrink: 0;
     }
     .ax-back-btn {
       position: absolute;
@@ -1639,11 +1625,11 @@ html, body {
     }
     .ax-guest-btn {
       width: 100%;
-      padding: 11px;
+      padding: 12px;
       border-radius: 12px;
       border: 1.5px dashed var(--ax-line);
       background: transparent;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
       color: var(--ax-ink-soft);
       cursor: pointer;
@@ -1656,20 +1642,38 @@ html, body {
     }
     .ax-guest-btn:hover {
       border-color: var(--ax-coral-2);
-      color: var(--ax-coral-3);
-      background: #fff;
+      color: var(--ax-coral-1);
+      background: var(--panel-2, #181d2f);
     }
     .ax-err-box {
       margin-bottom: 12px;
       padding: 10px 14px;
       border-radius: 12px;
-      background: #FFF0ED;
-      border: 1px solid rgba(232, 108, 92, 0.4);
-      color: #D85F4F;
+      background: rgba(232, 108, 92, 0.14);
+      border: 1px solid rgba(232, 108, 92, 0.35);
+      color: #FFAAA0;
       font-size: 12px;
       font-weight: 600;
       text-align: center;
       line-height: 1.4;
+    }
+    .ax-terms-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--panel, #121624);
+      border: 1px solid var(--ax-line);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .ax-terms-box label {
+      font-size: 11.5px;
+      color: var(--ax-ink-soft);
+      line-height: 1.45;
+      cursor: pointer;
+      user-select: none;
     }
     @media (max-width: 420px) {
       .ax-auth-top { padding-left: 24px; padding-right: 24px; }
@@ -1682,8 +1686,8 @@ html, body {
   <!-- Phone frame wrapper -->
   <div class="ax-auth-phone">
 
-    <!-- ============ 1. WELCOME SCREEN ============ -->
-    <div class="ax-auth-screen active" id="axWelcome">
+    <!-- ============ 1. WELCOME SCREEN (Bypassed directly to Sign in) ============ -->
+    <div class="ax-auth-screen" id="axWelcome">
       <div class="ax-auth-top">
         <div class="ax-auth-brand"><span class="ax-dot"></span> ARENAX</div>
         <div class="ax-auth-art">
@@ -1692,7 +1696,7 @@ html, body {
           <div class="ax-glyph">🎮</div>
         </div>
         <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
-          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="var(--ax-paper, #090b11)"/>
         </svg>
       </div>
       <div class="ax-auth-body-wrap">
@@ -1709,21 +1713,21 @@ html, body {
       </div>
     </div>
 
-    <!-- ============ 2. SIGN IN SCREEN ============ -->
-    <div class="ax-auth-screen" id="axSignin">
+    <!-- ============ 2. SIGN IN SCREEN (DIRECT LANDING) ============ -->
+    <div class="ax-auth-screen active" id="axSignin">
       <div class="ax-auth-top ax-form-top">
-        <button class="ax-back-btn" onclick="window.showAxAuthScreen('axWelcome')">←</button>
+        <button class="ax-back-btn hidden" onclick="window.showAxAuthScreen('axSignin')">←</button>
         <div class="ax-form-title">Sign in</div>
         <div class="ax-form-sub">Enter your credentials to access your tournament account.</div>
         <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
-          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="var(--ax-paper, #090b11)"/>
         </svg>
       </div>
 
       <div class="ax-form-body">
         <!-- Error & Notice Banner -->
         <div id="axSigninErr" class="ax-err-box hidden"></div>
-        <button id="axBtnResendVerify" type="button" class="hidden text-xs text-[#E86C5C] font-bold hover:underline w-full text-center py-1.5 cursor-pointer bg-[#FFF0ED] border border-[#F0DEDA] rounded-xl mb-3 transition">
+        <button id="axBtnResendVerify" type="button" class="hidden text-xs text-[#E86C5C] font-bold hover:underline w-full text-center py-2 cursor-pointer bg-[var(--panel,#121624)] border border-[var(--ax-line)] hover:border-[#E86C5C] rounded-xl mb-3 transition">
           ✉️ Resend Verification Email
         </button>
 
@@ -1752,9 +1756,9 @@ html, body {
         </div>
 
         <!-- Terms Agreement Checkbox -->
-        <div class="flex items-start gap-2 p-2.5 bg-[#FFF0ED]/60 border border-[#F0DEDA] rounded-xl mb-4 text-left">
+        <div class="ax-terms-box">
           <input id="axSigninTerms" type="checkbox" checked class="mt-0.5 w-3.5 h-3.5 accent-[#E86C5C] rounded cursor-pointer" />
-          <label for="axSigninTerms" class="text-[11px] text-[#8A7A75] leading-normal cursor-pointer select-none">
+          <label for="axSigninTerms">
             I agree to the <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mTerms')?.classList.remove('hidden')">Terms</span> & <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mPrivacy')?.classList.remove('hidden')">Privacy Policy</span>.
           </label>
         </div>
@@ -1769,11 +1773,11 @@ html, body {
 
         <!-- Social Logins (Discord & Google wired to real auth) -->
         <div class="ax-socials">
-          <button id="axBtnSocialDiscord" type="button" class="ax-social-btn text-[#5865F2]">
-            <i class="fab fa-discord text-base"></i>
+          <button id="axBtnSocialDiscord" type="button" class="ax-social-btn" aria-label="Sign in with Discord">
+            <i class="fab fa-discord"></i>
             <span>Discord</span>
           </button>
-          <button id="axBtnSocialGoogle" type="button" class="ax-social-btn">
+          <button id="axBtnSocialGoogle" type="button" class="ax-social-btn" aria-label="Sign in with Google">
             <svg class="w-4 h-4" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
               <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
@@ -1802,7 +1806,7 @@ html, body {
         <div class="ax-form-title">Create account</div>
         <div class="ax-form-sub">Sign up to claim your player tag and join tournaments.</div>
         <svg class="ax-auth-wave" viewBox="0 0 390 60" preserveAspectRatio="none">
-          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="#FFF9F7"/>
+          <path d="M0,40 C90,80 300,0 390,30 L390,60 L0,60 Z" fill="var(--ax-paper, #090b11)"/>
         </svg>
       </div>
 
@@ -1835,9 +1839,11 @@ html, body {
           </div>
         </div>
 
-        <div class="ax-row-fine">
-          <label class="ax-check">
-            <input type="checkbox" id="axSignupTerms" checked> I agree to the <span class="text-[#E86C5C] font-semibold hover:underline" onclick="document.getElementById('mTerms')?.classList.remove('hidden')">Terms</span> & <span class="text-[#E86C5C] font-semibold hover:underline" onclick="document.getElementById('mPrivacy')?.classList.remove('hidden')">Privacy Policy</span>
+        <!-- Terms Agreement Checkbox -->
+        <div class="ax-terms-box">
+          <input type="checkbox" id="axSignupTerms" checked class="mt-0.5 w-3.5 h-3.5 accent-[#E86C5C] rounded cursor-pointer">
+          <label for="axSignupTerms">
+            I agree to the <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mTerms')?.classList.remove('hidden')">Terms</span> & <span class="text-[#E86C5C] font-semibold hover:underline cursor-pointer" onclick="document.getElementById('mPrivacy')?.classList.remove('hidden')">Privacy Policy</span>.
           </label>
         </div>
 
@@ -1851,11 +1857,11 @@ html, body {
 
         <!-- Social Sign Up -->
         <div class="ax-socials">
-          <button id="axBtnSignupDiscord" type="button" class="ax-social-btn text-[#5865F2]">
-            <i class="fab fa-discord text-base"></i>
+          <button id="axBtnSignupDiscord" type="button" class="ax-social-btn" aria-label="Sign up with Discord">
+            <i class="fab fa-discord"></i>
             <span>Discord</span>
           </button>
-          <button id="axBtnSignupGoogle" type="button" class="ax-social-btn">
+          <button id="axBtnSignupGoogle" type="button" class="ax-social-btn" aria-label="Sign up with Google">
             <svg class="w-4 h-4" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
               <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
