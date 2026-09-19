@@ -2382,14 +2382,14 @@ html, body {
 
     <!-- ── HOME TAB ── -->
     <section id="tHome" class="tab space-y-4 max-w-md mx-auto">
-      <!-- Top Interface Header Card matching User Image -->
-      <div class="relative overflow-hidden rounded-2xl bg-panel border border-bdr p-4 shadow-sm bg-cover bg-center bg-no-repeat" style="background-image: url('/bg.png');">
-        <!-- Overlay to ensure readability in light theme -->
-        <div class="absolute inset-0 bg-white/75 pointer-events-none"></div>
+      <!-- Top Interface Header Card matching User Image (Dark themed) -->
+      <div class="relative overflow-hidden rounded-2xl bg-card border border-bdr p-4 shadow-lg bg-cover bg-center bg-no-repeat" style="background-image: url('/bg.png');">
+        <!-- Overlay: dark atmospheric gradient in dark theme, light in light theme -->
+        <div class="absolute inset-0 bg-gradient-to-b from-[#090c16]/90 via-[#0c101d]/92 to-[#080a12]/96 [data-theme='light']_:from-white/80 [data-theme='light']_:to-slate-100/90 pointer-events-none"></div>
 
         <!-- Background Mosque Silhouette & Ambient Glow -->
-        <div class="absolute inset-0 opacity-10 pointer-events-none flex items-end justify-center">
-          <svg viewBox="0 0 500 150" class="w-full h-full text-slate-700 fill-current">
+        <div class="absolute inset-0 opacity-15 pointer-events-none flex items-end justify-center">
+          <svg viewBox="0 0 500 150" class="w-full h-full text-purple-400/25 fill-current">
             <path d="M50,150 L50,80 L60,80 L60,150 M440,150 L440,80 L450,80 L450,150 M250,150 C200,150 190,70 250,50 C310,70 300,150 250,150 Z M190,150 L190,100 L200,100 L200,150 M300,150 L300,100 L310,100 L310,150" />
           </svg>
         </div>
@@ -2398,26 +2398,26 @@ html, body {
         <div class="relative z-10 flex items-center justify-between gap-3 mb-6">
           <div class="flex items-center gap-3">
             <!-- User Avatar -->
-            <div onclick="switchTab('Profile')" class="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-300 cursor-pointer hover:scale-105 transition shadow-sm flex-shrink-0">
+            <div onclick="switchTab('Profile')" class="w-12 h-12 rounded-full overflow-hidden border-2 border-gold/40 hover:border-gold cursor-pointer hover:scale-105 transition shadow-md flex-shrink-0">
               <img id="homeAvImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-full h-full object-cover"/>
             </div>
 
             <!-- AX Coins Pill (Click to open Wallet tab) -->
-            <div onclick="switchTab('Wallet')" class="flex items-center gap-2 bg-white/95 hover:bg-white border border-slate-200/90 px-3.5 py-1.5 rounded-full cursor-pointer transition shadow-sm">
-              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-xs font-black shadow">
+            <div onclick="switchTab('Wallet')" class="flex items-center gap-2 bg-[#141928]/90 [data-theme='light']_:bg-white/95 hover:bg-[#1c2338] [data-theme='light']_:hover:bg-white border border-gold/30 [data-theme='light']_:border-slate-200 px-3.5 py-1.5 rounded-full cursor-pointer transition shadow-md group">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-xs font-black shadow group-hover:scale-105 transition">
                 <i class="fas fa-coins"></i>
               </div>
               <span id="homeCoinsVal" class="font-extrabold text-sm text-t1 tracking-wide">225</span>
-              <span class="text-amber-600 font-bold text-sm ml-0.5">+</span>
+              <span class="text-gold font-bold text-sm ml-0.5">+</span>
             </div>
           </div>
 
           <!-- Events Star Button -->
-          <button onclick="alert('Events section coming soon!')" class="flex flex-col items-center justify-center transition group cursor-pointer">
-            <div class="w-9 h-9 rounded-full bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center text-base shadow-sm group-hover:scale-110 transition">
+          <button onclick="switchTab('Tour')" class="flex flex-col items-center justify-center transition group cursor-pointer" title="Tournaments & Events">
+            <div class="w-9 h-9 rounded-full bg-teal-500/15 [data-theme='light']_:bg-teal-50 border border-teal-500/30 [data-theme='light']_:border-teal-200 text-teal-400 [data-theme='light']_:text-teal-600 flex items-center justify-center text-base shadow-sm group-hover:scale-110 group-hover:border-teal-400 transition">
               <i class="fas fa-star"></i>
             </div>
-            <span class="text-[11px] font-medium text-t2 group-hover:text-teal-600 transition mt-0.5">Events</span>
+            <span class="text-[11px] font-semibold text-t2 group-hover:text-teal-400 transition mt-0.5">Events</span>
           </button>
         </div>
 
@@ -2425,8 +2425,8 @@ html, body {
         <div class="relative z-10 grid grid-cols-3 gap-2 pt-1 text-center">
           <!-- Ranking -->
           <div onclick="openRankingModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-purple-100 to-purple-50 border-2 border-purple-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
-              <div class="absolute -top-1 -left-1 text-gold text-xs drop-shadow">
+            <div class="relative w-14 h-14 rounded-full bg-gradient-to-b from-purple-500/20 to-purple-900/40 [data-theme='light']_:from-purple-100 [data-theme='light']_:to-purple-50 border-2 border-purple-500/40 [data-theme='light']_:border-purple-300 p-0.5 flex items-center justify-center shadow-md group-hover:scale-105 group-hover:border-purple-400 transition">
+              <div class="absolute -top-1 -left-1 text-gold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 <i class="fas fa-crown"></i>
               </div>
               <img id="homeRankingAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Ranking" class="w-11 h-11 rounded-full object-cover pointer-events-none"/>
@@ -2436,9 +2436,9 @@ html, body {
 
           <!-- Tasks -->
           <div onclick="openTasksModal()" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-sky-100 to-sky-50 border-2 border-sky-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
-              <div class="w-10 h-10 bg-white/80 rounded-xl flex items-center justify-center text-xl shadow-xs">
-                <i class="fas fa-clipboard-check text-rose-500"></i>
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-sky-500/20 to-sky-900/40 [data-theme='light']_:from-sky-100 [data-theme='light']_:to-sky-50 border-2 border-sky-500/40 [data-theme='light']_:border-sky-300 p-0.5 flex items-center justify-center shadow-md group-hover:scale-105 group-hover:border-sky-400 transition">
+              <div class="w-10 h-10 bg-[#0d121f] [data-theme='light']_:bg-white/80 border border-sky-500/25 [data-theme='light']_:border-transparent rounded-xl flex items-center justify-center text-xl shadow-xs group-hover:border-sky-400 transition">
+                <i class="fas fa-clipboard-check text-rose-400"></i>
               </div>
             </div>
             <span class="text-[11px] font-semibold text-t2 group-hover:text-t1 transition mt-1.5">Tasks</span>
@@ -2446,9 +2446,9 @@ html, body {
 
           <!-- Friends -->
           <div onclick="switchTab('Chat')" class="flex flex-col items-center cursor-pointer group">
-            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-emerald-300 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition">
-              <div class="w-10 h-10 bg-white/80 rounded-xl flex items-center justify-center text-xl shadow-xs">
-                <i class="fas fa-user-alt text-emerald-600"></i>
+            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-b from-emerald-500/20 to-emerald-900/40 [data-theme='light']_:from-emerald-100 [data-theme='light']_:to-emerald-50 border-2 border-emerald-500/40 [data-theme='light']_:border-emerald-300 p-0.5 flex items-center justify-center shadow-md group-hover:scale-105 group-hover:border-emerald-400 transition">
+              <div class="w-10 h-10 bg-[#0d121f] [data-theme='light']_:bg-white/80 border border-emerald-500/25 [data-theme='light']_:border-transparent rounded-xl flex items-center justify-center text-xl shadow-xs group-hover:border-emerald-400 transition">
+                <i class="fas fa-user-alt text-emerald-400"></i>
               </div>
             </div>
             <span class="text-[11px] font-semibold text-t2 group-hover:text-t1 transition mt-1.5">Friends</span>
@@ -2485,7 +2485,7 @@ html, body {
                 <i class="fas fa-comments"></i>
               </div>
               <div>
-                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-600 transition">Message</h4>
+                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-500 transition">Message</h4>
                 <p class="text-xs text-t2">chat with your friend</p>
               </div>
             </div>
@@ -2501,8 +2501,26 @@ html, body {
                 <i class="fas fa-camera text-amber-500"></i>
               </div>
               <div>
-                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-600 transition">Moments</h4>
+                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-500 transition">Moments</h4>
                 <p class="text-xs text-t2">Watch highlights & posts</p>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-panel border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-t1 transition text-xs">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+
+          <!-- Team Card -->
+          <div id="btnExploreTeam" onclick="window.openTeamsModal ? window.openTeamsModal() : (typeof openGuildsModal === 'function' ? openGuildsModal() : switchTab('Tour'))" class="sm:col-span-2 p-3.5 bg-card hover:bg-panel border border-bdr hover:border-gold/50 rounded-2xl flex items-center justify-between transition cursor-pointer group shadow-sm">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition shrink-0">
+                <i class="fas fa-shield-halved text-purple-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-t1 text-sm group-hover:text-amber-500 transition flex items-center gap-2">
+                  Team <span class="text-[9px] bg-gold/20 text-gold border border-gold/40 px-1.5 py-0.2 rounded font-black uppercase tracking-wider">Guild & Squad</span>
+                </h4>
+                <p class="text-xs text-t2">Guilds, wars, roster & team fights</p>
               </div>
             </div>
             <div class="w-8 h-8 rounded-full bg-panel border border-bdr group-hover:border-gold/40 flex items-center justify-center text-t2 group-hover:text-t1 transition text-xs">
