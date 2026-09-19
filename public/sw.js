@@ -41,8 +41,8 @@ if (typeof firebase !== 'undefined' && firebase.messaging) {
   }
 }
 
-// Cache & Offline Support - Bumped to v13 to invalidate stale client caches immediately
-const CACHE_NAME = 'arenax-cache-v13';
+// Cache & Offline Support - Bumped to v14 to invalidate stale client caches and cache bg.png
+const CACHE_NAME = 'arenax-cache-v14';
 const ASSETS = [
   './',
   'index.html',
@@ -51,6 +51,7 @@ const ASSETS = [
   'icon-512.png',
   'arenax_logo.jpg',
   'favicon.ico',
+  'bg.png',
   'https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
 ];
