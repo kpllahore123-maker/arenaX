@@ -3,6 +3,8 @@
 // ==========================================
 
 import './account-standing.js';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 function getNumericPlayerId(uid, currentHandle) {
   if (currentHandle) {
@@ -294,9 +296,118 @@ if ('serviceWorker' in navigator && !isCapacitorNative) {
   }
 }
 
+// Native Capacitor Push Notifications Handler
+let nativePushListenersAttached = false;
+
+async function registerNativePushNotifications(showSuccessAlert = false) {
+  try {
+    if (!nativePushListenersAttached) {
+      nativePushListenersAttached = true;
+
+      await PushNotifications.addListener('registration', async (token) => {
+        console.log("FCM (Native): Device token registered:", token.value);
+        const fcmToken = token.value;
+        if (fcmToken) {
+          localStorage.setItem('fcm_token_arena_x', fcmToken);
+          localStorage.setItem('arena_x_native_push_granted', 'true');
+          updateDiagnosticUI();
+
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            try {
+              await setDoc(doc(db, 'users', currentUser.uid), {
+                fcmToken: fcmToken,
+                fcmTokenUpdatedAt: serverTimestamp(),
+                notificationsEnabled: true,
+                notificationPermission: 'granted',
+                platform: 'android'
+              }, { merge: true });
+              console.log("FCM (Native): Token successfully synced to Firestore for:", currentUser.uid);
+            } catch (err) {
+              console.error("FCM (Native): Error saving token to Firestore:", err);
+            }
+          }
+        }
+      });
+
+      await PushNotifications.addListener('registrationError', (err) => {
+        console.error("FCM (Native): Push registration error:", err);
+        showDiagnosticError("Push registration error: " + (err.error || JSON.stringify(err)));
+      });
+
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log("FCM (Native): Foreground push received:", notification);
+        if (typeof showToastNotification === 'function') {
+          showToastNotification(notification.title || '🔔 ArenaX Alert', notification.body || '');
+        }
+      });
+
+      await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        console.log("FCM (Native): Push action performed:", action);
+        const data = action.notification?.data;
+        if (data && data.url) {
+          try {
+            window.location.hash = data.url;
+          } catch(e) {}
+        }
+      });
+    }
+
+    let permStatus = await PushNotifications.checkPermissions();
+    console.log("FCM (Native): Current permission state:", permStatus);
+
+    if (permStatus.receive === 'prompt' || permStatus.receive === 'prompt-with-rationale') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permStatus.receive === 'granted') {
+      localStorage.setItem('arena_x_native_push_granted', 'true');
+      localStorage.setItem('notifAsked', Date.now().toString());
+      await PushNotifications.register();
+
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            notificationsEnabled: true,
+            notificationPermission: 'granted',
+            notificationGrantedAt: new Date().toISOString(),
+            platform: 'android'
+          });
+        } catch(e) {}
+      }
+
+      updateDiagnosticUI();
+      if (showSuccessAlert) {
+        alert("🎉 Push notifications registered successfully!");
+      }
+      return true;
+    } else {
+      localStorage.setItem('notifAsked', Date.now().toString());
+      const deniedMsg = "Notification permission was not granted. You can enable it anytime in Android App Settings.";
+      showDiagnosticError(deniedMsg);
+      if (showSuccessAlert) {
+        alert("⚠️ " + deniedMsg);
+      }
+      return false;
+    }
+  } catch (err) {
+    console.error("FCM (Native): Error requesting native push permission:", err);
+    showDiagnosticError("Push Error: " + (err.message || String(err)));
+    if (showSuccessAlert) {
+      alert("⚠️ Error enabling notifications: " + (err.message || String(err)));
+    }
+    return false;
+  }
+}
+
 // FCM Diagnostic Methods
 async function requestFCMToken(showSuccessAlert = false) {
   showDiagnosticError(null);
+  if (isCapacitorNative) {
+    console.log("FCM: Detected native Capacitor Android APK, routing to PushNotifications flow.");
+    return await registerNativePushNotifications(showSuccessAlert);
+  }
   try {
     if (typeof Notification === 'undefined') {
       showDiagnosticError("Push notifications are not supported by this browser.");
@@ -397,7 +508,10 @@ function copyFCMToken() {
 }
 
 function updateDiagnosticUI() {
-  const perm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  let perm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  if (isCapacitorNative) {
+    perm = localStorage.getItem('arena_x_native_push_granted') === 'true' || localStorage.getItem('fcm_token_arena_x') ? 'granted' : 'default';
+  }
   
   const permEl = $('diagnosticPermission');
   if (permEl) {
@@ -6609,7 +6723,19 @@ $('btnNotifNotNow').addEventListener('click', () => {
 $('btnNotifAllow').addEventListener('click', async () => {
   $('mEnableNotifications').classList.add('hidden');
   
-  if (window.Notification) {
+  if (isCapacitorNative) {
+    try {
+      const granted = await registerNativePushNotifications(false);
+      if (granted) {
+        showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
+      } else {
+        showToastNotification('⚠️ Notifications Disabled', 'Permission was denied. You can enable it anytime in Android App Settings.');
+      }
+    } catch (nativeErr) {
+      console.error("Error enabling native notifications:", nativeErr);
+      showToastNotification('⚠️ Notification Notice', 'Please check notification permissions in Android settings.');
+    }
+  } else if (window.Notification) {
     try {
       if (Notification.permission === 'denied') {
         alert("⚠️ Notifications are currently blocked in your browser settings.\n\nTo enable them:\n1. Click the Lock/Tune icon (🔒) in your browser address bar.\n2. Tap 'Site settings' or 'Permissions'.\n3. Set 'Notifications' to 'Allow'.\n4. Refresh this page.");
