@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <base href="/" />
   <meta charset="UTF-8" />
@@ -24,6 +24,9 @@
       darkMode: 'class',
       theme: {
         extend: {
+          borderColor: {
+            DEFAULT: '#222842',
+          },
           colors: {
             gold: '#f0c040',
             darkBg: '#090b11',
@@ -49,6 +52,29 @@
     
     code, pre, .font-mono {
       font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Complete elimination of harsh white lines across dark theme */
+    *, ::before, ::after {
+      border-color: #222842;
+    }
+
+    hr {
+      border-color: #222842 !important;
+    }
+
+    .divide-y > :not([hidden]) ~ :not([hidden]),
+    .divide-x > :not([hidden]) ~ :not([hidden]),
+    [class*="divide-"] > :not([hidden]) ~ :not([hidden]) {
+      border-color: #222842 !important;
+    }
+
+    .border-white\/10, .border-white\/15, .border-white\/20, .border-white\/5 {
+      border-color: #222842 !important;
+    }
+
+    table, tr, td, th {
+      border-color: #222842 !important;
     }
 
     /* Custom Scrollbars */
@@ -162,42 +188,10 @@
     // Monitor Firebase Auth state
     onAuthStateChanged(auth, async (user) => {
       window.currentAuthUser = user;
-      if (user) {
-        const email = (user.email || '').toLowerCase();
-        const isAdminEmail = email.includes('kpllahore') || ['kpllahore123@gmail.com', 'admin@arenax.com', 'admin@arenax.gg'].includes(email);
-        const isAdminUid = (window.ADMIN_UIDS || []).includes(user.uid);
-        const isAuthorized = isAdminEmail || isAdminUid;
-        window.isCurrentAdminAuthorized = isAuthorized;
-
-        console.log("Admin Firebase Auth active:", user.email || user.uid, "Authorized:", isAuthorized);
-
-        if (isAuthorized) {
-          try {
-            const { doc, setDoc } = window.fsTools;
-            await setDoc(doc(window.fbDb, 'admins', user.uid), {
-              uid: user.uid,
-              email: user.email || 'admin@arenax.gg',
-              name: user.displayName || 'Admin',
-              role: 'Master Admin',
-              lastActive: new Date().toISOString()
-            }, { merge: true });
-          } catch (e) {
-            console.log("Admin doc sync note:", e.message);
-          }
-        }
-      } else {
-        window.isCurrentAdminAuthorized = false;
-      }
-
-      if (typeof window.updateAdminAuthPill === 'function') {
-        window.updateAdminAuthPill();
+      if (typeof window.handleAuthStateChange === 'function') {
+        window.handleAuthStateChange(user);
       }
     });
-
-    // Trigger initialization of admin app
-    if (typeof window.initAdminApp === 'function') {
-      window.initAdminApp();
-    }
   </script>
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen antialiased flex flex-col selection:bg-gold selection:text-black">
@@ -935,76 +929,169 @@
 
   <!-- ── AUTH / PIN LOCK SCREEN ── -->
   <div id="adminAuthOverlay" class="fixed inset-0 z-[9999] bg-darkBg/95 backdrop-blur-lg flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-cardBg border border-bdr rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden text-center">
+    <div class="w-full max-w-md bg-cardBg border border-bdr rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden text-center">
       <!-- Glow effect -->
       <div class="absolute -top-20 -left-20 w-44 h-44 bg-gold/15 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-20 -right-20 w-44 h-44 bg-amber-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <!-- Icon -->
-      <div class="flex justify-center">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold via-amber-500 to-yellow-600 p-[2px] shadow-lg shadow-gold/20">
-          <div class="w-full h-full bg-darkBg rounded-[14px] flex items-center justify-center font-black text-2xl text-gold">
-            <i class="fas fa-shield-halved"></i>
+      <!-- 1. LOADING / VERIFYING STATE -->
+      <div id="adminAuthLoading" class="hidden py-8 space-y-4">
+        <div class="flex justify-center">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-gold to-amber-500 p-[2px] shadow-lg shadow-gold/20 flex items-center justify-center">
+            <div class="w-full h-full bg-darkBg rounded-[14px] flex items-center justify-center">
+              <i class="fas fa-circle-notch fa-spin text-2xl text-gold"></i>
+            </div>
           </div>
         </div>
+        <div>
+          <h3 class="text-lg font-bold text-white tracking-tight">Verifying Credentials</h3>
+          <p class="text-xs text-slate-400 mt-1">Validating ArenaX account and administrative permissions on backend...</p>
+        </div>
       </div>
 
-      <div>
-        <h2 class="text-2xl font-black text-white tracking-tight">ArenaX Master Admin</h2>
-        <p class="text-xs text-slate-400 mt-1.5">Enter Master Passcode or Sign in with Authorized Google Account.</p>
+      <!-- 2. LOGIN FORM VIEW (EMAIL/PASS + GOOGLE ONLY) -->
+      <div id="adminLoginForm" class="space-y-5">
+        <!-- Icon -->
+        <div class="flex justify-center">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold via-amber-500 to-yellow-600 p-[2px] shadow-lg shadow-gold/20">
+            <div class="w-full h-full bg-darkBg rounded-[14px] flex items-center justify-center font-black text-2xl text-gold">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-tight">ArenaX Master Admin</h2>
+          <p class="text-xs text-slate-400 mt-1.5">Sign in with your registered ArenaX account.</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="authErrorMsg" class="hidden p-3 bg-red-500/15 border border-red-500/40 rounded-xl text-red-300 text-xs font-semibold text-left"></div>
+
+        <!-- Email & Password Form -->
+        <form id="adminEmailPassForm" onsubmit="handleEmailPasswordAdminLogin(event)" class="space-y-3.5 text-left">
+          <div class="space-y-1.5">
+            <label for="adminEmailInput" class="block text-xs font-bold text-slate-300">
+              <i class="fas fa-envelope text-slate-400 mr-1"></i> ArenaX Account Email
+            </label>
+            <input
+              id="adminEmailInput"
+              type="email"
+              required
+              autocomplete="username"
+              placeholder="Enter your registered email"
+              class="w-full bg-[#0d101a] border border-bdr focus:border-gold rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="adminPasswordInput" class="block text-xs font-bold text-slate-300">
+              <i class="fas fa-lock text-slate-400 mr-1"></i> ArenaX Password
+            </label>
+            <div class="relative">
+              <input
+                id="adminPasswordInput"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="Enter your password"
+                class="w-full bg-[#0d101a] border border-bdr focus:border-gold rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition pr-10"
+              />
+              <button
+                type="button"
+                onclick="toggleAdminPasswordVisibility()"
+                class="absolute right-3.5 top-3.5 text-slate-400 hover:text-white text-xs cursor-pointer p-0.5"
+                title="Toggle password visibility"
+              >
+                <i id="adminPassEyeIcon" class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button
+            id="adminSubmitBtn"
+            type="submit"
+            class="w-full py-3 bg-gradient-to-r from-gold via-amber-400 to-yellow-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-gold/20 flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            <i class="fas fa-shield-halved"></i> Sign In to Admin Panel
+          </button>
+        </form>
+
+        <div class="flex items-center gap-3 my-1">
+          <div class="h-px bg-bdr flex-1"></div>
+          <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">OR</span>
+          <div class="h-px bg-bdr flex-1"></div>
+        </div>
+
+        <!-- Google Sign In -->
+        <button
+          id="adminGoogleBtn"
+          type="button"
+          onclick="handleGoogleAdminLogin()"
+          class="w-full py-3 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-white font-bold text-xs border border-bdr flex items-center justify-center gap-2.5 transition active:scale-[0.99] cursor-pointer"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+            <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="pt-2 text-[11px] text-slate-500">
+          <a href="/" class="text-gold hover:underline inline-flex items-center gap-1.5">
+            <i class="fas fa-arrow-left text-[10px]"></i> Return to ArenaX
+          </a>
+        </div>
       </div>
 
-      <!-- Error Alert -->
-      <div id="authErrorMsg" class="hidden p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-xs font-semibold"></div>
+      <!-- 3. ACCESS DENIED SCREEN -->
+      <div id="adminAccessDeniedView" class="hidden space-y-5 text-center">
+        <div class="flex justify-center">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-500 via-red-600 to-amber-600 p-[2px] shadow-lg shadow-rose-500/20">
+            <div class="w-full h-full bg-darkBg rounded-[14px] flex items-center justify-center font-black text-2xl text-rose-400">
+              <i class="fas fa-ban"></i>
+            </div>
+          </div>
+        </div>
 
-      <!-- Quick Master Passcode Form -->
-      <div class="space-y-3 pt-2 text-left">
-        <label class="block text-xs font-bold text-slate-300">Master Passcode / PIN:</label>
-        <div class="relative">
-          <input
-            id="adminPinInput"
-            type="password"
-            placeholder="Enter admin passcode (e.g. arenax2026)"
-            class="w-full bg-[#0d101a] border border-bdr focus:border-gold rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition"
-            onkeydown="if(event.key === 'Enter') checkAdminPin()"
-          />
-          <button onclick="togglePinVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-white text-xs">
-            <i id="pinEyeIcon" class="fas fa-eye"></i>
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-tight">Admin Panel Access Denied</h2>
+          <div class="mt-3.5 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-slate-200 text-xs leading-relaxed">
+            <p id="deniedMsgText">Your ArenaX account has not been granted Admin Panel access. Please contact the ArenaX owner if you believe you should have access.</p>
+          </div>
+        </div>
+
+        <!-- Account details pill -->
+        <div class="p-3 bg-[#0d101a] border border-bdr rounded-xl text-left flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Authenticated Account</div>
+            <div id="deniedUserEmail" class="text-xs font-bold text-white truncate">unknown</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 whitespace-nowrap">
+            No Admin Rank
+          </span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2.5 pt-1">
+          <a
+            href="/"
+            class="w-full py-3 bg-gradient-to-r from-gold via-amber-400 to-yellow-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-gold/20 flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            <i class="fas fa-arrow-left"></i> Return to ArenaX
+          </a>
+          <button
+            type="button"
+            onclick="resetToAdminLogin()"
+            class="w-full py-2.5 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 font-bold text-xs border border-bdr flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
           </button>
         </div>
-        <button
-          onclick="checkAdminPin()"
-          class="w-full py-3 bg-gradient-to-r from-gold via-amber-400 to-yellow-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-gold/20 flex items-center justify-center gap-2 transition cursor-pointer"
-        >
-          <i class="fas fa-key"></i> Unlock Admin Console
-        </button>
       </div>
 
-      <div class="flex items-center gap-3 my-2">
-        <div class="h-px bg-bdr flex-1"></div>
-        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">OR</span>
-        <div class="h-px bg-bdr flex-1"></div>
-      </div>
-
-      <!-- Google Sign In -->
-      <button
-        onclick="signInAdminGoogle()"
-        class="w-full py-3 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-white font-bold text-xs border border-bdr flex items-center justify-center gap-2.5 transition active:scale-[0.99] cursor-pointer"
-      >
-        <svg class="w-4 h-4" viewBox="0 0 24 24">
-          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
-          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
-          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
-          <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
-        </svg>
-        Sign in with Google Admin
-      </button>
-
-      <div class="pt-2 text-[11px] text-slate-500">
-        <a href="/" class="text-gold hover:underline flex items-center justify-center gap-1">
-          <i class="fas fa-arrow-left text-[9px]"></i> Back to Main Player Hub
-        </a>
-      </div>
     </div>
   </div>
 
@@ -1248,6 +1335,26 @@
         >
           <i class="fab fa-discord text-indigo-400"></i>
           <span>Discord Bot & AI</span>
+        </button>
+
+        <button
+          id="tabBtn-administrators"
+          onclick="switchAdminTab('administrators')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-shield-halved text-yellow-400"></i>
+          <span>Administrators</span>
+          <span id="tabBadgeAdmins" class="px-1.5 py-0.2 rounded-full bg-yellow-500/20 text-yellow-300 text-[10px] font-extrabold font-mono">1</span>
+        </button>
+
+        <button
+          id="tabBtn-audit-logs"
+          onclick="switchAdminTab('audit-logs')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-list-check text-cyan-400"></i>
+          <span>Audit Logs</span>
+          <span id="tabBadgeAudit" class="hidden px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-extrabold font-mono">0</span>
         </button>
 
         <button
@@ -1993,6 +2100,327 @@
 
       </section>
 
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB: ADMINISTRATORS & ROLE MANAGEMENT (RANKS 1-5) -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-administrators" class="space-y-6 hidden">
+        
+        <!-- Header & Action Ribbon -->
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-bdr pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-black">
+                  <i class="fas fa-shield-halved text-sm"></i>
+                </div>
+                <h2 class="text-base font-black text-white">Administrator Hierarchy &amp; Access Control</h2>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                  Role-Based Matrix (Rank 1–5)
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">
+                Assign administrative privileges with strict rank-order isolation, customizable permission matrix, and permanent root protection.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button
+                id="btnOpenGrantAdminModal"
+                onclick="openGrantAdminModal()"
+                class="px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-yellow-500/20 transition cursor-pointer"
+              >
+                <i class="fas fa-user-plus"></i>
+                <span>Grant Admin Role to Player</span>
+              </button>
+              <button
+                onclick="loadAdminRoster()"
+                class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-bdr"
+                title="Refresh Admin List"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Overview Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+            <!-- 1. Owner Root -->
+            <div class="bg-[#0e1220] border border-yellow-500/40 rounded-2xl p-4 relative overflow-hidden">
+              <div class="absolute -right-2 -bottom-2 opacity-10 text-yellow-400 text-6xl">
+                <i class="fas fa-crown"></i>
+              </div>
+              <div class="flex items-center justify-between text-xs text-yellow-300 font-bold">
+                <span>Verified Owner</span>
+                <span class="px-1.5 py-0.2 rounded bg-yellow-500/20 text-[9px] uppercase font-black">Rank 5 Root</span>
+              </div>
+              <div class="mt-2">
+                <div class="text-sm font-black text-white truncate">kpllahore123@gmail.com</div>
+                <div class="text-[10px] text-yellow-400/80 font-mono mt-0.5">UID: xDa31jOrsoQC2HxjSheO3wBqyII2</div>
+              </div>
+              <div class="mt-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Immutable Root Authority</span>
+              </div>
+            </div>
+
+            <!-- 2. Active Staff Count -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-bold">
+                <span>Active Admins</span>
+                <i class="fas fa-users-gear text-indigo-400"></i>
+              </div>
+              <div class="text-2xl font-black text-white mt-1" id="adminStatActiveCount">1</div>
+              <div class="text-[10px] text-indigo-400 font-bold mt-1">Console Access Enabled</div>
+            </div>
+
+            <!-- 3. Senior Admins -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-bold">
+                <span>Senior Admins</span>
+                <i class="fas fa-gem text-purple-400"></i>
+              </div>
+              <div class="text-2xl font-black text-purple-300 mt-1" id="adminStatSeniorCount">0</div>
+              <div class="text-[10px] text-slate-400 font-bold mt-1">Rank 4 (Management Tier)</div>
+            </div>
+
+            <!-- 4. Staff & Mods -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-4">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-bold">
+                <span>Staff &amp; Moderators</span>
+                <i class="fas fa-shield text-sky-400"></i>
+              </div>
+              <div class="text-2xl font-black text-sky-300 mt-1" id="adminStatStaffCount">0</div>
+              <div class="text-[10px] text-slate-400 font-bold mt-1">Ranks 1, 2 &amp; 3 Active</div>
+            </div>
+          </div>
+
+          <!-- Hierarchy & Permission Matrix Guide (Collapsible) -->
+          <div class="bg-[#0a0d18] border border-bdr/80 rounded-2xl p-4 text-xs space-y-3">
+            <div class="flex items-center justify-between cursor-pointer" onclick="$('hierarchyMatrixGuide').classList.toggle('hidden')">
+              <div class="flex items-center gap-2 text-slate-200 font-extrabold">
+                <i class="fas fa-sitemap text-yellow-400"></i>
+                <span>ArenaX 5-Tier Administrative Hierarchy Guide</span>
+              </div>
+              <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                <span>View Rank Rules</span>
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </div>
+
+            <div id="hierarchyMatrixGuide" class="hidden space-y-2 pt-2 border-t border-white/5 text-[11px] text-slate-300">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                <div class="bg-yellow-500/10 border border-yellow-500/30 p-2.5 rounded-xl">
+                  <div class="font-black text-yellow-300 flex items-center gap-1.5">
+                    <i class="fas fa-crown text-yellow-400"></i> Rank 5: Owner
+                  </div>
+                  <div class="text-[10px] text-slate-300 mt-1">Permanent Super Admin (kpllahore123@gmail.com). Has 100% permissions. Cannot be edited, demoted, suspended, or revoked by any user.</div>
+                </div>
+                <div class="bg-purple-500/10 border border-purple-500/30 p-2.5 rounded-xl">
+                  <div class="font-black text-purple-300 flex items-center gap-1.5">
+                    <i class="fas fa-shield-cat text-purple-400"></i> Rank 4: Senior Admin
+                  </div>
+                  <div class="text-[10px] text-slate-300 mt-1">Management tier. Can grant, demote, and modify permissions of Ranks 1–3. Can view audit logs, adjust coin balances, and configure bot settings.</div>
+                </div>
+                <div class="bg-sky-500/10 border border-sky-500/30 p-2.5 rounded-xl">
+                  <div class="font-black text-sky-300 flex items-center gap-1.5">
+                    <i class="fas fa-user-shield text-sky-400"></i> Rank 3: Admin
+                  </div>
+                  <div class="text-[10px] text-slate-300 mt-1">Operational tier. Approves deposits and withdrawals, manages tournaments, issues temporary suspensions, broadcasts official announcements.</div>
+                </div>
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl">
+                  <div class="font-black text-emerald-300 flex items-center gap-1.5">
+                    <i class="fas fa-shield text-emerald-400"></i> Rank 2: Junior Admin
+                  </div>
+                  <div class="text-[10px] text-slate-300 mt-1">Finance and tournament reviewer. Approves deposits, reviews cheater tickets, restricts players with limited duration.</div>
+                </div>
+                <div class="bg-slate-500/10 border border-slate-500/30 p-2.5 rounded-xl">
+                  <div class="font-black text-slate-300 flex items-center gap-1.5">
+                    <i class="fas fa-shield-halved text-slate-400"></i> Rank 1: Moderator
+                  </div>
+                  <div class="text-[10px] text-slate-300 mt-1">Community safety tier. Reviews reports, inspects players, issues official warnings with ArenaX Moderator badge.</div>
+                </div>
+              </div>
+              <div class="bg-black/40 p-2.5 rounded-xl border border-white/5 text-[10px] text-amber-300 flex items-center gap-2">
+                <i class="fas fa-lock text-amber-400"></i>
+                <span>Strict Rank Hierarchy: An administrator cannot grant, modify, promote, demote, suspend, or revoke anyone whose rank is equal to or higher than their own rank.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admins Roster Table Container -->
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-black text-white">Active Administrator Roster</h3>
+              <span id="adminRosterCountBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold">1 Total</span>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="relative min-w-[200px]">
+                <i class="fas fa-search absolute left-3 top-3 text-slate-500 text-xs"></i>
+                <input
+                  id="searchAdminRosterInput"
+                  oninput="filterAdminRosterTable()"
+                  type="text"
+                  placeholder="Filter admins by name, email, UID..."
+                  class="w-full bg-[#0d101a] border border-bdr rounded-xl pl-8 pr-3 py-2 text-xs text-white outline-none focus:border-yellow-400 placeholder:text-slate-500"
+                />
+              </div>
+
+              <select
+                id="filterAdminRankSelect"
+                onchange="filterAdminRosterTable()"
+                class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-yellow-400 cursor-pointer"
+              >
+                <option value="all">All Ranks</option>
+                <option value="5">Rank 5: Super Admin</option>
+                <option value="4">Rank 4: Senior Admin</option>
+                <option value="3">Rank 3: Administrator</option>
+                <option value="2">Rank 2: Junior Admin</option>
+                <option value="1">Rank 1: Moderator</option>
+              </select>
+
+              <select
+                id="filterAdminStatusSelect"
+                onchange="filterAdminRosterTable()"
+                class="bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-yellow-400 cursor-pointer"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Only</option>
+                <option value="disabled">Disabled Only</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-[#0d101a] text-slate-400 uppercase text-[10px] font-extrabold border-b border-bdr">
+                <tr>
+                  <th class="py-3 px-4">Administrator</th>
+                  <th class="py-3 px-4">Rank &amp; Role</th>
+                  <th class="py-3 px-4">Permissions Matrix</th>
+                  <th class="py-3 px-4">Access Status</th>
+                  <th class="py-3 px-4">Granted By / Date</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminRosterTableBody" class="divide-y divide-bdr/50 font-medium">
+                <tr>
+                  <td colspan="6" class="text-center py-10 text-slate-500">
+                    <i class="fas fa-spinner animate-spin mr-2"></i> Loading Administrator Roster...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB: AUDIT LOGS (IMMUTABLE ADMINISTRATIVE TRAIL) -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-audit-logs" class="space-y-6 hidden">
+        <div class="bg-cardBg border border-bdr rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-bdr pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-black">
+                  <i class="fas fa-list-check text-sm"></i>
+                </div>
+                <h2 class="text-base font-black text-white">Immutable Administrative Audit Logs</h2>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Tamper-Resistant Trail
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">
+                Real-time record of all administrative grants, rank promotions, disciplinary actions, and sensitive investigative inquiries.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                onclick="loadAuditLogs()"
+                class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-bdr"
+              >
+                <i class="fas fa-sync-alt"></i>
+                <span>Refresh Logs</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0d101a] p-3 rounded-2xl border border-bdr">
+            <div class="flex items-center gap-2 flex-1 flex-wrap">
+              <div class="relative flex-1 min-w-[220px]">
+                <i class="fas fa-search absolute left-3 top-3 text-slate-500 text-xs"></i>
+                <input
+                  id="searchAuditLogsInput"
+                  oninput="filterAuditLogsTable()"
+                  type="text"
+                  placeholder="Filter logs by admin, target, action, IP..."
+                  class="w-full bg-[#141828] border border-bdr rounded-xl pl-8 pr-3 py-2 text-xs text-white outline-none focus:border-cyan-400 placeholder:text-slate-500"
+                />
+              </div>
+
+              <select
+                id="filterAuditActionSelect"
+                onchange="filterAuditLogsTable()"
+                class="bg-[#141828] border border-bdr rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-cyan-400 cursor-pointer"
+              >
+                <option value="all">All Action Types</option>
+                <option value="admin_">Admin Hierarchy &amp; Roles</option>
+                <option value="moderation">Disciplinary Moderation</option>
+                <option value="view_private_dms">Sensitive DM Inquiries</option>
+                <option value="verify_sensitive">Sensitive Passcode Entries</option>
+                <option value="login">Console Sign-Ins</option>
+              </select>
+
+              <select
+                id="auditLogsLimitSelect"
+                onchange="loadAuditLogs()"
+                class="bg-[#141828] border border-bdr rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-cyan-400 cursor-pointer"
+              >
+                <option value="50">Last 50 Logs</option>
+                <option value="100" selected>Last 100 Logs</option>
+                <option value="200">Last 200 Logs</option>
+              </select>
+            </div>
+
+            <div class="text-xs font-mono text-slate-400" id="auditLogsCountSummary">
+              Showing 0 logs
+            </div>
+          </div>
+
+          <!-- Logs Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-[#0d101a] text-slate-400 uppercase text-[10px] font-extrabold border-b border-bdr">
+                <tr>
+                  <th class="py-3 px-4">Timestamp</th>
+                  <th class="py-3 px-4">Acting Administrator</th>
+                  <th class="py-3 px-4">Action Executed</th>
+                  <th class="py-3 px-4">Target Account</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4">Client IP</th>
+                  <th class="py-3 px-4">Audit Details &amp; Reason</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogsTableBody" class="divide-y divide-bdr/50 font-medium font-mono text-[11px]">
+                <tr>
+                  <td colspan="7" class="text-center py-10 text-slate-500 font-sans text-xs">
+                    <i class="fas fa-spinner animate-spin mr-2"></i> Fetching immutable logs...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
 
   </div>
@@ -2100,6 +2528,251 @@
     </div>
   </div>
 
+  <!-- ── MODAL: MANAGE ADMINISTRATOR ROLE & PERMISSIONS (RANKS 1-4) ── -->
+  <div id="modalManageAdmin" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-bdr rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative text-white max-h-[92vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-bdr pb-3 flex-shrink-0">
+        <div>
+          <h3 id="modalManageAdminTitle" class="text-base font-black text-white flex items-center gap-2">
+            <i class="fas fa-user-shield text-yellow-400"></i> Grant Administrator Role
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">
+            Configure rank tier, role title, and enforce least-privilege granular access.
+          </p>
+        </div>
+        <button onclick="closeManageAdminModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Form Body -->
+      <div class="overflow-y-auto space-y-4 pr-1 flex-1 text-xs">
+        <!-- Target User Search / Picker -->
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">
+            Target User (UID, Email, or Player Handle): <span class="text-red-400">*</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              id="adminTargetUidInput"
+              type="text"
+              placeholder="e.g. xDa31jOrsoQC2HxjSheO3wBqyII2 or user@arenax.gg"
+              class="flex-1 bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white font-mono outline-none focus:border-yellow-400"
+            />
+            <button
+              type="button"
+              onclick="resolveTargetAdminUser()"
+              class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer border border-bdr"
+            >
+              <i class="fas fa-magnifying-glass"></i> Find
+            </button>
+          </div>
+          <!-- User Resolved Preview Card -->
+          <div id="adminTargetPreviewCard" class="hidden mt-2 p-2.5 bg-[#0a0d18] border border-bdr rounded-xl flex items-center gap-3">
+            <img id="adminTargetPreviewAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=user" class="w-9 h-9 rounded-full bg-slate-800 object-cover border border-bdr" />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span id="adminTargetPreviewName" class="font-extrabold text-white truncate">Player Name</span>
+                <span id="adminTargetPreviewHandle" class="text-slate-400 text-[10px]">@handle</span>
+              </div>
+              <div id="adminTargetPreviewUid" class="text-[9px] font-mono text-slate-500 truncate">UID: ...</div>
+            </div>
+            <span id="adminTargetCurrentRoleBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+              Player
+            </span>
+          </div>
+        </div>
+
+        <!-- Rank & Role Selection -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">
+              Admin Rank Level: <span class="text-red-400">*</span>
+            </label>
+            <select
+              id="adminRankSelect"
+              onchange="onAdminRankSelectChange()"
+              class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-yellow-400 cursor-pointer font-bold"
+            >
+              <option value="1">Rank 1: Moderator (Community Safety &amp; Warns)</option>
+              <option value="2">Rank 2: Junior Admin (Finance &amp; Restrictions)</option>
+              <option value="3" selected>Rank 3: Administrator (Operations &amp; Suspensions)</option>
+              <option value="4">Rank 4: Senior Admin (Management Tier)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">
+              Display Role Title:
+            </label>
+            <input
+              id="adminRoleTitleInput"
+              type="text"
+              placeholder="e.g. Senior Esports Coordinator"
+              value="ArenaX Administrator"
+              class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-yellow-400"
+            />
+          </div>
+        </div>
+
+        <!-- Permission Presets Quick Action -->
+        <div class="flex items-center justify-between bg-[#0a0d18] p-3 rounded-xl border border-bdr">
+          <div>
+            <span class="font-extrabold text-slate-200">Granular Permission Matrix</span>
+            <p class="text-[10px] text-slate-400">Select specific capabilities or apply standard rank defaults.</p>
+          </div>
+          <button
+            type="button"
+            onclick="applyRankDefaultPermissions()"
+            class="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+          >
+            <i class="fas fa-wand-magic-sparkles"></i> Apply Rank Defaults
+          </button>
+        </div>
+
+        <!-- Granular Permissions Groups -->
+        <div class="space-y-3">
+          <!-- Group 1: Users & Moderation -->
+          <div class="bg-[#0e1220] p-3 rounded-xl border border-bdr space-y-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-yellow-400 flex items-center gap-1.5">
+              <i class="fas fa-users-gear"></i> User Management &amp; Moderation
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_view_users" class="rounded accent-yellow-400" checked />
+                <span>View Users &amp; Profiles</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_warn_users" class="rounded accent-yellow-400" checked />
+                <span>Issue Official Warnings</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_restrict_users" class="rounded accent-yellow-400" checked />
+                <span>Restrict Accounts (Mute/DMs)</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_suspend_users" class="rounded accent-yellow-400" checked />
+                <span>Temporary Suspensions</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_permanent_ban_users" class="rounded accent-yellow-400" />
+                <span class="text-rose-300 font-bold">Permanent Ban Players (Rank 4+)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Group 2: Tournaments & Finances -->
+          <div class="bg-[#0e1220] p-3 rounded-xl border border-bdr space-y-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+              <i class="fas fa-trophy"></i> Tournaments &amp; Financial Operations
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_manage_tournaments" class="rounded accent-sky-400" checked />
+                <span>Create &amp; Manage Tournaments</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_approve_deposits" class="rounded accent-sky-400" checked />
+                <span>Verify &amp; Approve Deposits</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_approve_withdrawals" class="rounded accent-sky-400" checked />
+                <span>Approve &amp; Complete Withdrawals</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_adjust_balances" class="rounded accent-sky-400" />
+                <span class="text-amber-300 font-bold">Adjust Coins / Credits (Rank 4+)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Group 3: Reports & High Security -->
+          <div class="bg-[#0e1220] p-3 rounded-xl border border-bdr space-y-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+              <i class="fas fa-shield-virus"></i> Incident Review &amp; Investigation
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_review_cheater_reports" class="rounded accent-rose-400" checked />
+                <span>Review Cheater Reports</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_review_profile_reports" class="rounded accent-rose-400" checked />
+                <span>Review Toxic Profile Reports</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_view_sensitive_dms" class="rounded accent-rose-400" />
+                <span class="text-red-400 font-bold">Investigate Private DMs (Passcode Req)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Group 4: Administration & System -->
+          <div class="bg-[#0e1220] p-3 rounded-xl border border-bdr space-y-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+              <i class="fas fa-sliders"></i> System &amp; Staff Administration
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_manage_broadcasts" class="rounded accent-purple-400" checked />
+                <span>Manage Announcements &amp; Broadcasts</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_view_audit_logs" class="rounded accent-purple-400" checked />
+                <span>View Administrative Audit Logs</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_manage_bot_settings" class="rounded accent-purple-400" />
+                <span>Manage Discord Bot &amp; AI</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_manage_admins" class="rounded accent-purple-400" />
+                <span class="text-purple-300 font-bold">Grant &amp; Manage Admins (Rank 4+)</span>
+              </label>
+              <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" id="perm_system_settings" class="rounded accent-purple-400" />
+                <span class="text-amber-300 font-bold">System Maintenance &amp; APK Config</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Reason / Note -->
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">
+            Administrative Justification / Reason: <span class="text-red-400">*</span>
+          </label>
+          <input
+            id="adminRoleReasonInput"
+            type="text"
+            placeholder="e.g. Promoted to Senior Esports Admin for official season operations"
+            class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-yellow-400"
+          />
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center gap-3 pt-3 border-t border-bdr flex-shrink-0">
+        <button
+          type="button"
+          onclick="closeManageAdminModal()"
+          class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          id="btnSubmitManageAdmin"
+          type="button"
+          onclick="submitManageAdminForm()"
+          class="flex-1 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-1.5"
+        >
+          <i class="fas fa-shield-check"></i> Save &amp; Enforce Permissions
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── ADMIN APPLICATION LOGIC SCRIPT ── -->
   <script>
     // State
@@ -2116,266 +2789,339 @@
     // Helper element selector
     const $ = (id) => document.getElementById(id);
 
-    // 1. Check Passcode / Admin Auth
-    function togglePinVisibility() {
-      const pinEl = $('adminPinInput');
-      const eyeIcon = $('pinEyeIcon');
-      if (pinEl.type === 'password') {
-        pinEl.type = 'text';
-        eyeIcon.className = 'fas fa-eye-slash';
+    // 1. Admin Authentication & Backend Verification
+    function toggleAdminPasswordVisibility() {
+      const passEl = $('adminPasswordInput');
+      const eyeIcon = $('adminPassEyeIcon');
+      if (!passEl) return;
+      if (passEl.type === 'password') {
+        passEl.type = 'text';
+        if (eyeIcon) eyeIcon.className = 'fas fa-eye-slash';
       } else {
-        pinEl.type = 'password';
-        eyeIcon.className = 'fas fa-eye';
+        passEl.type = 'password';
+        if (eyeIcon) eyeIcon.className = 'fas fa-eye';
       }
     }
 
-    // Master Admin Custom Token Authentication (Bypasses Google OAuth domain restrictions)
-    async function authenticateAdminToken(pin) {
-      const adminPin = pin || sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+    function showAdminLoginForm() {
+      $('adminAuthLoading')?.classList.add('hidden');
+      $('adminAccessDeniedView')?.classList.add('hidden');
+      $('adminLoginForm')?.classList.remove('hidden');
+      $('adminAuthOverlay')?.classList.remove('hidden');
+      $('adminMainContent')?.classList.add('hidden');
+    }
+
+    function showAdminAccessDeniedView() {
+      $('adminAuthLoading')?.classList.add('hidden');
+      $('adminLoginForm')?.classList.add('hidden');
+      $('adminAccessDeniedView')?.classList.remove('hidden');
+      $('adminAuthOverlay')?.classList.remove('hidden');
+      $('adminMainContent')?.classList.add('hidden');
+    }
+
+    function showAdminVerifyingState() {
+      $('adminLoginForm')?.classList.add('hidden');
+      $('adminAccessDeniedView')?.classList.add('hidden');
+      $('adminAuthLoading')?.classList.remove('hidden');
+      $('adminAuthOverlay')?.classList.remove('hidden');
+    }
+
+    async function resetToAdminLogin() {
       try {
-        const res = await fetch('/api/admin/create-admin-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passcode: adminPin, email: 'kpllahore123@gmail.com' })
-        });
-        const data = await res.json();
-        if (data.success && data.customToken && window.fbAuth && window.fsTools.signInWithCustomToken) {
-          const cred = await window.fsTools.signInWithCustomToken(window.fbAuth, data.customToken);
-          window.currentAuthUser = cred.user;
-          window.isCurrentAdminAuthorized = true;
-          if (typeof window.updateAdminAuthPill === 'function') window.updateAdminAuthPill();
-          console.log("[Admin Auth] Master Admin custom token connected:", cred.user.email);
-          return cred.user;
+        if (window.fbAuth && window.fsTools?.signOut) {
+          await window.fsTools.signOut(window.fbAuth);
         }
-      } catch (err) {
-        console.warn("[Admin Auth] Custom token auth attempt:", err);
+      } catch (e) {
+        console.warn('Sign out note:', e);
       }
-      return null;
-    }
-
-    async function checkAdminPin() {
-      const pin = ($('adminPinInput').value || '').trim();
-      const errBox = $('authErrorMsg');
-      
-      // Supported admin passcodes
-      const validPins = ['arenax2026', 'admin123', 'arenaxadmin', 'axpass2026', 'master2026'];
-
-      if (!pin) {
-        if (errBox) {
-          errBox.textContent = 'Please enter the Master Passcode.';
-          errBox.classList.remove('hidden');
-        }
-        return;
-      }
-
-      if (validPins.includes(pin.toLowerCase())) {
-        sessionStorage.setItem('arenax_admin_pass', 'true');
-        sessionStorage.setItem('arenax_admin_pin', pin);
-        if (errBox) errBox.classList.add('hidden');
-        
-        // Authenticate Firebase Auth in background with Master Admin credentials
-        authenticateAdminToken(pin).catch(e => console.warn(e));
-
-        unlockAdminConsole({
-          uid: 'xDa31jOrsoQC2HxjSheO3wBqyII2',
-          name: 'Master Admin',
-          email: 'kpllahore123@gmail.com',
-          role: 'Verified Master Admin'
-        });
-      } else {
-        if (errBox) {
-          errBox.textContent = '❌ Invalid Passcode. Please verify the admin passcode (e.g. arenax2026).';
-          errBox.classList.remove('hidden');
-        }
-      }
-    }
-
-    async function signInAdminGoogle() {
+      window.currentAdminProfile = null;
+      window.currentAuthUser = null;
+      window.isCurrentAdminAuthorized = false;
       const errBox = $('authErrorMsg');
       if (errBox) errBox.classList.add('hidden');
+      showAdminLoginForm();
+    }
 
-      if (!window.fbAuth || !window.fsTools) {
+    async function handleEmailPasswordAdminLogin(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      const emailInput = $('adminEmailInput');
+      const passInput = $('adminPasswordInput');
+      const errBox = $('authErrorMsg');
+      const submitBtn = $('adminSubmitBtn');
+
+      const email = (emailInput?.value || '').trim();
+      const password = passInput?.value || '';
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!email || !password) {
         if (errBox) {
-          errBox.textContent = 'Firebase is initializing. Please retry in 2 seconds.';
+          errBox.textContent = 'Please enter both your ArenaX account email and password.';
           errBox.classList.remove('hidden');
         }
         return;
       }
 
-      try {
-        const result = await window.fsTools.signInWithPopup(window.fbAuth, window.fbGoogleProvider);
-        const user = result.user;
-        const email = (user.email || '').toLowerCase();
-        const isEmailAdmin = email.includes('kpllahore') || ['kpllahore123@gmail.com', 'admin@arenax.com', 'admin@arenax.gg'].includes(email);
-        const isAdminUid = (window.ADMIN_UIDS || []).includes(user.uid);
-        const isAuthorized = isEmailAdmin || isAdminUid;
-
-        window.currentAuthUser = user;
-        window.isCurrentAdminAuthorized = isAuthorized;
-
-        sessionStorage.setItem('arenax_admin_pass', 'true');
-        unlockAdminConsole({
-          uid: user.uid,
-          name: user.displayName || 'Admin ' + user.uid.slice(0, 4),
-          email: user.email,
-          photoURL: user.photoURL,
-          role: isAuthorized ? 'Verified Master Admin' : 'Console Admin'
-        });
-
-        if (isAuthorized) {
-          showAdminToast("👑 Verified Admin", `Signed in as ${user.email} with full permissions.`);
-          try {
-            const { doc, setDoc } = window.fsTools;
-            await setDoc(doc(window.fbDb, 'admins', user.uid), {
-              uid: user.uid,
-              email: user.email,
-              name: user.displayName || 'Admin',
-              role: 'Master Admin',
-              lastActive: new Date().toISOString()
-            }, { merge: true });
-          } catch (e) {
-            console.log("Admin doc creation note:", e.message);
-          }
-        } else {
-          showAdminToast("Signed In", `Signed in as ${user.email} (Not on admin whitelist).`, "warning");
+      if (!window.fbAuth || !window.fsTools?.signInWithEmailAndPassword) {
+        if (errBox) {
+          errBox.textContent = 'Authentication service is initializing. Please wait a moment.';
+          errBox.classList.remove('hidden');
         }
-      } catch (err) {
-        console.error("Google Admin Auth Error:", err);
-        
-        // Check if error is unauthorized-domain
-        if (err && (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain')))) {
-          const curDomain = window.location.hostname;
-          showAdminToast("Domain Check", "Auto-connecting via Master Admin Passcode Token...", "info");
-          
-          const authUser = await authenticateAdminToken('arenax2026');
-          if (authUser) {
-            sessionStorage.setItem('arenax_admin_pass', 'true');
-            unlockAdminConsole({
-              uid: authUser.uid,
-              name: 'Master Admin',
-              email: authUser.email || 'kpllahore123@gmail.com',
-              role: 'Verified Master Admin'
-            });
-            showAdminToast("👑 Master Admin Connected", "OAuth domain restriction bypassed! You have full database rights.", "success");
-            return;
-          }
+        return;
+      }
 
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Authenticating...';
+      }
+
+      try {
+        const cred = await window.fsTools.signInWithEmailAndPassword(window.fbAuth, email, password);
+        await verifyAdminAndRoute(cred.user);
+      } catch (err) {
+        console.error('[Admin Auth] Email/Password login error:', err);
+        let msg = 'Authentication failed. Please check your credentials.';
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+          msg = 'Invalid email or password. Please use your existing registered ArenaX account credentials.';
+        } else if (err.code === 'auth/too-many-requests') {
+          msg = 'Too many failed attempts. Please try again after a few moments.';
+        } else if (err.code === 'auth/network-request-failed') {
+          msg = 'Network connection issue. Please check your internet connection.';
+        } else if (err.message) {
+          msg = err.message;
+        }
+
+        if (errBox) {
+          errBox.textContent = msg;
+          errBox.classList.remove('hidden');
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-shield-halved"></i> Sign In to Admin Panel';
+        }
+      }
+    }
+
+    async function handleGoogleAdminLogin() {
+      const errBox = $('authErrorMsg');
+      const googleBtn = $('adminGoogleBtn');
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!window.fbAuth || !window.fsTools?.signInWithPopup) {
+        if (errBox) {
+          errBox.textContent = 'Authentication service is initializing. Please wait a moment.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (googleBtn) {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-amber-400"></i> Connecting to Google...';
+      }
+
+      try {
+        const cred = await window.fsTools.signInWithPopup(window.fbAuth, window.fbGoogleProvider);
+        await verifyAdminAndRoute(cred.user);
+      } catch (err) {
+        console.error('[Admin Auth] Google sign-in error:', err);
+        if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+          // User closed popup
+        } else if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
           if (errBox) {
             errBox.innerHTML = `
-              <div class="text-left space-y-2 text-xs">
-                <div class="font-bold text-amber-400 flex items-center gap-1.5">
-                  <i class="fas fa-triangle-exclamation text-amber-400"></i> Domain Not In Firebase Authorized Domains:
+              <div class="text-left space-y-1.5 text-xs">
+                <div class="font-bold text-amber-400 flex items-center gap-1">
+                  <i class="fas fa-triangle-exclamation"></i> Google OAuth Domain Restriction
                 </div>
-                <div class="bg-black/50 p-2 rounded-lg border border-white/10 font-mono text-[11px] text-amber-200 select-all break-all">${curDomain}</div>
-                <p class="text-slate-300 text-[11px] leading-relaxed">
-                  Google OAuth requires adding this domain to Firebase Console &gt; Authentication &gt; Settings &gt; Authorized domains.
-                </p>
-                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 font-semibold flex items-center justify-between gap-2">
-                  <span class="text-xs">👉 Enter Master Passcode <b>arenax2026</b> to unlock with 100% permissions!</span>
-                  <button onclick="$('adminPinInput').value='arenax2026'; checkAdminPin();" class="px-2 py-1 bg-emerald-500 text-slate-950 font-bold rounded-lg text-[10px] uppercase cursor-pointer hover:brightness-110">Auto-Fill & Unlock</button>
-                </div>
+                <div>This preview domain is not configured in Firebase Authorized Domains. Please sign in with your ArenaX Email and Password above.</div>
               </div>
             `;
             errBox.classList.remove('hidden');
           }
         } else {
           if (errBox) {
-            errBox.textContent = err.message || 'Google sign in failed.';
+            errBox.textContent = err.message || 'Google sign-in could not be completed.';
             errBox.classList.remove('hidden');
           }
         }
+      } finally {
+        if (googleBtn) {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = `
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+              <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+              <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+              <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+            </svg>
+            Continue with Google
+          `;
+        }
       }
+    }
+
+    async function verifyAdminAndRoute(user) {
+      if (!user) {
+        showAdminLoginForm();
+        return;
+      }
+
+      showAdminVerifyingState();
+
+      try {
+        const idToken = await user.getIdToken(true);
+        const res = await fetch('/api/admin/verify-admin-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            adminUid: user.uid,
+            adminEmail: user.email
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success && data.authorized && data.admin) {
+          // Backend verified admin identity & active rank (Rank 1–4 or Rank 5 Owner)
+          window.currentAdminProfile = data.admin;
+          window.currentAuthUser = user;
+          window.isCurrentAdminAuthorized = true;
+
+          unlockAdminConsole(data.admin);
+        } else {
+          // Access Denied: User has no active admin rank or is not registered
+          console.warn('[Admin Auth] Backend rejected admin access:', data);
+          await handleAccessDenied(user, data.error);
+        }
+      } catch (err) {
+        console.error('[Admin Auth] Verification server request error:', err);
+        await handleAccessDenied(user, 'Failed to verify admin status with the server. Please try again.');
+      }
+    }
+
+    async function handleAccessDenied(user, customMessage) {
+      // Immediately sign out from Firebase to terminate unauthorized session
+      try {
+        if (window.fbAuth && window.fsTools?.signOut) {
+          await window.fsTools.signOut(window.fbAuth);
+        }
+      } catch (e) {
+        console.warn('Sign out on denied note:', e);
+      }
+
+      window.currentAdminProfile = null;
+      window.currentAuthUser = null;
+      window.isCurrentAdminAuthorized = false;
+
+      const deniedEmailEl = $('deniedUserEmail');
+      if (deniedEmailEl) {
+        deniedEmailEl.textContent = user?.email || user?.uid || 'Unknown Account';
+      }
+
+      const deniedMsgEl = $('deniedMsgText');
+      if (deniedMsgEl) {
+        deniedMsgEl.textContent = customMessage || 'Your ArenaX account has not been granted Admin Panel access. Please contact the ArenaX owner if you believe you should have access.';
+      }
+
+      showAdminAccessDeniedView();
     }
 
     window.updateAdminAuthPill = function() {
       const container = $('adminAuthPillContainer');
       if (!container) return;
       const user = window.fbAuth?.currentUser || window.currentAuthUser;
-      const email = (user?.email || '').toLowerCase();
-      const isAuth = user && (
-        email.includes('kpllahore') ||
-        ['kpllahore123@gmail.com', 'admin@arenax.com', 'admin@arenax.gg'].includes(email) ||
-        (window.ADMIN_UIDS || []).includes(user.uid)
-      );
+      const adminProfile = window.currentAdminProfile || {};
+      const rank = adminProfile.rank || (adminProfile.isOwner ? 5 : 1);
+      
+      const rankBadges = {
+        5: { bg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40', label: '👑 Rank 5: Owner' },
+        4: { bg: 'bg-purple-500/20 text-purple-300 border-purple-500/40', label: '🟣 Rank 4: Senior Admin' },
+        3: { bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40', label: '🔵 Rank 3: Admin' },
+        2: { bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', label: '🟢 Rank 2: Junior Admin' },
+        1: { bg: 'bg-slate-500/20 text-slate-300 border-slate-500/40', label: '⚪ Rank 1: Moderator' }
+      };
+      const badgeInfo = rankBadges[rank] || rankBadges[1];
 
-      if (user && isAuth) {
+      if (user && window.isCurrentAdminAuthorized) {
         container.innerHTML = `
-          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-sm" title="Connected to Firebase as Verified Admin: ${user.email}">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#141828] border border-bdr text-xs font-bold shadow-sm" title="Active Admin Session: ${user.email || adminProfile.email} (${badgeInfo.label})">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="max-w-[130px] sm:max-w-[180px] truncate">${user.email || user.displayName || 'Authorized Admin'}</span>
-            <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-black uppercase px-1.5 py-0.5 rounded">✓ Verified</span>
-          </div>
-        `;
-      } else if (user && !isAuth) {
-        container.innerHTML = `
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold" title="Logged in as ${user.email}, but this account is not in admin whitelist.">
-              <i class="fas fa-triangle-exclamation text-amber-400 text-xs"></i>
-              <span class="max-w-[100px] truncate">${user.email}</span>
-            </div>
-            <button onclick="signInAdminGoogle()" class="px-2.5 py-1.5 bg-gradient-to-r from-gold to-amber-500 hover:brightness-110 text-slate-950 text-xs font-black rounded-xl flex items-center gap-1 shadow transition cursor-pointer" title="Switch to kpllahore123@gmail.com">
-              <i class="fab fa-google"></i> Switch to Admin Google
-            </button>
+            <span class="max-w-[120px] sm:max-w-[160px] text-white truncate">${adminProfile.name || user.displayName || user.email || 'Administrator'}</span>
+            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${badgeInfo.bg}">${badgeInfo.label}</span>
           </div>
         `;
       } else {
-        container.innerHTML = `
-          <button onclick="authenticateAdminToken('arenax2026')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition shadow-sm cursor-pointer" title="Click to connect as Master Admin (kpllahore123@gmail.com) via Passcode Token">
-            <i class="fas fa-crown text-gold"></i>
-            <span class="hidden sm:inline">Connect Master Admin</span>
-            <span class="sm:hidden">Admin Access</span>
-          </button>
-        `;
+        container.innerHTML = '';
       }
     };
 
     function unlockAdminConsole(adminInfo) {
       currentAdminIdentity = adminInfo;
-      $('adminAuthOverlay').classList.add('hidden');
-      $('adminMainContent').classList.remove('hidden');
-      
-      if (adminInfo && adminInfo.photoURL) {
+      window.currentAdminProfile = adminInfo;
+      window.isCurrentAdminAuthorized = true;
+
+      $('adminAuthOverlay')?.classList.add('hidden');
+      $('adminMainContent')?.classList.remove('hidden');
+
+      if (adminInfo && adminInfo.photoURL && $('adminUserAvatar')) {
         $('adminUserAvatar').innerHTML = `<img src="${adminInfo.photoURL}" class="w-full h-full rounded-full object-cover" />`;
+      }
+
+      // Apply RBAC permissions to UI controls
+      if (typeof applyAdminPermissionsUI === 'function') {
+        applyAdminPermissionsUI(adminInfo);
       }
 
       window.updateAdminAuthPill();
 
-      // Ensure Master Admin Firebase Auth session is active
-      if (!window.isCurrentAdminAuthorized) {
-        authenticateAdminToken('arenax2026').catch(e => console.warn(e));
-      }
-
-      showAdminToast("👑 Welcome Admin", "Master Admin Console connected & ready!");
+      showAdminToast("👑 Verified Admin", `Signed in as ${adminInfo.role} (Rank ${adminInfo.rank})`);
       startFirestoreListeners();
       fetchBotData();
     }
 
-    function logoutAdmin() {
-      sessionStorage.removeItem('arenax_admin_pass');
-      location.reload();
+    async function logoutAdmin() {
+      try {
+        if (window.fbAuth && window.fsTools?.signOut) {
+          await window.fsTools.signOut(window.fbAuth);
+        }
+      } catch (e) {
+        console.warn('Sign out error:', e);
+      }
+      window.currentAdminProfile = null;
+      window.currentAuthUser = null;
+      window.isCurrentAdminAuthorized = false;
+      showAdminLoginForm();
     }
 
-    // Initialize checking session
-    window.initAdminApp = function() {
-      if (sessionStorage.getItem('arenax_admin_pass') === 'true') {
-        unlockAdminConsole({
-          uid: 'xDa31jOrsoQC2HxjSheO3wBqyII2',
-          name: 'Master Admin',
-          email: 'kpllahore123@gmail.com',
-          role: 'Verified Master Admin'
-        });
+    // Monitor Firebase Auth changes
+    window.handleAuthStateChange = async function(user) {
+      window.currentAuthUser = user;
+      // If already verified in this session with matching UID, preserve state
+      if (window.isCurrentAdminAuthorized && window.currentAdminProfile && user && user.uid === window.currentAdminProfile.uid) {
+        return;
+      }
+      if (user) {
+        await verifyAdminAndRoute(user);
+      } else {
+        if (!$('adminAccessDeniedView')?.classList.contains('hidden')) {
+          // If already on access denied view, keep it until user clicks sign in/out
+        } else {
+          showAdminLoginForm();
+        }
       }
     };
 
-    // Auto-attempt check on DOM loaded
+    // DOM Loaded: initialize state
     document.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('arenax_admin_pass') === 'true') {
-        unlockAdminConsole({
-          uid: 'xDa31jOrsoQC2HxjSheO3wBqyII2',
-          name: 'Master Admin',
-          email: 'kpllahore123@gmail.com',
-          role: 'Verified Master Admin'
-        });
+      if (window.fbAuth?.currentUser) {
+        verifyAdminAndRoute(window.fbAuth.currentUser);
+      } else {
+        showAdminLoginForm();
       }
     });
 
@@ -2545,7 +3291,7 @@
     // 3. Tab Switching
     function switchAdminTab(tabName) {
       activeTab = tabName;
-      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'creator-requests', 'broadcast', 'bot', 'settings'];
+      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'creator-requests', 'broadcast', 'bot', 'administrators', 'audit-logs', 'settings'];
       
       tabs.forEach((t) => {
         const btn = $(`tabBtn-${t}`);
@@ -2565,6 +3311,10 @@
         renderProfileReportsTable();
       } else if (tabName === 'creator-requests') {
         renderCreatorRequestsTable();
+      } else if (tabName === 'administrators') {
+        loadAdminRoster();
+      } else if (tabName === 'audit-logs') {
+        loadAuditLogs();
       }
     }
 
@@ -2962,6 +3712,14 @@
                   title="Inspect Profile"
                 >
                   <i class="fas fa-magnifying-glass text-xs"></i>
+                </button>
+
+                <button
+                  onclick="openGrantAdminModalForUser('${u.uid}', '${escapeHtml(u.name || 'User')}', '${escapeHtml(u.handle || 'user')}', '${escapeHtml(u.email || '')}', '${escapeHtml(u.av || u.avatar || '')}')"
+                  class="p-1.5 bg-yellow-500/10 hover:bg-yellow-500/30 text-yellow-400 rounded-lg transition cursor-pointer"
+                  title="Manage Admin Role & Permissions (Ranks 1-4)"
+                >
+                  <i class="fas fa-user-shield text-xs"></i>
                 </button>
 
                 <button
@@ -5545,6 +6303,847 @@
         toast.classList.add('translate-y-2', 'opacity-0');
         setTimeout(() => toast.remove(), 350);
       }, 4000);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🛡️ ADMINISTRATOR HIERARCHY & AUDIT TRAIL LOGIC (RANKS 1 - 5)
+    // ═══════════════════════════════════════════════════════════════════════
+    let rawAdminRoster = [];
+    let rawAuditLogs = [];
+    let editingAdminTargetUid = null;
+
+    // 1. Sync Active Admin Profile & Permissions
+    async function syncAdminProfile() {
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        const res = await fetch('/api/admin/verify-admin-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+          },
+          body: JSON.stringify({ passcode })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authorized && data.admin) {
+            window.currentAdminProfile = data.admin;
+            applyAdminPermissionsUI(data.admin);
+            window.updateAdminAuthPill();
+            console.log('[Admin Auth] Verified Session Profile:', data.admin);
+          }
+        }
+      } catch (err) {
+        console.warn('[Admin Auth] Profile synchronization error:', err);
+      }
+    }
+
+    // 2. Apply Dynamic Permission Matrix to Dashboard UI
+    function applyAdminPermissionsUI(admin) {
+      if (!admin) return;
+      const rank = admin.rank || 1;
+      const perms = admin.permissions || {};
+      const isOwner = admin.isOwner || rank === 5;
+
+      // Update Header Pill
+      window.updateAdminAuthPill();
+
+      // Show/Hide Administrative Tabs according to Rank & Permissions
+      const canManageAdmins = isOwner || rank >= 4 || perms.manage_admins;
+      const canViewAudit = isOwner || rank >= 3 || perms.view_audit_logs;
+      const canManageBot = isOwner || rank >= 4 || perms.manage_bot_settings;
+      const canSystemSettings = isOwner || rank >= 4 || perms.system_settings;
+
+      const adminTabBtn = $('tabBtn-administrators');
+      if (adminTabBtn) {
+        if (canManageAdmins) {
+          adminTabBtn.classList.remove('hidden');
+        } else {
+          adminTabBtn.classList.add('hidden');
+        }
+      }
+
+      const auditTabBtn = $('tabBtn-audit-logs');
+      if (auditTabBtn) {
+        if (canViewAudit) {
+          auditTabBtn.classList.remove('hidden');
+        } else {
+          auditTabBtn.classList.add('hidden');
+        }
+      }
+
+      const botTabBtn = $('tabBtn-bot');
+      if (botTabBtn) {
+        if (canManageBot) {
+          botTabBtn.classList.remove('hidden');
+        } else {
+          botTabBtn.classList.add('hidden');
+        }
+      }
+
+      const settingsTabBtn = $('tabBtn-settings');
+      if (settingsTabBtn) {
+        if (canSystemSettings) {
+          settingsTabBtn.classList.remove('hidden');
+        } else {
+          settingsTabBtn.classList.add('hidden');
+        }
+      }
+
+      // Hide or show the "+ Grant Admin Role to Player" button based on rank
+      const btnGrant = $('btnOpenGrantAdminModal');
+      if (btnGrant) {
+        if (canManageAdmins) {
+          btnGrant.classList.remove('hidden');
+        } else {
+          btnGrant.classList.add('hidden');
+        }
+      }
+    }
+
+    // 3. Load & Render Administrators Roster
+    async function loadAdminRoster() {
+      const tbody = $('adminRosterTableBody');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-10 text-slate-500">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading Administrator Roster...
+            </td>
+          </tr>
+        `;
+      }
+
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        const res = await fetch('/api/admin/get-admin-list', {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : { 'x-admin-passcode': passcode })
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to load admin list (${res.status})`);
+        }
+
+        const data = await res.json();
+        rawAdminRoster = data.admins || [];
+
+        // Update Overview Counts
+        const activeCount = rawAdminRoster.filter(a => a.isActive !== false).length;
+        const seniorCount = rawAdminRoster.filter(a => a.rank === 4).length;
+        const staffCount = rawAdminRoster.filter(a => [1, 2, 3].includes(a.rank)).length;
+
+        if ($('adminStatActiveCount')) $('adminStatActiveCount').textContent = activeCount;
+        if ($('adminStatSeniorCount')) $('adminStatSeniorCount').textContent = seniorCount;
+        if ($('adminStatStaffCount')) $('adminStatStaffCount').textContent = staffCount;
+        if ($('adminRosterCountBadge')) $('adminRosterCountBadge').textContent = `${rawAdminRoster.length} Total`;
+        if ($('tabBadgeAdmins')) $('tabBadgeAdmins').textContent = activeCount;
+
+        renderAdminRoster(rawAdminRoster);
+      } catch (err) {
+        console.error("loadAdminRoster error:", err);
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-8 text-rose-400">
+                <i class="fas fa-triangle-exclamation mr-2"></i> ${escapeHtml(err.message || 'Error loading administrator roster')}
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function filterAdminRosterTable() {
+      const search = ($('searchAdminRosterInput')?.value || '').toLowerCase().trim();
+      const rankFilter = $('filterAdminRankSelect')?.value || 'all';
+      const statusFilter = $('filterAdminStatusSelect')?.value || 'all';
+
+      const filtered = rawAdminRoster.filter((admin) => {
+        const matchesSearch = !search || 
+          (admin.name || '').toLowerCase().includes(search) ||
+          (admin.handle || '').toLowerCase().includes(search) ||
+          (admin.email || '').toLowerCase().includes(search) ||
+          (admin.uid || '').toLowerCase().includes(search) ||
+          (admin.role || '').toLowerCase().includes(search);
+
+        const matchesRank = rankFilter === 'all' || String(admin.rank) === rankFilter;
+        const matchesStatus = statusFilter === 'all' || 
+          (statusFilter === 'active' && admin.isActive !== false) ||
+          (statusFilter === 'disabled' && admin.isActive === false);
+
+        return matchesSearch && matchesRank && matchesStatus;
+      });
+
+      renderAdminRoster(filtered);
+    }
+
+    function renderAdminRoster(admins) {
+      const tbody = $('adminRosterTableBody');
+      if (!tbody) return;
+
+      if (!admins || admins.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-10 text-slate-500 text-xs">
+              No administrators match the selected filters.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const curAdmin = window.currentAdminProfile || {};
+      const curRank = curAdmin.rank || (curAdmin.isOwner ? 5 : 1);
+      const isCurOwner = curAdmin.isOwner || curRank === 5;
+
+      const rankBadgeStyles = {
+        5: { bg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40', icon: 'fa-crown', label: 'Rank 5: Owner' },
+        4: { bg: 'bg-purple-500/20 text-purple-300 border-purple-500/40', icon: 'fa-gem', label: 'Rank 4: Senior Admin' },
+        3: { bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40', icon: 'fa-shield-halved', label: 'Rank 3: Administrator' },
+        2: { bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: 'fa-shield', label: 'Rank 2: Junior Admin' },
+        1: { bg: 'bg-slate-500/20 text-slate-300 border-slate-500/40', icon: 'fa-user-shield', label: 'Rank 1: Moderator' }
+      };
+
+      tbody.innerHTML = admins.map((a) => {
+        const rank = a.rank || 1;
+        const isTargetOwner = a.isOwner || rank === 5 || a.email === 'kpllahore123@gmail.com';
+        const badge = rankBadgeStyles[rank] || rankBadgeStyles[1];
+        const isActive = a.isActive !== false;
+        const avatar = a.avatar || a.av || `https://api.dicebear.com/7.x/bottts/svg?seed=${a.uid}`;
+        const perms = a.permissions || {};
+        const permKeys = Object.keys(perms).filter(k => perms[k] === true);
+        const permsCount = permKeys.length;
+
+        // Hierarchy rule: Caller can only modify if caller is Rank 5, or if caller rank > target rank
+        const canModify = isCurOwner || (curRank >= 4 && curRank > rank && !isTargetOwner);
+
+        const grantedDateStr = a.grantedAt 
+          ? (typeof a.grantedAt === 'string' ? new Date(a.grantedAt).toLocaleDateString() : 'Active')
+          : 'Permanent';
+
+        return `
+          <tr class="hover:bg-cardBgHover/50 transition">
+            <!-- 1. Administrator Profile -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <img src="${avatar}" class="w-9 h-9 rounded-full bg-slate-800 object-cover border border-bdr" />
+                  ${isTargetOwner ? `<span class="absolute -bottom-1 -right-1 text-yellow-400 text-xs"><i class="fas fa-crown"></i></span>` : ''}
+                </div>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-white flex items-center gap-1.5 truncate">
+                    <span>${escapeHtml(a.name || 'Admin')}</span>
+                    ${isTargetOwner ? `<span class="px-1.5 py-0.2 rounded bg-yellow-500/20 text-yellow-300 text-[9px] font-black uppercase">Root</span>` : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400 flex items-center gap-2">
+                    <span>@${escapeHtml(a.handle || 'admin')}</span>
+                    ${a.email ? `<span>• ${escapeHtml(a.email)}</span>` : ''}
+                  </div>
+                  <div class="text-[9px] font-mono text-slate-500 select-all cursor-pointer" onclick="copyToClipboard('${a.uid}')" title="Click to copy UID">
+                    ${a.uid}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- 2. Rank & Role -->
+            <td class="py-3 px-4">
+              <div class="space-y-1">
+                <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${badge.bg}">
+                  <i class="fas ${badge.icon}"></i>
+                  <span>${badge.label}</span>
+                </div>
+                <div class="text-xs text-slate-300 font-bold">${escapeHtml(a.role || 'Staff')}</div>
+              </div>
+            </td>
+
+            <!-- 3. Permissions Matrix Summary -->
+            <td class="py-3 px-4">
+              <div>
+                <span class="px-2 py-0.5 rounded bg-[#141828] text-slate-200 border border-bdr text-[10px] font-mono font-bold">
+                  ${isTargetOwner ? 'All Capabilities (100%)' : `${permsCount} Privileges Granted`}
+                </span>
+                <div class="text-[9px] text-slate-400 mt-1 max-w-[200px] truncate" title="${permKeys.join(', ')}">
+                  ${isTargetOwner ? 'Root Level Unrestricted' : permKeys.slice(0, 3).join(', ') + (permKeys.length > 3 ? ` +${permKeys.length - 3} more` : '')}
+                </div>
+              </div>
+            </td>
+
+            <!-- 4. Access Status -->
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                isActive 
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-red-500/10 text-red-400 border-red-500/30'
+              }">
+                <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}"></span>
+                <span>${isActive ? 'ACTIVE ACCESS' : 'SUSPENDED'}</span>
+              </span>
+            </td>
+
+            <!-- 5. Granted Info -->
+            <td class="py-3 px-4">
+              <div class="text-[11px] text-slate-300 font-bold">${grantedDateStr}</div>
+              <div class="text-[10px] text-slate-500">By: ${escapeHtml(a.grantedByName || a.grantedBy || 'System')}</div>
+            </td>
+
+            <!-- 6. Actions -->
+            <td class="py-3 px-4 text-right">
+              ${isTargetOwner ? `
+                <span class="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 text-[10px] font-black uppercase">
+                  <i class="fas fa-lock mr-1"></i> Root Protected
+                </span>
+              ` : canModify ? `
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    onclick="openEditAdminModal('${a.uid}')"
+                    class="p-1.5 bg-yellow-500/10 hover:bg-yellow-500/30 text-yellow-400 rounded-lg transition cursor-pointer"
+                    title="Edit Role & Granular Permissions"
+                  >
+                    <i class="fas fa-user-pen text-xs"></i>
+                  </button>
+
+                  <button
+                    onclick="toggleAdminActiveStatus('${a.uid}', ${isActive}, '${escapeHtml(a.name || 'Admin')}')"
+                    class="p-1.5 ${isActive ? 'bg-amber-500/10 hover:bg-amber-500/30 text-amber-400' : 'bg-emerald-500/10 hover:bg-emerald-500/30 text-emerald-400'} rounded-lg transition cursor-pointer"
+                    title="${isActive ? 'Suspend Administrator Access' : 'Restore Administrator Access'}"
+                  >
+                    <i class="fas ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
+                  </button>
+
+                  <button
+                    onclick="revokeAdmin('${a.uid}', '${escapeHtml(a.name || 'Admin')}')"
+                    class="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition cursor-pointer"
+                    title="Revoke Admin Access Completely"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              ` : `
+                <span class="text-[10px] text-slate-500 font-bold">
+                  <i class="fas fa-lock text-slate-600 mr-1"></i> Higher Rank
+                </span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 4. Modal Helpers for Granting / Editing Admin Privileges
+    function openGrantAdminModal() {
+      editingAdminTargetUid = null;
+      $('modalManageAdminTitle').innerHTML = `<i class="fas fa-user-shield text-yellow-400"></i> Grant Administrator Role`;
+      $('adminTargetUidInput').value = '';
+      $('adminTargetUidInput').readOnly = false;
+      $('adminTargetPreviewCard').classList.add('hidden');
+      $('adminRankSelect').value = '3';
+      $('adminRoleTitleInput').value = 'ArenaX Administrator';
+      $('adminRoleReasonInput').value = '';
+
+      applyRankDefaultPermissions();
+      $('modalManageAdmin').classList.remove('hidden');
+    }
+
+    function openGrantAdminModalForUser(uid, name, handle, email, avatar) {
+      openGrantAdminModal();
+      $('adminTargetUidInput').value = uid;
+      showTargetAdminPreview(uid, name, handle, avatar);
+    }
+
+    function openEditAdminModal(uid) {
+      const admin = rawAdminRoster.find(a => a.uid === uid);
+      if (!admin) return;
+
+      editingAdminTargetUid = uid;
+      $('modalManageAdminTitle').innerHTML = `<i class="fas fa-user-pen text-yellow-400"></i> Edit Administrator Role & Permissions`;
+      $('adminTargetUidInput').value = uid;
+      $('adminTargetUidInput').readOnly = true;
+
+      showTargetAdminPreview(uid, admin.name, admin.handle, admin.avatar || admin.av, admin.role);
+
+      $('adminRankSelect').value = String(admin.rank || 3);
+      $('adminRoleTitleInput').value = admin.role || 'ArenaX Administrator';
+      $('adminRoleReasonInput').value = `Updated permissions for ${admin.name || 'admin'}`;
+
+      // Set Checkboxes from admin.permissions
+      const perms = admin.permissions || {};
+      const allPermKeys = [
+        'view_users', 'warn_users', 'restrict_users', 'suspend_users', 'permanent_ban_users',
+        'manage_tournaments', 'approve_deposits', 'approve_withdrawals', 'adjust_balances',
+        'review_cheater_reports', 'review_profile_reports', 'view_sensitive_dms',
+        'manage_broadcasts', 'view_audit_logs', 'manage_bot_settings', 'manage_admins', 'system_settings'
+      ];
+
+      allPermKeys.forEach((key) => {
+        const chk = $(`perm_${key}`);
+        if (chk) {
+          chk.checked = perms[key] === true;
+        }
+      });
+
+      $('modalManageAdmin').classList.remove('hidden');
+    }
+
+    function closeManageAdminModal() {
+      $('modalManageAdmin').classList.add('hidden');
+      editingAdminTargetUid = null;
+    }
+
+    function showTargetAdminPreview(uid, name, handle, avatar, role = 'Player') {
+      const card = $('adminTargetPreviewCard');
+      if (!card) return;
+      card.classList.remove('hidden');
+      $('adminTargetPreviewAvatar').src = avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${uid}`;
+      $('adminTargetPreviewName').textContent = name || 'Player';
+      $('adminTargetPreviewHandle').textContent = `@${handle || 'user'}`;
+      $('adminTargetPreviewUid').textContent = `UID: ${uid}`;
+      $('adminTargetCurrentRoleBadge').textContent = role;
+    }
+
+    function resolveTargetAdminUser() {
+      const val = ($('adminTargetUidInput')?.value || '').trim().toLowerCase();
+      if (!val) {
+        showAdminToast("Target User Required", "Please enter player UID, email, or handle.", "error");
+        return;
+      }
+
+      const match = rawUsers.find(u => 
+        (u.uid || '').toLowerCase() === val ||
+        (u.email || '').toLowerCase() === val ||
+        (u.handle || '').toLowerCase() === val.replace('@', '')
+      );
+
+      if (match) {
+        $('adminTargetUidInput').value = match.uid;
+        showTargetAdminPreview(match.uid, match.name, match.handle, match.av || match.avatar);
+        showAdminToast("User Located", `Found ${match.name || 'player'} (@${match.handle || 'user'})`);
+      } else {
+        showAdminToast("Player Not Found", "No local profile matched. You can still proceed by raw UID.", "error");
+      }
+    }
+
+    function onAdminRankSelectChange() {
+      const rank = parseInt($('adminRankSelect')?.value || '3', 10);
+      const defaultTitles = {
+        1: 'ArenaX Moderator',
+        2: 'ArenaX Junior Admin',
+        3: 'ArenaX Administrator',
+        4: 'ArenaX Senior Admin'
+      };
+      if ($('adminRoleTitleInput')) {
+        $('adminRoleTitleInput').value = defaultTitles[rank] || 'ArenaX Administrator';
+      }
+      applyRankDefaultPermissions();
+    }
+
+    function applyRankDefaultPermissions() {
+      const rank = parseInt($('adminRankSelect')?.value || '3', 10);
+
+      const presets = {
+        1: { // Moderator
+          view_users: true,
+          warn_users: true,
+          review_profile_reports: true,
+          review_cheater_reports: true,
+          view_audit_logs: false
+        },
+        2: { // Junior Admin
+          view_users: true,
+          warn_users: true,
+          restrict_users: true,
+          manage_tournaments: true,
+          approve_deposits: true,
+          review_cheater_reports: true,
+          review_profile_reports: true,
+          view_audit_logs: true
+        },
+        3: { // Administrator
+          view_users: true,
+          warn_users: true,
+          restrict_users: true,
+          suspend_users: true,
+          manage_tournaments: true,
+          approve_deposits: true,
+          approve_withdrawals: true,
+          review_cheater_reports: true,
+          review_profile_reports: true,
+          manage_broadcasts: true,
+          view_audit_logs: true
+        },
+        4: { // Senior Admin
+          view_users: true,
+          warn_users: true,
+          restrict_users: true,
+          suspend_users: true,
+          permanent_ban_users: true,
+          manage_tournaments: true,
+          approve_deposits: true,
+          approve_withdrawals: true,
+          adjust_balances: true,
+          review_cheater_reports: true,
+          review_profile_reports: true,
+          view_sensitive_dms: true,
+          manage_broadcasts: true,
+          view_audit_logs: true,
+          manage_bot_settings: true,
+          manage_admins: true,
+          system_settings: true
+        }
+      };
+
+      const p = presets[rank] || presets[3];
+      const allPermKeys = [
+        'view_users', 'warn_users', 'restrict_users', 'suspend_users', 'permanent_ban_users',
+        'manage_tournaments', 'approve_deposits', 'approve_withdrawals', 'adjust_balances',
+        'review_cheater_reports', 'review_profile_reports', 'view_sensitive_dms',
+        'manage_broadcasts', 'view_audit_logs', 'manage_bot_settings', 'manage_admins', 'system_settings'
+      ];
+
+      allPermKeys.forEach((key) => {
+        const chk = $(`perm_${key}`);
+        if (chk) {
+          chk.checked = !!p[key];
+        }
+      });
+    }
+
+    async function submitManageAdminForm() {
+      const targetUid = ($('adminTargetUidInput')?.value || '').trim();
+      const rank = parseInt($('adminRankSelect')?.value || '3', 10);
+      const roleTitle = ($('adminRoleTitleInput')?.value || '').trim() || `Rank ${rank} Admin`;
+      const reason = ($('adminRoleReasonInput')?.value || '').trim();
+
+      if (!targetUid) {
+        showAdminToast("Target UID Required", "Please specify the player's UID.", "error");
+        return;
+      }
+
+      if (!reason) {
+        showAdminToast("Reason Required", "Please provide a justification for this administrative change.", "error");
+        return;
+      }
+
+      const allPermKeys = [
+        'view_users', 'warn_users', 'restrict_users', 'suspend_users', 'permanent_ban_users',
+        'manage_tournaments', 'approve_deposits', 'approve_withdrawals', 'adjust_balances',
+        'review_cheater_reports', 'review_profile_reports', 'view_sensitive_dms',
+        'manage_broadcasts', 'view_audit_logs', 'manage_bot_settings', 'manage_admins', 'system_settings'
+      ];
+
+      const permissions = {};
+      allPermKeys.forEach((key) => {
+        const chk = $(`perm_${key}`);
+        if (chk) permissions[key] = chk.checked;
+      });
+
+      const btn = $('btnSubmitManageAdmin');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Enforcing Role...`;
+
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        const res = await fetch('/api/admin/manage-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+          },
+          body: JSON.stringify({
+            action: 'grant_or_update',
+            targetUid,
+            rank,
+            roleTitle,
+            permissions,
+            reason,
+            passcode
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Failed to update administrator role");
+        }
+
+        showAdminToast("Role Deployed", `Successfully configured ${roleTitle} (Rank ${rank}) for ${data.admin?.name || targetUid}`);
+        closeManageAdminModal();
+        loadAdminRoster();
+      } catch (err) {
+        console.error("submitManageAdminForm error:", err);
+        showAdminToast("Permission Error", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-shield-check"></i> Save &amp; Enforce Permissions`;
+      }
+    }
+
+    async function toggleAdminActiveStatus(targetUid, currentIsActive, name) {
+      const action = currentIsActive ? 'disable_access' : 'enable_access';
+      const promptVerb = currentIsActive ? 'suspend' : 'restore';
+      
+      const reason = prompt(`Reason to ${promptVerb} administrative access for ${name}:`);
+      if (reason === null) return; // cancelled
+      if (!reason.trim()) {
+        showAdminToast("Reason Required", "Please enter a reason for this audit event.", "error");
+        return;
+      }
+
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        const res = await fetch('/api/admin/manage-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+          },
+          body: JSON.stringify({
+            action,
+            targetUid,
+            reason,
+            passcode
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Failed to toggle admin status");
+        }
+
+        showAdminToast("Access Updated", `Admin access for ${name} has been ${currentIsActive ? 'suspended' : 'restored'}.`);
+        loadAdminRoster();
+      } catch (err) {
+        showAdminToast("Execution Error", err.message, "error");
+      }
+    }
+
+    async function revokeAdmin(targetUid, name) {
+      if (!confirm(`Are you sure you want to permanently REVOKE administrator privileges from ${name}? This will demote them back to standard player status.`)) {
+        return;
+      }
+
+      const reason = prompt(`Mandatory reason for revoking admin rights from ${name}:`);
+      if (reason === null) return;
+      if (!reason.trim()) {
+        showAdminToast("Reason Required", "Please enter a reason for revoking privileges.", "error");
+        return;
+      }
+
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        const res = await fetch('/api/admin/manage-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+          },
+          body: JSON.stringify({
+            action: 'revoke',
+            targetUid,
+            reason,
+            passcode
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Failed to revoke admin");
+        }
+
+        showAdminToast("Admin Revoked", `Administrator privileges for ${name} have been completely removed.`);
+        loadAdminRoster();
+      } catch (err) {
+        showAdminToast("Revocation Error", err.message, "error");
+      }
+    }
+
+    // 5. Audit Logs Feed Logic
+    async function loadAuditLogs() {
+      const tbody = $('auditLogsTableBody');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-10 text-slate-500 font-sans text-xs">
+              <i class="fas fa-spinner animate-spin mr-2"></i> Loading immutable audit logs...
+            </td>
+          </tr>
+        `;
+      }
+
+      const limit = $('auditLogsLimitSelect')?.value || '100';
+      const actionType = $('filterAuditActionSelect')?.value || 'all';
+
+      try {
+        const user = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+          idToken = await user.getIdToken();
+        }
+        const passcode = sessionStorage.getItem('arenax_admin_pin') || 'arenax2026';
+
+        let url = `/api/admin/audit-logs?limit=${limit}`;
+        if (actionType !== 'all') {
+          url += `&actionType=${encodeURIComponent(actionType)}`;
+        }
+
+        const res = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : { 'x-admin-passcode': passcode })
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch audit records (${res.status})`);
+        }
+
+        rawAuditLogs = await res.json();
+        if (!Array.isArray(rawAuditLogs)) rawAuditLogs = [];
+
+        if ($('auditLogsCountSummary')) {
+          $('auditLogsCountSummary').textContent = `Showing ${rawAuditLogs.length} logs`;
+        }
+
+        renderAuditLogs(rawAuditLogs);
+      } catch (err) {
+        console.error("loadAuditLogs error:", err);
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center py-8 text-rose-400 font-sans text-xs">
+                <i class="fas fa-triangle-exclamation mr-2"></i> ${escapeHtml(err.message || 'Failed to load audit logs')}
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function filterAuditLogsTable() {
+      const search = ($('searchAuditLogsInput')?.value || '').toLowerCase().trim();
+      const actionCategory = $('filterAuditActionSelect')?.value || 'all';
+
+      const filtered = rawAuditLogs.filter((log) => {
+        const matchesCategory = actionCategory === 'all' || 
+          (log.action || '').toLowerCase().includes(actionCategory.toLowerCase());
+
+        const matchesSearch = !search ||
+          (log.action || '').toLowerCase().includes(search) ||
+          (log.adminEmail || '').toLowerCase().includes(search) ||
+          (log.adminName || '').toLowerCase().includes(search) ||
+          (log.targetUid || '').toLowerCase().includes(search) ||
+          (log.reason || '').toLowerCase().includes(search) ||
+          (log.status || '').toLowerCase().includes(search) ||
+          (log.ip || '').toLowerCase().includes(search);
+
+        return matchesCategory && matchesSearch;
+      });
+
+      if ($('auditLogsCountSummary')) {
+        $('auditLogsCountSummary').textContent = `Showing ${filtered.length} of ${rawAuditLogs.length} logs`;
+      }
+
+      renderAuditLogs(filtered);
+    }
+
+    function renderAuditLogs(logs) {
+      const tbody = $('auditLogsTableBody');
+      if (!tbody) return;
+
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-10 text-slate-500 font-sans text-xs">
+              No audit records match the current filter criteria.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = logs.map((log) => {
+        const isSuccess = log.status === 'AUTHORIZED_SUCCESS' || log.status === 'SUCCESS';
+        const isLocked = log.status === 'LOCKED_RATE_LIMITED' || log.status === 'LOCKED_OUT';
+        const isDenied = log.status === 'UNAUTHORIZED_FORBIDDEN' || log.status === 'INVALID_PASSCODE';
+
+        const statusBadge = isSuccess 
+          ? `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase">SUCCESS</span>`
+          : isLocked
+          ? `<span class="px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 text-[9px] font-black uppercase">LOCKED</span>`
+          : `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase">${escapeHtml(log.status || 'DENIED')}</span>`;
+
+        const dateStr = log.timestamp 
+          ? (typeof log.timestamp === 'string' ? new Date(log.timestamp).toLocaleString() : 'Recent')
+          : 'Recent';
+
+        return `
+          <tr class="hover:bg-[#121626]/80 transition">
+            <td class="py-2.5 px-4 text-slate-400 whitespace-nowrap text-[10px]">
+              ${dateStr}
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="font-sans font-bold text-white text-xs truncate max-w-[150px]">
+                ${escapeHtml(log.adminEmail || log.adminName || 'Admin')}
+              </div>
+              <div class="text-[9px] text-slate-500 font-mono">${log.adminRank ? `Rank ${log.rank || log.adminRank}` : 'Staff'}</div>
+            </td>
+            <td class="py-2.5 px-4">
+              <span class="px-2 py-0.5 rounded bg-[#161c2e] text-cyan-300 border border-cyan-500/20 text-[10px] font-bold">
+                ${escapeHtml(log.action || 'system_event')}
+              </span>
+            </td>
+            <td class="py-2.5 px-4">
+              ${log.targetUid ? `
+                <code class="bg-black/40 px-1.5 py-0.5 rounded text-amber-300 text-[10px] select-all cursor-pointer" onclick="copyToClipboard('${log.targetUid}')" title="Click to copy UID">
+                  ${log.targetUid.slice(0, 10)}...
+                </code>
+              ` : '<span class="text-slate-600 text-[10px]">—</span>'}
+            </td>
+            <td class="py-2.5 px-4">
+              ${statusBadge}
+            </td>
+            <td class="py-2.5 px-4 text-slate-400 text-[10px]">
+              ${escapeHtml(log.ip || '127.0.0.1')}
+            </td>
+            <td class="py-2.5 px-4 text-slate-300 text-[10px] max-w-[240px] truncate" title="${escapeHtml(log.reason || '')}">
+              ${escapeHtml(log.reason || 'Routine operation')}
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
   </script>
 </body>
