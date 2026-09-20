@@ -35,6 +35,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Ensure Android app icon and assets are generated
+        run: |
+          # Support APK.png, icon.png, and logo.png in resources/ or assets/
+          if [ -f "resources/APK.png" ] && [ ! -f "resources/icon.png" ]; then
+            cp resources/APK.png resources/icon.png
+          fi
+          if [ -d "resources" ] || [ -d "assets" ]; then
+            echo "Generating Android app icons and splash assets..."
+            npx capacitor-assets generate --android || true
+          fi
+
       - name: Build web assets
         run: npm run build
 
