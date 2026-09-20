@@ -302,18 +302,24 @@ let nativePushListenersAttached = false;
 
 // Robust helper to open native Android notification settings for ArenaX
 async function openNativeNotificationSettings() {
-  if (typeof Capacitor === 'undefined' || !Capacitor.isNativePlatform()) {
+  const isNative = (typeof Capacitor !== 'undefined' && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform()) ||
+                   (typeof window !== 'undefined' && window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) ||
+                   (typeof window !== 'undefined' && typeof window.isNativeCapacitor === 'function' && window.isNativeCapacitor());
+  if (!isNative) {
     console.warn("SettingsLauncher: Not running on a native platform.");
     return false;
   }
   try {
-    console.log("SettingsLauncher: Opening Android notification settings screen...");
+    console.log("SettingsLauncher: [BEFORE CALL] Attempting to open Android notification settings screen via SettingsLauncher.openNotificationSettings()...");
     await SettingsLauncher.openNotificationSettings();
+    console.log("SettingsLauncher: [AFTER CALL] Successfully opened Android notification settings!");
     return true;
   } catch (notifErr) {
-    console.warn("SettingsLauncher: openNotificationSettings failed, falling back to openAppSettings():", notifErr);
+    console.warn("SettingsLauncher: openNotificationSettings() threw error, trying openAppSettings():", notifErr);
     try {
+      console.log("SettingsLauncher: [BEFORE CALL] Attempting fallback via SettingsLauncher.openAppSettings()...");
       await SettingsLauncher.openAppSettings();
+      console.log("SettingsLauncher: [AFTER CALL] Successfully opened Android app settings!");
       return true;
     } catch (appErr) {
       console.error("SettingsLauncher: Both openNotificationSettings and openAppSettings failed:", appErr);
@@ -6764,33 +6770,62 @@ $('btnNotifNotNow').addEventListener('click', () => {
 
 $('btnNotifAllow').addEventListener('click', async () => {
   $('mEnableNotifications').classList.add('hidden');
+  console.log("FCM: 'Allow' notification button tapped by user.");
   
-  if (isCapacitorNative) {
+  const isNative = (typeof Capacitor !== 'undefined' && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform()) ||
+                   (typeof window !== 'undefined' && window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) ||
+                   (typeof window !== 'undefined' && typeof window.isNativeCapacitor === 'function' && window.isNativeCapacitor());
+
+  console.log("FCM: Native Android environment detected:", isNative);
+
+  if (isNative) {
     try {
       // 1. Check current permission status before requesting
-      const permStatus = await PushNotifications.checkPermissions();
-      console.log("FCM (Native): Permission check on Allow tap:", permStatus);
+      let permStatus = null;
+      try {
+        permStatus = await PushNotifications.checkPermissions();
+        console.log("FCM (Native): Permission check on Allow tap:", permStatus);
+      } catch (permErr) {
+        console.warn("FCM (Native): PushNotifications.checkPermissions threw error:", permErr);
+      }
 
-      const isAlreadyDenied = permStatus.receive === 'denied' || localStorage.getItem('arena_x_native_push_denied') === 'true';
+      const isAlreadyDenied = (permStatus && permStatus.receive === 'denied') || 
+                              localStorage.getItem('arena_x_native_push_denied') === 'true';
+
+      console.log("FCM (Native): Is permission already denied?", isAlreadyDenied);
 
       if (isAlreadyDenied) {
         // 2. Previously denied: Android will NOT show prompt again from code.
         // Directly open ArenaX's app-specific notification settings screen in Android system settings
-        const opened = await openNativeNotificationSettings();
-        if (opened) {
+        console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Calling SettingsLauncher.openNotificationSettings() for ArenaX...");
+        try {
+          await SettingsLauncher.openNotificationSettings();
+          console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] SettingsLauncher.openNotificationSettings() completed successfully!");
           showToastNotification('⚙️ Opening Settings', 'Please toggle "Allow notifications" for ArenaX in Settings.');
-        } else {
-          // Fallback text as last resort if plugin call fails
-          showToastNotification('⚠️ Notification Settings', 'Please enable notifications in Android Settings > Apps > ArenaX > Notifications.');
+          return;
+        } catch (settingsErr) {
+          console.warn("FCM (Native): [SETTINGS LAUNCHER] openNotificationSettings failed, trying openAppSettings fallback:", settingsErr);
+          try {
+            console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Calling SettingsLauncher.openAppSettings() for ArenaX...");
+            await SettingsLauncher.openAppSettings();
+            console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] SettingsLauncher.openAppSettings() completed successfully!");
+            showToastNotification('⚙️ Opening Settings', 'Please enable notifications for ArenaX in Settings.');
+            return;
+          } catch (appSettingsErr) {
+            console.error("FCM (Native): [SETTINGS LAUNCHER] Failed to open settings:", appSettingsErr);
+            // Only show text message here as last resort
+            showToastNotification('⚠️ Notification Notice', 'Please check notification permissions in Android settings.');
+            return;
+          }
         }
-        return;
       }
 
       // 3. Not yet denied: proceed with normal permission request flow
+      console.log("FCM (Native): Requesting native push permission dialog...");
       let reqResult = await PushNotifications.requestPermissions();
       console.log("FCM (Native): Request permission result:", reqResult);
 
-      if (reqResult.receive === 'granted') {
+      if (reqResult && reqResult.receive === 'granted') {
         localStorage.setItem('arena_x_native_push_granted', 'true');
         localStorage.removeItem('arena_x_native_push_denied');
         localStorage.setItem('notifAsked', Date.now().toString());
@@ -6809,21 +6844,46 @@ $('btnNotifAllow').addEventListener('click', async () => {
         }
         showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
       } else {
-        // User denied or dismissed prompt
+        // User denied or dismissed prompt -> save state and launch Settings
+        console.log("FCM (Native): User did not grant permission. Marking denied and opening settings screen...");
         localStorage.setItem('arena_x_native_push_denied', 'true');
         localStorage.setItem('notifAsked', Date.now().toString());
-        const opened = await openNativeNotificationSettings();
-        if (opened) {
+
+        console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Calling SettingsLauncher.openNotificationSettings() after dismissal...");
+        try {
+          await SettingsLauncher.openNotificationSettings();
+          console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] SettingsLauncher.openNotificationSettings() opened successfully!");
           showToastNotification('⚙️ Opening Settings', 'Notifications were disabled. Opening Settings to toggle them.');
-        } else {
-          showToastNotification('⚠️ Notifications Disabled', 'Permission was denied. You can enable it anytime in Android App Settings.');
+        } catch (dismissErr) {
+          console.warn("FCM (Native): [SETTINGS LAUNCHER] openNotificationSettings failed after dismissal, trying openAppSettings:", dismissErr);
+          try {
+            console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Calling SettingsLauncher.openAppSettings() after dismissal...");
+            await SettingsLauncher.openAppSettings();
+            console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] SettingsLauncher.openAppSettings() opened successfully!");
+            showToastNotification('⚙️ Opening Settings', 'Please enable notifications for ArenaX in Settings.');
+          } catch (appErr) {
+            console.error("FCM (Native): [SETTINGS LAUNCHER] Failed to open settings:", appErr);
+            showToastNotification('⚠️ Notifications Disabled', 'Permission was denied. You can enable it anytime in Android App Settings.');
+          }
         }
       }
     } catch (nativeErr) {
       console.error("Error handling native notification permission:", nativeErr);
-      const opened = await openNativeNotificationSettings();
-      if (!opened) {
-        showToastNotification('⚠️ Notification Notice', 'Please check notification permissions in Android settings.');
+      console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Attempting to open settings from catch block...");
+      try {
+        await SettingsLauncher.openNotificationSettings();
+        console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] Opened settings from catch block successfully!");
+        showToastNotification('⚙️ Opening Settings', 'Please toggle "Allow notifications" for ArenaX in Settings.');
+      } catch (err1) {
+        try {
+          console.log("FCM (Native): [SETTINGS LAUNCHER] [BEFORE CALL] Attempting openAppSettings from catch block...");
+          await SettingsLauncher.openAppSettings();
+          console.log("FCM (Native): [SETTINGS LAUNCHER] [AFTER CALL] Opened app settings from catch block successfully!");
+          showToastNotification('⚙️ Opening Settings', 'Please enable notifications for ArenaX in Settings.');
+        } catch (err2) {
+          console.error("FCM (Native): [SETTINGS LAUNCHER] Failed to open settings:", err2);
+          showToastNotification('⚠️ Notification Notice', 'Please check notification permissions in Android settings.');
+        }
       }
     }
   } else if (window.Notification) {
