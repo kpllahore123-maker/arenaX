@@ -111,6 +111,9 @@ export async function cleanupStaleServiceWorkers(expectedScriptFilename, expecte
 // 3. FCM Token Management
 export async function requestFCMToken(showSuccessAlert = false) {
   try {
+    if (typeof window.requestFCMToken === 'function') {
+      return await window.requestFCMToken(showSuccessAlert);
+    }
     if (!('Notification' in window)) {
       if (showSuccessAlert && typeof window.showToast === 'function') {
         window.showToast('Push notifications are not supported in this browser.', 'error');
