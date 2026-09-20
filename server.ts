@@ -83,6 +83,35 @@ async function startServer() {
 
   app.use(express.json());
 
+  // CORS & Security Headers configuration
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, x-admin-passcode, x-admin-key");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
+  // Rewrite subpath requests (e.g. /arenax/...) early before API routes
+  app.use((req, res, next) => {
+    const subpathRegex = /^\/(arenax|arenaX)(\/|$)/i;
+    if (subpathRegex.test(req.url)) {
+      const originalUrl = req.url;
+      req.url = req.url.replace(subpathRegex, "/");
+      req.originalUrl = req.url;
+      console.log(`Rewrote subpath request from ${originalUrl} to ${req.url}`);
+    }
+    next();
+  });
+
   // Support Chat API with Gemini AI
   app.post("/api/support-chat", async (req, res) => {
     try {
@@ -619,7 +648,9 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 
   // ── VERIFIED OWNER CONFIGURATION & SECURE ADMIN RBAC ENGINE ──
   const OWNER_EMAIL = (process.env.OWNER_EMAIL || "kpllahore123@gmail.com").toLowerCase().trim();
-  const OWNER_UID = (process.env.OWNER_UID || "xDa31jOrsoQC2HxjSheO3wBqyII2").trim();
+  const KNOWN_OWNER_UIDS = ["bxHj6AsY30O7HSBxxs14om6XEFs2", "xDa31jOrsoQC2HxjSheO3wBqyII2"];
+  const OWNER_UID = (process.env.OWNER_UID || "bxHj6AsY30O7HSBxxs14om6XEFs2").trim();
+  const KNOWN_OWNER_EMAILS = ["kpllahore123@gmail.com", "admin@arenax.com", "admin@arenax.gg"];
 
   const ALL_ADMIN_PERMISSIONS = [
     "view_dashboard",
@@ -775,12 +806,17 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         const uid = decoded.uid;
 
         // 1. Is this the Verified Rank 5 Owner?
-        if (email === OWNER_EMAIL || uid === OWNER_UID) {
+        if (
+          email === OWNER_EMAIL ||
+          KNOWN_OWNER_EMAILS.includes(email) ||
+          uid === OWNER_UID ||
+          KNOWN_OWNER_UIDS.includes(uid)
+        ) {
           if (adminDb) {
             try {
               await adminDb.collection("admin_roles").doc(uid).set({
                 userId: uid,
-                email: OWNER_EMAIL,
+                email: email || OWNER_EMAIL,
                 name: decoded.name || "Owner (Super Admin)",
                 rank: 5,
                 role: RANK_TITLES[5],
@@ -798,7 +834,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           }
           return {
             uid,
-            email: OWNER_EMAIL,
+            email: email || OWNER_EMAIL,
             name: decoded.name || "Owner (Super Admin)",
             photoURL: decoded.picture,
             rank: 5,
@@ -900,9 +936,9 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     if (isAdminConsoleSession) return true;
     if (adminEmail) {
       const em = adminEmail.toLowerCase().trim();
-      if (em === OWNER_EMAIL || ["admin@arenax.com", "admin@arenax.gg"].includes(em)) return true;
+      if (em === OWNER_EMAIL || KNOWN_OWNER_EMAILS.includes(em)) return true;
     }
-    if (adminUid && [OWNER_UID, "lCNKrLAliFSvuML6Nwrr6YlNOtG3"].includes(adminUid.trim())) return true;
+    if (adminUid && ([OWNER_UID, ...KNOWN_OWNER_UIDS, "lCNKrLAliFSvuML6Nwrr6YlNOtG3"].includes(adminUid.trim()))) return true;
     return false;
   }
 
@@ -2201,18 +2237,6 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       console.error("[API Error] /api/complete-password-reset:", err);
       return res.status(500).json({ success: false, error: err.message });
     }
-  });
-
-  // Rewrite subpath requests (e.g. /arenax/...)
-  app.use((req, res, next) => {
-    const subpathRegex = /^\/(arenax|arenaX)(\/|$)/i;
-    if (subpathRegex.test(req.url)) {
-      const originalUrl = req.url;
-      req.url = req.url.replace(subpathRegex, "/");
-      req.originalUrl = req.url;
-      console.log(`Rewrote subpath request from ${originalUrl} to ${req.url}`);
-    }
-    next();
   });
 
   // Dedicated HTML routes
