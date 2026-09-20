@@ -5,6 +5,7 @@
 import './account-standing.js';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { SettingsLauncher } from '@capawesome/capacitor-settings-launcher';
 
 function getNumericPlayerId(uid, currentHandle) {
   if (currentHandle) {
@@ -355,6 +356,15 @@ async function registerNativePushNotifications(showSuccessAlert = false) {
 
     let permStatus = await PushNotifications.checkPermissions();
     console.log("FCM (Native): Current permission state:", permStatus);
+
+    if (permStatus.receive === 'denied') {
+      try {
+        await SettingsLauncher.openNotificationSettings();
+      } catch (settingsErr) {
+        await SettingsLauncher.openAppSettings();
+      }
+      return false;
+    }
 
     if (permStatus.receive === 'prompt' || permStatus.receive === 'prompt-with-rationale') {
       permStatus = await PushNotifications.requestPermissions();
@@ -6725,14 +6735,31 @@ $('btnNotifAllow').addEventListener('click', async () => {
   
   if (isCapacitorNative) {
     try {
-      const granted = await registerNativePushNotifications(false);
-      if (granted) {
-        showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
+      // 1. Check current permission status before requesting
+      const permStatus = await PushNotifications.checkPermissions();
+      console.log("FCM (Native): Permission check on Allow tap:", permStatus);
+
+      if (permStatus.receive === 'denied') {
+        // 2. Previously denied: Android will NOT show the prompt again from code.
+        // Directly open ArenaX's app-specific notification settings screen in Android system settings
+        showToastNotification('⚙️ Opening Settings', 'Notifications are blocked. Please toggle them ON in Settings.');
+        try {
+          await SettingsLauncher.openNotificationSettings();
+        } catch (settingsErr) {
+          console.warn("Could not open notification settings, falling back to app settings:", settingsErr);
+          await SettingsLauncher.openAppSettings();
+        }
       } else {
-        showToastNotification('⚠️ Notifications Disabled', 'Permission was denied. You can enable it anytime in Android App Settings.');
+        // 3. Not yet denied ('prompt', 'prompt-with-rationale', or 'granted'): proceed with normal permission flow
+        const granted = await registerNativePushNotifications(false);
+        if (granted) {
+          showToastNotification('🔔 Notifications Enabled!', 'You will now receive real-time alerts for tournaments, rewards, and match status!');
+        } else {
+          showToastNotification('⚠️ Notifications Disabled', 'Permission was denied. You can enable it anytime in Android App Settings.');
+        }
       }
     } catch (nativeErr) {
-      console.error("Error enabling native notifications:", nativeErr);
+      console.error("Error handling native notification permission:", nativeErr);
       showToastNotification('⚠️ Notification Notice', 'Please check notification permissions in Android settings.');
     }
   } else if (window.Notification) {
