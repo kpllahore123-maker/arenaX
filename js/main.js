@@ -593,10 +593,25 @@ if (referrerParam) {
   localStorage.setItem('arenaX_ref', referrerParam);
 }
 
-// Custom Interactive Cursor Logic
+// Verified server entitlement state (protected from DevTools window tampering)
+let _verifiedServerPremium = false;
+
+// Custom Interactive Cursor Logic with smooth auto-hide on inactivity
 const cur = $('cur');
 const curR = $('curR');
 let mx = 0, my = 0, rx = 0, ry = 0;
+let curTimeout = null;
+
+function showCustomCursor() {
+  if (cur) cur.style.opacity = '1';
+  if (curR) curR.style.opacity = '1';
+  if (curTimeout) clearTimeout(curTimeout);
+  curTimeout = setTimeout(() => {
+    if (cur) cur.style.opacity = '0';
+    if (curR) curR.style.opacity = '0';
+  }, 1500);
+}
+
 if (cur && curR) {
   document.addEventListener('mousemove', (e) => {
     mx = e.clientX;
@@ -605,6 +620,7 @@ if (cur && curR) {
       cur.style.left = mx + 'px';
       cur.style.top = my + 'px';
     }
+    showCustomCursor();
   });
   function loopCursor() {
     if (curR) {
@@ -616,9 +632,142 @@ if (cur && curR) {
     }
   }
   loopCursor();
-  document.addEventListener('mousedown', () => { if (cur) cur.classList.add('scale-150'); });
+  document.addEventListener('mousedown', () => {
+    if (cur) cur.classList.add('scale-150');
+    showCustomCursor();
+  });
   document.addEventListener('mouseup', () => { if (cur) cur.classList.remove('scale-150'); });
+  document.addEventListener('mouseleave', () => {
+    if (cur) cur.style.opacity = '0';
+    if (curR) curR.style.opacity = '0';
+  });
 }
+
+// ==================== DYNAMIC PROFILE CARD THEME (PREMIUM PASS TRACKING) ====================
+function applyProfilePremiumTheme(forceProfile) {
+  const profile = forceProfile || userProfile || guestProfile;
+  if (!profile) return;
+
+  // Security check: Profile must be from authenticated user, not a guest, and backed by authorized data source
+  const isServerEntitled = _verifiedServerPremium || (profile.uid !== 'guest_temp_uid' && !profile.isGuest && profile.premium === true);
+  const isPremium = Boolean(isServerEntitled && profile.premium === true && !profile.isGuest && profile.uid !== 'guest_temp_uid');
+
+  const card = $('profileCard');
+  if (!card) return;
+
+  const glow1 = $('profileCardGlow1');
+  const glow2 = $('profileCardGlow2');
+  const avRing = $('profileAvRing');
+  const btnChangeAv = $('btnChangeAv');
+  const pAv = $('pAv');
+  const pName = $('pName');
+  const pHandle = $('pHandle');
+  const btnViewActivity = $('btnViewActivity');
+  const divider = $('profileCardDivider');
+  const statusIcon = $('profileMemberStatusIcon');
+  const statusIconInner = $('profileMemberStatusIconInner');
+  const statusText = $('profileMemberStatusText');
+  const bOpenPrm = $('bOpenPremium');
+  const bOpenPrmText = $('bOpenPremiumText');
+  const bOpenPrmChevron = $('bOpenPremiumChevron');
+  const badgePrm = $('badgePrm');
+  const popularityBadge = $('pPopularityBadge');
+  const pBio = $('pBio');
+
+  if (isPremium) {
+    // ──────── CASE B: ACTIVE PREMIUM PASS (GOLD MEMBER) ────────
+    // Visible, elegant premium gold-themed background using gold, dark gold, and subtle dark ArenaX obsidian-gold
+    card.className = "relative rounded-2xl p-5 overflow-hidden border border-amber-400/50 bg-gradient-to-br from-[#382607] via-[#231704] to-[#101423] shadow-xl shadow-amber-950/50 transition-all duration-300";
+
+    if (profile.bannerTheme) {
+      const gradients = {
+        red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
+        gold: 'linear-gradient(135deg, #382607 0%, #231704 50%, #101423 100%)',
+        blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
+        purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
+        green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
+        sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
+        ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
+        dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
+      };
+      card.style.background = gradients[profile.bannerTheme] || '';
+    } else {
+      card.style.background = '';
+    }
+
+    if (glow1) glow1.className = "absolute -right-8 -top-8 w-36 h-36 bg-amber-400/25 rounded-full blur-2xl pointer-events-none transition-all";
+    if (glow2) glow2.className = "absolute -left-8 -bottom-8 w-36 h-36 bg-yellow-500/15 rounded-full blur-xl pointer-events-none transition-all";
+
+    if (avRing) avRing.className = "p-0.5 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-md shadow-amber-500/35 transition-all";
+    if (btnChangeAv) btnChangeAv.className = "absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition cursor-pointer border border-amber-300";
+    if (pAv) pAv.className = "w-16 h-16 rounded-full object-cover bg-[#0a0d18]";
+
+    if (pName) {
+      pName.classList.remove('text-slate-900');
+      pName.classList.add('text-white');
+    }
+    if (pHandle) pHandle.className = "text-xs text-amber-200/90 font-medium truncate";
+    if (btnViewActivity) btnViewActivity.className = "text-[11px] text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer";
+    if (divider) divider.className = "relative z-10 border-t border-amber-400/25 my-3.5 transition-colors";
+
+    if (statusIcon) statusIcon.className = "w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 via-amber-300 to-yellow-500 border border-amber-300 text-slate-950 flex items-center justify-center text-xs flex-shrink-0 shadow-md shadow-amber-500/30 transition-colors";
+    if (statusIconInner) statusIconInner.className = "fas fa-crown";
+    if (statusText) {
+      statusText.className = "text-sm font-bold text-white tracking-wide transition-colors";
+      statusText.textContent = "Gold member";
+    }
+
+    if (bOpenPrm) bOpenPrm.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/25";
+    if (bOpenPrmText) bOpenPrmText.textContent = "1 new offer";
+    if (bOpenPrmChevron) bOpenPrmChevron.className = "fas fa-chevron-right text-[10px] text-slate-950";
+
+    if (badgePrm) {
+      badgePrm.classList.remove('hidden');
+      badgePrm.className = "px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-amber-500/25 to-yellow-500/25 text-amber-300 rounded-full border border-amber-400/40 uppercase flex items-center gap-1 shadow-sm";
+    }
+    if (popularityBadge) popularityBadge.className = "px-2 py-0.5 text-[9px] font-bold bg-rose-500/20 text-rose-200 rounded-full border border-rose-500/30 uppercase flex items-center gap-1";
+    if (pBio) pBio.className = "text-[11px] text-amber-100/90 italic";
+
+  } else {
+    // ──────── CASE A: NON-GOLD MEMBER (DEFAULT DARK ARENAX THEME) ────────
+    card.className = "relative rounded-2xl p-5 overflow-hidden border border-white/10 bg-gradient-to-br from-[#121626] via-[#0d101d] to-[#15192d] shadow-lg shadow-black/40 transition-all duration-300";
+    card.style.background = '';
+
+    if (glow1) glow1.className = "absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none transition-all";
+    if (glow2) glow2.className = "absolute -left-8 -bottom-8 w-32 h-32 bg-cyan-500/5 rounded-full blur-xl pointer-events-none transition-all";
+
+    if (avRing) avRing.className = "p-0.5 rounded-full bg-gradient-to-tr from-slate-700 via-slate-600 to-slate-800 border border-slate-600/40 shadow-sm transition-all";
+    if (btnChangeAv) btnChangeAv.className = "absolute -bottom-1 -right-1 w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition cursor-pointer border border-slate-600";
+    if (pAv) pAv.className = "w-16 h-16 rounded-full object-cover bg-[#0a0d18]";
+
+    if (pName) {
+      pName.classList.remove('text-slate-900', 'golden-name-shimmer');
+      pName.classList.add('text-white');
+      pName.style.background = '';
+      pName.style.webkitBackgroundClip = '';
+      pName.style.webkitTextFillColor = '';
+      pName.style.fontStyle = 'normal';
+    }
+    if (pHandle) pHandle.className = "text-xs text-slate-400 font-medium truncate";
+    if (btnViewActivity) btnViewActivity.className = "text-[11px] text-slate-400 hover:text-white font-semibold flex items-center gap-1 transition pt-0.5 cursor-pointer";
+    if (divider) divider.className = "relative z-10 border-t border-white/10 my-3.5 transition-colors";
+
+    if (statusIcon) statusIcon.className = "w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-400 flex items-center justify-center text-xs flex-shrink-0 shadow-xs transition-colors";
+    if (statusIconInner) statusIconInner.className = "fas fa-shield-alt";
+    if (statusText) {
+      statusText.className = "text-sm font-bold text-slate-300 tracking-wide transition-colors";
+      statusText.textContent = "Non-Gold Member";
+    }
+
+    if (bOpenPrm) bOpenPrm.className = "px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-yellow-500/15 hover:from-amber-500/25 hover:to-yellow-500/25 border border-amber-400/40 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs";
+    if (bOpenPrmText) bOpenPrmText.textContent = "Get Premium Pass";
+    if (bOpenPrmChevron) bOpenPrmChevron.className = "fas fa-chevron-right text-[10px]";
+
+    if (badgePrm) badgePrm.classList.add('hidden');
+    if (popularityBadge) popularityBadge.className = "px-2 py-0.5 text-[9px] font-bold bg-rose-500/10 text-rose-400 rounded-full border border-rose-500/20 uppercase flex items-center gap-1";
+  }
+}
+window.applyProfilePremiumTheme = applyProfilePremiumTheme;
 
 // Screen Route controls
 let splashDismissed = false;
@@ -747,24 +896,9 @@ function boot() {
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI(profile);
     if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(profile);
 
-    // 1. Profile Banner Theme (Premium only)
-    const card = $('profileCard');
-    if (card) {
-      if (profile.premium && profile.bannerTheme) {
-        const gradients = {
-          red: 'linear-gradient(135deg, #3f0f15 0%, #1a0508 100%)',
-          gold: 'linear-gradient(135deg, #3b2f0f 0%, #1a1405 100%)',
-          blue: 'linear-gradient(135deg, #0f233f 0%, #050e1a 100%)',
-          purple: 'linear-gradient(135deg, #2b0f3f 0%, #12051a 100%)',
-          green: 'linear-gradient(135deg, #0f3f1e 0%, #051a0b 100%)',
-          sunset: 'linear-gradient(135deg, #3f1e0f 0%, #1a0512 100%)',
-          ocean: 'linear-gradient(135deg, #0f3f3b 0%, #051a18 100%)',
-          dark: 'linear-gradient(135deg, #151821 0%, #0a0b10 100%)'
-        };
-        card.style.background = gradients[profile.bannerTheme] || '';
-      } else {
-        card.style.background = '';
-      }
+    // 1. Dynamic Profile Card Theme (Verified Premium Pass tracking: Gold vs Non-Gold theme)
+    if (typeof window.applyProfilePremiumTheme === 'function') {
+      window.applyProfilePremiumTheme(profile);
     }
 
     // 2. Username Color (Premium only)
@@ -1145,6 +1279,12 @@ function switchTab(tabId) {
       window.playSubmissionSplash();
     }
   }
+
+  if (tabId === 'Profile') {
+    if (typeof window.applyProfilePremiumTheme === 'function') {
+      window.applyProfilePremiumTheme();
+    }
+  }
 }
 window.switchTab = switchTab;
 
@@ -1352,6 +1492,7 @@ onAuthStateChanged(auth, async (fireUser) => {
         userProfile = { ...snap.data(), id: fireUser.uid, uid: fireUser.uid };
         window.userProfile = userProfile;
         window.currentUser = userProfile;
+        _verifiedServerPremium = Boolean(snap.data() && snap.data().premium === true);
         if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(userProfile);
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
@@ -1858,6 +1999,7 @@ $('bLogout').addEventListener('click', async () => {
   if (!confirm('Are you sure you want to sign out?')) return;
   guestProfile = null;
   userProfile = null;
+  _verifiedServerPremium = false;
   cleanupAllUserListeners();
   try {
     sessionStorage.clear();
