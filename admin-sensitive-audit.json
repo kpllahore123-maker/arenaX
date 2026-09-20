@@ -1,0 +1,73 @@
+[
+  {
+    "id": "audit_1789724408400_uvik8",
+    "timestamp": "2026-09-18T09:40:08.400Z",
+    "adminUid": "bxHj6AsY30O7HSBxxs14om6XEFs2",
+    "adminEmail": "kpllahore123@gmail.com",
+    "adminName": "Master Admin (Owner)",
+    "adminRank": 5,
+    "action": "admin_session_verified",
+    "status": "AUTHORIZED_SUCCESS",
+    "ip": "127.0.0.1",
+    "details": "Signed in to Admin Panel as Super Admin / Owner (Rank 5)."
+  },
+  {
+    "id": "audit_1789724405657_t5r7r",
+    "timestamp": "2026-09-18T09:40:05.657Z",
+    "adminUid": "unauthorized_123",
+    "adminEmail": "",
+    "adminName": "Unauthorized User",
+    "action": "admin_login_attempt",
+    "status": "UNAUTHORIZED_FORBIDDEN",
+    "ip": "127.0.0.1",
+    "details": "Attempted admin console login without verified administrator authorization."
+  },
+  {
+    "id": "audit_1789722584769_2zajc",
+    "timestamp": "2026-09-18T09:09:44.769Z",
+    "adminUid": "xDa31jOrsoQC2HxjSheO3wBqyII2",
+    "adminEmail": "kpllahore123@gmail.com",
+    "adminName": "saadanadnan",
+    "adminRank": 5,
+    "action": "admin_session_verified",
+    "status": "AUTHORIZED_SUCCESS",
+    "ip": "175.107.205.89",
+    "details": "Signed in to Admin Panel as Super Admin / Owner (Rank 5)."
+  },
+  {
+    "id": "audit_1789722575508_jn0uf",
+    "timestamp": "2026-09-18T09:09:35.508Z",
+    "adminUid": "xDa31jOrsoQC2HxjSheO3wBqyII2",
+    "adminEmail": "kpllahore123@gmail.com",
+    "adminName": "saadanadnan",
+    "adminRank": 5,
+    "action": "admin_session_verified",
+    "status": "AUTHORIZED_SUCCESS",
+    "ip": "175.107.205.89",
+    "details": "Signed in to Admin Panel as Super Admin / Owner (Rank 5)."
+  },
+  {
+    "id": "audit_1789722543392_49s7n",
+    "timestamp": "2026-09-18T09:09:03.392Z",
+    "adminUid": "xDa31jOrsoQC2HxjSheO3wBqyII2",
+    "adminEmail": "kpllahore123@gmail.com",
+    "adminName": "Master Admin (Owner)",
+    "adminRank": 5,
+    "action": "admin_session_verified",
+    "status": "AUTHORIZED_SUCCESS",
+    "ip": "175.107.205.89",
+    "details": "Signed in to Admin Panel as Super Admin / Owner (Rank 5)."
+  },
+  {
+    "id": "audit_1789722382364_glep6",
+    "timestamp": "2026-09-18T09:06:22.364Z",
+    "adminUid": "xDa31jOrsoQC2HxjSheO3wBqyII2",
+    "adminEmail": "kpllahore123@gmail.com",
+    "adminName": "Master Admin (Owner)",
+    "adminRank": 5,
+    "action": "admin_session_verified",
+    "status": "AUTHORIZED_SUCCESS",
+    "ip": "127.0.0.1",
+    "details": "Signed in to Admin Panel as Super Admin / Owner (Rank 5)."
+  }
+]
