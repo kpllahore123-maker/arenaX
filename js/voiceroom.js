@@ -976,6 +976,46 @@ function listenToActiveRoomDoc(roomId) {
   });
 }
 
+// Contextual Microphone Stream Request (Just-In-Time)
+async function requestMicrophoneForSeat(silent = false) {
+  if (localStream && localStream.getAudioTracks().some(t => t.readyState === 'live')) {
+    return true;
+  }
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!silent) showToastNotification("Unsupported ⚠️", "Microphone not supported on this device.");
+      return false;
+    }
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    localStream.getAudioTracks().forEach(track => {
+      track.enabled = !isMicMuted;
+    });
+    
+    toggleLocalMicLoopback(!isMicMuted);
+    playRadioSquelchClick(false);
+    setupVolumeAnalysis();
+
+    // Attach audio track to any existing peer connections
+    Object.values(peerConnections).forEach(pc => {
+      if (pc && pc.signalingState !== 'closed') {
+        localStream.getTracks().forEach(track => {
+          const senders = pc.getSenders();
+          if (!senders.some(s => s.track === track)) {
+            pc.addTrack(track, localStream);
+          }
+        });
+      }
+    });
+    return true;
+  } catch (micErr) {
+    console.warn("Microphone access denied or unavailable:", micErr);
+    if (!silent) {
+      showToastNotification("Microphone Blocked ⚠️", "Microphone permission is required to speak on a seat.");
+    }
+    return false;
+  }
+}
+
 // Join voice room
 async function joinVoiceRoom(roomId) {
   if (!userProfile) {
@@ -993,20 +1033,6 @@ async function joinVoiceRoom(roomId) {
     await leaveVoiceRoom(false);
   }
 
-  // Request Local Microphone Stream FIRST
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    localStream.getAudioTracks().forEach(track => {
-      track.enabled = !isMicMuted;
-    });
-    
-    toggleLocalMicLoopback(!isMicMuted);
-    playRadioSquelchClick(false);
-  } catch (micErr) {
-    console.warn("Microphone access denied or unavailable:", micErr);
-    showToastNotification("Microphone Blocked ⚠️", "Continuing in listen-only mode.");
-  }
-
   try {
     wasIInRoomPreviously = false;
     currentVoiceRoomId = roomId;
@@ -1022,6 +1048,12 @@ async function joinVoiceRoom(roomId) {
       return;
     }
     const roomData = roomSnap.data();
+    const isRoomHost = roomData.hostId === userProfile.uid;
+
+    // Contextual permission: only request mic on room entry if user is the room host
+    if (isRoomHost) {
+      await requestMicrophoneForSeat(true);
+    }
 
     // Show UI Transition
     $('voiceLobbyView').classList.add('hidden');
@@ -1052,19 +1084,20 @@ async function joinVoiceRoom(roomId) {
 
     // Add local participant to Room Members
     const myMemberId = userProfile.uid;
+    const initialSeat = isRoomHost ? 1 : null;
     await setDoc(doc(db, 'voice_rooms', roomId, 'members', myMemberId), {
       uid: userProfile.uid,
       name: userProfile.name,
       handle: userProfile.handle || '@player',
       avatar: myAvatar,
-      seatIndex: 1, // Default seat
+      seatIndex: initialSeat,
       isPremium: !!(userProfile.premium || userProfile.isPremium || userProfile.isVIP || userProfile.vip),
       isVerified: !!(userProfile.isVerified || userProfile.hasBlueTick || userProfile.blueTick || userProfile.verified),
-      muted: isMicMuted,
+      muted: isMicMuted || !localStream,
       deafened: isSpeakerMuted,
       speaking: false,
       handRaised: false,
-      micStatus: !isMicMuted,
+      micStatus: !isMicMuted && !!localStream,
       joinedAt: serverTimestamp()
     }, { merge: true });
 
@@ -1254,11 +1287,18 @@ function listenToRoomMembers(roomId) {
         // Join/Move to this seat
         seatSlot.addEventListener('click', async () => {
           if (!userProfile || !currentVoiceRoomId) return;
+          // Contextual Just-In-Time permission request when taking a seat
+          const micOk = await requestMicrophoneForSeat(false);
+          if (!micOk) {
+            return;
+          }
           try {
             await updateDoc(doc(db, 'voice_rooms', currentVoiceRoomId, 'members', userProfile.uid), {
-              seatIndex: i
+              seatIndex: i,
+              muted: isMicMuted,
+              micStatus: !isMicMuted
             });
-            showToastNotification("Moved Seat 🛋️", `You moved to Seat ${i}`);
+            showToastNotification("Joined Seat 🛋️", `You took Seat ${i}. Mic is ready.`);
           } catch(e) {}
         });
       }
@@ -1815,8 +1855,17 @@ async function toggleRoomLockState() {
 }
 
 // Toggle local microphone state
-function toggleMyMicrophone() {
-  isMicMuted = !isMicMuted;
+async function toggleMyMicrophone() {
+  if (isMicMuted) {
+    // Unmuting: Ensure microphone permission is granted
+    if (!localStream) {
+      const micOk = await requestMicrophoneForSeat(false);
+      if (!micOk) return;
+    }
+    isMicMuted = false;
+  } else {
+    isMicMuted = true;
+  }
   const icon = $('btnVoiceToggleMute').querySelector('i');
   
   if (isMicMuted) {
