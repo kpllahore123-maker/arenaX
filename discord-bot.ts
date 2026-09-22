@@ -6,6 +6,7 @@ import {
   GatewayIntentBits,
   Partials,
   EmbedBuilder,
+  AttachmentBuilder,
   ActivityType,
   REST,
   Routes,
@@ -124,6 +125,7 @@ function getGuildConfig(guildId) {
       welcomeChannelId: cfg.welcomeChannelId || "",
       warningLinkChannels: [],
       notBotChannels: [],
+      linkWarnings: {},
       userWarnings: {},
     };
   }
@@ -132,6 +134,12 @@ function getGuildConfig(guildId) {
   }
   if (!Array.isArray(cfg.guilds[guildId].notBotChannels)) {
     cfg.guilds[guildId].notBotChannels = [];
+  }
+  if (
+    !cfg.guilds[guildId].linkWarnings ||
+    typeof cfg.guilds[guildId].linkWarnings !== "object"
+  ) {
+    cfg.guilds[guildId].linkWarnings = {};
   }
   if (
     !cfg.guilds[guildId].userWarnings ||
@@ -440,14 +448,17 @@ async function initializeDiscordBot() {
             inline: false,
           }
         )
+        .setImage("attachment://welcome.gif")
         .setFooter({
           text: `ArenaX Esports | ${guild.name}`,
           iconURL: guild.iconURL() || void 0,
         })
         .setTimestamp();
+      const attachment = new AttachmentBuilder("public/welcome.gif");
       await welcomeChannel.send({
         content: `🎮 Welcome to ArenaX Esports, ${member}!`,
         embeds: [channelEmbed],
+        files: [attachment],
       });
       addBotLog(
         `Welcome message posted for ${member.user.tag} in channel #${welcomeChannel.name}`
@@ -490,76 +501,51 @@ async function initializeDiscordBot() {
             addBotLog(
               `Auto-deleted link from ${message.author.tag} in monitored channel #${message.channel.name}`
             );
-            const warnRes = await addUserWarning(
-              message.guild,
-              message.author,
-              "AutoMod (Link Protection)",
-              "Sending unauthorized link in monitored channel"
-            );
-
-            if (warnRes.timedOut) {
-              const timeoutEmbed = new EmbedBuilder()
-                .setTitle("⛔ 12-Hour Timeout Applied")
-                .setDescription(
-                  `🚨 ${message.author} has accumulated **3 warnings** and has been given a **12-hour timeout**!`
-                )
-                .addFields(
-                  {
-                    name: "👤 Member",
-                    value: `${message.author} (@${message.author.username})`,
-                    inline: true,
-                  },
-                  {
-                    name: "⏱️ Duration",
-                    value: "`12 Hours (12 ghante)`",
-                    inline: true,
-                  },
-                  {
-                    name: "👮 Action By",
-                    value: "`AutoMod (Link Protection)`",
-                    inline: true,
-                  },
-                  {
-                    name: "📋 Final Infraction",
-                    value: "Sending unauthorized link in monitored channel",
-                    inline: false,
-                  }
-                )
-                .setColor(15158332)
-                .setFooter({ text: "ArenaX Auto-Moderation System" })
-                .setTimestamp();
-
-              await message.channel.send({
-                content: `⛔ ${message.author} has reached 3 warnings and received a 12-hour timeout.`,
-                embeds: [timeoutEmbed],
-              });
-            } else {
-              const warnEmbed = new EmbedBuilder()
-                .setTitle("⚠️ Anti-Link Warning")
-                .setDescription(
-                  `⚠️ ${message.author} has been warned due to sending a link in this channel.`
-                )
-                .addFields(
-                  {
-                    name: "Active Warnings",
-                    value: `**${warnRes.count} / 3**`,
-                    inline: true,
-                  },
-                  {
-                    name: "Penalty Notice",
-                    value: "`3 warnings = 12 Hours Timeout`",
-                    inline: true,
-                  }
-                )
-                .setColor(15105570)
-                .setFooter({ text: "ArenaX Anti-Link Moderation" })
-                .setTimestamp();
-
-              await message.channel.send({
-                content: `⚠️ ${message.author} has been warned due to sending link (Warning **${warnRes.count}/3**)`,
-                embeds: [warnEmbed],
-              });
+            if (!gCfg.linkWarnings || typeof gCfg.linkWarnings !== "object") {
+              gCfg.linkWarnings = {};
             }
+            const currentStrikes = (gCfg.linkWarnings[message.author.id] || 0) + 1;
+            let embedDesc = "";
+
+            if (currentStrikes === 1) {
+              gCfg.linkWarnings[message.author.id] = 1;
+              embedDesc = `${message.author.username} has been warned due to sending links (1/3).`;
+            } else if (currentStrikes === 2) {
+              gCfg.linkWarnings[message.author.id] = 2;
+              embedDesc = `${message.author.username} has been warned due to sending links (2/3). Next warning will lead to 24 hours timeout.`;
+            } else {
+              gCfg.linkWarnings[message.author.id] = 0;
+              try {
+                const member =
+                  message.member ||
+                  (await message.guild.members.fetch(message.author.id).catch(() => null));
+                if (member && member.moderatable) {
+                  await member.timeout(86400000, "Sending links (3/3 strikes)");
+                  addBotLog(
+                    `Applied 24-hour timeout to ${message.author.tag} for 3 link warnings.`
+                  );
+                } else {
+                  addBotLog(
+                    `⚠️ Could not timeout ${message.author.tag}: member not moderatable.`
+                  );
+                }
+              } catch (timeoutErr) {
+                addBotLog(
+                  `⚠️ Timeout error for ${message.author.tag}: ${timeoutErr.message}`
+                );
+              }
+              embedDesc = `${message.author.username} has been warned due to sending links (3/3). User has been timed out for 24 hours.`;
+            }
+
+            saveGuildConfig(message.guild.id, { linkWarnings: gCfg.linkWarnings });
+
+            const warnEmbed = new EmbedBuilder()
+              .setDescription(embedDesc)
+              .setColor("#f0c040");
+
+            await message.channel.send({
+              embeds: [warnEmbed],
+            });
           } catch (err) {
             addBotLog(
               `⚠️ Error handling link violation in #${message.channel.name}: ${err.message}`
@@ -663,7 +649,7 @@ async function initializeDiscordBot() {
           .addFields(
             {
               name: "🛡️ Server Moderation (Admin / Mod)",
-              value: `\`${prefix}welcome set #channel\` — Configure welcome announcements & DMs\n\`${prefix}setwarninglink #channel\` — Set link-prohibited channel (Auto-delete & warn)\n\`${prefix}notbot #channel\` — Set silent zone (ignores commands from regular users)\n\`${prefix}warn @user <reason>\` — Warn user (3 warnings = 12h timeout)\n\`${prefix}warnings [@user]\` — View active warnings & timeout history\n\`${prefix}clearwarn @user\` — Clear active warnings (back to 0/3)\n\`${prefix}clear <amount>\` — Bulk delete messages (1-100)\n\`${prefix}slowmode <seconds>\` — Set channel message cooldown\n\`${prefix}announce <#channel> <msg>\` — Broadcast server announcement\n\`${prefix}alert <msg>\` — Urgent announcement with @everyone\n\`${prefix}setmaintenance <on/off>\` — Toggle bot maintenance mode`,
+              value: `\`${prefix}welcome set #channel\` — Configure welcome announcements & DMs\n\`${prefix}setwarninglink #channel\` — Set link-prohibited channel (Auto-delete & warn)\n\`${prefix}notbot #channel\` — Set silent zone (ignores commands from regular users)\n\`${prefix}removenotbot #channel\` — Remove silent zone\n\`${prefix}warn @user <reason>\` — Warn user (3 warnings = 12h timeout)\n\`${prefix}warnings [@user]\` — View active warnings & timeout history\n\`${prefix}clearwarn @user\` — Clear active warnings (back to 0/3)\n\`${prefix}clear <amount>\` — Bulk delete messages (1-100)\n\`${prefix}slowmode <seconds>\` — Set channel message cooldown\n\`${prefix}announce <#channel> <msg>\` — Broadcast server announcement\n\`${prefix}alert <msg>\` — Urgent announcement with @everyone\n\`${prefix}setmaintenance <on/off>\` — Toggle bot maintenance mode`,
             },
             {
               name: "🌐 General & Info",
@@ -1363,41 +1349,46 @@ ${trivia.q}
         }
         if (!targetChannel || !targetChannel.isTextBased()) {
           await message.reply(
-            `⚠️ Please provide a valid text channel mention or ID.\n**Usage:** \`${prefix}notbot #channel-name\` or \`${prefix}notbot <channelID>\`\n• To remove: \`${prefix}notbot remove #channel-name\``
+            `⚠️ Please provide a valid text channel mention or ID.\n**Usage:** \`${prefix}notbot #channel-name\` or \`${prefix}notbot <channelID>\`\n• To remove: \`${prefix}removenotbot #channel-name\``
           );
           return;
         }
         const gCfg = getGuildConfig(message.guild.id);
-        const notBotList = gCfg.notBotChannels || [];
-        let updatedChannels = [];
-        let responseTitle = "";
-        let responseDesc = "";
+        const notBotList = Array.isArray(gCfg.notBotChannels) ? gCfg.notBotChannels : [];
         if (
           args[0]?.toLowerCase() === "remove" ||
           args[0]?.toLowerCase() === "del" ||
           args[0]?.toLowerCase() === "off"
         ) {
-          updatedChannels = notBotList.filter((id) => id !== targetChannel.id);
+          const updatedChannels = notBotList.filter((id) => id !== targetChannel.id);
           saveGuildConfig(message.guild.id, {
             notBotChannels: updatedChannels,
           });
-          responseTitle = "🔊 Silent Zone Removed";
-          responseDesc = `${targetChannel} has been removed from silent zones. Normal bot commands are now active for all members in this channel.`;
-        } else {
-          if (!notBotList.includes(targetChannel.id)) {
-            updatedChannels = [...notBotList, targetChannel.id];
-            saveGuildConfig(message.guild.id, {
-              notBotChannels: updatedChannels,
-            });
-          } else {
-            updatedChannels = notBotList;
-          }
-          responseTitle = "🤫 Bot Silent Zone Configured";
-          responseDesc = `${targetChannel} is now saved as a **Silent Zone** (\`${prefix}notbot\`)!\n\n**Silent Zone Rules:**\n• Regular users typing bot commands (\`${prefix}help\`, \`${prefix}welcome\`, \`${prefix}setwarninglink\`, \`${prefix}notbot\`, etc.) will receive **no response** (completely silent, no error).\n• Server Moderators and Admins are exempt and can still run all commands normally.\n• 🛡️ Anti-link protection (if enabled for this channel via \`${prefix}setwarninglink\`) will continue to automatically delete links and warn users.`;
+          const removeEmbed = new EmbedBuilder()
+            .setDescription("This channel is no longer a notbot zone.")
+            .setColor("#f0c040");
+          await message.reply({ embeds: [removeEmbed] });
+          addBotLog(
+            `Silent zone removed for #${targetChannel.name} in guild ${message.guild.id}`
+          );
+          return;
         }
+
+        let updatedChannels = [];
+        if (!notBotList.includes(targetChannel.id)) {
+          updatedChannels = [...notBotList, targetChannel.id];
+          saveGuildConfig(message.guild.id, {
+            notBotChannels: updatedChannels,
+          });
+        } else {
+          updatedChannels = notBotList;
+        }
+
         const notBotEmbed = new EmbedBuilder()
-          .setTitle(responseTitle)
-          .setDescription(responseDesc)
+          .setTitle("🤫 Bot Silent Zone Configured")
+          .setDescription(
+            `${targetChannel} is now saved permanently as a **Silent Zone** (\`${prefix}notbot\`)!\n\n**Silent Zone Rules:**\n• Regular users typing bot commands will receive **no response** (completely silent, no error).\n• Server Moderators and Admins are exempt and can still run all commands normally.\n• This channel remains silent permanently until explicitly removed via \`${prefix}removenotbot ${targetChannel}\`.`
+          )
           .setColor("#f0c040")
           .addFields({
             name: "📋 Active Silent Channels in Server",
@@ -1412,6 +1403,50 @@ ${trivia.q}
         await message.reply({ embeds: [notBotEmbed] });
         addBotLog(
           `Silent zone channels updated for guild ${message.guild.id} by ${message.author.tag} (Channel: #${targetChannel.name})`
+        );
+      } else if (commandName === "removenotbot") {
+        const member = message.member;
+        if (
+          !member ||
+          (!member.permissions.has("ManageChannels") &&
+            !member.permissions.has("Administrator") &&
+            !member.permissions.has("ManageGuild") &&
+            !member.permissions.has("ManageMessages"))
+        ) {
+          await message.reply(
+            "❌ Only server administrators or moderators can remove silent bot channels."
+          );
+          return;
+        }
+        let targetChannel = null;
+        if (args[0]) {
+          const channelId = args[0].replace(/[<#>]/g, "");
+          targetChannel =
+            message.mentions.channels.first() ||
+            message.guild?.channels.cache.get(channelId);
+        } else {
+          targetChannel = message.channel;
+        }
+        if (!targetChannel || !targetChannel.isTextBased()) {
+          await message.reply(
+            `⚠️ Please provide a valid text channel mention or ID.\n**Usage:** \`${prefix}removenotbot #channel-name\` or \`${prefix}removenotbot <channelID>\``
+          );
+          return;
+        }
+        const gCfg = getGuildConfig(message.guild.id);
+        const notBotList = Array.isArray(gCfg.notBotChannels) ? gCfg.notBotChannels : [];
+        const updatedChannels = notBotList.filter((id) => id !== targetChannel.id);
+        saveGuildConfig(message.guild.id, {
+          notBotChannels: updatedChannels,
+        });
+
+        const removeEmbed = new EmbedBuilder()
+          .setDescription("This channel is no longer a notbot zone.")
+          .setColor("#f0c040");
+
+        await message.reply({ embeds: [removeEmbed] });
+        addBotLog(
+          `Silent zone removed for #${targetChannel.name} in guild ${message.guild.id} via !removenotbot by ${message.author.tag}`
         );
       } else if (commandName === "announce") {
         const member = message.member;
