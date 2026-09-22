@@ -1,0 +1,16 @@
+{
+  "prefix": "!",
+  "systemInstruction": "You are an intelligent, helpful, and funny AI Discord Bot powered by Gemini. You reply with a casual, engaging tone. Use Discord markdown features (bold, italics, code blocks, lists) to format your replies beautifully.",
+  "temperature": 0.7,
+  "allowedChannels": [],
+  "maintenanceMode": false,
+  "welcomeChannelId": "",
+  "guilds": {
+    "1548721349076459571": {
+      "welcomeChannelId": "1548749653342683156",
+      "warningLinkChannels": [],
+      "notBotChannels": [],
+      "linkWarnings": {}
+    }
+  }
+}
