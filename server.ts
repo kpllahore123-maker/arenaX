@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import { initializeDiscordBot, botLogs, botStats, getBotConfig, saveBotConfig } from "./discord-bot.ts";
+import { initializeDiscordBot, botLogs, botStats, getLiveBotStats, getBotConfig, saveBotConfig } from "./discord-bot.ts";
 import { initializeApp as initAdminApp, cert as adminCert, getApps as getAdminApps } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore, FieldValue } from "firebase-admin/firestore";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
@@ -513,7 +513,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   });
 
   app.get("/api/discord-bot/status", (req, res) => {
-    res.json({ stats: botStats, config: getBotConfig() });
+    res.json({ stats: getLiveBotStats(), config: getBotConfig() });
   });
 
   app.get("/api/discord-bot/logs", (req, res) => {
@@ -539,6 +539,219 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       res.json({ success: true, stats: botStats });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // ARENAX WEEKLY REWARDS SYSTEM (SERVER-SIDE)
+  // ==========================================
+  const getVerifiedRewardUid = async (req: express.Request): Promise<string | null> => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      if (adminAuth && token) {
+        try {
+          const decoded = await adminAuth.verifyIdToken(token);
+          if (decoded && decoded.uid) return decoded.uid;
+        } catch (e) {
+          // Fall back to uid in body/query if token is expired or anonymous
+        }
+      }
+    }
+    const uid = (req.body?.uid || req.query?.uid) as string | undefined;
+    return uid || null;
+  };
+
+  // GET /api/weekly-rewards/status
+  app.get("/api/weekly-rewards/status", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Missing UID." });
+      }
+
+      const userDoc = await adminDb.collection("users").doc(uid).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: "User profile not found." });
+      }
+
+      const userData = userDoc.data() || {};
+      const weeklyReward = userData.weeklyReward || {};
+      const now = Date.now();
+      const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+      let isEligible = true;
+      let remainingMs = 0;
+
+      if (weeklyReward.lastClaimAt) {
+        const lastClaimMs = new Date(weeklyReward.lastClaimAt).getTime();
+        const elapsed = now - lastClaimMs;
+        if (elapsed < COOLDOWN_MS) {
+          isEligible = false;
+          remainingMs = COOLDOWN_MS - elapsed;
+        }
+      }
+
+      let currentDay = typeof weeklyReward.currentDay === "number" ? weeklyReward.currentDay : 1;
+      if (currentDay < 1 || currentDay > 7) {
+        currentDay = 1;
+      }
+
+      return res.json({
+        success: true,
+        isEligible,
+        remainingMs,
+        currentDay,
+        lastClaimAt: weeklyReward.lastClaimAt || null,
+        nextClaimAt: weeklyReward.nextClaimAt || null,
+        totalClaims: weeklyReward.totalClaims || 0,
+        rewards: [15, 20, 25, 30, 35, 40, "Mystery Gift"],
+        serverTime: now,
+      });
+    } catch (error: any) {
+      console.error("[Weekly Rewards Status Error]:", error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // POST /api/weekly-rewards/claim
+  app.post("/api/weekly-rewards/claim", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database service not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Please sign in to claim rewards." });
+      }
+
+      const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+      const userRef = adminDb.collection("users").doc(uid);
+
+      // Run atomic Firestore transaction
+      const result = await adminDb.runTransaction(async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        if (!userSnap.exists) {
+          throw new Error("Player profile not found.");
+        }
+
+        const userData = userSnap.data() || {};
+        const weeklyReward = userData.weeklyReward || {};
+        const now = Date.now();
+
+        // 1. Verify 24-hour cooldown
+        if (weeklyReward.lastClaimAt) {
+          const lastClaimMs = new Date(weeklyReward.lastClaimAt).getTime();
+          const elapsed = now - lastClaimMs;
+          if (elapsed < COOLDOWN_MS) {
+            const waitMs = COOLDOWN_MS - elapsed;
+            const hours = Math.floor(waitMs / (1000 * 60 * 60));
+            const minutes = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
+            throw new Error(`Reward already claimed. Next reward unlocks in ${hours}h ${minutes}m.`);
+          }
+        }
+
+        // 2. Verify and determine current reward day (1 to 7)
+        let currentDay = typeof weeklyReward.currentDay === "number" ? weeklyReward.currentDay : 1;
+        if (currentDay < 1 || currentDay > 7) {
+          currentDay = 1;
+        }
+
+        // 3. Calculate reward amount server-side
+        const standardRewards: Record<number, number> = {
+          1: 15,
+          2: 20,
+          3: 25,
+          4: 30,
+          5: 35,
+          6: 40,
+        };
+
+        let rewardAmount = 0;
+        let isMystery = false;
+
+        if (currentDay === 7) {
+          isMystery = true;
+          // Randomly award ONE of: 20, 30, 50, 70 (server authoritative)
+          const mysteryPool = [20, 30, 50, 70];
+          const randomIndex = Math.floor(Math.random() * mysteryPool.length);
+          rewardAmount = mysteryPool[randomIndex];
+        } else {
+          rewardAmount = standardRewards[currentDay] || 15;
+        }
+
+        // 4. Determine next cycle progression
+        const nextClaimAt = new Date(now + COOLDOWN_MS).toISOString();
+        const nextDay = currentDay >= 7 ? 1 : currentDay + 1;
+        const cycleStartedAt =
+          currentDay === 1 || !weeklyReward.cycleStartedAt
+            ? new Date(now).toISOString()
+            : weeklyReward.cycleStartedAt;
+        const cycleId =
+          currentDay >= 7
+            ? `cycle_${now}_${Math.random().toString(36).substring(2, 7)}`
+            : weeklyReward.cycleId || `cycle_${now}_${Math.random().toString(36).substring(2, 7)}`;
+
+        const newWeeklyReward = {
+          currentDay: nextDay,
+          lastClaimAt: new Date(now).toISOString(),
+          nextClaimAt,
+          cycleStartedAt,
+          cycleId,
+          totalClaims: (weeklyReward.totalClaims || 0) + 1,
+        };
+
+        // 5. Update user balance and weeklyReward state atomically
+        transaction.update(userRef, {
+          balance: FieldValue.increment(rewardAmount),
+          weeklyReward: newWeeklyReward,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        // 6. Record transaction history in reward_transactions
+        const txnRef = adminDb.collection("reward_transactions").doc();
+        transaction.set(txnRef, {
+          userId: uid,
+          rewardType: "weekly_reward",
+          day: currentDay,
+          amount: rewardAmount,
+          isMystery,
+          cycleId,
+          claimedAt: FieldValue.serverTimestamp(),
+          claimedAtIso: new Date(now).toISOString(),
+          createdAt: new Date().toISOString(),
+        });
+
+        return {
+          rewardAmount,
+          isMystery,
+          claimedDay: currentDay,
+          nextDay,
+          newWeeklyReward,
+          newBalance: (userData.balance || 0) + rewardAmount,
+        };
+      });
+
+      return res.json({
+        success: true,
+        rewardAmount: result.rewardAmount,
+        isMystery: result.isMystery,
+        claimedDay: result.claimedDay,
+        nextDay: result.nextDay,
+        newBalance: result.newBalance,
+        newWeeklyReward: result.newWeeklyReward,
+        message: result.isMystery
+          ? `Mystery Gift claimed! +${result.rewardAmount} AX Coins`
+          : `+${result.rewardAmount} AX Coins claimed!`,
+      });
+    } catch (error: any) {
+      console.error("[Weekly Rewards Claim Error]:", error);
+      return res.status(400).json({ success: false, error: error.message || "Failed to claim reward." });
     }
   });
 
