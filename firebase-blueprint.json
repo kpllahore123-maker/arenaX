@@ -13,9 +13,27 @@
         "balance": { "type": "number", "description": "AX Coin balance" },
         "hasBlueTick": { "type": "boolean", "description": "Verified badge" },
         "premium": { "type": "boolean", "description": "VIP premium account status" },
+        "isAXCreator": { "type": "boolean", "description": "Whether user is an approved AX Creator eligible to create teams" },
+        "playerRole": { "type": "string", "enum": ["rusher", "sniper", "boomer", "supporter"], "description": "Esports combat specialization role" },
+        "weeklyReward": { "type": "object", "description": "Player 7-day weekly reward progression and cooldown state" },
         "createdAt": { "type": "string", "description": "Account registration timestamp" }
       },
       "required": ["uid", "name", "handle", "balance"]
+    },
+    "RewardTransaction": {
+      "title": "RewardTransaction",
+      "description": "Daily and weekly reward claim history records",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Player UID" },
+        "rewardType": { "type": "string", "description": "Type of reward (e.g. weekly_reward)" },
+        "day": { "type": "number", "description": "Reward cycle day (1-7)" },
+        "amount": { "type": "number", "description": "AX Coins awarded" },
+        "isMystery": { "type": "boolean", "description": "Whether reward came from Day 7 Mystery Gift" },
+        "cycleId": { "type": "string", "description": "Identifier of weekly reward cycle" },
+        "claimedAt": { "type": "string", "description": "Timestamp of claim" }
+      },
+      "required": ["userId", "rewardType", "day", "amount"]
     },
     "Tournament": {
       "title": "Tournament",
@@ -136,9 +154,28 @@
         "updatedAt": { "type": "string", "description": "Timestamp when release was published" }
       },
       "required": ["latestVersion", "downloadUrl"]
+    },
+    "AXCreatorRequest": {
+      "title": "AXCreatorRequest",
+      "description": "Application submitted by user requesting AX Creator team creation authorization",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Applicant user UID" },
+        "name": { "type": "string", "description": "Applicant display name" },
+        "handle": { "type": "string", "description": "Applicant username handle" },
+        "av": { "type": "string", "description": "Applicant avatar URL" },
+        "requestedAt": { "type": "string", "description": "Request creation timestamp" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Review status" },
+        "reviewedAt": { "type": "string", "description": "Timestamp when admin took action" }
+      },
+      "required": ["uid", "name", "status"]
     }
   },
   "firestore": {
+    "/ax_creator_requests/{reqId}": {
+      "schema": "AXCreatorRequest",
+      "description": "AX Creator approval requests for squad creation"
+    },
     "/app_config/{configId}": {
       "schema": "AppVersionConfig",
       "description": "Application remote versioning and configuration"
@@ -174,6 +211,10 @@
     "/moderation_history/{historyId}": {
       "schema": "ModerationHistory",
       "description": "Moderation punishment actions log"
+    },
+    "/reward_transactions/{txnId}": {
+      "schema": "RewardTransaction",
+      "description": "Weekly reward claims and transactions log"
     }
   }
 }
