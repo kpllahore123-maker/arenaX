@@ -4616,61 +4616,8 @@ html, body {
   </div>
 </div>
 
-<!-- ==================== UNDER DEVELOPMENT POPUP MODAL ==================== -->
-<div id="mUnderDevPopup" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[300] flex items-center justify-center p-4 hidden">
-  <div class="bg-panel border border-bdr rounded-2xl max-w-[440px] w-full overflow-hidden shadow-2xl relative animate-scale-in flex flex-col">
-    <!-- Close Cross Button -->
-    <button type="button" id="bCloseUnderDevCross" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-gold hover:text-bg text-white transition flex items-center justify-center cursor-pointer">
-      <i class="fas fa-times text-sm"></i>
-    </button>
-
-    <!-- Top Graphic Banner -->
-    <div class="relative w-full h-48 overflow-hidden flex-shrink-0">
-      <video id="eventBannerImg" class="w-full h-full object-cover" autoplay loop muted playsinline poster="event_banner_1783187383925.jpg">
-        <source src="code.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <script>
-        (function() {
-          var video = document.getElementById('eventBannerImg');
-          if (video) {
-            var basePath = (typeof window.getAppBasePath === 'function') ? window.getAppBasePath() : './';
-            var source = video.querySelector('source');
-            if (source) {
-              source.src = basePath + 'code.mp4';
-              video.load();
-              video.play().catch(function(e) { console.log('Video autoplay:', e); });
-            }
-          }
-        })();
-      </script>
-      <!-- Gradient overlay to blend bottom -->
-      <div class="absolute inset-0 bg-gradient-to-t from-panel via-panel/20 to-black/30"></div>
-    </div>
-
-    <!-- Content Area -->
-    <div class="p-6 space-y-4 text-center">
-      <div class="flex justify-center">
-        <span class="px-2.5 py-1 bg-gold/10 border border-gold/30 text-gold text-[10px] font-black uppercase rounded-full tracking-widest animate-pulse">
-          🔥 WELCOME TO ARENAX
-        </span>
-      </div>
-
-      <div class="space-y-2">
-        <h3 class="font-display text-xl font-black text-white uppercase tracking-wide">
-          ArenaX Esports Center
-        </h3>
-        <p class="text-xs text-t2 leading-relaxed max-w-[360px] mx-auto font-sans">
-          Step into the ultimate gaming ecosystem! Challenge opponents, join matches, participate in premier esports tournaments, and lead your squad to glory on the leaderboards!
-        </p>
-      </div>
-
-      <button type="button" id="bCloseUnderDev" class="w-full py-3 bg-gold hover:bg-gold/80 text-bg text-xs font-black uppercase tracking-widest rounded-xl transition duration-150 shadow-lg shadow-gold/10 cursor-pointer">
-        ENTER ARENA
-      </button>
-    </div>
-  </div>
-</div>
+<!-- Under Development / Welcome modal removed per user request: replaced by Weekly Rewards modal -->
+<div id="mUnderDevPopup" class="hidden" style="display:none !important;" aria-hidden="true"></div>
 
 <!-- ==================== ENABLE PUSH NOTIFICATIONS POPUP ==================== -->
 <div id="mEnableNotifications" class="fixed inset-0 bg-black/90 backdrop-filter backdrop-blur-md z-[310] flex items-center justify-center p-4 hidden animate-fade-in">
