@@ -2026,6 +2026,36 @@ window.openPlayerProfileCard = async function(targetUid) {
     if ($('vppName')) {
       $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
     }
+    // Esports Player Role Badge
+    const roleInfo = window.getRoleInfo ? window.getRoleInfo(u.playerRole) : null;
+    if ($('vppRoleBadge')) {
+      if (roleInfo) {
+        $('vppRoleBadge').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[10px]"></i>${roleInfo.name}`;
+        $('vppRoleBadge').className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+        $('vppRoleBadge').classList.remove('hidden');
+      } else {
+        $('vppRoleBadge').classList.add('hidden');
+      }
+    }
+    if ($('vppRoleTag')) {
+      if (roleInfo) {
+        $('vppRoleTag').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[9px]"></i>${roleInfo.name}`;
+        $('vppRoleTag').className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+        $('vppRoleTag').classList.remove('hidden');
+      } else {
+        $('vppRoleTag').classList.add('hidden');
+      }
+    }
+
+    // AX Creator Badge
+    if ($('vppAXCreatorBadge')) {
+      if (u && u.isAXCreator === true) {
+        $('vppAXCreatorBadge').classList.remove('hidden');
+      } else {
+        $('vppAXCreatorBadge').classList.add('hidden');
+      }
+    }
+
     if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
     
     // Country
