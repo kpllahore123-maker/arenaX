@@ -10,6 +10,8 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./css/supporter-titles.css" />
+  <script type="module" src="./js/supporter-titles.js"></script>
   <script type="module" src="./js/account-standing.js"></script>
   <script>
     window.addEventListener('error', function(e) {
@@ -241,6 +243,19 @@
         <p id="adminInspectBio" class="text-xs text-slate-300 italic leading-relaxed">No signature</p>
       </div>
 
+      <!-- Esports Role & Supporter Level -->
+      <div class="bg-[#0b0e18] border border-white/5 rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Esports Role & Title:</div>
+          <button type="button" id="btnAdminInspectManageRole" class="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1">
+            <i class="fas fa-shield-heart"></i> Manage Role & Level
+          </button>
+        </div>
+        <div id="adminInspectRoleDisplay" class="flex items-center gap-2 pt-0.5">
+          <span class="text-xs text-slate-400">None</span>
+        </div>
+      </div>
+
       <!-- Moderation & Quick Action Buttons -->
       <div class="space-y-2 pt-1">
         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Moderation Controls:</div>
@@ -272,6 +287,111 @@
           Close
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: MANAGE ESPORTS ROLE & SUPPORTER LEVEL ── -->
+  <div id="mManageEsportsRoleModal" class="fixed inset-0 z-[100002] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in font-sans">
+    <div class="w-full max-w-md bg-cardBg border border-bdr rounded-3xl p-6 shadow-2xl space-y-5 text-white max-h-[92vh] overflow-y-auto relative">
+      
+      <!-- Top Row -->
+      <div class="flex items-center justify-between border-b border-bdr pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30">
+            <i class="fas fa-shield-heart"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-white">Manage Esports Role & Level</h4>
+            <p class="text-[10px] text-slate-400">Configure Supporter status and Level 1–4 title</p>
+          </div>
+        </div>
+        <button onclick="$('mManageEsportsRoleModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Target User Info -->
+      <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3 flex items-center gap-3">
+        <img id="esportsRoleTargetAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=user" class="w-12 h-12 rounded-xl object-cover border border-bdr bg-slate-900" />
+        <div class="min-w-0 flex-1">
+          <h4 id="esportsRoleTargetName" class="text-sm font-black text-white truncate">Player Name</h4>
+          <div id="esportsRoleTargetHandle" class="text-xs text-gold font-mono">@handle</div>
+          <div class="text-[10px] text-slate-400 font-mono">UID: <span id="esportsRoleTargetUid" class="text-slate-300 select-all">...</span></div>
+        </div>
+      </div>
+
+      <!-- Role Selection -->
+      <div class="space-y-1.5">
+        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">Select Esports Role</label>
+        <select id="selEsportsRole" onchange="window.handleEsportsRoleChange(this.value)" class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500 transition cursor-pointer font-bold">
+          <option value="none">None (No Esports Title)</option>
+          <option value="supporter">Supporter (Level 1–4 Title)</option>
+        </select>
+      </div>
+
+      <!-- Supporter Level Controls (Visible only when role is Supporter) -->
+      <div id="supporterLevelControlsContainer" class="space-y-3 p-4 bg-[#0a0d18] border border-emerald-500/20 rounded-2xl">
+        <div class="flex items-center justify-between">
+          <div>
+            <label class="block text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Supporter Level Tier</label>
+            <p class="text-[10px] text-slate-400">Increase or decrease level from 1 to 4</p>
+          </div>
+          <!-- Increase / Decrease Step Buttons -->
+          <div class="flex items-center gap-2">
+            <button id="btnDecSupporterLvl" type="button" onclick="window.adjustSupporterLevel(-1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center transition border border-bdr cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fas fa-minus text-[10px]"></i>
+            </button>
+            <span id="lblSupporterLevelNumber" class="w-12 text-center font-black text-sm text-gold font-mono">LVL 1</span>
+            <button id="btnIncSupporterLvl" type="button" onclick="window.adjustSupporterLevel(1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center transition border border-bdr cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fas fa-plus text-[10px]"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Level Select Buttons -->
+        <div class="grid grid-cols-4 gap-2 pt-1">
+          <button type="button" onclick="window.setSupporterLevel(1)" id="btnLvlOption1" class="py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-slate-800 text-slate-300 border-bdr">
+            LVL 1
+          </button>
+          <button type="button" onclick="window.setSupporterLevel(2)" id="btnLvlOption2" class="py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-slate-800 text-slate-300 border-bdr">
+            LVL 2
+          </button>
+          <button type="button" onclick="window.setSupporterLevel(3)" id="btnLvlOption3" class="py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-slate-800 text-slate-300 border-bdr">
+            LVL 3
+          </button>
+          <button type="button" onclick="window.setSupporterLevel(4)" id="btnLvlOption4" class="py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-slate-800 text-slate-300 border-bdr">
+            LVL 4
+          </button>
+        </div>
+
+        <!-- Live Title Visual Preview -->
+        <div class="pt-2">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>Live Visual Preview</span>
+            <span class="text-[9px] text-emerald-400 lowercase font-mono">renders in profile</span>
+          </div>
+          <div id="adminSupporterTitlePreviewBox" class="p-4 bg-[#05070d] border border-white/10 rounded-2xl flex items-center justify-center min-h-[90px] overflow-visible relative">
+            <!-- Live Preview rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason (Audit Record) -->
+      <div class="space-y-1">
+        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">Administrative Reason (Audit Log)</label>
+        <input id="inputEsportsRoleReason" type="text" placeholder="e.g. Verified Supporter badge granted for tournament patronage" class="w-full bg-[#0d101a] border border-bdr rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none" />
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-2">
+        <button id="btnSaveEsportsRole" onclick="window.saveEsportsRoleAndLevel()" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+          <i class="fas fa-check"></i> Save Role & Level
+        </button>
+        <button onclick="$('mManageEsportsRoleModal').classList.add('hidden')" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">
+          Cancel
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -3788,6 +3908,18 @@
                 >
                   ${u.isAXCreator ? 'AX Creator ★' : '+ AX Creator'}
                 </button>
+
+                <button
+                  onclick="openManageEsportsRoleModal('${u.uid}')"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                    (u.esportsRole === 'supporter' || u.playerRole === 'supporter')
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                      : 'bg-slate-800 text-slate-400 border-bdr hover:text-white'
+                  }"
+                  title="Manage Esports Role & Supporter Level (1-4)"
+                >
+                  <i class="fas fa-shield-heart mr-1"></i>${(u.esportsRole === 'supporter' || u.playerRole === 'supporter') ? `Supporter LVL ${u.supporterLevel || 1}` : '+ Role'}
+                </button>
               </div>
             </td>
 
@@ -3801,6 +3933,14 @@
 
             <td class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-1.5">
+                <button
+                  onclick="openManageEsportsRoleModal('${u.uid}')"
+                  class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition cursor-pointer"
+                  title="Manage Esports Role & Supporter Level"
+                >
+                  <i class="fas fa-shield-heart text-xs"></i>
+                </button>
+
                 <button
                   onclick="openBalancePrompt('${u.uid}', '${escapeHtml(u.name || 'User')}', ${u.balance || 0})"
                   class="p-1.5 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 rounded-lg transition cursor-pointer"
@@ -4436,8 +4576,226 @@
         };
       }
 
+      if ($('adminInspectRoleDisplay')) {
+        const isSupporter = user.esportsRole === 'supporter' || user.playerRole === 'supporter';
+        if (isSupporter && typeof window.getSupporterTitleHtml === 'function') {
+          const lvl = parseInt(user.supporterLevel, 10) || 1;
+          $('adminInspectRoleDisplay').innerHTML = window.getSupporterTitleHtml(lvl, { isViewProfile: false });
+        } else {
+          $('adminInspectRoleDisplay').innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">None</span>`;
+        }
+      }
+      if ($('btnAdminInspectManageRole')) {
+        $('btnAdminInspectManageRole').onclick = () => {
+          openManageEsportsRoleModal(user.uid);
+        };
+      }
+
       $('mAdminInspectProfileModal').classList.remove('hidden');
     }
+
+    // ── ESPORTS ROLE & SUPPORTER LEVEL CONTROLLER ──
+    let currentManagingRoleUid = null;
+    let currentManagingRoleUser = null;
+    let selectedEsportsRole = 'none';
+    let selectedSupporterLevel = 1;
+
+    window.openManageEsportsRoleModal = async function(uid) {
+      if (!uid) return;
+      currentManagingRoleUid = uid;
+      let user = rawUsers.find((u) => u.uid === uid || u.id === uid);
+      if (!user) {
+        try {
+          const { doc, getDoc } = window.fsTools;
+          const snap = await getDoc(doc(window.fbDb, 'users', uid));
+          if (snap.exists()) {
+            user = { id: snap.id, uid: snap.id, ...snap.data() };
+          }
+        } catch(e) {
+          console.warn("Could not fetch user directly:", e);
+        }
+      }
+      if (!user) {
+        showAdminToast("Not Found", "User record does not exist in database.", "error");
+        return;
+      }
+      currentManagingRoleUser = user;
+
+      // Populate user preview
+      $('esportsRoleTargetAv').src = user.av || user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+      $('esportsRoleTargetName').textContent = user.name || user.userName || 'ArenaX Player';
+      $('esportsRoleTargetHandle').textContent = `@${user.handle || 'player'}`;
+      $('esportsRoleTargetUid').textContent = user.uid || uid;
+      $('inputEsportsRoleReason').value = `Updated Esports Role for ${user.name || user.handle || 'user'}`;
+
+      // Read current state
+      const hasSupporter = (user.esportsRole === 'supporter' || user.playerRole === 'supporter');
+      selectedEsportsRole = hasSupporter ? 'supporter' : 'none';
+      selectedSupporterLevel = parseInt(user.supporterLevel, 10) || 1;
+      if (selectedSupporterLevel < 1 || selectedSupporterLevel > 4) selectedSupporterLevel = 1;
+
+      $('selEsportsRole').value = selectedEsportsRole;
+      window.handleEsportsRoleChange(selectedEsportsRole);
+
+      $('mManageEsportsRoleModal').classList.remove('hidden');
+    };
+
+    window.handleEsportsRoleChange = function(role) {
+      selectedEsportsRole = role;
+      const controls = $('supporterLevelControlsContainer');
+      if (role === 'supporter') {
+        if (!selectedSupporterLevel || selectedSupporterLevel < 1 || selectedSupporterLevel > 4) {
+          selectedSupporterLevel = 1; // Default auto-equipped when select supporter
+        }
+        if (controls) controls.classList.remove('hidden');
+        window.setSupporterLevel(selectedSupporterLevel);
+      } else {
+        if (controls) controls.classList.add('hidden');
+      }
+    };
+
+    window.adjustSupporterLevel = function(delta) {
+      let nextLvl = selectedSupporterLevel + delta;
+      if (nextLvl < 1) nextLvl = 1;
+      if (nextLvl > 4) nextLvl = 4;
+      window.setSupporterLevel(nextLvl);
+    };
+
+    window.setSupporterLevel = function(lvl) {
+      selectedSupporterLevel = Math.min(4, Math.max(1, parseInt(lvl, 10) || 1));
+      if ($('lblSupporterLevelNumber')) {
+        $('lblSupporterLevelNumber').textContent = `LVL ${selectedSupporterLevel}`;
+      }
+
+      // Update button highlights
+      for (let i = 1; i <= 4; i++) {
+        const btn = $(`btnLvlOption${i}`);
+        if (btn) {
+          if (i === selectedSupporterLevel) {
+            btn.className = 'py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-600/30';
+          } else {
+            btn.className = 'py-2 rounded-xl text-xs font-black transition border cursor-pointer text-center bg-slate-800 text-slate-300 border-bdr hover:bg-slate-700';
+          }
+        }
+      }
+
+      // Update step buttons disable state
+      if ($('btnDecSupporterLvl')) $('btnDecSupporterLvl').disabled = (selectedSupporterLevel <= 1);
+      if ($('btnIncSupporterLvl')) $('btnIncSupporterLvl').disabled = (selectedSupporterLevel >= 4);
+
+      // Render live visual preview
+      const previewBox = $('adminSupporterTitlePreviewBox');
+      if (previewBox && typeof window.getSupporterTitleHtml === 'function') {
+        previewBox.innerHTML = window.getSupporterTitleHtml(selectedSupporterLevel, { isViewProfile: false });
+      }
+    };
+
+    window.saveEsportsRoleAndLevel = async function() {
+      if (!currentManagingRoleUid) return;
+      const btn = $('btnSaveEsportsRole');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Saving Role...`;
+
+      const targetUid = currentManagingRoleUid;
+      const newRole = selectedEsportsRole;
+      const newLvl = newRole === 'supporter' ? selectedSupporterLevel : null;
+      const reason = ($('inputEsportsRoleReason')?.value || '').trim() || 'Admin role update';
+
+      try {
+        const adminUid = adminAuthSession?.uid || activeAdminUid || 'admin';
+        const adminEmail = adminAuthSession?.email || activeAdminEmail || '';
+        const adminName = adminAuthSession?.name || activeAdminName || 'Master Admin';
+
+        // 1. Call Backend Secure API endpoint
+        let apiSuccess = false;
+        try {
+          const res = await fetch('/api/admin/update-esports-role', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminAuthSession?.token || ''}`
+            },
+            body: JSON.stringify({
+              adminUid,
+              adminEmail,
+              adminName,
+              targetUserId: targetUid,
+              esportsRole: newRole,
+              supporterLevel: newLvl,
+              reason,
+              isAdminConsoleSession: true
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              apiSuccess = true;
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[Admin] Server update API note:', apiErr);
+        }
+
+        // 2. Direct Firestore fallback if client has admin session
+        if (!apiSuccess && window.fbDb && window.fsTools) {
+          const { doc, updateDoc, addDoc, collection, serverTimestamp } = window.fsTools;
+          const userRef = doc(window.fbDb, 'users', targetUid);
+          const updatePayload = {
+            esportsRole: newRole,
+            supporterLevel: newLvl,
+            playerRole: newRole === 'supporter' ? 'supporter' : null
+          };
+          await updateDoc(userRef, updatePayload);
+
+          // Save audit record
+          const prevRole = currentManagingRoleUser?.esportsRole || (currentManagingRoleUser?.playerRole === 'supporter' ? 'supporter' : 'none');
+          const prevLvl = currentManagingRoleUser?.supporterLevel || null;
+          await addDoc(collection(window.fbDb, 'role_audit_logs'), {
+            targetUserId: targetUid,
+            previousRole: prevRole,
+            newRole: newRole,
+            previousLevel: prevLvl,
+            newLevel: newLvl,
+            adminUserId: adminUid,
+            adminEmail: adminEmail,
+            timestamp: new Date().toISOString(),
+            createdAt: serverTimestamp()
+          });
+        }
+
+        // Update local memory user object
+        const uIdx = rawUsers.findIndex((u) => u.uid === targetUid || u.id === targetUid);
+        if (uIdx !== -1) {
+          rawUsers[uIdx].esportsRole = newRole;
+          rawUsers[uIdx].supporterLevel = newLvl;
+          if (newRole === 'supporter') {
+            rawUsers[uIdx].playerRole = 'supporter';
+          }
+        }
+        if (currentManagingRoleUser) {
+          currentManagingRoleUser.esportsRole = newRole;
+          currentManagingRoleUser.supporterLevel = newLvl;
+        }
+
+        renderUsersTable();
+
+        showAdminToast(
+          "Role Configured! 🛡️",
+          newRole === 'supporter'
+            ? `Granted Supporter LVL ${newLvl} to ${currentManagingRoleUser?.name || targetUid}`
+            : `Removed Esports Role for ${currentManagingRoleUser?.name || targetUid}`
+        );
+
+        $('mManageEsportsRoleModal').classList.add('hidden');
+      } catch (err) {
+        console.error("Save role error:", err);
+        showAdminToast("Error", err.message || "Failed to update role.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-check"></i> Save Role & Level`;
+      }
+    };
 
     // 6. ACTIONS
 
