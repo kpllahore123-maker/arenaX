@@ -558,12 +558,12 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         }
       }
     }
-    const uid = (req.body?.uid || req.query?.uid) as string | undefined;
+    const uid = (req.body?.uid || req.query?.uid || req.params?.uid) as string | undefined;
     return uid || null;
   };
 
-  // GET /api/weekly-rewards/status
-  app.get("/api/weekly-rewards/status", async (req, res) => {
+  // GET /api/weekly-rewards/status (supports query, param, and multiple route variations)
+  app.all(["/api/weekly-rewards/status", "/api/weekly-rewards/status/:uid", "/api/weekly-rewards/user/:uid"], async (req, res) => {
     try {
       if (!adminDb) {
         return res.status(500).json({ success: false, error: "Database not initialized." });
@@ -575,11 +575,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       }
 
       const userDoc = await adminDb.collection("users").doc(uid).get();
-      if (!userDoc.exists) {
-        return res.status(404).json({ success: false, error: "User profile not found." });
-      }
-
-      const userData = userDoc.data() || {};
+      const userData = userDoc.exists ? (userDoc.data() || {}) : {};
       const weeklyReward = userData.weeklyReward || {};
       const now = Date.now();
       const COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -2484,6 +2480,11 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     } else {
       res.sendFile(path.join(process.cwd(), "index.html"));
     }
+  });
+
+  // Ensure any unmatched /api route returns JSON error instead of SPA HTML
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({ success: false, error: `API route ${req.method} ${req.path} not found.` });
   });
 
   // Development vs Production static / vite serving
