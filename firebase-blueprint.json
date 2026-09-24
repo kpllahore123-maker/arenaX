@@ -15,6 +15,8 @@
         "premium": { "type": "boolean", "description": "VIP premium account status" },
         "isAXCreator": { "type": "boolean", "description": "Whether user is an approved AX Creator eligible to create teams" },
         "playerRole": { "type": "string", "enum": ["rusher", "sniper", "boomer", "supporter"], "description": "Esports combat specialization role" },
+        "esportsRole": { "type": "string", "enum": ["none", "supporter"], "description": "Official Esports title role" },
+        "supporterLevel": { "type": "number", "description": "Supporter level tier (1-4)" },
         "weeklyReward": { "type": "object", "description": "Player 7-day weekly reward progression and cooldown state" },
         "createdAt": { "type": "string", "description": "Account registration timestamp" }
       },
@@ -34,6 +36,21 @@
         "claimedAt": { "type": "string", "description": "Timestamp of claim" }
       },
       "required": ["userId", "rewardType", "day", "amount"]
+    },
+    "RoleAuditRecord": {
+      "title": "RoleAuditRecord",
+      "description": "Administrative audit trail of player esports role and supporter level adjustments",
+      "type": "object",
+      "properties": {
+        "targetUserId": { "type": "string", "description": "Target Player UID" },
+        "previousRole": { "type": "string", "description": "Previous Esports Role" },
+        "newRole": { "type": "string", "description": "Newly assigned Esports Role" },
+        "previousLevel": { "type": "number", "description": "Previous Supporter Level" },
+        "newLevel": { "type": "number", "description": "Newly assigned Supporter Level" },
+        "adminUserId": { "type": "string", "description": "UID of admin making the modification" },
+        "timestamp": { "type": "string", "description": "ISO timestamp of administrative action" }
+      },
+      "required": ["targetUserId", "newRole", "adminUserId", "timestamp"]
     },
     "Tournament": {
       "title": "Tournament",
@@ -215,6 +232,10 @@
     "/reward_transactions/{txnId}": {
       "schema": "RewardTransaction",
       "description": "Weekly reward claims and transactions log"
+    },
+    "/role_audit_logs/{logId}": {
+      "schema": "RoleAuditRecord",
+      "description": "Administrative role modification audit records"
     }
   }
 }
