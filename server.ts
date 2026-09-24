@@ -1593,6 +1593,120 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     }
   });
 
+  // 3.5. Update Player Esports Role & Supporter Level
+  app.post("/api/admin/update-esports-role", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database service not initialized." });
+      }
+
+      const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const {
+        adminUid,
+        adminEmail,
+        adminName,
+        targetUserId,
+        esportsRole,
+        supporterLevel,
+        reason,
+        isAdminConsoleSession
+      } = req.body || {};
+
+      // Verify admin authorization
+      const caller = await verifyAdminCaller(req);
+      const isAuthorized = caller || isAuthorizedAdmin(adminUid, adminEmail, isAdminConsoleSession);
+
+      if (!isAuthorized) {
+        return res.status(403).json({ success: false, error: "Access denied. Only authorized administrators can modify Esports Roles." });
+      }
+
+      if (!targetUserId || typeof targetUserId !== "string") {
+        return res.status(400).json({ success: false, error: "Valid targetUserId is required." });
+      }
+
+      const validRole = esportsRole === "supporter" ? "supporter" : "none";
+      let validLevel: number | null = null;
+      if (validRole === "supporter") {
+        const lvlNum = parseInt(supporterLevel, 10);
+        validLevel = (lvlNum >= 1 && lvlNum <= 4) ? lvlNum : 1; // Default LVL 1 auto-equipped
+      }
+
+      const userRef = adminDb.collection("users").doc(targetUserId.trim());
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists) {
+        return res.status(404).json({ success: false, error: "Player profile not found in database." });
+      }
+
+      const existingData = userSnap.data() || {};
+      const previousRole = existingData.esportsRole || (existingData.playerRole === "supporter" ? "supporter" : "none");
+      const previousLevel = existingData.supporterLevel !== undefined ? existingData.supporterLevel : null;
+
+      const effectiveAdminUid = caller?.uid || adminUid || "admin";
+      const nowIso = new Date().toISOString();
+
+      // Atomic update to Firestore user document
+      const updatePayload: Record<string, any> = {
+        esportsRole: validRole,
+        supporterLevel: validLevel,
+        updatedAt: FieldValue.serverTimestamp()
+      };
+
+      if (validRole === "supporter") {
+        updatePayload.playerRole = "supporter";
+      } else if (existingData.playerRole === "supporter") {
+        updatePayload.playerRole = null;
+      }
+
+      await userRef.update(updatePayload);
+
+      // Save audit record as strictly specified:
+      // targetUserId, previousRole, newRole, previousLevel, newLevel, adminUserId, timestamp
+      const auditRecord = {
+        targetUserId: targetUserId.trim(),
+        previousRole: previousRole || "none",
+        newRole: validRole,
+        previousLevel: previousLevel != null ? Number(previousLevel) : null,
+        newLevel: validLevel != null ? Number(validLevel) : null,
+        adminUserId: effectiveAdminUid,
+        adminEmail: caller?.email || adminEmail || "",
+        adminName: caller?.name || adminName || "Administrator",
+        timestamp: nowIso,
+        reason: reason || "Administrative Esports Role & Supporter Level configuration",
+        ip: clientIp,
+        createdAt: FieldValue.serverTimestamp()
+      };
+
+      await adminDb.collection("role_audit_logs").add(auditRecord);
+
+      // Also append to global admin audit logs
+      recordAuditLog({
+        adminUid: effectiveAdminUid,
+        adminEmail: caller?.email || adminEmail || "",
+        adminName: caller?.name || adminName || "Administrator",
+        action: "update_esports_role",
+        targetUid: targetUserId.trim(),
+        status: "AUTHORIZED_SUCCESS",
+        ip: clientIp,
+        details: `Updated Esports Role to ${validRole}${validLevel ? ` (LVL ${validLevel})` : ""}. Previous: ${previousRole}${previousLevel ? ` (LVL ${previousLevel})` : ""}`
+      });
+
+      return res.json({
+        success: true,
+        message: `Successfully updated Esports Role to ${validRole}${validLevel ? ` (LVL ${validLevel})` : ""}`,
+        user: {
+          uid: targetUserId.trim(),
+          esportsRole: validRole,
+          supporterLevel: validLevel
+        },
+        auditRecord
+      });
+    } catch (err: any) {
+      console.error("[Update Esports Role Error]:", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to update esports role." });
+    }
+  });
+
   // 4. Admin Dashboard Overview Statistics
   app.get("/api/admin/dashboard-stats", async (req, res) => {
     try {
