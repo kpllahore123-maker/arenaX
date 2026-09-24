@@ -293,6 +293,9 @@ async function fetchWeeklyRewardsStatus(forceOpen = false) {
         openWeeklyRewardsModal();
       } else {
         console.log(`[Weekly Rewards] Cooldown active for player (${Math.round(data.remainingMs / 1000 / 60)} mins left). Modal not auto-opened.`);
+        if (typeof window.checkAndShowNotificationPopup === 'function') {
+          window.checkAndShowNotificationPopup();
+        }
       }
 
       return data;
@@ -331,6 +334,9 @@ function closeWeeklyRewardsModal() {
   const modal = document.getElementById('mWeeklyRewards');
   if (modal) {
     modal.classList.add('hidden');
+  }
+  if (typeof window.checkAndShowNotificationPopup === 'function') {
+    window.checkAndShowNotificationPopup();
   }
 }
 
