@@ -993,6 +993,11 @@ function goTo(screenId) {
   if (window.ArenaSplash) {
     window.ArenaSplash.finish();
   }
+
+  // Trigger Weekly Rewards check on entering the Arena dashboard
+  if (screenId === 'sDash' && typeof window.checkArenaWeeklyRewardsEligibility === 'function') {
+    window.checkArenaWeeklyRewardsEligibility();
+  }
 }
 window.goTo = goTo;
 
@@ -1337,9 +1342,12 @@ function boot() {
 
     goTo('sDash');
 
-    if (!devPopupShownThisSession) {
-      if ($('mUnderDevPopup')) $('mUnderDevPopup').classList.remove('hidden');
-      devPopupShownThisSession = true;
+    // Welcome popup (mUnderDevPopup) removed per user request:
+    // In its place, Weekly Rewards eligibility is checked automatically.
+    // If eligible (Day 1 or after 24-hour cooldown), Weekly Rewards modal will pop up.
+    // If timer / cooldown is active, the modal will NOT pop up.
+    if (typeof window.checkArenaWeeklyRewardsEligibility === 'function') {
+      window.checkArenaWeeklyRewardsEligibility();
     }
     if (typeof initVoiceRoomsSystem === 'function') {
       initVoiceRoomsSystem();
@@ -1376,6 +1384,10 @@ function boot() {
         }, 500);
       }
     } catch(e) {}
+    // Arena entry complete: trigger Weekly Rewards eligibility check
+    if (typeof window.checkArenaWeeklyRewardsEligibility === 'function') {
+      window.checkArenaWeeklyRewardsEligibility();
+    }
   } catch (bootErr) {
     console.error('[Boot Error] Exception caught during boot:', bootErr);
     // Ensure user still reaches dashboard without being trapped
