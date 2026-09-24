@@ -111,8 +111,12 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ user }) => {
         const res = await fetch(`/api/weekly-rewards/status?uid=${encodeURIComponent(user.uid)}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
-        const data = await res.json();
-        if (data.success && isMounted) {
+        const ct = res.headers.get('content-type') || '';
+        let data: any = null;
+        if (res.ok && ct.includes('application/json')) {
+          data = await res.json();
+        }
+        if (data && data.success && isMounted) {
           setWeeklyRewardSummary({
             isEligible: !!data.isEligible,
             currentDay: data.currentDay || 1,
