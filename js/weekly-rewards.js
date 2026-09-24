@@ -1,5 +1,5 @@
 // ArenaX - Weekly Rewards System Integration (Client-Side)
-import { auth } from './firebase-config.js';
+import { auth, db, doc, getDoc, updateDoc, increment, runTransaction } from './firebase-config.js';
 
 let weeklyRewardState = {
   currentDay: 1,
@@ -219,10 +219,65 @@ async function fetchWeeklyRewardsStatus(forceOpen = false) {
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`/api/weekly-rewards/status?uid=${encodeURIComponent(uid)}`, { headers });
-    const data = await res.json();
+    let data = null;
 
-    if (data.success) {
+    // 1. Try server status API first
+    try {
+      const res = await fetch(`/api/weekly-rewards/status?uid=${encodeURIComponent(uid)}`, { headers });
+      if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const json = await res.json();
+          if (json && json.success) {
+            data = json;
+          }
+        }
+      }
+    } catch (netErr) {
+      console.warn('[Weekly Rewards] Server status fetch note:', netErr.message || netErr);
+    }
+
+    // 2. Direct Firestore fallback if server status API is unavailable / 404 / HTML
+    if (!data && db) {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', uid));
+        const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
+        const weeklyReward = userData.weeklyReward || {};
+        const now = Date.now();
+        const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+        let isEligible = true;
+        let remainingMs = 0;
+
+        if (weeklyReward.lastClaimAt) {
+          const lastClaimMs = new Date(weeklyReward.lastClaimAt).getTime();
+          const elapsed = now - lastClaimMs;
+          if (elapsed < COOLDOWN_MS) {
+            isEligible = false;
+            remainingMs = COOLDOWN_MS - elapsed;
+          }
+        }
+
+        let currentDay = typeof weeklyReward.currentDay === 'number' ? weeklyReward.currentDay : 1;
+        if (currentDay < 1 || currentDay > 7) currentDay = 1;
+
+        data = {
+          success: true,
+          isEligible,
+          remainingMs,
+          currentDay,
+          lastClaimAt: weeklyReward.lastClaimAt || null,
+          nextClaimAt: weeklyReward.nextClaimAt || null,
+          totalClaims: weeklyReward.totalClaims || 0,
+          rewards: [15, 20, 25, 30, 35, 40, 'Mystery Gift'],
+          serverTime: now
+        };
+      } catch (fsErr) {
+        console.warn('[Weekly Rewards] Firestore fallback status error:', fsErr);
+      }
+    }
+
+    if (data && data.success) {
       weeklyRewardState.currentDay = data.currentDay || 1;
       weeklyRewardState.isEligible = !!data.isEligible;
       weeklyRewardState.remainingMs = data.remainingMs || 0;
@@ -242,11 +297,11 @@ async function fetchWeeklyRewardsStatus(forceOpen = false) {
 
       return data;
     } else {
-      console.warn('[Weekly Rewards] Status returned error:', data.error);
+      console.warn('[Weekly Rewards] Status unavailable for UID:', uid);
       return null;
     }
   } catch (err) {
-    console.error('[Weekly Rewards] Failed to fetch status:', err);
+    console.warn('[Weekly Rewards] Status fetch note:', err.message || err);
     return null;
   } finally {
     weeklyRewardState.loading = false;
@@ -310,17 +365,96 @@ async function handleClaimWeeklyReward() {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch('/api/weekly-rewards/claim', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ uid })
-    });
+    let claimResult = null;
 
-    const data = await res.json();
+    // 1. Try server-side atomic claim first
+    try {
+      const res = await fetch('/api/weekly-rewards/claim', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ uid })
+      });
 
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to claim reward.');
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const json = await res.json();
+        if (res.ok && json.success) {
+          claimResult = json;
+        } else if (json && json.error) {
+          throw new Error(json.error);
+        }
+      }
+    } catch (err) {
+      if (err.message && (err.message.includes('already claimed') || err.message.includes('cooldown') || err.message.includes('unlocks in'))) {
+        throw err;
+      }
+      console.warn('[Weekly Rewards] Server claim fallback note:', err.message || err);
     }
+
+    // 2. Direct Firestore Transaction fallback if server endpoint is unavailable
+    if (!claimResult && db) {
+      const userRef = doc(db, 'users', uid);
+      claimResult = await runTransaction(db, async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        if (!userSnap.exists()) {
+          throw new Error('Player profile not found in database.');
+        }
+        const userData = userSnap.data() || {};
+        const weeklyReward = userData.weeklyReward || {};
+        const now = Date.now();
+        const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+        if (weeklyReward.lastClaimAt) {
+          const lastClaimMs = new Date(weeklyReward.lastClaimAt).getTime();
+          const elapsed = now - lastClaimMs;
+          if (elapsed < COOLDOWN_MS) {
+            const waitMs = COOLDOWN_MS - elapsed;
+            const hours = Math.floor(waitMs / (1000 * 60 * 60));
+            const minutes = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
+            throw new Error(`Reward already claimed. Next reward unlocks in ${hours}h ${minutes}m.`);
+          }
+        }
+
+        let currentDay = typeof weeklyReward.currentDay === 'number' ? weeklyReward.currentDay : 1;
+        if (currentDay < 1 || currentDay > 7) currentDay = 1;
+
+        const REWARD_SCHEDULE = [15, 20, 25, 30, 35, 40, 60];
+        const isMystery = currentDay === 7;
+        const rewardAmount = REWARD_SCHEDULE[currentDay - 1];
+        const nextDay = currentDay >= 7 ? 1 : currentDay + 1;
+        const nowIso = new Date(now).toISOString();
+        const nextIso = new Date(now + COOLDOWN_MS).toISOString();
+        const currentBalance = Number(userData.balance || 0);
+        const newBalance = currentBalance + rewardAmount;
+
+        transaction.update(userRef, {
+          balance: increment(rewardAmount),
+          weeklyReward: {
+            currentDay: nextDay,
+            lastClaimAt: nowIso,
+            nextClaimAt: nextIso,
+            cycleStartedAt: weeklyReward.cycleStartedAt || nowIso,
+            cycleId: weeklyReward.cycleId || `cycle_${now}`,
+            totalClaims: (weeklyReward.totalClaims || 0) + 1
+          }
+        });
+
+        return {
+          success: true,
+          rewardAmount,
+          isMystery,
+          claimedDay: currentDay,
+          nextDay,
+          newBalance
+        };
+      });
+    }
+
+    if (!claimResult || !claimResult.success) {
+      throw new Error('Unable to complete claim at this time. Please try again.');
+    }
+
+    const data = claimResult;
 
     // Success!
     const msg = data.isMystery
