@@ -4702,23 +4702,40 @@
       const reason = ($('inputEsportsRoleReason')?.value || '').trim() || 'Admin role update';
 
       try {
-        const adminUid = adminAuthSession?.uid || activeAdminUid || 'admin';
-        const adminEmail = adminAuthSession?.email || activeAdminEmail || '';
-        const adminName = adminAuthSession?.name || activeAdminName || 'Master Admin';
+        const authUser = window.fbAuth?.currentUser || window.currentAuthUser || null;
+        let idToken = '';
+        if (authUser && typeof authUser.getIdToken === 'function') {
+          try {
+            idToken = await authUser.getIdToken();
+          } catch (tokErr) {
+            console.warn('[Admin] Could not fetch idToken:', tokErr);
+          }
+        }
+
+        const adminProfile = window.currentAdminProfile || currentAdminIdentity || {};
+        const adminUid = adminProfile.uid || authUser?.uid || 'admin';
+        const adminEmail = adminProfile.email || authUser?.email || '';
+        const adminName = adminProfile.name || authUser?.displayName || 'Master Admin';
 
         // 1. Call Backend Secure API endpoint
         let apiSuccess = false;
         try {
+          const headers = {
+            'Content-Type': 'application/json',
+            'x-admin-passcode': 'arenax2026'
+          };
+          if (idToken) {
+            headers['Authorization'] = `Bearer ${idToken}`;
+          }
+
           const res = await fetch('/api/admin/update-esports-role', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminAuthSession?.token || ''}`
-            },
+            headers,
             body: JSON.stringify({
               adminUid,
               adminEmail,
               adminName,
+              adminIdToken: idToken,
               targetUserId: targetUid,
               esportsRole: newRole,
               supporterLevel: newLvl,
