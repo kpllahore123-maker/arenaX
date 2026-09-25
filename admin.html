@@ -4754,31 +4754,38 @@
           console.warn('[Admin] Server update API note:', apiErr);
         }
 
-        // 2. Direct Firestore fallback if client has admin session
-        if (!apiSuccess && window.fbDb && window.fsTools) {
-          const { doc, updateDoc, addDoc, collection, serverTimestamp } = window.fsTools;
-          const userRef = doc(window.fbDb, 'users', targetUid);
-          const updatePayload = {
-            esportsRole: newRole,
-            supporterLevel: newLvl,
-            playerRole: newRole === 'supporter' ? 'supporter' : null
-          };
-          await updateDoc(userRef, updatePayload);
+        // 2. Direct Firestore update from admin console to broadcast real-time changes immediately
+        if (window.fbDb && window.fsTools?.doc && window.fsTools?.updateDoc) {
+          try {
+            const { doc, updateDoc, addDoc, collection, serverTimestamp } = window.fsTools;
+            const userRef = doc(window.fbDb, 'users', targetUid);
+            const updatePayload = {
+              esportsRole: newRole,
+              supporterLevel: newLvl,
+              playerRole: newRole === 'supporter' ? 'supporter' : null,
+              updatedAt: new Date().toISOString()
+            };
+            await updateDoc(userRef, updatePayload);
 
-          // Save audit record
-          const prevRole = currentManagingRoleUser?.esportsRole || (currentManagingRoleUser?.playerRole === 'supporter' ? 'supporter' : 'none');
-          const prevLvl = currentManagingRoleUser?.supporterLevel || null;
-          await addDoc(collection(window.fbDb, 'role_audit_logs'), {
-            targetUserId: targetUid,
-            previousRole: prevRole,
-            newRole: newRole,
-            previousLevel: prevLvl,
-            newLevel: newLvl,
-            adminUserId: adminUid,
-            adminEmail: adminEmail,
-            timestamp: new Date().toISOString(),
-            createdAt: serverTimestamp()
-          });
+            // Save audit record if server api was not reached
+            if (!apiSuccess && addDoc && collection) {
+              const prevRole = currentManagingRoleUser?.esportsRole || (currentManagingRoleUser?.playerRole === 'supporter' ? 'supporter' : 'none');
+              const prevLvl = currentManagingRoleUser?.supporterLevel || null;
+              await addDoc(collection(window.fbDb, 'role_audit_logs'), {
+                targetUserId: targetUid,
+                previousRole: prevRole,
+                newRole: newRole,
+                previousLevel: prevLvl,
+                newLevel: newLvl,
+                adminUserId: adminUid,
+                adminEmail: adminEmail,
+                timestamp: new Date().toISOString(),
+                createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
+              }).catch(() => {});
+            }
+          } catch (fsErr) {
+            console.warn('[Admin] Direct Firestore sync note:', fsErr);
+          }
         }
 
         // Update local memory user object
