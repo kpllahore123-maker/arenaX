@@ -122,4 +122,19 @@ export function getSupporterTitleHtml(levelInput = 1, options = {}) {
 
 if (typeof window !== 'undefined') {
   window.getSupporterTitleHtml = getSupporterTitleHtml;
+  window.checkIsSupporterRole = function(userData) {
+    if (!userData) return false;
+    const eRole = String(userData.esportsRole || '').toLowerCase().trim();
+    const pRole = String(userData.playerRole || '').toLowerCase().trim();
+    return eRole === 'supporter' || pRole === 'supporter';
+  };
+  window.getSupporterRoleLevel = function(userData) {
+    if (!userData) return 1;
+    const raw = userData.supporterLevel ?? userData.supporter_level ?? userData.supporterLvl;
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
+      return parsed;
+    }
+    return 1;
+  };
 }
