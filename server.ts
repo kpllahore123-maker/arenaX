@@ -751,6 +751,290 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     }
   });
 
+  // ============================================================
+  // ARENAX GOLDEN WINGS AVATAR FRAME — 3-DAY (72-HR) FREE TRIAL
+  // ============================================================
+  const GOLDEN_WINGS_TRIAL_MS = 72 * 60 * 60 * 1000; // Exactly 72 Hours
+  const GOLDEN_WINGS_PURCHASE_PRICE = 150; // Standard 150 AX Coins
+
+  // 1. Status Check (Server-authoritative timestamp & expiry verification)
+  app.all(["/api/golden-wings/status", "/api/golden-wings/status/:uid"], async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Missing user identifier." });
+      }
+
+      const userRef = adminDb.collection("users").doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: "User profile not found." });
+      }
+
+      const userData = userDoc.data() || {};
+      const now = Date.now();
+      const gw = userData.goldenWingsFrame || null;
+
+      // Handle not activated
+      if (!gw || !gw.activatedAt) {
+        return res.json({
+          success: true,
+          status: "not_activated",
+          hasFrame: false,
+          equipped: false,
+          activatedAt: null,
+          freeTrialEndsAt: null,
+          remainingMs: GOLDEN_WINGS_TRIAL_MS,
+          serverTime: now,
+          isExpired: false,
+          permanentUnlocked: false,
+        });
+      }
+
+      const activatedAtMs = new Date(gw.activatedAt).getTime();
+      const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : activatedAtMs + GOLDEN_WINGS_TRIAL_MS;
+      const isPermanent = !!gw.permanentUnlocked;
+      const isExpired = !isPermanent && (now >= endsAtMs || remainingMs <= 0 || gw.status === "expired");
+      const effectiveRemainingMs = isExpired ? 0 : Math.max(0, endsAtMs - now);
+
+      // Auto-transition expired state in database & unequip if expired
+      if (isExpired && (gw.status !== "expired" || gw.equipped)) {
+        try {
+          await userRef.update({
+            "goldenWingsFrame.status": "expired",
+            "goldenWingsFrame.equipped": false,
+            frameEquipped: false,
+            updatedAt: new Date().toISOString(),
+          });
+          gw.status = "expired";
+          gw.equipped = false;
+        } catch (syncErr) {
+          console.warn("[Golden Wings] Expiry sync notice:", syncErr);
+        }
+      }
+
+      return res.json({
+        success: true,
+        status: isPermanent ? "permanent" : (isExpired ? "expired" : "active"),
+        hasFrame: isPermanent || !isExpired,
+        equipped: !!gw.equipped && (isPermanent || !isExpired),
+        activatedAt: gw.activatedAt,
+        freeTrialEndsAt: gw.freeTrialEndsAt,
+        remainingMs: effectiveRemainingMs,
+        serverTime: now,
+        isExpired,
+        permanentUnlocked: isPermanent,
+      });
+    } catch (err: any) {
+      console.error("[Golden Wings Status Error]:", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to fetch status." });
+    }
+  });
+
+  // 2. Claim 3-Day Free Trial (Strict 72-Hour Server Duration, once per account)
+  app.post("/api/golden-wings/claim", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Missing user ID." });
+      }
+
+      const userRef = adminDb.collection("users").doc(uid);
+
+      const result = await adminDb.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+          throw new Error("User profile does not exist.");
+        }
+
+        const userData = userDoc.data() || {};
+        const gw = userData.goldenWingsFrame;
+
+        // Anti-Tamper: Cannot re-claim 3-day trial if already activated
+        if (gw && gw.activatedAt) {
+          throw new Error("You have already claimed your 3-Day Free Trial for Golden Wings Frame.");
+        }
+
+        const now = Date.now();
+        const endsAt = now + GOLDEN_WINGS_TRIAL_MS;
+        const activatedAtIso = new Date(now).toISOString();
+        const freeTrialEndsAtIso = new Date(endsAt).toISOString();
+
+        const goldenWingsData = {
+          activatedAt: activatedAtIso,
+          freeTrialEndsAt: freeTrialEndsAtIso,
+          equipped: true,
+          status: "active",
+          trialDurationHours: 72,
+          permanentUnlocked: false,
+        };
+
+        transaction.update(userRef, {
+          goldenWingsFrame: goldenWingsData,
+          hasFrame: true,
+          frameEquipped: true,
+          frameExpiresAt: freeTrialEndsAtIso,
+          updatedAt: activatedAtIso,
+        });
+
+        return {
+          goldenWingsData,
+          serverTime: now,
+          remainingMs: GOLDEN_WINGS_TRIAL_MS,
+        };
+      });
+
+      return res.json({
+        success: true,
+        message: "Golden Wings Avatar Frame unlocked! 72-Hour Free Trial is now active.",
+        ...result,
+      });
+    } catch (err: any) {
+      console.error("[Golden Wings Claim Error]:", err);
+      return res.status(400).json({ success: false, error: err.message || "Failed to claim free trial." });
+    }
+  });
+
+  // 3. Toggle Equip / Unequip
+  app.post("/api/golden-wings/toggle-equip", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Missing user ID." });
+      }
+
+      const userRef = adminDb.collection("users").doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: "User profile not found." });
+      }
+
+      const userData = userDoc.data() || {};
+      const gw = userData.goldenWingsFrame;
+      const now = Date.now();
+
+      if (!gw || !gw.activatedAt) {
+        return res.status(403).json({ success: false, error: "You must claim the Golden Wings Free Trial first." });
+      }
+
+      const isPermanent = !!gw.permanentUnlocked;
+      const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : 0;
+      const isExpired = !isPermanent && (now >= endsAtMs || gw.status === "expired");
+
+      if (isExpired) {
+        return res.status(403).json({ success: false, error: "Your 3-day free trial has expired. Unlock permanently to equip." });
+      }
+
+      const shouldEquip = req.body?.equipped !== undefined ? !!req.body.equipped : !gw.equipped;
+
+      await userRef.update({
+        "goldenWingsFrame.equipped": shouldEquip,
+        frameEquipped: shouldEquip,
+        updatedAt: new Date().toISOString(),
+      });
+
+      return res.json({
+        success: true,
+        equipped: shouldEquip,
+        message: shouldEquip ? "Golden Wings Avatar Frame equipped!" : "Avatar frame unequipped.",
+      });
+    } catch (err: any) {
+      console.error("[Golden Wings Toggle Equip Error]:", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to toggle frame equipment." });
+    }
+  });
+
+  // 4. Permanent Unlock via AX Coins (Existing payment/coin system)
+  app.post("/api/golden-wings/purchase", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Missing user ID." });
+      }
+
+      const userRef = adminDb.collection("users").doc(uid);
+
+      const result = await adminDb.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+          throw new Error("User profile not found.");
+        }
+
+        const userData = userDoc.data() || {};
+        const balance = Number(userData.balance || 0);
+
+        if (balance < GOLDEN_WINGS_PURCHASE_PRICE) {
+          throw new Error(`Insufficient balance. You need ${GOLDEN_WINGS_PURCHASE_PRICE} AX Coins (Current: ${balance} AX).`);
+        }
+
+        const currentGw = userData.goldenWingsFrame || {};
+        if (currentGw.permanentUnlocked) {
+          throw new Error("You already permanently own the Golden Wings Avatar Frame.");
+        }
+
+        const now = Date.now();
+        const updatedGw = {
+          ...currentGw,
+          permanentUnlocked: true,
+          status: "permanent",
+          equipped: true,
+          purchasedAt: new Date(now).toISOString(),
+        };
+
+        const newBalance = balance - GOLDEN_WINGS_PURCHASE_PRICE;
+
+        transaction.update(userRef, {
+          balance: newBalance,
+          goldenWingsFrame: updatedGw,
+          hasFrame: true,
+          frameEquipped: true,
+          updatedAt: new Date(now).toISOString(),
+        });
+
+        // Record transaction
+        const txnRef = adminDb.collection("transactions").doc();
+        transaction.set(txnRef, {
+          userId: uid,
+          type: "item_purchase",
+          item: "Golden Wings Avatar Frame",
+          amount: -GOLDEN_WINGS_PURCHASE_PRICE,
+          balanceAfter: newBalance,
+          createdAt: new Date().toISOString(),
+        });
+
+        return {
+          newBalance,
+          goldenWingsFrame: updatedGw,
+        };
+      });
+
+      return res.json({
+        success: true,
+        message: "Golden Wings Avatar Frame unlocked permanently!",
+        ...result,
+      });
+    } catch (err: any) {
+      console.error("[Golden Wings Purchase Error]:", err);
+      return res.status(400).json({ success: false, error: err.message || "Failed to purchase frame." });
+    }
+  });
+
   // FCM Push Notifications Relay
   app.post("/api/send-fcm-push", async (req, res) => {
     try {
@@ -1704,6 +1988,106 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     } catch (err: any) {
       console.error("[Update Esports Role Error]:", err);
       return res.status(500).json({ success: false, error: err.message || "Failed to update esports role." });
+    }
+  });
+
+  // Admin Golden Wings Frame Management (Authorized Admins only)
+  app.post("/api/admin/golden-wings/manage", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const caller = await verifyAdminCaller(req);
+      if (!caller) {
+        return res.status(403).json({ success: false, error: "Unauthorized: Admin session required." });
+      }
+
+      const { targetUid, action } = req.body || {};
+      if (!targetUid || !action) {
+        return res.status(400).json({ success: false, error: "targetUid and action are required." });
+      }
+
+      const userRef = adminDb.collection("users").doc(targetUid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: "Target player not found." });
+      }
+
+      const now = Date.now();
+      let updatePayload: any = {};
+      let auditDetail = "";
+
+      if (action === "grant_trial") {
+        const endsAt = now + GOLDEN_WINGS_TRIAL_MS;
+        const activatedAtIso = new Date(now).toISOString();
+        const endsAtIso = new Date(endsAt).toISOString();
+        updatePayload = {
+          goldenWingsFrame: {
+            activatedAt: activatedAtIso,
+            freeTrialEndsAt: endsAtIso,
+            equipped: true,
+            status: "active",
+            trialDurationHours: 72,
+            permanentUnlocked: false,
+          },
+          hasFrame: true,
+          frameEquipped: true,
+          frameExpiresAt: endsAtIso,
+          updatedAt: activatedAtIso,
+        };
+        auditDetail = `Granted/Reset 72-Hour Free Trial for ${targetUid}`;
+      } else if (action === "grant_permanent") {
+        updatePayload = {
+          "goldenWingsFrame.permanentUnlocked": true,
+          "goldenWingsFrame.status": "permanent",
+          "goldenWingsFrame.equipped": true,
+          hasFrame: true,
+          frameEquipped: true,
+          updatedAt: new Date(now).toISOString(),
+        };
+        auditDetail = `Granted permanent Golden Wings frame to ${targetUid}`;
+      } else if (action === "expire_trial") {
+        updatePayload = {
+          "goldenWingsFrame.status": "expired",
+          "goldenWingsFrame.equipped": false,
+          frameEquipped: false,
+          updatedAt: new Date(now).toISOString(),
+        };
+        auditDetail = `Expired Golden Wings trial for ${targetUid}`;
+      } else if (action === "revoke") {
+        updatePayload = {
+          goldenWingsFrame: FieldValue.delete(),
+          hasFrame: false,
+          frameEquipped: false,
+          frameExpiresAt: FieldValue.delete(),
+          updatedAt: new Date(now).toISOString(),
+        };
+        auditDetail = `Revoked Golden Wings frame from ${targetUid}`;
+      } else {
+        return res.status(400).json({ success: false, error: "Invalid action." });
+      }
+
+      await userRef.update(updatePayload);
+
+      const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1";
+
+      recordAuditLog({
+        adminUid: caller.uid,
+        adminEmail: caller.email,
+        adminName: caller.name,
+        adminRank: caller.rank,
+        action: `golden_wings_${action}`,
+        targetUid,
+        status: "AUTHORIZED_SUCCESS",
+        ip: clientIp,
+        details: auditDetail,
+      });
+
+      return res.json({ success: true, message: auditDetail });
+    } catch (err: any) {
+      console.error("[Admin Golden Wings Manage Error]:", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to update frame." });
     }
   });
 
