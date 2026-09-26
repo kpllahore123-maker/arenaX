@@ -3,15 +3,17 @@ import {
   getFirebaseAdmin,
   getVerifiedUid,
   GOLDEN_WINGS_PURCHASE_PRICE
-} from './_common.js';
+} from './common.js';
 
 /**
  * Vercel Serverless Function: Permanent Unlock Golden Wings Frame (150 AX Coins)
  * Endpoint: POST /api/golden-wings/purchase
  */
 export default async function handler(req, res) {
+  // Apply CORS headers for all requests, including preflight
   setCorsHeaders(req, res);
 
+  // Return HTTP 200 OK for preflight OPTIONS requests immediately
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -38,7 +40,9 @@ export default async function handler(req, res) {
     }
 
     let body = req.body;
-    if (typeof body === 'string') {
+    if (Buffer.isBuffer(body)) {
+      try { body = JSON.parse(body.toString('utf-8')); } catch (_) {}
+    } else if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch (_) {}
     }
     const clientUid = body && body.uid ? String(body.uid).trim() : null;
@@ -59,70 +63,64 @@ export default async function handler(req, res) {
 
     const userRef = db.collection('users').doc(verifiedUid);
 
-    const result = await db.runTransaction(async (transaction) => {
+    const purchaseResult = await db.runTransaction(async (transaction) => {
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists) {
-        throw new Error('User profile not found.');
+        throw new Error('User profile does not exist.');
       }
 
       const userData = userDoc.data() || {};
-      const balance = Number(userData.balance || 0);
+      const currentBalance = Number(userData.balance ?? 0);
+      const gw = userData.goldenWingsFrame || {};
 
-      if (balance < GOLDEN_WINGS_PURCHASE_PRICE) {
-        throw new Error(`Insufficient balance. You need ${GOLDEN_WINGS_PURCHASE_PRICE} AX Coins (Current: ${balance} AX).`);
+      if (gw.permanentUnlocked) {
+        throw new Error('You already own Golden Wings frame permanently.');
       }
 
-      const currentGw = userData.goldenWingsFrame || {};
-      if (currentGw.permanentUnlocked) {
-        throw new Error('You already permanently own the Golden Wings Avatar Frame.');
+      if (currentBalance < GOLDEN_WINGS_PURCHASE_PRICE) {
+        throw new Error(`Insufficient AX Coins. Required: ${GOLDEN_WINGS_PURCHASE_PRICE} AX, Current: ${currentBalance} AX.`);
       }
 
-      const now = Date.now();
-      const updatedGw = {
-        ...currentGw,
-        permanentUnlocked: true,
-        status: 'permanent',
-        equipped: true,
-        purchasedAt: new Date(now).toISOString()
-      };
-
-      const newBalance = balance - GOLDEN_WINGS_PURCHASE_PRICE;
+      const newBalance = currentBalance - GOLDEN_WINGS_PURCHASE_PRICE;
+      const nowIso = new Date().toISOString();
 
       transaction.update(userRef, {
         balance: newBalance,
-        goldenWingsFrame: updatedGw,
+        'goldenWingsFrame.permanentUnlocked': true,
+        'goldenWingsFrame.status': 'permanent',
+        'goldenWingsFrame.equipped': true,
+        'goldenWingsFrame.purchasedAt': nowIso,
         hasFrame: true,
         frameEquipped: true,
-        updatedAt: new Date(now).toISOString()
+        updatedAt: nowIso
       });
 
-      // Record transaction history
-      const txnRef = db.collection('transactions').doc();
+      // Audit purchase transaction
+      const txnRef = userRef.collection('transactions').doc();
       transaction.set(txnRef, {
-        userId: verifiedUid,
-        type: 'item_purchase',
-        item: 'Golden Wings Avatar Frame',
+        type: 'purchase_avatar_frame',
+        item: 'golden_wings_permanent',
         amount: -GOLDEN_WINGS_PURCHASE_PRICE,
         balanceAfter: newBalance,
-        createdAt: new Date().toISOString()
+        createdAt: nowIso
       });
 
       return {
-        goldenWingsFrame: updatedGw,
-        newBalance
+        newBalance,
+        permanentUnlocked: true
       };
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Golden Wings Avatar Frame permanently unlocked!',
-      ...result
+      message: 'Golden Wings Frame unlocked permanently!',
+      ...purchaseResult
     });
   } catch (err) {
     console.error('[Golden Wings Purchase Error]:', err);
     return res.status(400).json({
       success: false,
-      error: err.message || 'Failed to purchase Golden Wings frame.'
+      error: err.message || 'Failed to complete Golden Wings purchase.'
     });
   }
 }
