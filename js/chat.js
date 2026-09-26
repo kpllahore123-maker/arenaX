@@ -343,6 +343,60 @@ let goldenWingsCountdownTimer = null;
 let goldenWingsServerDelta = 0;
 let cachedGoldenWingsState = null;
 
+// Robust API requester with static host (GitHub Pages) to Vercel fallback & safe JSON parsing
+async function requestGoldenWingsApi(endpoint, options = {}) {
+  const isStaticHost = typeof window !== 'undefined' && (
+    window.location.hostname === 'arenax.cyou' || 
+    window.location.hostname.endsWith('github.io')
+  );
+  const vercelBase = 'https://arena-x-beta.vercel.app';
+  const primaryUrl = isStaticHost ? `${vercelBase}${endpoint}` : endpoint;
+
+  let res;
+  try {
+    res = await fetch(primaryUrl, options);
+  } catch (netErr) {
+    if (!primaryUrl.startsWith(vercelBase)) {
+      res = await fetch(`${vercelBase}${endpoint}`, options);
+    } else {
+      throw netErr;
+    }
+  }
+
+  // Fallback to Vercel backend if relative endpoint on static host returned 404 or 405
+  if ((res.status === 404 || res.status === 405) && !primaryUrl.startsWith(vercelBase)) {
+    try {
+      const fallbackRes = await fetch(`${vercelBase}${endpoint}`, options);
+      if (fallbackRes.ok || fallbackRes.status < 500) {
+        res = fallbackRes;
+      }
+    } catch (_) {}
+  }
+
+  // Safe JSON extraction to guarantee HTML error pages never cause "Unexpected token '<'"
+  let data = null;
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      console.warn('[Golden Wings] JSON parse error:', parseErr);
+    }
+  } else {
+    const rawText = await res.text().catch(() => '');
+    try {
+      data = JSON.parse(rawText);
+    } catch (_) {
+      data = {
+        success: false,
+        error: `Server returned an invalid response (${res.status}). Please try again.`
+      };
+    }
+  }
+
+  return { res, data: data || { success: false, error: 'Empty response from server.' } };
+}
+
 window.refreshGoldenWingsServerStatus = async function() {
   const profile = window.getActiveUserProfile();
   if (!profile || !profile.uid) return null;
@@ -357,27 +411,24 @@ window.refreshGoldenWingsServerStatus = async function() {
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`/api/golden-wings/status?uid=${encodeURIComponent(profile.uid)}`, {
+    const { res, data } = await requestGoldenWingsApi(`/api/golden-wings/status?uid=${encodeURIComponent(profile.uid)}`, {
       method: 'GET',
       headers
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.success) {
-        goldenWingsServerDelta = (data.serverTime || Date.now()) - Date.now();
-        cachedGoldenWingsState = data;
-        profile.goldenWingsFrame = {
-          activatedAt: data.activatedAt,
-          freeTrialEndsAt: data.freeTrialEndsAt,
-          equipped: data.equipped,
-          status: data.status,
-          permanentUnlocked: data.permanentUnlocked
-        };
-        profile.frameEquipped = data.equipped;
-        profile.hasFrame = data.hasFrame;
-        return data;
-      }
+    if (res.ok && data && data.success) {
+      goldenWingsServerDelta = (data.serverTime || Date.now()) - Date.now();
+      cachedGoldenWingsState = data;
+      profile.goldenWingsFrame = {
+        activatedAt: data.activatedAt,
+        freeTrialEndsAt: data.freeTrialEndsAt,
+        equipped: data.equipped,
+        status: data.status,
+        permanentUnlocked: data.permanentUnlocked
+      };
+      profile.frameEquipped = data.equipped;
+      profile.hasFrame = data.hasFrame;
+      return data;
     }
   } catch (e) {
     console.warn('[Golden Wings] Server status note:', e);
@@ -578,12 +629,11 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
 
     if (!state.activatedAt || state.status === 'not_activated') {
       // 1. Claim 72-Hour Free Trial
-      const res = await fetch('/api/golden-wings/claim', {
+      const { res, data } = await requestGoldenWingsApi('/api/golden-wings/claim', {
         method: 'POST',
         headers,
         body: JSON.stringify({ uid: profile.uid })
       });
-      const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to claim trial.');
       }
@@ -609,12 +659,11 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
       const confirmed = confirm("Unlock Golden Wings Avatar Frame permanently for 150 AX Coins?");
       if (!confirmed) return;
 
-      const res = await fetch('/api/golden-wings/purchase', {
+      const { res, data } = await requestGoldenWingsApi('/api/golden-wings/purchase', {
         method: 'POST',
         headers,
         body: JSON.stringify({ uid: profile.uid })
       });
-      const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to purchase frame.');
       }
@@ -642,12 +691,11 @@ window.handleClaimOrToggleFrameFromVanilla = async function() {
     } else {
       // 3. Toggle Equip / Unequip
       const nextEquipped = !state.equipped;
-      const res = await fetch('/api/golden-wings/toggle-equip', {
+      const { res, data } = await requestGoldenWingsApi('/api/golden-wings/toggle-equip', {
         method: 'POST',
         headers,
         body: JSON.stringify({ uid: profile.uid, equipped: nextEquipped })
       });
-      const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to toggle frame equipment.');
       }
