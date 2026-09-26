@@ -3,7 +3,7 @@ import {
   getFirebaseAdmin,
   getVerifiedUid,
   GOLDEN_WINGS_TRIAL_MS
-} from './common.js';
+} from './_common.js';
 
 /**
  * Vercel Serverless Function: Claim Golden Wings Avatar Frame 3-Day Free Trial
