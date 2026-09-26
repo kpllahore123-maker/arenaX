@@ -3,15 +3,17 @@ import {
   getFirebaseAdmin,
   getVerifiedUid,
   GOLDEN_WINGS_TRIAL_MS
-} from './_common.js';
+} from './common.js';
 
 /**
  * Vercel Serverless Function: Claim Golden Wings Avatar Frame 3-Day Free Trial
  * Endpoint: POST /api/golden-wings/claim
  */
 export default async function handler(req, res) {
+  // Apply CORS headers for all requests, including preflight
   setCorsHeaders(req, res);
 
+  // Return HTTP 200 OK for preflight OPTIONS requests immediately
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -39,7 +41,9 @@ export default async function handler(req, res) {
     }
 
     let body = req.body;
-    if (typeof body === 'string') {
+    if (Buffer.isBuffer(body)) {
+      try { body = JSON.parse(body.toString('utf-8')); } catch (_) {}
+    } else if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch (_) {}
     }
     const clientUid = body && body.uid ? String(body.uid).trim() : null;
