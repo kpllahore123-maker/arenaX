@@ -2,8 +2,6 @@
 // ARENAX CHAT & DIRECT MESSAGING (DMs) SYSTEM
 // ==========================================
 
-import { getSupporterTitleHtml } from './supporter-titles.js';
-
 
 // Module variables & listeners
 let friendReqsUnsub = null;
@@ -2028,93 +2026,63 @@ window.openPlayerProfileCard = async function(targetUid) {
     if ($('vppName')) {
       $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
     }
-    // ── ESPORTS ROLE & SUPPORTER LEVEL TITLE LOGIC ──
-    const isSupporterCheck = (userData) => {
-      if (!userData) return false;
-      const eRole = String(userData.esportsRole || '').toLowerCase().trim();
-      const pRole = String(userData.playerRole || '').toLowerCase().trim();
-      return eRole === 'supporter' || pRole === 'supporter';
-    };
-
-    const getSupporterLevelNumber = (userData) => {
-      if (!userData) return 1;
-      const raw = userData.supporterLevel ?? userData.supporter_level ?? userData.supporterLvl;
-      const parsed = parseInt(raw, 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
-        return parsed;
+    // Esports Player Role Badge
+    const roleInfo = window.getRoleInfo ? window.getRoleInfo(u.playerRole) : null;
+    if ($('vppRoleBadge')) {
+      if (roleInfo) {
+        $('vppRoleBadge').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[10px]"></i>${roleInfo.name}`;
+        $('vppRoleBadge').className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+        $('vppRoleBadge').classList.remove('hidden');
+      } else {
+        $('vppRoleBadge').classList.add('hidden');
       }
-      return 1;
-    };
-
-    const syncViewProfileEsportsRoleAndTitle = (userData) => {
-      if (!userData) return;
-      const isSupporter = isSupporterCheck(userData);
-      const lvl = getSupporterLevelNumber(userData);
-
-      // 1. Supporter Title (LVL 1 - 4) placed beside User ID
-      const supporterTitleEl = $('vppSupporterTitleContainer');
-      if (supporterTitleEl) {
-        if (isSupporter) {
-          const fn = (typeof getSupporterTitleHtml === 'function')
-            ? getSupporterTitleHtml
-            : (window.getSupporterTitleHtml || null);
-          if (fn) {
-            supporterTitleEl.innerHTML = fn(lvl, { isViewProfile: true });
-            supporterTitleEl.classList.remove('hidden');
-          }
-        } else {
-          supporterTitleEl.innerHTML = '';
-          supporterTitleEl.classList.add('hidden');
-        }
-      }
-
-      // 2. Hide old duplicate Supporter badges when user is Supporter
-      // Only display traditional Rusher, Sniper, or Boomer badges when NOT a supporter
-      const rawRole = userData.playerRole || userData.esportsRole || null;
-      const roleInfo = (window.getRoleInfo && rawRole && !isSupporter) ? window.getRoleInfo(rawRole) : null;
-      const isCombatRole = roleInfo && roleInfo.id !== 'supporter';
-
-      const roleBadge = $('vppRoleBadge');
-      if (roleBadge) {
-        if (isCombatRole) {
-          roleBadge.innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[10px]"></i>${roleInfo.name}`;
-          roleBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
-          roleBadge.classList.remove('hidden');
-        } else {
-          roleBadge.innerHTML = '';
-          roleBadge.classList.add('hidden');
-        }
-      }
-
-      const roleTag = $('vppRoleTag');
-      if (roleTag) {
-        if (isCombatRole) {
-          roleTag.innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[9px]"></i>${roleInfo.name}`;
-          roleTag.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
-          roleTag.classList.remove('hidden');
-        } else {
-          roleTag.innerHTML = '';
-          roleTag.classList.add('hidden');
-        }
-      }
-    };
-
-    // Apply immediately on profile open
-    syncViewProfileEsportsRoleAndTitle(u);
-
-    // Real-time listener for live role/level changes while modal is open
-    if (window.vppLiveProfileUnsub) {
-      try { window.vppLiveProfileUnsub(); } catch(e) {}
-      window.vppLiveProfileUnsub = null;
     }
-    window.vppLiveProfileUnsub = onSnapshot(userDocRef, (liveSnap) => {
-      if (liveSnap.exists()) {
-        const liveData = liveSnap.data();
-        syncViewProfileEsportsRoleAndTitle(liveData);
+    if ($('vppRoleTag')) {
+      if (roleInfo) {
+        $('vppRoleTag').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[9px]"></i>${roleInfo.name}`;
+        $('vppRoleTag').className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+        $('vppRoleTag').classList.remove('hidden');
+      } else {
+        $('vppRoleTag').classList.add('hidden');
       }
-    }, (err) => {
-      console.warn("Live profile title sync notice:", err);
-    });
+    }
+
+    // AX Creator Badge
+    if ($('vppAXCreatorBadge')) {
+      if (u && u.isAXCreator === true) {
+        $('vppAXCreatorBadge').classList.remove('hidden');
+      } else {
+        $('vppAXCreatorBadge').classList.add('hidden');
+      }
+    }
+
+    if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+    
+    // Country
+    const countryNames = {
+      PK: { flag: '🇵🇰', name: 'Pakistan' },
+      IN: { flag: '🇮🇳', name: 'India' },
+      BD: { flag: '🇧🇩', name: 'Bangladesh' },
+      SA: { flag: '🇸🇦', name: 'Saudi Arabia' },
+      AE: { flag: '🇦🇪', name: 'UAE' },
+      US: { flag: '🇺🇸', name: 'USA' },
+      GB: { flag: '🇬🇧', name: 'UK' },
+      Other: { flag: '🌍', name: 'Other' }
+    };
+    if (u.country && countryNames[u.country]) {
+      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = countryNames[u.country].flag;
+      if ($('vppCountryName')) $('vppCountryName').textContent = countryNames[u.country].name;
+    } else if (u.countryName) {
+      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = u.countryFlag || '🌍';
+      if ($('vppCountryName')) $('vppCountryName').textContent = u.countryName;
+    } else {
+      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = '🇵🇰';
+      if ($('vppCountryName')) $('vppCountryName').textContent = 'Pakistan';
+    }
+
+    // User ID (Friend Request Numeric ID)
+    const numericId = getNumericPlayerId(u.uid || targetUid, u.gameUID || u.handle);
+    if ($('vppGameUID')) $('vppGameUID').textContent = `ID: ${numericId}`;
 
     // Fill Stats Section
     if ($('vppBio')) $('vppBio').textContent = u.bio || u.signature || "This person says nothing!";
@@ -2218,19 +2186,11 @@ window.openPlayerProfileCard = async function(targetUid) {
 if ($('bCloseViewPlayerProfile')) {
   $('bCloseViewPlayerProfile').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
-    if (window.vppLiveProfileUnsub) {
-      try { window.vppLiveProfileUnsub(); } catch(e) {}
-      window.vppLiveProfileUnsub = null;
-    }
   });
 }
 if ($('btnCloseViewPlayerProfileX')) {
   $('btnCloseViewPlayerProfileX').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
-    if (window.vppLiveProfileUnsub) {
-      try { window.vppLiveProfileUnsub(); } catch(e) {}
-      window.vppLiveProfileUnsub = null;
-    }
   });
 }
 
