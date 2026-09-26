@@ -18,6 +18,9 @@
         "esportsRole": { "type": "string", "enum": ["none", "supporter"], "description": "Official Esports title role" },
         "supporterLevel": { "type": "number", "description": "Supporter level tier (1-4)" },
         "weeklyReward": { "type": "object", "description": "Player 7-day weekly reward progression and cooldown state" },
+        "goldenWingsFrame": { "type": "object", "description": "Golden Wings Avatar Frame 72-Hour Free Trial state and permanent ownership" },
+        "hasFrame": { "type": "boolean", "description": "Whether user owns or has active trial of an avatar frame" },
+        "frameEquipped": { "type": "boolean", "description": "Whether user currently has avatar frame equipped" },
         "createdAt": { "type": "string", "description": "Account registration timestamp" }
       },
       "required": ["uid", "name", "handle", "balance"]
