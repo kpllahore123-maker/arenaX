@@ -2,6 +2,8 @@
 // ARENAX CHAT & DIRECT MESSAGING (DMs) SYSTEM
 // ==========================================
 
+import { getSupporterTitleHtml } from './supporter-titles.js';
+
 
 // Module variables & listeners
 let friendReqsUnsub = null;
@@ -337,127 +339,350 @@ window.getActiveUserProfile = function() {
   return profile;
 };
 
-function updateTasksFrameButtonState() {
+// ── GOLDEN WINGS AVATAR FRAME 72-HOUR FREE TRIAL CONTROLLER ──
+let goldenWingsCountdownTimer = null;
+let goldenWingsServerDelta = 0;
+let cachedGoldenWingsState = null;
+
+window.refreshGoldenWingsServerStatus = async function() {
   const profile = window.getActiveUserProfile();
-  if (profile) {
-    const btn = $('btnTaskClaimFrame');
-    const av = $('taskModalUserAv');
-    if (av && profile.av) av.src = profile.av;
+  if (!profile || !profile.uid) return null;
 
-    const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
-    const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
+  try {
+    const authUser = (typeof auth !== 'undefined' && auth?.currentUser) ? auth.currentUser : null;
+    let token = '';
+    if (authUser && typeof authUser.getIdToken === 'function') {
+      token = await authUser.getIdToken().catch(() => '');
+    }
 
-    if (btn) {
-      if (isUnlocked) {
-        if (isEquipped) {
-          btn.textContent = 'Equipped ✓';
-          btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
-        } else {
-          btn.textContent = 'Equip Frame';
-          btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
-        }
-      } else {
-        btn.textContent = 'Claim Frame';
-        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)] cursor-pointer';
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`/api/golden-wings/status?uid=${encodeURIComponent(profile.uid)}`, {
+      method: 'GET',
+      headers
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        goldenWingsServerDelta = (data.serverTime || Date.now()) - Date.now();
+        cachedGoldenWingsState = data;
+        profile.goldenWingsFrame = {
+          activatedAt: data.activatedAt,
+          freeTrialEndsAt: data.freeTrialEndsAt,
+          equipped: data.equipped,
+          status: data.status,
+          permanentUnlocked: data.permanentUnlocked
+        };
+        profile.frameEquipped = data.equipped;
+        profile.hasFrame = data.hasFrame;
+        return data;
       }
     }
+  } catch (e) {
+    console.warn('[Golden Wings] Server status note:', e);
+  }
+  return null;
+};
+
+window.isGoldenWingsEquippedForUser = function(userData) {
+  if (!userData) return false;
+  const gw = userData.goldenWingsFrame;
+  if (!gw) {
+    return !!userData.frameEquipped && (userData.hasFrame || (userData.frameExpiresAt && new Date(userData.frameExpiresAt).getTime() > Date.now()));
+  }
+  if (!gw.equipped) return false;
+  if (gw.permanentUnlocked || gw.status === 'permanent') return true;
+  if (gw.activatedAt && gw.freeTrialEndsAt) {
+    const endsAtMs = new Date(gw.freeTrialEndsAt).getTime();
+    const serverNow = Date.now() + (window.goldenWingsServerDelta || goldenWingsServerDelta || 0);
+    if (serverNow < endsAtMs && gw.status !== 'expired') {
+      return true;
+    }
+  }
+  return false;
+};
+
+window.renderViewProfileAvatar = function(userData) {
+  const avWrap = $('vppAvWrap');
+  const avImg = $('vppAv');
+  const frameImg = $('vppFrameImg');
+  if (!avWrap || !avImg) return;
+
+  const avUrl = userData?.av || userData?.avatar || userData?.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${userData?.uid || 'user'}`;
+  avImg.src = avUrl;
+
+  const isEquipped = window.isGoldenWingsEquippedForUser(userData);
+
+  if (isEquipped) {
+    avWrap.className = 'relative -mt-12 sm:-mt-14 shrink-0 z-20 frame-wrap frame-wrap-vpp';
+    avImg.className = 'avatar-photo bg-gray-100 shadow-md';
+    if (frameImg) {
+      frameImg.src = './frame1.png';
+      frameImg.className = 'frame-img block';
+    }
+  } else {
+    avWrap.className = 'relative -mt-10 shrink-0 z-20';
+    avImg.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100';
+    if (frameImg) {
+      frameImg.className = 'hidden';
+    }
+  }
+};
+
+function formatGoldenWingsCountdown(remainingMs) {
+  if (remainingMs <= 0) return 'Free Trial Expired';
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (days >= 1) {
+    return `FREE — ${days}d ${hours}h remaining`;
+  }
+  if (hours >= 1) {
+    return `FREE — ${hours}h ${minutes}m remaining`;
+  }
+  const seconds = totalSeconds % 60;
+  return `FREE — ${minutes}m ${seconds}s remaining`;
+}
+
+function updateTasksFrameButtonState() {
+  const profile = window.getActiveUserProfile();
+  if (!profile) return;
+
+  const av = $('taskModalUserAv');
+  if (av && profile.av) av.src = profile.av;
+
+  window.refreshGoldenWingsServerStatus().then((serverData) => {
+    renderFrameUIFromState(serverData || cachedGoldenWingsState);
+  });
+
+  renderFrameUIFromState(cachedGoldenWingsState);
+}
+
+function renderFrameUIFromState(state) {
+  const btn = $('btnTaskClaimFrame');
+  const countdownTxt = $('taskFrameCountdownTxt');
+  const trialTag = $('taskFrameTrialTag');
+  if (!btn) return;
+
+  if (goldenWingsCountdownTimer) {
+    clearInterval(goldenWingsCountdownTimer);
+    goldenWingsCountdownTimer = null;
+  }
+
+  if (!state || state.status === 'not_activated') {
+    if (countdownTxt) countdownTxt.innerHTML = '<span class="text-[#f0c040] font-bold">72-Hour Free Trial (100% Free)</span>';
+    if (trialTag) {
+      trialTag.textContent = '3-DAY FREE TRIAL';
+      trialTag.className = 'text-[8px] px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-amber-600 text-black font-black uppercase tracking-wider';
+    }
+    btn.textContent = 'Claim Free (3 Days)';
+    btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)] cursor-pointer';
+    btn.onclick = window.handleClaimOrToggleFrameFromVanilla;
+    return;
+  }
+
+  if (state.status === 'permanent' || state.permanentUnlocked) {
+    if (countdownTxt) countdownTxt.innerHTML = '<span class="text-emerald-400 font-bold">Permanent Frame Owned ✓</span>';
+    if (trialTag) {
+      trialTag.textContent = 'PERMANENT VIP';
+      trialTag.className = 'text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase tracking-wider border border-emerald-500/30';
+    }
+    if (state.equipped) {
+      btn.textContent = 'Equipped ✓';
+      btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+    } else {
+      btn.textContent = 'Equip Frame';
+      btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+    }
+    btn.onclick = window.handleClaimOrToggleFrameFromVanilla;
+    return;
+  }
+
+  // Active Trial or Expired
+  const updateTick = () => {
+    const serverNow = Date.now() + goldenWingsServerDelta;
+    const endsAtMs = state.freeTrialEndsAt ? new Date(state.freeTrialEndsAt).getTime() : 0;
+    const remainingMs = Math.max(0, endsAtMs - serverNow);
+
+    if (remainingMs > 0 && state.status === 'active') {
+      const countdownStr = formatGoldenWingsCountdown(remainingMs);
+      if (countdownTxt) countdownTxt.innerHTML = `<span class="text-[#f0c040] font-bold">${countdownStr}</span>`;
+      if (trialTag) {
+        trialTag.textContent = '3-DAY FREE TRIAL';
+        trialTag.className = 'text-[8px] px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-amber-600 text-black font-black uppercase tracking-wider';
+      }
+      if (state.equipped) {
+        btn.textContent = 'Equipped ✓';
+        btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+      } else {
+        btn.textContent = 'Equip Frame';
+        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
+      }
+      btn.onclick = window.handleClaimOrToggleFrameFromVanilla;
+    } else {
+      // Free Trial Expired!
+      if (goldenWingsCountdownTimer) {
+        clearInterval(goldenWingsCountdownTimer);
+        goldenWingsCountdownTimer = null;
+      }
+      state.status = 'expired';
+      state.isExpired = true;
+      state.equipped = false;
+      if (countdownTxt) countdownTxt.innerHTML = '<span class="text-rose-400 font-bold">Free Trial Expired</span>';
+      if (trialTag) {
+        trialTag.textContent = 'EXPIRED';
+        trialTag.className = 'text-[8px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wider border border-rose-500/40';
+      }
+      btn.textContent = 'Unlock (150 AX)';
+      btn.className = 'px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black rounded-lg text-xs transition shrink-0 shadow-md cursor-pointer hover:brightness-110';
+      btn.onclick = window.handleClaimOrToggleFrameFromVanilla;
+      if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+    }
+  };
+
+  updateTick();
+  if (state.status === 'active') {
+    goldenWingsCountdownTimer = setInterval(updateTick, 1000);
   }
 }
 
 window.updateCustomizeFrameButtonState = function() {
-  const profile = window.getActiveUserProfile();
-  if (!profile) return;
-
-  const btn = $('btnCustModalToggleFrame');
-  const statusTxt = $('custModalFrameStatusText');
-  const av = $('custModalFrameAvatar');
-  
-  if (av && profile.av) av.src = profile.av;
-
-  const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
-  const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
-
-  if (btn) {
-    if (isUnlocked) {
-      if (isEquipped) {
-        btn.textContent = 'Unequip Frame';
-        btn.className = 'px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
-        if (statusTxt) statusTxt.textContent = 'Currently Active across Profile ✓';
-      } else {
-        btn.textContent = 'Equip Frame';
-        btn.className = 'px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
-        if (statusTxt) statusTxt.textContent = 'Unlocked & Ready to Equip';
-      }
-    } else {
-      btn.textContent = 'Get Frame (Tasks)';
-      btn.className = 'px-3 py-1.5 bg-[#f0c040]/20 text-[#f0c040] border border-[#f0c040]/30 hover:bg-[#f0c040]/30 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer';
-      if (statusTxt) statusTxt.textContent = 'Locked - Complete 1 Day Login in Tasks';
-    }
-  }
-
-  if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+  updateTasksFrameButtonState();
 };
 
 window.handleClaimOrToggleFrameFromVanilla = async function() {
   const profile = window.getActiveUserProfile();
+  if (!profile || !profile.uid) {
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Account Required", "Please sign in to access Golden Wings Avatar Frame.");
+    }
+    return;
+  }
 
-  const btn1 = $('btnTaskClaimFrame');
-  const btn2 = $('btnCustModalToggleFrame');
-  if (btn1) btn1.disabled = true;
-  if (btn2) btn2.disabled = true;
+  const btn = $('btnTaskClaimFrame');
+  if (btn) btn.disabled = true;
 
   try {
-    const isUnlocked = !!(profile.hasFrame || localStorage.getItem('user_has_frame') === 'true');
-    const isEquipped = !!(profile.frameEquipped || localStorage.getItem('user_frame_equipped') === 'true');
+    const authUser = (typeof auth !== 'undefined' && auth?.currentUser) ? auth.currentUser : null;
+    let token = '';
+    if (authUser && typeof authUser.getIdToken === 'function') {
+      token = await authUser.getIdToken().catch(() => '');
+    }
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    if (!isUnlocked) {
-      // Claim
+    const state = cachedGoldenWingsState || (await window.refreshGoldenWingsServerStatus()) || {};
+
+    if (!state.activatedAt || state.status === 'not_activated') {
+      // 1. Claim 72-Hour Free Trial
+      const res = await fetch('/api/golden-wings/claim', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ uid: profile.uid })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to claim trial.');
+      }
+
+      cachedGoldenWingsState = {
+        ...data.goldenWingsData,
+        success: true,
+        remainingMs: data.remainingMs,
+        serverTime: data.serverTime,
+        hasFrame: true,
+        equipped: true
+      };
+      profile.goldenWingsFrame = data.goldenWingsData;
       profile.hasFrame = true;
       profile.frameEquipped = true;
-      localStorage.setItem('user_has_frame', 'true');
-      localStorage.setItem('user_frame_equipped', 'true');
-      localStorage.setItem('user_frame_expiry', String(Date.now() + 3 * 24 * 60 * 60 * 1000));
 
-      if (profile.uid && !profile.uid.startsWith('guest_') && typeof db !== 'undefined' && typeof doc !== 'undefined' && typeof updateDoc !== 'undefined') {
-        await updateDoc(doc(db, 'users', profile.uid), {
-          hasFrame: true,
-          frameEquipped: true,
-          frameExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-        }).catch(e => console.warn(e));
+      if (typeof spawnConfetti === 'function') spawnConfetti(['#ffd700', '#f59e0b', '#fff']);
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("Golden Wings Unlocked! 🪽", "Your 72-Hour Free Trial is now active and equipped!");
+      }
+    } else if (state.status === 'expired' && !state.permanentUnlocked) {
+      // 2. Purchase permanently for 150 AX Coins
+      const confirmed = confirm("Unlock Golden Wings Avatar Frame permanently for 150 AX Coins?");
+      if (!confirmed) return;
+
+      const res = await fetch('/api/golden-wings/purchase', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ uid: profile.uid })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to purchase frame.');
       }
 
-      if (typeof spawnConfetti === 'function') spawnConfetti(['#f0c040', '#a78bfa', '#38bdf8']);
-      if (typeof showToastNotification === 'function') showToastNotification("VIP Frame Unlocked! ✨", "You claimed the 3-Day VIP Avatar Frame!");
+      cachedGoldenWingsState = {
+        ...data.goldenWingsFrame,
+        success: true,
+        hasFrame: true,
+        equipped: true,
+        permanentUnlocked: true,
+        status: 'permanent'
+      };
+      profile.goldenWingsFrame = data.goldenWingsFrame;
+      profile.hasFrame = true;
+      profile.frameEquipped = true;
+      profile.balance = data.newBalance;
+
+      if ($('homeCoinsVal')) $('homeCoinsVal').textContent = Number(data.newBalance).toLocaleString();
+      if ($('wBal')) $('wBal').textContent = Number(data.newBalance).toLocaleString();
+
+      if (typeof spawnConfetti === 'function') spawnConfetti(['#ffd700', '#f59e0b', '#38bdf8']);
+      if (typeof showToastNotification === 'function') {
+        showToastNotification("Frame Purchased! 👑", "Golden Wings Avatar Frame is permanently yours!");
+      }
     } else {
-      // Toggle
-      const nextEquipped = !isEquipped;
-      profile.frameEquipped = nextEquipped;
-      localStorage.setItem('user_frame_equipped', String(nextEquipped));
-
-      if (profile.uid && !profile.uid.startsWith('guest_') && typeof db !== 'undefined' && typeof doc !== 'undefined' && typeof updateDoc !== 'undefined') {
-        await updateDoc(doc(db, 'users', profile.uid), {
-          frameEquipped: nextEquipped
-        }).catch(e => console.warn(e));
+      // 3. Toggle Equip / Unequip
+      const nextEquipped = !state.equipped;
+      const res = await fetch('/api/golden-wings/toggle-equip', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ uid: profile.uid, equipped: nextEquipped })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to toggle frame equipment.');
       }
+
+      state.equipped = nextEquipped;
+      if (cachedGoldenWingsState) cachedGoldenWingsState.equipped = nextEquipped;
+      if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = nextEquipped;
+      profile.frameEquipped = nextEquipped;
 
       if (typeof showToastNotification === 'function') {
         showToastNotification(
-          nextEquipped ? "Frame Equipped! ✨" : "Frame Unequipped",
-          nextEquipped ? "VIP Frame active across profile!" : "Avatar frame unequipped."
+          nextEquipped ? "Frame Equipped! 🪽" : "Frame Unequipped",
+          nextEquipped ? "Golden Wings active across your profile!" : "Avatar frame unequipped."
         );
       }
     }
 
     if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
-    if (typeof updateTasksFrameButtonState === 'function') updateTasksFrameButtonState();
-    if (typeof window.updateCustomizeFrameButtonState === 'function') window.updateCustomizeFrameButtonState();
+    if (window.renderViewProfileAvatar && window.currentViewedUser) {
+      if (window.currentViewedUser.uid === profile.uid) {
+        window.renderViewProfileAvatar({ ...window.currentViewedUser, goldenWingsFrame: profile.goldenWingsFrame });
+      }
+    }
+    updateTasksFrameButtonState();
     if (typeof boot === 'function') boot();
   } catch (err) {
-    console.error("Frame action error:", err);
-    alert("Action failed: " + (err.message || err));
+    console.error('[Golden Wings Action Error]:', err);
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Notice", err.message || "Action could not be completed.", "error");
+    } else {
+      alert(err.message || 'Action failed');
+    }
   } finally {
-    if (btn1) btn1.disabled = false;
-    if (btn2) btn2.disabled = false;
+    if (btn) btn.disabled = false;
   }
 };
 
@@ -1927,6 +2152,11 @@ window.openPlayerProfileCard = async function(targetUid) {
         $('vppName').innerHTML = '<span class="text-rose-500 font-black tracking-tight flex items-center gap-1.5"><i class="fas fa-ban text-rose-500 text-sm"></i> Blocked User</span>';
       }
       window.currentViewingPlayerName = "Blocked User";
+      if ($('vppFrameImg')) $('vppFrameImg').classList.add('hidden');
+      if ($('vppAvWrap')) {
+        $('vppAvWrap').className = 'relative -mt-10 shrink-0 z-20';
+        $('vppAv').className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100';
+      }
       if ($('vppAv')) $('vppAv').src = "https://api.dicebear.com/7.x/bottts/svg?seed=blocked_user";
 
       // Hide Country, Numeric ID, and Score badge
@@ -1978,7 +2208,11 @@ window.openPlayerProfileCard = async function(targetUid) {
       if ($('vppName')) {
         $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
       }
-      if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+      if (typeof window.renderViewProfileAvatar === 'function') {
+        window.renderViewProfileAvatar(u);
+      } else if ($('vppAv')) {
+        $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
+      }
       if ($('vppCountryRow')) $('vppCountryRow').classList.remove('hidden');
 
       // Hide Numeric ID and Score badge
@@ -2026,63 +2260,99 @@ window.openPlayerProfileCard = async function(targetUid) {
     if ($('vppName')) {
       $('vppName').innerHTML = window.formatPlayerNameHtml(u, 'text-xl sm:text-2xl font-black text-gray-900 tracking-tight');
     }
-    // Esports Player Role Badge
-    const roleInfo = window.getRoleInfo ? window.getRoleInfo(u.playerRole) : null;
-    if ($('vppRoleBadge')) {
-      if (roleInfo) {
-        $('vppRoleBadge').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[10px]"></i>${roleInfo.name}`;
-        $('vppRoleBadge').className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
-        $('vppRoleBadge').classList.remove('hidden');
-      } else {
-        $('vppRoleBadge').classList.add('hidden');
-      }
-    }
-    if ($('vppRoleTag')) {
-      if (roleInfo) {
-        $('vppRoleTag').innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[9px]"></i>${roleInfo.name}`;
-        $('vppRoleTag').className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
-        $('vppRoleTag').classList.remove('hidden');
-      } else {
-        $('vppRoleTag').classList.add('hidden');
-      }
-    }
-
-    // AX Creator Badge
-    if ($('vppAXCreatorBadge')) {
-      if (u && u.isAXCreator === true) {
-        $('vppAXCreatorBadge').classList.remove('hidden');
-      } else {
-        $('vppAXCreatorBadge').classList.add('hidden');
-      }
-    }
-
-    if ($('vppAv')) $('vppAv').src = u.av || u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUid}`;
-    
-    // Country
-    const countryNames = {
-      PK: { flag: '🇵🇰', name: 'Pakistan' },
-      IN: { flag: '🇮🇳', name: 'India' },
-      BD: { flag: '🇧🇩', name: 'Bangladesh' },
-      SA: { flag: '🇸🇦', name: 'Saudi Arabia' },
-      AE: { flag: '🇦🇪', name: 'UAE' },
-      US: { flag: '🇺🇸', name: 'USA' },
-      GB: { flag: '🇬🇧', name: 'UK' },
-      Other: { flag: '🌍', name: 'Other' }
+    // ── ESPORTS ROLE & SUPPORTER LEVEL TITLE LOGIC ──
+    const isSupporterCheck = (userData) => {
+      if (!userData) return false;
+      const eRole = String(userData.esportsRole || '').toLowerCase().trim();
+      const pRole = String(userData.playerRole || '').toLowerCase().trim();
+      return eRole === 'supporter' || pRole === 'supporter';
     };
-    if (u.country && countryNames[u.country]) {
-      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = countryNames[u.country].flag;
-      if ($('vppCountryName')) $('vppCountryName').textContent = countryNames[u.country].name;
-    } else if (u.countryName) {
-      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = u.countryFlag || '🌍';
-      if ($('vppCountryName')) $('vppCountryName').textContent = u.countryName;
-    } else {
-      if ($('vppCountryFlag')) $('vppCountryFlag').textContent = '🇵🇰';
-      if ($('vppCountryName')) $('vppCountryName').textContent = 'Pakistan';
+
+    const getSupporterLevelNumber = (userData) => {
+      if (!userData) return 1;
+      const raw = userData.supporterLevel ?? userData.supporter_level ?? userData.supporterLvl;
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
+        return parsed;
+      }
+      return 1;
+    };
+
+    const syncViewProfileEsportsRoleAndTitle = (userData) => {
+      if (!userData) return;
+      const isSupporter = isSupporterCheck(userData);
+      const lvl = getSupporterLevelNumber(userData);
+
+      // 1. Supporter Title (LVL 1 - 4) placed beside User ID
+      const supporterTitleEl = $('vppSupporterTitleContainer');
+      if (supporterTitleEl) {
+        if (isSupporter) {
+          const fn = (typeof getSupporterTitleHtml === 'function')
+            ? getSupporterTitleHtml
+            : (window.getSupporterTitleHtml || null);
+          if (fn) {
+            supporterTitleEl.innerHTML = fn(lvl, { isViewProfile: true });
+            supporterTitleEl.classList.remove('hidden');
+          }
+        } else {
+          supporterTitleEl.innerHTML = '';
+          supporterTitleEl.classList.add('hidden');
+        }
+      }
+
+      // 2. Hide old duplicate Supporter badges when user is Supporter
+      // Only display traditional Rusher, Sniper, or Boomer badges when NOT a supporter
+      const rawRole = userData.playerRole || userData.esportsRole || null;
+      const roleInfo = (window.getRoleInfo && rawRole && !isSupporter) ? window.getRoleInfo(rawRole) : null;
+      const isCombatRole = roleInfo && roleInfo.id !== 'supporter';
+
+      const roleBadge = $('vppRoleBadge');
+      if (roleBadge) {
+        if (isCombatRole) {
+          roleBadge.innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[10px]"></i>${roleInfo.name}`;
+          roleBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-gray-900 text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+          roleBadge.classList.remove('hidden');
+        } else {
+          roleBadge.innerHTML = '';
+          roleBadge.classList.add('hidden');
+        }
+      }
+
+      const roleTag = $('vppRoleTag');
+      if (roleTag) {
+        if (isCombatRole) {
+          roleTag.innerHTML = `<i class="${roleInfo.icon} text-gold mr-1 text-[9px]"></i>${roleInfo.name}`;
+          roleTag.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#0a0c12] text-gold border border-gold/40 shadow-sm inline-flex items-center gap-1';
+          roleTag.classList.remove('hidden');
+        } else {
+          roleTag.innerHTML = '';
+          roleTag.classList.add('hidden');
+        }
+      }
+    };
+
+    // Apply immediately on profile open
+    syncViewProfileEsportsRoleAndTitle(u);
+    if (typeof window.renderViewProfileAvatar === 'function') {
+      window.renderViewProfileAvatar(u);
     }
 
-    // User ID (Friend Request Numeric ID)
-    const numericId = getNumericPlayerId(u.uid || targetUid, u.gameUID || u.handle);
-    if ($('vppGameUID')) $('vppGameUID').textContent = `ID: ${numericId}`;
+    // Real-time listener for live role/level changes while modal is open
+    if (window.vppLiveProfileUnsub) {
+      try { window.vppLiveProfileUnsub(); } catch(e) {}
+      window.vppLiveProfileUnsub = null;
+    }
+    window.vppLiveProfileUnsub = onSnapshot(userDocRef, (liveSnap) => {
+      if (liveSnap.exists()) {
+        const liveData = liveSnap.data();
+        syncViewProfileEsportsRoleAndTitle(liveData);
+        if (typeof window.renderViewProfileAvatar === 'function') {
+          window.renderViewProfileAvatar({ uid: targetUid, ...liveData });
+        }
+      }
+    }, (err) => {
+      console.warn("Live profile title sync notice:", err);
+    });
 
     // Fill Stats Section
     if ($('vppBio')) $('vppBio').textContent = u.bio || u.signature || "This person says nothing!";
@@ -2186,11 +2456,19 @@ window.openPlayerProfileCard = async function(targetUid) {
 if ($('bCloseViewPlayerProfile')) {
   $('bCloseViewPlayerProfile').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
+    if (window.vppLiveProfileUnsub) {
+      try { window.vppLiveProfileUnsub(); } catch(e) {}
+      window.vppLiveProfileUnsub = null;
+    }
   });
 }
 if ($('btnCloseViewPlayerProfileX')) {
   $('btnCloseViewPlayerProfileX').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
+    if (window.vppLiveProfileUnsub) {
+      try { window.vppLiveProfileUnsub(); } catch(e) {}
+      window.vppLiveProfileUnsub = null;
+    }
   });
 }
 
