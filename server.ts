@@ -783,6 +783,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       if (!gw || !gw.activatedAt) {
         return res.json({
           success: true,
+          eligible: true,
+          claimed: false,
           status: "not_activated",
           hasFrame: false,
           equipped: false,
@@ -798,7 +800,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       const activatedAtMs = new Date(gw.activatedAt).getTime();
       const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : activatedAtMs + GOLDEN_WINGS_TRIAL_MS;
       const isPermanent = !!gw.permanentUnlocked;
-      const isExpired = !isPermanent && (now >= endsAtMs || remainingMs <= 0 || gw.status === "expired");
+      const isExpired = !isPermanent && (now >= endsAtMs || gw.status === "expired");
       const effectiveRemainingMs = isExpired ? 0 : Math.max(0, endsAtMs - now);
 
       // Auto-transition expired state in database & unequip if expired
@@ -819,6 +821,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 
       return res.json({
         success: true,
+        eligible: false,
+        claimed: true,
         status: isPermanent ? "permanent" : (isExpired ? "expired" : "active"),
         hasFrame: isPermanent || !isExpired,
         equipped: !!gw.equipped && (isPermanent || !isExpired),
@@ -894,6 +898,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 
       return res.json({
         success: true,
+        eligible: false,
+        claimed: true,
         message: "Golden Wings Avatar Frame unlocked! 72-Hour Free Trial is now active.",
         ...result,
       });
