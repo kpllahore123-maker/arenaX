@@ -533,6 +533,16 @@
               <div id="modDossierBadgesCount" class="text-xs font-black text-white">0 Badges</div>
               <div id="modDossierBadgesList" class="text-[10px] text-slate-400 truncate">Standard Player</div>
             </div>
+
+            <!-- Golden Wings Avatar Frame -->
+            <div class="bg-[#0e1220] border border-bdr rounded-2xl p-3.5 space-y-1 col-span-2 sm:col-span-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Golden Wings Frame</span>
+                <i class="fas fa-feather text-amber-400 text-xs"></i>
+              </div>
+              <div id="modDossierFrameStatusText" class="text-xs font-black text-white">None</div>
+              <div id="modDossierFrameInfo" class="text-[10px] text-slate-400 truncate">72h Free Trial or VIP Owned</div>
+            </div>
           </div>
 
           <!-- Current Account Moderation State Overview -->
@@ -3831,6 +3841,86 @@
       }).join('');
     }
 
+    function renderAdminGoldenWingsBadge(u) {
+      const gw = u.goldenWingsFrame;
+      if (!gw || !gw.activatedAt) {
+        return `<button onclick="manageAdminGoldenWings('${u.uid}', 'grant_trial')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-500 border border-bdr hover:text-slate-300 transition cursor-pointer" title="Click to grant 72h Free Trial">🪽 Frame: None</button>`;
+      }
+      if (gw.permanentUnlocked || gw.status === 'permanent') {
+        return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40" title="Permanent Golden Wings Frame Owned">🪽 Frame: Owned ✓</span>`;
+      }
+      const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : 0;
+      const remMs = endsAtMs - Date.now();
+      if (remMs > 0 && gw.status !== 'expired') {
+        const totalSecs = Math.floor(remMs / 1000);
+        const d = Math.floor(totalSecs / 86400);
+        const h = Math.floor((totalSecs % 86400) / 3600);
+        const timeStr = d > 0 ? `${d}d ${h}h` : `${h}h`;
+        return `<button onclick="manageAdminGoldenWings('${u.uid}', 'expire_trial')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:brightness-110 transition cursor-pointer" title="72h Free Trial Active (${timeStr} remaining). Click to expire.">🪽 Trial: ${timeStr}</button>`;
+      }
+      return `<button onclick="manageAdminGoldenWings('${u.uid}', 'grant_trial')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:brightness-110 transition cursor-pointer" title="72h Free Trial Expired. Click to grant new trial.">🪽 Trial: Expired</button>`;
+    }
+
+    async function manageAdminGoldenWings(targetUid, action) {
+      if (!confirm(`Are you sure you want to perform '${action}' on Golden Wings Frame for user ${targetUid}?`)) return;
+      try {
+        const authUser = window.fbAuth?.currentUser || window.currentAuthUser || null;
+        let idToken = '';
+        if (authUser && typeof authUser.getIdToken === 'function') {
+          idToken = await authUser.getIdToken().catch(() => '');
+        }
+        const sessionPasscode = localStorage.getItem('ax_admin_passcode') || 'arenax2026';
+        const headers = {
+          'Content-Type': 'application/json',
+          'x-admin-passcode': sessionPasscode
+        };
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        const res = await fetch('/api/admin/golden-wings/manage', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            targetUid,
+            action,
+            adminIdToken: idToken,
+            adminPasscode: sessionPasscode
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Action failed');
+        }
+        alert(`Golden Wings: ${data.message || 'Updated successfully'}`);
+        // Update local state if present
+        const idx = rawUsers.findIndex(x => x.uid === targetUid);
+        if (idx !== -1) {
+          if (action === 'grant_trial') {
+            rawUsers[idx].goldenWingsFrame = {
+              activatedAt: new Date().toISOString(),
+              freeTrialEndsAt: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+              equipped: true,
+              status: 'active'
+            };
+          } else if (action === 'grant_permanent') {
+            rawUsers[idx].goldenWingsFrame = {
+              status: 'permanent',
+              permanentUnlocked: true,
+              equipped: true
+            };
+          } else if (action === 'expire_trial') {
+            if (rawUsers[idx].goldenWingsFrame) {
+              rawUsers[idx].goldenWingsFrame.status = 'expired';
+              rawUsers[idx].goldenWingsFrame.equipped = false;
+            }
+          }
+          renderUsersTable();
+        }
+      } catch (err) {
+        alert(err.message || 'Failed to update Golden Wings');
+      }
+    }
+    window.manageAdminGoldenWings = manageAdminGoldenWings;
+
     // D. Users
     function renderUsersTable() {
       const tbody = $('usersTableBody');
@@ -3920,6 +4010,8 @@
                 >
                   <i class="fas fa-shield-heart mr-1"></i>${(u.esportsRole === 'supporter' || u.playerRole === 'supporter') ? `Supporter LVL ${u.supporterLevel || 1}` : '+ Role'}
                 </button>
+
+                ${renderAdminGoldenWingsBadge(u)}
               </div>
             </td>
 
@@ -5468,6 +5560,32 @@
       const badgesCount = (user.badges && user.badges.length) || (user.badgeId ? 1 : 0);
       $('modDossierBadgesCount').textContent = `${badgesCount} Badges`;
       $('modDossierBadgesList').textContent = badgesCount > 0 ? (user.badges ? user.badges.join(', ') : 'Standard Badge') : 'Standard Player';
+
+      // Telemetry: Golden Wings Frame
+      const gw = user.goldenWingsFrame;
+      const gwStatusEl = $('modDossierFrameStatusText');
+      const gwInfoEl = $('modDossierFrameInfo');
+      if (gwStatusEl) {
+        if (!gw || !gw.activatedAt) {
+          gwStatusEl.innerHTML = '<span class="text-slate-400">Not Claimed</span>';
+          if (gwInfoEl) gwInfoEl.textContent = '72-Hour Free Trial Available';
+        } else if (gw.permanentUnlocked || gw.status === 'permanent') {
+          gwStatusEl.innerHTML = '<span class="text-amber-400 font-bold">Permanent Owned ✓</span>';
+          if (gwInfoEl) gwInfoEl.textContent = gw.equipped ? 'Currently Equipped' : 'Unequipped';
+        } else {
+          const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : 0;
+          const remMs = endsAtMs - Date.now();
+          if (remMs > 0 && gw.status !== 'expired') {
+            const h = Math.floor(remMs / 3600000);
+            const m = Math.floor((remMs % 3600000) / 60000);
+            gwStatusEl.innerHTML = `<span class="text-emerald-400 font-bold">Trial Active (${h}h ${m}m left)</span>`;
+            if (gwInfoEl) gwInfoEl.textContent = `Ends: ${new Date(endsAtMs).toLocaleString()} | Equipped: ${gw.equipped ? 'Yes' : 'No'}`;
+          } else {
+            gwStatusEl.innerHTML = '<span class="text-rose-400 font-bold">Trial Expired</span>';
+            if (gwInfoEl) gwInfoEl.textContent = `Expired on ${new Date(endsAtMs).toLocaleDateString()}`;
+          }
+        }
+      }
 
       // Populate Tab 2: Safety History & Reports
       populateModSafetyHistory(uid, reportId);
