@@ -287,24 +287,23 @@ $('bCloseFriendsModalDone')?.addEventListener('click', () => $('mFriendsModal')?
 
 // Ranking Leaderboard Modal Controls
 // Tasks Modal Controls
-window.openTasksModal = function() {
+function openTasksModal() {
   const modal = $('mTasksModal');
   if (modal) modal.classList.remove('hidden');
-  updateTasksFrameButtonState();
+  if (typeof updateTasksFrameButtonState === 'function') {
+    try { updateTasksFrameButtonState(); } catch (e) { console.warn(e); }
+  }
   if (typeof window.reactOpenTasksModal === 'function') {
     try { window.reactOpenTasksModal(); } catch(e) {}
   }
-};
-window.closeTasksModal = function() {
+}
+window.openTasksModal = openTasksModal;
+
+function closeTasksModal() {
   const modal = $('mTasksModal');
   if (modal) modal.classList.add('hidden');
-};
-function openTasksModal() {
-  window.openTasksModal();
 }
-function closeTasksModal() {
-  window.closeTasksModal();
-}
+window.closeTasksModal = closeTasksModal;
 
 window.getActiveUserProfile = function() {
   let profile = window.userProfile || window.guestProfile || window.currentUser;
@@ -764,20 +763,20 @@ setTimeout(() => {
   }
 }, 300);
 
-window.openRankingModal = function() {
+function openRankingModal() {
   const modal = $('mRankingModal');
   if (modal) modal.classList.remove('hidden');
-  renderVanillaRankingList();
-};
+  if (typeof renderVanillaRankingList === 'function') {
+    try { renderVanillaRankingList(); } catch (e) { console.warn(e); }
+  }
+}
+window.openRankingModal = openRankingModal;
 
-window.closeRankingModal = function() {
+function closeRankingModal() {
   const modal = $('mRankingModal');
   if (modal) modal.classList.add('hidden');
-};
-
-function openRankingModal() {
-  window.openRankingModal();
 }
+window.closeRankingModal = closeRankingModal;
 
 window.setRkCategory = function(cat) {
   const btnCoins = $('rkTabCoins');
@@ -4173,6 +4172,7 @@ window.openTasksModal = openTasksModal;
 window.closeTasksModal = closeTasksModal;
 window.updateTasksFrameButtonState = updateTasksFrameButtonState;
 window.openRankingModal = openRankingModal;
+window.closeRankingModal = closeRankingModal;
 window.renderVanillaRankingList = renderVanillaRankingList;
 window.initGlobalChat = initGlobalChat;
 window.renderGlobalMessages = renderGlobalMessages;
