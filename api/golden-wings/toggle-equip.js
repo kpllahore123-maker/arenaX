@@ -2,15 +2,17 @@ import {
   setCorsHeaders,
   getFirebaseAdmin,
   getVerifiedUid
-} from './_common.js';
+} from './common.js';
 
 /**
  * Vercel Serverless Function: Toggle Equip / Unequip Golden Wings Frame
  * Endpoint: POST /api/golden-wings/toggle-equip
  */
 export default async function handler(req, res) {
+  // Apply CORS headers for all requests, including preflight
   setCorsHeaders(req, res);
 
+  // Return HTTP 200 OK for preflight OPTIONS requests immediately
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -37,7 +39,9 @@ export default async function handler(req, res) {
     }
 
     let body = req.body;
-    if (typeof body === 'string') {
+    if (Buffer.isBuffer(body)) {
+      try { body = JSON.parse(body.toString('utf-8')); } catch (_) {}
+    } else if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch (_) {}
     }
     const clientUid = body && body.uid ? String(body.uid).trim() : null;
@@ -56,55 +60,54 @@ export default async function handler(req, res) {
       });
     }
 
+    const equip = body && typeof body.equipped === 'boolean' ? body.equipped : null;
     const userRef = db.collection('users').doc(verifiedUid);
     const userDoc = await userRef.get();
+
     if (!userDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'User profile not found.'
-      });
+      return res.status(404).json({ success: false, error: 'User profile not found.' });
     }
 
     const userData = userDoc.data() || {};
     const gw = userData.goldenWingsFrame;
-    const now = Date.now();
 
     if (!gw || !gw.activatedAt) {
       return res.status(403).json({
         success: false,
-        error: 'You must claim the Golden Wings Free Trial first.'
+        error: 'You do not own Golden Wings avatar frame.'
       });
     }
 
+    const now = Date.now();
     const isPermanent = !!gw.permanentUnlocked;
-    const endsAtMs = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : 0;
-    const isExpired = !isPermanent && (now >= endsAtMs || gw.status === 'expired');
+    const trialEnds = gw.freeTrialEndsAt ? new Date(gw.freeTrialEndsAt).getTime() : 0;
+    const isExpired = !isPermanent && now >= trialEnds;
 
     if (isExpired) {
       return res.status(403).json({
         success: false,
-        error: 'Your 3-day free trial has expired. Unlock permanently to equip.'
+        error: 'Your Golden Wings frame free trial has expired.'
       });
     }
 
-    const shouldEquip = body && body.equipped !== undefined ? !!body.equipped : !gw.equipped;
+    const newEquipState = equip !== null ? equip : !gw.equipped;
 
     await userRef.update({
-      'goldenWingsFrame.equipped': shouldEquip,
-      frameEquipped: shouldEquip,
+      'goldenWingsFrame.equipped': newEquipState,
+      frameEquipped: newEquipState,
       updatedAt: new Date().toISOString()
     });
 
     return res.status(200).json({
       success: true,
-      equipped: shouldEquip,
-      message: shouldEquip ? 'Golden Wings Avatar Frame equipped!' : 'Avatar frame unequipped.'
+      equipped: newEquipState,
+      message: newEquipState ? 'Golden Wings Avatar Frame equipped!' : 'Golden Wings Frame unequipped.'
     });
   } catch (err) {
     console.error('[Golden Wings Toggle Equip Error]:', err);
     return res.status(500).json({
       success: false,
-      error: err.message || 'Failed to toggle frame equipment.'
+      error: err.message || 'Failed to update equip status.'
     });
   }
 }
