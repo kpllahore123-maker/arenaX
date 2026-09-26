@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/api/golden-wings/(.*)",
+      "source": "/api/golden-wings(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "https://arenax.cyou" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
