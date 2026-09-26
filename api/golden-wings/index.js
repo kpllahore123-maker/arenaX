@@ -1,14 +1,18 @@
 import {
   setCorsHeaders
-} from './common.js';
-import statusHandler from './status.js';
-import claimHandler from './claim.js';
-import toggleEquipHandler from './toggle-equip.js';
-import purchaseHandler from './purchase.js';
+} from './_common.js';
+import statusHandler from './_status.js';
+import claimHandler from './_claim.js';
+import toggleEquipHandler from './_toggle-equip.js';
+import purchaseHandler from './_purchase.js';
 
 /**
  * Vercel Serverless Function: Golden Wings API Dispatcher / Base Endpoint
- * Endpoint: /api/golden-wings
+ * Endpoints handled:
+ *   - GET  /api/golden-wings/status?uid=<UID>
+ *   - POST /api/golden-wings/claim
+ *   - POST /api/golden-wings/toggle-equip
+ *   - POST /api/golden-wings/purchase
  */
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
@@ -17,7 +21,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const action = (req.query && req.query.action) || '';
+  const urlPath = (req.url || '').split('?')[0].replace(/\/+$/, '');
+  const lastSegment = urlPath.split('/').pop();
+  const action = (req.query && req.query.action) || lastSegment;
 
   if (action === 'claim') {
     return claimHandler(req, res);
