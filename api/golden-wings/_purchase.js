@@ -3,7 +3,7 @@ import {
   getFirebaseAdmin,
   getVerifiedUid,
   GOLDEN_WINGS_PURCHASE_PRICE
-} from './common.js';
+} from './_common.js';
 
 /**
  * Vercel Serverless Function: Permanent Unlock Golden Wings Frame (150 AX Coins)
