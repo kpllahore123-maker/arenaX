@@ -2,7 +2,7 @@ import {
   setCorsHeaders,
   getFirebaseAdmin,
   getVerifiedUid
-} from './common.js';
+} from './_common.js';
 
 /**
  * Vercel Serverless Function: Toggle Equip / Unequip Golden Wings Frame
