@@ -1104,7 +1104,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   // Custom 6-Digit Email Verification Code Endpoint
   app.all("/api/send-verification-code", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/send-verification-code.js");
+      const { default: handler } = await import("./api/_send-verification-code.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[Server Relay] /api/send-verification-code error:", err);
@@ -1115,7 +1115,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   // Verify 6-Digit Email Verification Code Endpoint
   app.all("/api/verify-email-code", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/verify-email-code.js");
+      const { default: handler } = await import("./api/_verify-email-code.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[Server Relay] /api/verify-email-code error:", err);
@@ -1126,7 +1126,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   // Request Password Reset Link (Branded Email with Button)
   app.all("/api/request-password-reset", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/request-password-reset.js");
+      const { default: handler } = await import("./api/_request-password-reset.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[Server Relay] /api/request-password-reset error:", err);
@@ -1137,7 +1137,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   // Complete Password Reset (Validate token & update password via Admin SDK)
   app.all("/api/complete-password-reset", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/complete-password-reset.js");
+      const { default: handler } = await import("./api/_complete-password-reset.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[Server Relay] /api/complete-password-reset error:", err);
@@ -2934,7 +2934,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 
   app.all("/api/request-password-reset", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/request-password-reset.js");
+      const { default: handler } = await import("./api/_request-password-reset.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[API Error] /api/request-password-reset:", err);
@@ -2944,7 +2944,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
 
   app.all("/api/complete-password-reset", async (req, res) => {
     try {
-      const { default: handler } = await import("./api/complete-password-reset.js");
+      const { default: handler } = await import("./api/_complete-password-reset.js");
       return await handler(req, res);
     } catch (err: any) {
       console.error("[API Error] /api/complete-password-reset:", err);
