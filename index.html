@@ -434,6 +434,63 @@ html, body {
 }
 
 /* ========================================================
+   GOLDEN WINGS AVATAR FRAME (360x360 px image)
+   Avatar hole measurements:
+   Left: 20.8%, Top: 22.5%, Width: 57.2%, Height: 50.8%
+   ======================================================== */
+.frame-wrap {
+  position: relative;
+  width: 260px;
+  height: 260px;
+}
+
+.avatar-photo,
+.frame-wrap .avatar-photo,
+.frame-wrap-vpp .avatar-photo,
+.frame-wrap-task .avatar-photo {
+  position: absolute;
+  left: 20.8%;
+  top: 22.5%;
+  width: 57.2%;
+  height: 50.8%;
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.frame-img,
+.frame-wrap .frame-img,
+.frame-wrap-vpp .frame-img,
+.frame-wrap-task .frame-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.frame-wrap-vpp {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+@media (min-width: 640px) {
+  .frame-wrap-vpp {
+    width: 136px;
+    height: 136px;
+  }
+}
+
+.frame-wrap-task {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+/* ========================================================
    VIP / PREMIUM CUSTOM ESPORTS FONTS (12 EXCLUSIVE FONTS)
    ======================================================== */
 .font-poppins { font-family: 'Poppins', sans-serif !important; }
@@ -6928,26 +6985,26 @@ html, body {
     </div>
 
     <div class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-      <!-- SPECIAL VIP AVATAR FRAME REWARD TASK -->
-      <div class="p-3.5 bg-gradient-to-r from-amber-500/15 via-[#171b2e] to-purple-500/15 border border-[#f0c040]/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
+      <!-- GOLDEN WINGS AVATAR FRAME — 3-DAY FREE TRIAL TASK -->
+      <div id="taskGoldenWingsCard" class="p-3.5 bg-gradient-to-r from-amber-500/15 via-[#171b2e] to-purple-500/15 border border-[#f0c040]/40 rounded-xl flex items-center justify-between gap-3 shadow-md">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-[#111420]">
-            <img id="taskModalUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-8 h-8 rounded-full object-cover" />
-            <img src="/arenaX/avatarframe1.svg"  alt="Frame" class="absolute -inset-[22%] w-[144%] h-[144%] pointer-events-none z-10 object-contain" />
+          <div class="frame-wrap-task shrink-0">
+            <img id="taskModalUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="avatar-photo bg-[#171b2e]" />
+            <img src="./frame1.png" alt="Golden Wings Frame" class="frame-img" />
           </div>
           <div class="min-w-0">
             <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
-              Login 1 Day
-              <span class="text-[8px] px-1.5 py-0.2 rounded bg-[#f0c040] text-[#0a0c12] font-black uppercase tracking-wider">SPECIAL</span>
+              Golden Wings Frame
+              <span id="taskFrameTrialTag" class="text-[8px] px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-amber-600 text-black font-black uppercase tracking-wider">3-DAY FREE TRIAL</span>
             </div>
-            <div class="text-[10px] text-[#8890b0] truncate">
-              Reward: <span class="text-[#f0c040] font-bold">VIP Avatar Frame (3 Days)</span>
+            <div id="taskFrameSubtitle" class="text-[10px] text-[#8890b0] truncate">
+              Reward: <span id="taskFrameCountdownTxt" class="text-[#f0c040] font-bold">72-Hour Free Trial (100% Free)</span>
             </div>
           </div>
         </div>
 
-        <button id="btnTaskClaimFrame" onclick="handleClaimOrToggleFrameFromVanilla()" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)]">
-          Claim Frame
+        <button id="btnTaskClaimFrame" onclick="handleClaimOrToggleFrameFromVanilla()" class="px-3 py-1.5 bg-[#f0c040] text-[#0a0c12] hover:bg-[#e8b830] rounded-lg text-xs font-bold transition shrink-0 shadow-[0_0_12px_rgba(240,192,64,0.4)] cursor-pointer">
+          Claim Free (3 Days)
         </button>
       </div>
 
@@ -7232,8 +7289,9 @@ html, body {
       <!-- Avatar & Top Info Row -->
       <div class="flex items-start justify-between gap-3">
         <!-- Large Avatar overlapping top dark bar cleanly -->
-        <div class="relative -mt-10 shrink-0 z-20">
+        <div id="vppAvWrap" class="relative -mt-10 shrink-0 z-20">
           <img id="vppAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1" alt="Profile Picture" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100" />
+          <img id="vppFrameImg" src="./frame1.png" alt="Golden Wings Frame" class="hidden pointer-events-none" />
         </div>
 
         <!-- Name & Country on Right Side -->
