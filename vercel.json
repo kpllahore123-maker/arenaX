@@ -17,5 +17,31 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With, Accept" }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/golden-wings/:action",
+      "destination": "/api/golden-wings?action=:action"
+    },
+    {
+      "source": "/api/admin/:action",
+      "destination": "/api/admin?action=:action"
+    },
+    {
+      "source": "/api/send-verification-code",
+      "destination": "/api/email-verification?action=send"
+    },
+    {
+      "source": "/api/verify-email-code",
+      "destination": "/api/email-verification?action=verify"
+    },
+    {
+      "source": "/api/request-password-reset",
+      "destination": "/api/password-reset?action=request"
+    },
+    {
+      "source": "/api/complete-password-reset",
+      "destination": "/api/password-reset?action=complete"
+    }
   ]
 }
