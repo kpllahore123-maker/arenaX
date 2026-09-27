@@ -2214,7 +2214,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
       // Compact Header & Disable 3D Model
       if (headerBar) {
-        headerBar.className = "relative h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
@@ -2269,7 +2269,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
       // Compact Header & Disable 3D Model
       if (headerBar) {
-        headerBar.className = "relative h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
@@ -2477,7 +2477,7 @@ window.openPlayerProfileCard = async function(targetUid) {
       }
     } else {
       if (headerBar) {
-        headerBar.className = "relative h-20 bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
