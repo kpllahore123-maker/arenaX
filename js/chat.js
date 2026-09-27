@@ -465,11 +465,17 @@ window.renderViewProfileAvatar = function(userData) {
 
   const isEquipped = window.isGoldenWingsEquippedForUser(userData);
 
-  if (frameImg) {
-    if (isEquipped) {
+  if (isEquipped) {
+    avWrap.classList.remove('no-frame');
+    avWrap.classList.add('has-frame');
+    if (frameImg) {
       frameImg.src = './frame1.png';
       frameImg.style.display = 'block';
-    } else {
+    }
+  } else {
+    avWrap.classList.remove('has-frame');
+    avWrap.classList.add('no-frame');
+    if (frameImg) {
       frameImg.style.display = 'none';
     }
   }
@@ -2083,6 +2089,7 @@ window.openPlayerProfileCard = async function(targetUid) {
   if ($('vppGiftCount')) $('vppGiftCount').textContent = "0";
   if ($('vppStarCount')) $('vppStarCount').textContent = "0";
   if ($('vppFrameImg')) $('vppFrameImg').style.display = 'none';
+  if ($('vppAvWrap')) $('vppAvWrap').className = 'relative shrink-0 z-20 no-frame';
 
   // Show modal
   if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.remove('hidden');
@@ -2196,8 +2203,7 @@ window.openPlayerProfileCard = async function(targetUid) {
       window.currentViewingPlayerName = "Blocked User";
       if ($('vppFrameImg')) $('vppFrameImg').style.display = 'none';
       if ($('vppAvWrap')) {
-        $('vppAvWrap').className = 'relative -mt-10 shrink-0 z-20 w-20 h-20 sm:w-24 sm:h-24';
-        $('vppAv').className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100';
+        $('vppAvWrap').className = 'relative shrink-0 z-20 no-frame';
       }
       if ($('vppAv')) $('vppAv').src = "https://api.dicebear.com/7.x/bottts/svg?seed=blocked_user";
 
