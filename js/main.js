@@ -1099,6 +1099,7 @@ function boot() {
     if ($('setHandle')) $('setHandle').textContent = numId;
     if ($('setAv')) $('setAv').src = profile.av || 'av1.png';
     if ($('wBal')) $('wBal').textContent = (profile.balance || 0).toLocaleString();
+    if ($('shopCoinsVal')) $('shopCoinsVal').textContent = (profile.balance || 0).toLocaleString();
     if ($('pPopularityVal')) $('pPopularityVal').textContent = profile.popularity || 0;
 
     if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
@@ -3580,6 +3581,54 @@ $('btnHubRedReport').addEventListener('click', () => {
   switchSupportSubSlab('RedReport');
   openSupportDrawer();
 });
+
+// ArenaX Shop Modal Controls
+window.openShopModal = function() {
+  const modal = document.getElementById('mShopModal');
+  if (!modal) return;
+
+  // Close hamburger menu hub drawer if open
+  if (typeof window.closeRedReportHubDrawer === 'function') {
+    window.closeRedReportHubDrawer();
+  }
+
+  // Update user balance display from active profile
+  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  const balance = profile?.balance ?? 0;
+  const shopCoinsEl = document.getElementById('shopCoinsVal');
+  if (shopCoinsEl) {
+    shopCoinsEl.textContent = Number(balance).toLocaleString();
+  }
+
+  // Update avatar preview with active player avatar if present
+  const shopAvEl = document.getElementById('shopPreviewAvatar');
+  if (shopAvEl && (profile?.av || profile?.avatar)) {
+    shopAvEl.src = profile.av || profile.avatar;
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.closeShopModal = function() {
+  const modal = document.getElementById('mShopModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+};
+
+const btnHubShopEl = document.getElementById('btnHubShop');
+if (btnHubShopEl) {
+  btnHubShopEl.addEventListener('click', () => {
+    window.openShopModal();
+  });
+}
+
+const btnShopBackEl = document.getElementById('btnShopBack');
+if (btnShopBackEl) {
+  btnShopBackEl.addEventListener('click', () => {
+    window.closeShopModal();
+  });
+}
 
 // Setup Sub-Slab Navigation inside Support
 window.switchSupportSubSlab = function(slab) {
