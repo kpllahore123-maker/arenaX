@@ -465,18 +465,12 @@ window.renderViewProfileAvatar = function(userData) {
 
   const isEquipped = window.isGoldenWingsEquippedForUser(userData);
 
-  if (isEquipped) {
-    avWrap.className = 'relative -mt-12 sm:-mt-14 shrink-0 z-20 frame-wrap frame-wrap-vpp';
-    avImg.className = 'avatar-photo bg-gray-100 shadow-md';
-    if (frameImg) {
+  if (frameImg) {
+    if (isEquipped) {
       frameImg.src = './frame1.png';
-      frameImg.className = 'frame-img block';
-    }
-  } else {
-    avWrap.className = 'relative -mt-10 shrink-0 z-20';
-    avImg.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100';
-    if (frameImg) {
-      frameImg.className = 'hidden';
+      frameImg.style.display = 'block';
+    } else {
+      frameImg.style.display = 'none';
     }
   }
 };
@@ -2088,6 +2082,7 @@ window.openPlayerProfileCard = async function(targetUid) {
   if ($('vppGameUID')) $('vppGameUID').textContent = `ID: ${getNumericPlayerId(targetUid)}`;
   if ($('vppGiftCount')) $('vppGiftCount').textContent = "0";
   if ($('vppStarCount')) $('vppStarCount').textContent = "0";
+  if ($('vppFrameImg')) $('vppFrameImg').style.display = 'none';
 
   // Show modal
   if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.remove('hidden');
@@ -2199,9 +2194,9 @@ window.openPlayerProfileCard = async function(targetUid) {
         $('vppName').innerHTML = '<span class="text-rose-500 font-black tracking-tight flex items-center gap-1.5"><i class="fas fa-ban text-rose-500 text-sm"></i> Blocked User</span>';
       }
       window.currentViewingPlayerName = "Blocked User";
-      if ($('vppFrameImg')) $('vppFrameImg').classList.add('hidden');
+      if ($('vppFrameImg')) $('vppFrameImg').style.display = 'none';
       if ($('vppAvWrap')) {
-        $('vppAvWrap').className = 'relative -mt-10 shrink-0 z-20';
+        $('vppAvWrap').className = 'relative -mt-10 shrink-0 z-20 w-20 h-20 sm:w-24 sm:h-24';
         $('vppAv').className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-xl bg-gray-100';
       }
       if ($('vppAv')) $('vppAv').src = "https://api.dicebear.com/7.x/bottts/svg?seed=blocked_user";
