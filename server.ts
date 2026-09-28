@@ -1052,6 +1052,14 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       type: "frame",
       image: "frame1.png",
       category: "Frames"
+    },
+    "eagle": {
+      id: "eagle",
+      name: "Eagle",
+      price: 399,
+      type: "animated",
+      image: "frame3.webm",
+      category: "Frames"
     }
   };
 
@@ -1086,7 +1094,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         // Check if already claimed / owned
         const ownedItems = userData.ownedShopItems || {};
         const isGoldenWingsOwned = item.id === "golden-wings" && (userData.goldenWingsFrame?.permanentUnlocked || userData.goldenWingsFrame?.status === "permanent");
-        if (ownedItems[item.id] || isGoldenWingsOwned) {
+        const isEagleOwned = item.id === "eagle" && (userData.eagleFrame?.permanentUnlocked || userData.eagleFrame?.status === "permanent");
+        if (ownedItems[item.id] || isGoldenWingsOwned || isEagleOwned) {
           throw new Error(`You already own ${item.name}.`);
         }
 
@@ -1124,6 +1133,20 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           };
           updatePayload.hasFrame = true;
           updatePayload.frameEquipped = true;
+          updatePayload.equippedFrameId = "golden-wings";
+        } else if (item.id === "eagle") {
+          updatePayload.eagleFrame = {
+            id: "eagle",
+            name: "Eagle",
+            asset: "frame3.webm",
+            permanentUnlocked: true,
+            status: "permanent",
+            equipped: true,
+            purchasedAt: new Date(now).toISOString()
+          };
+          updatePayload.hasFrame = true;
+          updatePayload.frameEquipped = true;
+          updatePayload.equippedFrameId = "eagle";
         }
 
         transaction.update(userRef, updatePayload);
@@ -1145,7 +1168,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           itemId: item.id,
           itemName: item.name,
           ownedShopItems: updatedOwnedItems,
-          goldenWingsFrame: updatePayload.goldenWingsFrame
+          goldenWingsFrame: updatePayload.goldenWingsFrame,
+          eagleFrame: updatePayload.eagleFrame
         };
       });
 
