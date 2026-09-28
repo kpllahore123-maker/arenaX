@@ -3,7 +3,7 @@
  */
 
 export const GOLDEN_WINGS_TRIAL_MS = 72 * 60 * 60 * 1000; // 72 Hours (3 Days)
-export const GOLDEN_WINGS_PURCHASE_PRICE = 150; // 150 AX Coins
+export const GOLDEN_WINGS_PURCHASE_PRICE = 300; // 300 AX Coins
 
 const ALLOWED_ORIGINS = [
   'https://arenax.cyou',
