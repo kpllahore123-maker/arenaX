@@ -428,6 +428,7 @@ window.refreshGoldenWingsServerStatus = async function() {
       };
       profile.frameEquipped = data.equipped;
       profile.hasFrame = data.hasFrame;
+      if (typeof window.updateShopItemsUI === 'function') window.updateShopItemsUI();
       return data;
     }
   } catch (e) {
