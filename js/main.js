@@ -3594,6 +3594,15 @@ window.ARENAX_SHOP_ITEMS = {
     category: "Frames",
     image: "./frame1.png",
     type: "frame"
+  },
+  "eagle": {
+    id: "eagle",
+    name: "Eagle",
+    price: 399,
+    category: "Frames",
+    image: "./frame3.webm",
+    poster: "./frame3.png",
+    type: "animated"
   }
 };
 
@@ -3614,29 +3623,50 @@ window.isShopItemClaimed = function(itemId) {
     );
   }
 
+  if (itemId === 'eagle') {
+    return !!(
+      profile.eagleFrame?.permanentUnlocked ||
+      profile.eagleFrame?.status === 'permanent' ||
+      (profile.ownedShopItems && profile.ownedShopItems['eagle'])
+    );
+  }
+
   return !!(profile.ownedShopItems && profile.ownedShopItems[itemId]);
 };
 
 window.updateShopItemsUI = function() {
-  const isClaimed = window.isShopItemClaimed('golden-wings');
-  const priceRow = document.getElementById('shopCardGoldenWingsPriceRow');
-  const badge = document.getElementById('shopCardGoldenWingsClaimedBadge');
-  if (isClaimed) {
-    if (priceRow) priceRow.classList.add('hidden');
-    if (badge) badge.classList.remove('hidden');
-  } else {
-    if (priceRow) priceRow.classList.remove('hidden');
-    if (badge) badge.classList.add('hidden');
-  }
-
-  // Update avatar preview with active user avatar
   const profile = (typeof window.getActiveUserProfile === 'function')
     ? window.getActiveUserProfile()
     : (window.userProfile || window.guestProfile || window.currentUser);
-  const shopAvEl = document.getElementById('shopPreviewAvatar');
-  if (shopAvEl && (profile?.av || profile?.avatar)) {
-    shopAvEl.src = profile.av || profile.avatar;
+  const userAvatar = profile?.av || profile?.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax';
+
+  // 1. Golden Wings Card
+  const isGwClaimed = window.isShopItemClaimed('golden-wings');
+  const gwPriceRow = document.getElementById('shopCardGoldenWingsPriceRow');
+  const gwBadge = document.getElementById('shopCardGoldenWingsClaimedBadge');
+  if (isGwClaimed) {
+    if (gwPriceRow) gwPriceRow.classList.add('hidden');
+    if (gwBadge) gwBadge.classList.remove('hidden');
+  } else {
+    if (gwPriceRow) gwPriceRow.classList.remove('hidden');
+    if (gwBadge) gwBadge.classList.add('hidden');
   }
+  const gwAvEl = document.getElementById('shopPreviewAvatar');
+  if (gwAvEl) gwAvEl.src = userAvatar;
+
+  // 2. Eagle Card
+  const isEagleClaimed = window.isShopItemClaimed('eagle');
+  const eaglePriceRow = document.getElementById('shopCardEaglePriceRow');
+  const eagleBadge = document.getElementById('shopCardEagleClaimedBadge');
+  if (isEagleClaimed) {
+    if (eaglePriceRow) eaglePriceRow.classList.add('hidden');
+    if (eagleBadge) eagleBadge.classList.remove('hidden');
+  } else {
+    if (eaglePriceRow) eaglePriceRow.classList.remove('hidden');
+    if (eagleBadge) eagleBadge.classList.add('hidden');
+  }
+  const eagleAvEl = document.getElementById('shopPreviewAvatarEagle');
+  if (eagleAvEl) eagleAvEl.src = userAvatar;
 };
 
 window.openShopModal = function() {
@@ -3683,6 +3713,7 @@ window.openShopPurchaseModal = function(itemData) {
   const priceEl = document.getElementById('shopModalItemPrice');
   const categoryEl = document.getElementById('shopModalItemCategory');
   const frameImgEl = document.getElementById('shopModalFrameImg');
+  const frameVideoEl = document.getElementById('shopModalFrameVideo');
   const avatarEl = document.getElementById('shopModalAvatar');
   const buyBtn = document.getElementById('btnShopModalBuy');
   const buyText = document.getElementById('shopModalBuyText');
@@ -3690,14 +3721,45 @@ window.openShopPurchaseModal = function(itemData) {
 
   if (nameEl) nameEl.textContent = itemData.name;
   if (priceEl) priceEl.textContent = Number(itemData.price).toLocaleString();
-  if (categoryEl) categoryEl.textContent = itemData.category || 'Decorations';
-  if (frameImgEl) frameImgEl.src = itemData.image || './frame1.png';
+  if (categoryEl) categoryEl.textContent = itemData.category || 'Frames';
 
   const profile = (typeof window.getActiveUserProfile === 'function')
     ? window.getActiveUserProfile()
     : (window.userProfile || window.guestProfile || window.currentUser);
-  if (avatarEl && (profile?.av || profile?.avatar)) {
-    avatarEl.src = profile.av || profile.avatar;
+  if (avatarEl) {
+    avatarEl.src = profile?.av || profile?.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax';
+  }
+
+  // Dynamic frame asset & layering: profile photo bottom, frame on top
+  if (itemData.id === 'eagle' || itemData.type === 'animated') {
+    // Show animated WebM (autoplay, loop, muted, playsinline, transparent background)
+    if (frameImgEl) frameImgEl.classList.add('hidden');
+    if (frameVideoEl) {
+      frameVideoEl.src = itemData.image || './frame3.webm';
+      frameVideoEl.classList.remove('hidden');
+      frameVideoEl.style.display = 'block';
+      frameVideoEl.currentTime = 0;
+      frameVideoEl.play().catch(() => {});
+    }
+    // Profile photo positioned with exact percentages: Left: 22%, Top: 21.5%, Width: 56%, Height: 54%, Border radius: 50%, Object fit: cover
+    if (avatarEl) {
+      avatarEl.style.cssText = 'position: absolute !important; left: 22% !important; top: 21.5% !important; width: 56% !important; height: 54% !important; border-radius: 50% !important; object-fit: cover !important; border: none !important; box-shadow: none !important; background: #1e293b !important; z-index: 1 !important; transform: none !important;';
+    }
+  } else {
+    // Golden Wings or static frames
+    if (frameVideoEl) {
+      frameVideoEl.pause();
+      frameVideoEl.classList.add('hidden');
+      frameVideoEl.style.display = 'none';
+    }
+    if (frameImgEl) {
+      frameImgEl.src = itemData.image || './frame1.png';
+      frameImgEl.classList.remove('hidden');
+      frameImgEl.style.display = 'block';
+    }
+    if (avatarEl) {
+      avatarEl.style.cssText = 'position: absolute !important; left: 50% !important; top: 48% !important; transform: translate(-50%, -48%) !important; width: 57.2% !important; height: 51% !important; border-radius: 50% !important; object-fit: cover !important; border: none !important; box-shadow: none !important; background: #1e293b !important; z-index: 1 !important;';
+    }
   }
 
   // Reset alert message
@@ -3728,6 +3790,10 @@ window.openShopPurchaseModal = function(itemData) {
 window.closeShopPurchaseModal = function() {
   const modal = document.getElementById('mShopPurchaseModal');
   if (modal) modal.classList.add('hidden');
+  const frameVideoEl = document.getElementById('shopModalFrameVideo');
+  if (frameVideoEl) {
+    frameVideoEl.pause();
+  }
   window.currentShopSelectedItem = null;
 };
 
@@ -3822,6 +3888,21 @@ window.handleShopItemPurchase = async function() {
       };
       profile.hasFrame = true;
       profile.frameEquipped = true;
+      profile.equippedFrameId = 'golden-wings';
+      if (typeof window.updateAllAvatarFrames === 'function') window.updateAllAvatarFrames();
+    } else if (item.id === 'eagle') {
+      profile.eagleFrame = data.eagleFrame || {
+        id: 'eagle',
+        name: 'Eagle',
+        asset: 'frame3.webm',
+        permanentUnlocked: true,
+        status: 'permanent',
+        equipped: true,
+        purchasedAt: new Date().toISOString()
+      };
+      profile.hasFrame = true;
+      profile.frameEquipped = true;
+      profile.equippedFrameId = 'eagle';
       if (typeof window.updateAllAvatarFrames === 'function') window.updateAllAvatarFrames();
     }
 
@@ -3904,7 +3985,26 @@ if (shopCardGwEl) {
       name: shopCardGwEl.getAttribute('data-item-name') || 'Golden Wings',
       price: Number(shopCardGwEl.getAttribute('data-item-price') || 300),
       category: shopCardGwEl.getAttribute('data-item-category') || 'Frames',
-      image: shopCardGwEl.getAttribute('data-item-image') || './frame1.png'
+      image: shopCardGwEl.getAttribute('data-item-image') || './frame1.png',
+      type: 'frame'
+    };
+    window.openShopPurchaseModal(itemData);
+  });
+}
+
+// Click listener on Eagle card in Shop grid
+const shopCardEagleEl = document.getElementById('shopCardEagle');
+if (shopCardEagleEl) {
+  shopCardEagleEl.addEventListener('click', () => {
+    const itemId = shopCardEagleEl.getAttribute('data-item-id') || 'eagle';
+    const itemData = window.ARENAX_SHOP_ITEMS[itemId] || {
+      id: itemId,
+      name: shopCardEagleEl.getAttribute('data-item-name') || 'Eagle',
+      price: Number(shopCardEagleEl.getAttribute('data-item-price') || 399),
+      category: shopCardEagleEl.getAttribute('data-item-category') || 'Frames',
+      image: shopCardEagleEl.getAttribute('data-item-image') || './frame3.webm',
+      poster: shopCardEagleEl.getAttribute('data-item-poster') || './frame3.png',
+      type: 'animated'
     };
     window.openShopPurchaseModal(itemData);
   });
