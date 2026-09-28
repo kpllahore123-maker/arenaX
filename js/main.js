@@ -3866,7 +3866,27 @@ window.handleShopItemPurchase = async function() {
     const data = await res.json().catch(() => null);
 
     if (!res.ok || !data || !data.success) {
-      throw new Error((data && data.error) || 'Failed to complete purchase transaction.');
+      const errCode = (data && data.error) || '';
+      const errMsg = (data && data.message) || '';
+      let displayError = 'Failed to complete purchase transaction.';
+
+      if (errCode === 'INSUFFICIENT_COINS' || errMsg.includes('Insufficient') || errMsg.includes('INSUFFICIENT_COINS')) {
+        displayError = 'Insufficient AX Coins';
+      } else if (errCode === 'ALREADY_OWNED' || errMsg.includes('Already') || errMsg.includes('already own') || errMsg.includes('ALREADY_OWNED')) {
+        displayError = 'Already Claimed';
+        // Immediately reflect claimed status in UI
+        window.updateShopItemsUI();
+        if (buyText) buyText.textContent = 'CLAIMED';
+        if (buyBtn) {
+          buyBtn.className = 'w-full py-3.5 rounded-full bg-slate-700 text-slate-400 font-black text-sm tracking-wide transition flex items-center justify-center gap-2 cursor-not-allowed';
+          buyBtn.disabled = true;
+        }
+      } else if (errCode === 'UNAUTHORIZED' || errMsg.includes('Unauthorized') || errMsg.includes('sign in') || errMsg.includes('log in')) {
+        displayError = 'Please sign in to purchase items.';
+      } else if (errMsg && errCode !== 'SERVER_ERROR') {
+        displayError = errMsg;
+      }
+      throw new Error(displayError);
     }
 
     // Secure transaction succeeded!
@@ -3939,8 +3959,10 @@ window.handleShopItemPurchase = async function() {
   } catch (err) {
     console.error('[Shop Purchase Error]:', err);
     showError(err.message || 'Transaction failed. Please try again.');
-    if (buyBtn) buyBtn.disabled = false;
-    if (buyText) buyText.textContent = 'Buy';
+    if (err.message !== 'Already Claimed') {
+      if (buyBtn) buyBtn.disabled = false;
+      if (buyText) buyText.textContent = 'Buy';
+    }
   } finally {
     isShopPurchaseInProgress = false;
   }
