@@ -755,7 +755,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
   // ARENAX GOLDEN WINGS AVATAR FRAME — 3-DAY (72-HR) FREE TRIAL
   // ============================================================
   const GOLDEN_WINGS_TRIAL_MS = 72 * 60 * 60 * 1000; // Exactly 72 Hours
-  const GOLDEN_WINGS_PURCHASE_PRICE = 150; // Standard 150 AX Coins
+  const GOLDEN_WINGS_PURCHASE_PRICE = 300; // 300 AX Coins
 
   // 1. Status Check (Server-authoritative timestamp & expiry verification)
   app.all(["/api/golden-wings/status", "/api/golden-wings/status/:uid"], async (req, res) => {
@@ -1038,6 +1038,125 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     } catch (err: any) {
       console.error("[Golden Wings Purchase Error]:", err);
       return res.status(400).json({ success: false, error: err.message || "Failed to purchase frame." });
+    }
+  });
+
+  // ============================================================
+  // ARENAX SHOP — SECURE SERVER-SIDE ITEM PURCHASE TRANSACTION
+  // ============================================================
+  const ARENAX_SHOP_CATALOG: Record<string, { id: string; name: string; price: number; type: string; image: string; category: string }> = {
+    "golden-wings": {
+      id: "golden-wings",
+      name: "Golden Wings",
+      price: 300,
+      type: "frame",
+      image: "frame1.png",
+      category: "Frames"
+    }
+  };
+
+  app.post("/api/shop/purchase", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Please log in first." });
+      }
+
+      const { itemId } = req.body || {};
+      const item = ARENAX_SHOP_CATALOG[itemId || "golden-wings"];
+      if (!item) {
+        return res.status(400).json({ success: false, error: "Invalid shop item." });
+      }
+
+      const userRef = adminDb.collection("users").doc(uid);
+
+      const result = await adminDb.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+          throw new Error("User profile not found.");
+        }
+
+        const userData = userDoc.data() || {};
+        const balance = Number(userData.balance || 0);
+
+        // Check if already claimed / owned
+        const ownedItems = userData.ownedShopItems || {};
+        const isGoldenWingsOwned = item.id === "golden-wings" && (userData.goldenWingsFrame?.permanentUnlocked || userData.goldenWingsFrame?.status === "permanent");
+        if (ownedItems[item.id] || isGoldenWingsOwned) {
+          throw new Error(`You already own ${item.name}.`);
+        }
+
+        // Real server-side balance check against catalog price (never trust client)
+        if (balance < item.price) {
+          throw new Error(`Insufficient AX Coins. You need ${item.price} AX Coins (Current: ${balance} AX).`);
+        }
+
+        const now = Date.now();
+        const newBalance = balance - item.price;
+        const updatedOwnedItems = {
+          ...ownedItems,
+          [item.id]: {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            purchasedAt: new Date(now).toISOString()
+          }
+        };
+
+        const updatePayload: any = {
+          balance: newBalance,
+          ownedShopItems: updatedOwnedItems,
+          updatedAt: new Date(now).toISOString()
+        };
+
+        if (item.id === "golden-wings") {
+          const currentGw = userData.goldenWingsFrame || {};
+          updatePayload.goldenWingsFrame = {
+            ...currentGw,
+            permanentUnlocked: true,
+            status: "permanent",
+            equipped: true,
+            purchasedAt: new Date(now).toISOString()
+          };
+          updatePayload.hasFrame = true;
+          updatePayload.frameEquipped = true;
+        }
+
+        transaction.update(userRef, updatePayload);
+
+        // Record audit transaction
+        const txnRef = adminDb.collection("transactions").doc();
+        transaction.set(txnRef, {
+          userId: uid,
+          type: "shop_purchase",
+          itemId: item.id,
+          itemName: item.name,
+          amount: -item.price,
+          balanceAfter: newBalance,
+          createdAt: new Date(now).toISOString()
+        });
+
+        return {
+          newBalance,
+          itemId: item.id,
+          itemName: item.name,
+          ownedShopItems: updatedOwnedItems,
+          goldenWingsFrame: updatePayload.goldenWingsFrame
+        };
+      });
+
+      return res.json({
+        success: true,
+        message: `${result.itemName} purchased successfully!`,
+        ...result
+      });
+    } catch (err: any) {
+      console.error("[ArenaX Shop Purchase Error]:", err);
+      return res.status(400).json({ success: false, error: err.message || "Failed to purchase item." });
     }
   });
 
