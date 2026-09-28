@@ -52,6 +52,13 @@ export default async function handler(req, res) {
     let verifiedUid = null;
     if (auth) {
       verifiedUid = await getVerifiedUid(req, auth);
+      if (!verifiedUid) {
+        return res.status(401).json({
+          success: false,
+          error: 'UNAUTHORIZED',
+          message: 'Unauthorized. Authentication session required.'
+        });
+      }
     }
 
     if (verifiedUid && clientUid && clientUid !== verifiedUid) {
