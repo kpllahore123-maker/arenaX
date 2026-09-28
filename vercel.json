@@ -1,6 +1,15 @@
 {
   "headers": [
     {
+      "source": "/api/shop(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://arenax.cyou" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With, Accept" },
+        { "key": "Access-Control-Max-Age", "value": "86400" }
+      ]
+    },
+    {
       "source": "/api/golden-wings(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "https://arenax.cyou" },
@@ -19,6 +28,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/shop/purchase",
+      "destination": "/api/shop/purchase"
+    },
+    {
+      "source": "/api/shop/:action",
+      "destination": "/api/shop?action=:action"
+    },
     {
       "source": "/api/golden-wings/:action",
       "destination": "/api/golden-wings?action=:action"
