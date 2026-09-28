@@ -455,27 +455,74 @@ window.isGoldenWingsEquippedForUser = function(userData) {
   return false;
 };
 
+window.getEquippedFrameForUser = function(userData) {
+  if (!userData) return null;
+  const hasEagle = !!(
+    userData.eagleFrame?.permanentUnlocked ||
+    userData.eagleFrame?.status === 'permanent' ||
+    (userData.ownedShopItems && userData.ownedShopItems['eagle'])
+  );
+  const hasGoldenWings = !!(
+    userData.goldenWingsFrame?.permanentUnlocked ||
+    userData.goldenWingsFrame?.status === 'permanent' ||
+    (userData.ownedShopItems && userData.ownedShopItems['golden-wings']) ||
+    window.isGoldenWingsEquippedForUser(userData)
+  );
+
+  // If user explicitly chose a frame
+  if (userData.equippedFrameId === 'eagle' && hasEagle) {
+    return 'eagle';
+  }
+  if (userData.equippedFrameId === 'golden-wings' && hasGoldenWings) {
+    return 'golden-wings';
+  }
+
+  // If frame is marked equipped
+  if (userData.eagleFrame?.equipped && hasEagle) return 'eagle';
+  if (userData.goldenWingsFrame?.equipped && hasGoldenWings) return 'golden-wings';
+
+  if (hasEagle) return 'eagle';
+  if (hasGoldenWings) return 'golden-wings';
+
+  return null;
+};
+
 window.renderViewProfileAvatar = function(userData) {
   const avWrap = $('vppAvWrap');
   const avImg = $('vppAv');
   const frameImg = $('vppFrameImg');
+  const frameVideo = $('vppFrameVideo');
   if (!avWrap || !avImg) return;
 
   const avUrl = userData?.av || userData?.avatar || userData?.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${userData?.uid || 'user'}`;
   avImg.src = avUrl;
 
-  const isEquipped = window.isGoldenWingsEquippedForUser(userData);
+  const equippedFrame = window.getEquippedFrameForUser ? window.getEquippedFrameForUser(userData) : (window.isGoldenWingsEquippedForUser(userData) ? 'golden-wings' : null);
 
-  if (isEquipped) {
-    avWrap.classList.remove('no-frame');
-    avWrap.classList.add('has-frame');
+  if (equippedFrame === 'eagle') {
+    avWrap.className = 'relative shrink-0 z-20 has-frame-eagle';
+    if (frameImg) frameImg.style.display = 'none';
+    if (frameVideo) {
+      frameVideo.src = './frame3.webm';
+      frameVideo.style.display = 'block';
+      frameVideo.play().catch(() => {});
+    }
+  } else if (equippedFrame === 'golden-wings') {
+    avWrap.className = 'relative shrink-0 z-20 has-frame';
+    if (frameVideo) {
+      frameVideo.pause();
+      frameVideo.style.display = 'none';
+    }
     if (frameImg) {
       frameImg.src = './frame1.png';
       frameImg.style.display = 'block';
     }
   } else {
-    avWrap.classList.remove('has-frame');
-    avWrap.classList.add('no-frame');
+    avWrap.className = 'relative shrink-0 z-20 no-frame';
+    if (frameVideo) {
+      frameVideo.pause();
+      frameVideo.style.display = 'none';
+    }
     if (frameImg) {
       frameImg.style.display = 'none';
     }
@@ -2090,6 +2137,7 @@ window.openPlayerProfileCard = async function(targetUid) {
   if ($('vppGiftCount')) $('vppGiftCount').textContent = "0";
   if ($('vppStarCount')) $('vppStarCount').textContent = "0";
   if ($('vppFrameImg')) $('vppFrameImg').style.display = 'none';
+  if ($('vppFrameVideo')) { $('vppFrameVideo').pause(); $('vppFrameVideo').style.display = 'none'; }
   if ($('vppAvWrap')) $('vppAvWrap').className = 'relative shrink-0 z-20 no-frame';
 
   // Show modal
@@ -2215,7 +2263,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
       // Compact Header & Disable 3D Model
       if (headerBar) {
-        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[140px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
@@ -2270,7 +2318,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 
       // Compact Header & Disable 3D Model
       if (headerBar) {
-        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[140px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
@@ -2478,7 +2526,7 @@ window.openPlayerProfileCard = async function(targetUid) {
       }
     } else {
       if (headerBar) {
-        headerBar.className = "relative h-[98px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
+        headerBar.className = "relative h-[140px] bg-gradient-to-r from-[#1b1528] via-[#241a38] to-[#171024] px-5 pt-4 flex items-start justify-between shrink-0 z-0 transition-all duration-300";
       }
       if (heroCanvas) {
         heroCanvas.classList.add('hidden');
@@ -2505,6 +2553,7 @@ window.openPlayerProfileCard = async function(targetUid) {
 if ($('bCloseViewPlayerProfile')) {
   $('bCloseViewPlayerProfile').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
+    if ($('vppFrameVideo')) $('vppFrameVideo').pause();
     if (window.vppLiveProfileUnsub) {
       try { window.vppLiveProfileUnsub(); } catch(e) {}
       window.vppLiveProfileUnsub = null;
@@ -2514,6 +2563,7 @@ if ($('bCloseViewPlayerProfile')) {
 if ($('btnCloseViewPlayerProfileX')) {
   $('btnCloseViewPlayerProfileX').addEventListener('click', () => {
     if ($('mViewPlayerProfile')) $('mViewPlayerProfile').classList.add('hidden');
+    if ($('vppFrameVideo')) $('vppFrameVideo').pause();
     if (window.vppLiveProfileUnsub) {
       try { window.vppLiveProfileUnsub(); } catch(e) {}
       window.vppLiveProfileUnsub = null;
