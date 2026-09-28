@@ -4096,7 +4096,7 @@ html, body {
       <!-- Products Grid -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
         <!-- Golden Wings Product Card -->
-        <div id="shopCardGoldenWings" class="group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg">
+        <div id="shopCardGoldenWings" data-item-id="golden-wings" data-item-name="Golden Wings" data-item-price="300" data-item-category="Frames" data-item-image="./frame1.png" class="shop-item-card group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg cursor-pointer active:scale-95">
           <!-- Frame Preview Tile (Inspired by Reference squircle tile) -->
           <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-[#1b1c3b] via-[#13172e] to-[#0e1122] [data-theme='light']_:from-indigo-50 [data-theme='light']_:to-purple-50 border border-white/10 [data-theme='light']_:border-purple-200/60 p-2 flex items-center justify-center relative shadow-inner overflow-hidden group-hover:scale-[1.02] transition duration-300">
             <!-- Ambient backdrop glow -->
@@ -4112,15 +4112,68 @@ html, body {
           <!-- Product Info -->
           <div class="w-full mt-2.5 text-center">
             <h3 class="text-xs sm:text-sm font-bold text-white [data-theme='light']_:text-slate-900 tracking-tight truncate">Golden Wings</h3>
-            <div class="flex items-center justify-center gap-1.5 mt-1">
+            <div id="shopCardGoldenWingsPriceRow" class="flex items-center justify-center gap-1.5 mt-1">
               <div class="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-[7px] font-black shadow-xs">
                 <i class="fas fa-coins"></i>
               </div>
-              <span class="text-xs font-black text-amber-400 [data-theme='light']_:text-amber-600">300 AX Coins</span>
+              <span id="shopCardGoldenWingsPriceText" class="text-xs font-black text-amber-400 [data-theme='light']_:text-amber-600">300 AX Coins</span>
+            </div>
+            <!-- Claimed State Badge -->
+            <div id="shopCardGoldenWingsClaimedBadge" class="hidden mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
+              <i class="fas fa-check-circle text-[9px]"></i> CLAIMED
             </div>
           </div>
         </div>
       </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== ARENAX SHOP PURCHASE MODAL ==================== -->
+<div id="mShopPurchaseModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-[260] flex items-center justify-center p-4 hidden animate-fade-in font-sans">
+  <!-- Modal Card -->
+  <div class="relative w-full max-w-[340px] sm:max-w-[360px] bg-white [data-theme='dark']_:bg-[#121626] rounded-3xl shadow-2xl overflow-hidden border border-slate-200 [data-theme='dark']_:border-white/10 transition-all flex flex-col">
+    
+    <!-- Top Preview Showcase -->
+    <div class="relative w-full bg-gradient-to-b from-[#e0f7fa] to-[#b2ebf2]/40 [data-theme='dark']_:from-[#1c233c] [data-theme='dark']_:to-[#101424] p-6 pb-5 flex flex-col items-center justify-center">
+      <!-- Category Tag (Top Left) -->
+      <span id="shopModalItemCategory" class="absolute top-4 left-4 text-[10px] font-bold text-slate-500 [data-theme='dark']_:text-slate-400 bg-white/80 [data-theme='dark']_:bg-white/10 px-2.5 py-0.5 rounded-full backdrop-blur-xs border border-slate-200/60 [data-theme='dark']_:border-white/10">Frames</span>
+      
+      <!-- Close Button (Top Right) -->
+      <button id="btnShopModalClose" type="button" class="absolute top-3.5 right-3.5 w-7 h-7 rounded-full bg-black/10 [data-theme='dark']_:bg-white/10 hover:bg-black/20 [data-theme='dark']_:hover:bg-white/20 text-slate-600 [data-theme='dark']_:text-slate-300 flex items-center justify-center transition cursor-pointer active:scale-90 text-xs" title="Close">
+        <i class="fas fa-times pointer-events-none"></i>
+      </button>
+
+      <!-- Center Avatar + Frame Preview -->
+      <div class="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center my-3">
+        <img id="shopModalAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-13 h-13 sm:w-15 sm:h-15 rounded-full object-cover shadow-inner bg-slate-800 border-2 border-white/50" />
+        <img id="shopModalFrameImg" src="./frame1.png" alt="Item Preview" class="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.25)]" />
+      </div>
+    </div>
+
+    <!-- Details & Action Body -->
+    <div class="p-5 pt-4 flex flex-col bg-white [data-theme='dark']_:bg-[#121626]">
+      
+      <!-- Name & Price Row -->
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <h3 id="shopModalItemName" class="text-base sm:text-lg font-black text-slate-900 [data-theme='dark']_:text-white tracking-tight truncate">Golden Wings</h3>
+        <div id="shopModalPriceContainer" class="flex items-center gap-1.5 shrink-0 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+          <div class="w-4 h-4 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-[8px] font-black shadow-xs">
+            <i class="fas fa-coins"></i>
+          </div>
+          <span id="shopModalItemPrice" class="font-black text-sm sm:text-base text-amber-500">300</span>
+        </div>
+      </div>
+
+      <!-- Error / Feedback Alert Box -->
+      <div id="shopModalErrorMsg" class="hidden mb-3.5 p-2.5 rounded-xl text-xs font-bold text-center border"></div>
+
+      <!-- Buy Button -->
+      <button id="btnShopModalBuy" type="button" class="w-full py-3.5 rounded-full bg-[#00c8ff] hover:bg-[#00b4e6] active:scale-[0.98] text-white font-black text-sm tracking-wide shadow-lg shadow-cyan-500/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+        <span id="shopModalBuyText">Buy</span>
+      </button>
 
     </div>
 
