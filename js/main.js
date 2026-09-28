@@ -1103,6 +1103,7 @@ function boot() {
     if ($('pPopularityVal')) $('pPopularityVal').textContent = profile.popularity || 0;
 
     if (window.updateAllAvatarFrames) window.updateAllAvatarFrames();
+    if (typeof window.updateShopItemsUI === 'function') window.updateShopItemsUI();
     if (typeof window.preloadRankingData === 'function') window.preloadRankingData();
     if (typeof window.updatePlayerShowUI === 'function') window.updatePlayerShowUI(profile);
     if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(profile);
@@ -3582,7 +3583,62 @@ $('btnHubRedReport').addEventListener('click', () => {
   openSupportDrawer();
 });
 
-// ArenaX Shop Modal Controls
+// ============================================================
+// ARENAX SHOP & ITEM PURCHASE SYSTEM
+// ============================================================
+window.ARENAX_SHOP_ITEMS = {
+  "golden-wings": {
+    id: "golden-wings",
+    name: "Golden Wings",
+    price: 300,
+    category: "Frames",
+    image: "./frame1.png",
+    type: "frame"
+  }
+};
+
+window.currentShopSelectedItem = null;
+let isShopPurchaseInProgress = false;
+
+window.isShopItemClaimed = function(itemId) {
+  const profile = (typeof window.getActiveUserProfile === 'function')
+    ? window.getActiveUserProfile()
+    : (window.userProfile || window.guestProfile || window.currentUser);
+  if (!profile) return false;
+
+  if (itemId === 'golden-wings') {
+    return !!(
+      profile.goldenWingsFrame?.permanentUnlocked ||
+      profile.goldenWingsFrame?.status === 'permanent' ||
+      (profile.ownedShopItems && profile.ownedShopItems['golden-wings'])
+    );
+  }
+
+  return !!(profile.ownedShopItems && profile.ownedShopItems[itemId]);
+};
+
+window.updateShopItemsUI = function() {
+  const isClaimed = window.isShopItemClaimed('golden-wings');
+  const priceRow = document.getElementById('shopCardGoldenWingsPriceRow');
+  const badge = document.getElementById('shopCardGoldenWingsClaimedBadge');
+  if (isClaimed) {
+    if (priceRow) priceRow.classList.add('hidden');
+    if (badge) badge.classList.remove('hidden');
+  } else {
+    if (priceRow) priceRow.classList.remove('hidden');
+    if (badge) badge.classList.add('hidden');
+  }
+
+  // Update avatar preview with active user avatar
+  const profile = (typeof window.getActiveUserProfile === 'function')
+    ? window.getActiveUserProfile()
+    : (window.userProfile || window.guestProfile || window.currentUser);
+  const shopAvEl = document.getElementById('shopPreviewAvatar');
+  if (shopAvEl && (profile?.av || profile?.avatar)) {
+    shopAvEl.src = profile.av || profile.avatar;
+  }
+};
+
 window.openShopModal = function() {
   const modal = document.getElementById('mShopModal');
   if (!modal) return;
@@ -3593,18 +3649,17 @@ window.openShopModal = function() {
   }
 
   // Update user balance display from active profile
-  const profile = window.userProfile || window.guestProfile || window.currentUser;
+  const profile = (typeof window.getActiveUserProfile === 'function')
+    ? window.getActiveUserProfile()
+    : (window.userProfile || window.guestProfile || window.currentUser);
   const balance = profile?.balance ?? 0;
   const shopCoinsEl = document.getElementById('shopCoinsVal');
   if (shopCoinsEl) {
     shopCoinsEl.textContent = Number(balance).toLocaleString();
   }
 
-  // Update avatar preview with active player avatar if present
-  const shopAvEl = document.getElementById('shopPreviewAvatar');
-  if (shopAvEl && (profile?.av || profile?.avatar)) {
-    shopAvEl.src = profile.av || profile.avatar;
-  }
+  // Update items state (claimed vs price)
+  window.updateShopItemsUI();
 
   modal.classList.remove('hidden');
 };
@@ -3614,8 +3669,203 @@ window.closeShopModal = function() {
   if (modal) {
     modal.classList.add('hidden');
   }
+  window.closeShopPurchaseModal();
 };
 
+window.openShopPurchaseModal = function(itemData) {
+  if (!itemData) return;
+  window.currentShopSelectedItem = itemData;
+
+  const modal = document.getElementById('mShopPurchaseModal');
+  if (!modal) return;
+
+  const nameEl = document.getElementById('shopModalItemName');
+  const priceEl = document.getElementById('shopModalItemPrice');
+  const categoryEl = document.getElementById('shopModalItemCategory');
+  const frameImgEl = document.getElementById('shopModalFrameImg');
+  const avatarEl = document.getElementById('shopModalAvatar');
+  const buyBtn = document.getElementById('btnShopModalBuy');
+  const buyText = document.getElementById('shopModalBuyText');
+  const errorEl = document.getElementById('shopModalErrorMsg');
+
+  if (nameEl) nameEl.textContent = itemData.name;
+  if (priceEl) priceEl.textContent = Number(itemData.price).toLocaleString();
+  if (categoryEl) categoryEl.textContent = itemData.category || 'Decorations';
+  if (frameImgEl) frameImgEl.src = itemData.image || './frame1.png';
+
+  const profile = (typeof window.getActiveUserProfile === 'function')
+    ? window.getActiveUserProfile()
+    : (window.userProfile || window.guestProfile || window.currentUser);
+  if (avatarEl && (profile?.av || profile?.avatar)) {
+    avatarEl.src = profile.av || profile.avatar;
+  }
+
+  // Reset alert message
+  if (errorEl) {
+    errorEl.className = 'hidden mb-3.5 p-2.5 rounded-xl text-xs font-bold text-center border';
+    errorEl.textContent = '';
+  }
+
+  // Check if item is already claimed / owned
+  const isClaimed = window.isShopItemClaimed(itemData.id);
+  if (isClaimed) {
+    if (buyText) buyText.textContent = 'CLAIMED';
+    if (buyBtn) {
+      buyBtn.disabled = true;
+      buyBtn.className = 'w-full py-3.5 rounded-full bg-slate-700 text-slate-400 font-black text-sm tracking-wide transition flex items-center justify-center gap-2 cursor-not-allowed';
+    }
+  } else {
+    if (buyText) buyText.textContent = 'Buy';
+    if (buyBtn) {
+      buyBtn.disabled = false;
+      buyBtn.className = 'w-full py-3.5 rounded-full bg-[#00c8ff] hover:bg-[#00b4e6] active:scale-[0.98] text-white font-black text-sm tracking-wide shadow-lg shadow-cyan-500/30 transition flex items-center justify-center gap-2 cursor-pointer';
+    }
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.closeShopPurchaseModal = function() {
+  const modal = document.getElementById('mShopPurchaseModal');
+  if (modal) modal.classList.add('hidden');
+  window.currentShopSelectedItem = null;
+};
+
+window.handleShopItemPurchase = async function() {
+  if (isShopPurchaseInProgress) return; // Prevent double-clicks / concurrent purchase
+  const item = window.currentShopSelectedItem;
+  if (!item) return;
+
+  const buyBtn = document.getElementById('btnShopModalBuy');
+  const buyText = document.getElementById('shopModalBuyText');
+  const errorEl = document.getElementById('shopModalErrorMsg');
+
+  const showError = (msg) => {
+    if (errorEl) {
+      errorEl.textContent = msg;
+      errorEl.className = 'mb-3.5 p-2.5 rounded-xl text-xs font-bold text-center border bg-rose-500/10 border-rose-500/30 text-rose-400 block';
+    }
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Purchase Failed", msg);
+    }
+  };
+
+  const profile = (typeof window.getActiveUserProfile === 'function')
+    ? window.getActiveUserProfile()
+    : (window.userProfile || window.guestProfile || window.currentUser);
+  if (!profile || !profile.uid) {
+    showError("Please sign in to purchase items.");
+    return;
+  }
+
+  // Check if already claimed
+  if (window.isShopItemClaimed(item.id)) {
+    showError(`You already own ${item.name}.`);
+    return;
+  }
+
+  // Real balance comparison: user AX Coins < item price
+  const currentBalance = Number(profile.balance || 0);
+  if (currentBalance < item.price) {
+    showError("Insufficient AX Coins");
+    return;
+  }
+
+  try {
+    isShopPurchaseInProgress = true;
+    if (buyBtn) {
+      buyBtn.disabled = true;
+      if (buyText) buyText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
+    // Get Auth token for verified user UID
+    let token = '';
+    const authUser = (typeof auth !== 'undefined' && auth?.currentUser) ? auth.currentUser : null;
+    if (authUser && typeof authUser.getIdToken === 'function') {
+      token = await authUser.getIdToken().catch(() => '');
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/shop/purchase', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        uid: profile.uid,
+        itemId: item.id
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data || !data.success) {
+      throw new Error((data && data.error) || 'Failed to complete purchase transaction.');
+    }
+
+    // Secure transaction succeeded!
+    // Update client balance & owned items immediately
+    profile.balance = data.newBalance;
+    if (data.ownedShopItems) {
+      profile.ownedShopItems = data.ownedShopItems;
+    } else {
+      profile.ownedShopItems = profile.ownedShopItems || {};
+      profile.ownedShopItems[item.id] = { id: item.id, name: item.name, purchasedAt: new Date().toISOString() };
+    }
+
+    if (item.id === 'golden-wings') {
+      profile.goldenWingsFrame = data.goldenWingsFrame || {
+        permanentUnlocked: true,
+        status: 'permanent',
+        equipped: true,
+        purchasedAt: new Date().toISOString()
+      };
+      profile.hasFrame = true;
+      profile.frameEquipped = true;
+      if (typeof window.updateAllAvatarFrames === 'function') window.updateAllAvatarFrames();
+    }
+
+    // Update balances across entire application
+    if (document.getElementById('homeCoinsVal')) document.getElementById('homeCoinsVal').textContent = Number(data.newBalance).toLocaleString();
+    if (document.getElementById('wBal')) document.getElementById('wBal').textContent = Number(data.newBalance).toLocaleString();
+    if (document.getElementById('shopCoinsVal')) document.getElementById('shopCoinsVal').textContent = Number(data.newBalance).toLocaleString();
+
+    // Update Shop card to CLAIMED
+    window.updateShopItemsUI();
+
+    // Show CLAIMED state on button
+    if (buyText) buyText.textContent = 'CLAIMED';
+    if (buyBtn) {
+      buyBtn.className = 'w-full py-3.5 rounded-full bg-slate-700 text-slate-400 font-black text-sm tracking-wide transition flex items-center justify-center gap-2 cursor-not-allowed';
+      buyBtn.disabled = true;
+    }
+
+    // Show success message
+    if (errorEl) {
+      errorEl.textContent = `${item.name} purchased successfully! 👑`;
+      errorEl.className = 'mb-3.5 p-2.5 rounded-xl text-xs font-bold text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 block';
+    }
+
+    if (typeof spawnConfetti === 'function') spawnConfetti(['#00c8ff', '#ffd700', '#f59e0b', '#fff']);
+    if (typeof showToastNotification === 'function') {
+      showToastNotification("Purchase Complete! 👑", `${item.name} unlocked permanently for ${item.price} AX Coins!`);
+    }
+
+    setTimeout(() => {
+      window.closeShopPurchaseModal();
+    }, 1500);
+
+  } catch (err) {
+    console.error('[Shop Purchase Error]:', err);
+    showError(err.message || 'Transaction failed. Please try again.');
+    if (buyBtn) buyBtn.disabled = false;
+    if (buyText) buyText.textContent = 'Buy';
+  } finally {
+    isShopPurchaseInProgress = false;
+  }
+};
+
+// Event Listeners for Shop UI
 const btnHubShopEl = document.getElementById('btnHubShop');
 if (btnHubShopEl) {
   btnHubShopEl.addEventListener('click', () => {
@@ -3627,6 +3877,46 @@ const btnShopBackEl = document.getElementById('btnShopBack');
 if (btnShopBackEl) {
   btnShopBackEl.addEventListener('click', () => {
     window.closeShopModal();
+  });
+}
+
+const btnShopModalCloseEl = document.getElementById('btnShopModalClose');
+if (btnShopModalCloseEl) {
+  btnShopModalCloseEl.addEventListener('click', () => {
+    window.closeShopPurchaseModal();
+  });
+}
+
+const btnShopModalBuyEl = document.getElementById('btnShopModalBuy');
+if (btnShopModalBuyEl) {
+  btnShopModalBuyEl.addEventListener('click', () => {
+    window.handleShopItemPurchase();
+  });
+}
+
+// Click listener on Golden Wings card in Shop grid
+const shopCardGwEl = document.getElementById('shopCardGoldenWings');
+if (shopCardGwEl) {
+  shopCardGwEl.addEventListener('click', () => {
+    const itemId = shopCardGwEl.getAttribute('data-item-id') || 'golden-wings';
+    const itemData = window.ARENAX_SHOP_ITEMS[itemId] || {
+      id: itemId,
+      name: shopCardGwEl.getAttribute('data-item-name') || 'Golden Wings',
+      price: Number(shopCardGwEl.getAttribute('data-item-price') || 300),
+      category: shopCardGwEl.getAttribute('data-item-category') || 'Frames',
+      image: shopCardGwEl.getAttribute('data-item-image') || './frame1.png'
+    };
+    window.openShopPurchaseModal(itemData);
+  });
+}
+
+// Close purchase modal when clicking background overlay
+const shopPurchaseModalEl = document.getElementById('mShopPurchaseModal');
+if (shopPurchaseModalEl) {
+  shopPurchaseModalEl.addEventListener('click', (e) => {
+    if (e.target === shopPurchaseModalEl) {
+      window.closeShopPurchaseModal();
+    }
   });
 }
 
