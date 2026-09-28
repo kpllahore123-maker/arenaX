@@ -1096,12 +1096,12 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         const isGoldenWingsOwned = item.id === "golden-wings" && (userData.goldenWingsFrame?.permanentUnlocked || userData.goldenWingsFrame?.status === "permanent");
         const isEagleOwned = item.id === "eagle" && (userData.eagleFrame?.permanentUnlocked || userData.eagleFrame?.status === "permanent");
         if (ownedItems[item.id] || isGoldenWingsOwned || isEagleOwned) {
-          throw new Error(`You already own ${item.name}.`);
+          throw new Error("ALREADY_OWNED");
         }
 
         // Real server-side balance check against catalog price (never trust client)
         if (balance < item.price) {
-          throw new Error(`Insufficient AX Coins. You need ${item.price} AX Coins (Current: ${balance} AX).`);
+          throw new Error("INSUFFICIENT_COINS");
         }
 
         const now = Date.now();
@@ -1180,7 +1180,33 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       });
     } catch (err: any) {
       console.error("[ArenaX Shop Purchase Error]:", err);
-      return res.status(400).json({ success: false, error: err.message || "Failed to purchase item." });
+      const msg = err.message || "";
+      if (msg === "INSUFFICIENT_COINS" || msg.includes("INSUFFICIENT_COINS")) {
+        return res.status(400).json({
+          success: false,
+          error: "INSUFFICIENT_COINS",
+          message: "Insufficient AX Coins"
+        });
+      }
+      if (msg === "ALREADY_OWNED" || msg.includes("ALREADY_OWNED")) {
+        return res.status(400).json({
+          success: false,
+          error: "ALREADY_OWNED",
+          message: "Already Claimed"
+        });
+      }
+      if (msg === "User profile not found." || msg.includes("USER_NOT_FOUND")) {
+        return res.status(404).json({
+          success: false,
+          error: "USER_NOT_FOUND",
+          message: "User profile not found."
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: "SERVER_ERROR",
+        message: err.message || "Failed to complete purchase transaction."
+      });
     }
   });
 
