@@ -460,7 +460,11 @@ window.getEquippedFrameForUser = function(userData) {
   const hasEagle = !!(
     userData.eagleFrame?.permanentUnlocked ||
     userData.eagleFrame?.status === 'permanent' ||
-    (userData.ownedShopItems && userData.ownedShopItems['eagle'])
+    userData.eagleFrame?.equipped ||
+    userData.equippedFrameId === 'eagle' ||
+    userData.equippedFrame === 'eagle' ||
+    userData.frame === 'eagle' ||
+    (userData.ownedShopItems && (userData.ownedShopItems['eagle'] || userData.ownedShopItems['item-frame-eagle']))
   );
   const hasGoldenWings = !!(
     userData.goldenWingsFrame?.permanentUnlocked ||
