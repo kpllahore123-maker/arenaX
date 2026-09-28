@@ -29,10 +29,6 @@
   ],
   "rewrites": [
     {
-      "source": "/api/shop/purchase",
-      "destination": "/api/shop/purchase"
-    },
-    {
       "source": "/api/shop/:action",
       "destination": "/api/shop?action=:action"
     },
