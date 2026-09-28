@@ -494,9 +494,64 @@ html, body {
   transform: none !important;
 }
 
-/* 2. When Frame is NOT Equipped (Standard Clean Round Avatar) */
+/* 2. When Eagle Animated Frame is Equipped (160x160 box, Left 14px, 40% below header) */
+#vppAvWrap.has-frame-eagle {
+  width: 160px !important;
+  height: 160px !important;
+  min-width: 160px !important;
+  min-height: 160px !important;
+  max-width: 160px !important;
+  max-height: 160px !important;
+  margin-top: -96px !important; /* ~40% (64px) extends below header into white area */
+  margin-left: -6px !important; /* Positioned approx 14px from left card edge (px-5 is 20px - 6px = 14px) */
+}
+
+#vppAvWrap.has-frame-eagle #vppAv {
+  position: absolute !important;
+  left: 22% !important;
+  top: 21.5% !important;
+  width: 56% !important;
+  height: 54% !important;
+  min-width: 56% !important;
+  min-height: 54% !important;
+  max-width: 56% !important;
+  max-height: 54% !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  z-index: 1 !important;
+  display: block !important;
+  transform: none !important;
+}
+
+#vppAvWrap.has-frame-eagle #vppFrameVideo {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  z-index: 25 !important;
+  display: block !important;
+  background: transparent !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important;
+}
+
+#vppAvWrap.has-frame-eagle #vppFrameImg {
+  display: none !important;
+}
+
+/* 3. When Frame is NOT Equipped (Standard Clean Round Avatar) */
 #vppAvWrap.no-frame,
-#vppAvWrap:not(.has-frame) {
+#vppAvWrap:not(.has-frame):not(.has-frame-eagle) {
   width: 80px !important;
   height: 80px !important;
   min-width: 80px !important;
@@ -4096,7 +4151,7 @@ html, body {
       <!-- Products Grid -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
         <!-- Golden Wings Product Card -->
-        <div id="shopCardGoldenWings" data-item-id="golden-wings" data-item-name="Golden Wings" data-item-price="300" data-item-category="Frames" data-item-image="./frame1.png" class="shop-item-card group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg cursor-pointer active:scale-95">
+        <div id="shopCardGoldenWings" data-item-id="golden-wings" data-item-name="Golden Wings" data-item-price="300" data-item-category="Frames" data-item-image="./frame1.png" data-item-type="static" class="shop-item-card group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg cursor-pointer active:scale-95">
           <!-- Frame Preview Tile (Inspired by Reference squircle tile) -->
           <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-[#1b1c3b] via-[#13172e] to-[#0e1122] [data-theme='light']_:from-indigo-50 [data-theme='light']_:to-purple-50 border border-white/10 [data-theme='light']_:border-purple-200/60 p-2 flex items-center justify-center relative shadow-inner overflow-hidden group-hover:scale-[1.02] transition duration-300">
             <!-- Ambient backdrop glow -->
@@ -4124,6 +4179,38 @@ html, body {
             </div>
           </div>
         </div>
+
+        <!-- Eagle Product Card (Animated WebM Frame, 56px x 56px static grid preview) -->
+        <div id="shopCardEagle" data-item-id="eagle" data-item-name="Eagle" data-item-price="399" data-item-category="Frames" data-item-image="./frame3.webm" data-item-poster="./frame3.png" data-item-type="animated" class="shop-item-card group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg cursor-pointer active:scale-95">
+          <!-- Frame Preview Tile (Squircle with padding around 56x56 frame) -->
+          <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-[#1b1c3b] via-[#13172e] to-[#0e1122] [data-theme='light']_:from-indigo-50 [data-theme='light']_:to-purple-50 border border-white/10 [data-theme='light']_:border-purple-200/60 p-2 flex items-center justify-center relative shadow-inner overflow-hidden group-hover:scale-[1.02] transition duration-300">
+            <!-- Ambient backdrop glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.18),transparent_70%)] pointer-events-none"></div>
+
+            <!-- Eagle Frame Box at 56px x 56px perfectly square with padding -->
+            <div class="relative w-[56px] h-[56px] flex-shrink-0">
+              <!-- Profile photo inside with exact percentages: Left: 22%, Top: 21.5%, Width: 56%, Height: 54% -->
+              <img id="shopPreviewAvatarEagle" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar Preview" class="absolute left-[22%] top-[21.5%] w-[56%] h-[54%] rounded-full object-cover shadow-sm bg-slate-800" />
+              <!-- Static first-frame poster preview for clean UI & performance in grid -->
+              <img src="./frame3.png" alt="Eagle Frame" class="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]" />
+            </div>
+          </div>
+
+          <!-- Product Info -->
+          <div class="w-full mt-2.5 text-center">
+            <h3 class="text-xs sm:text-sm font-bold text-white [data-theme='light']_:text-slate-900 tracking-tight truncate">Eagle</h3>
+            <div id="shopCardEaglePriceRow" class="flex items-center justify-center gap-1.5 mt-1">
+              <div class="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-[7px] font-black shadow-xs">
+                <i class="fas fa-coins"></i>
+              </div>
+              <span id="shopCardEaglePriceText" class="text-xs font-black text-amber-400 [data-theme='light']_:text-amber-600">399 AX Coins</span>
+            </div>
+            <!-- Claimed State Badge -->
+            <div id="shopCardEagleClaimedBadge" class="hidden mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
+              <i class="fas fa-check-circle text-[9px]"></i> CLAIMED
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -4146,10 +4233,11 @@ html, body {
         <i class="fas fa-times pointer-events-none"></i>
       </button>
 
-      <!-- Center Avatar + Frame Preview -->
-      <div class="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center my-3">
-        <img id="shopModalAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="w-13 h-13 sm:w-15 sm:h-15 rounded-full object-cover shadow-inner bg-slate-800 border-2 border-white/50" />
+      <!-- Center Avatar + Frame Preview (Supports both image and animated WebM) -->
+      <div id="shopModalFrameBox" class="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center my-3">
+        <img id="shopModalAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar" class="absolute rounded-full object-cover shadow-inner bg-slate-800 border-2 border-white/50" />
         <img id="shopModalFrameImg" src="./frame1.png" alt="Item Preview" class="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.25)]" />
+        <video id="shopModalFrameVideo" src="./frame3.webm" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.25)] bg-transparent hidden"></video>
       </div>
     </div>
 
@@ -7527,6 +7615,7 @@ html, body {
         <div id="vppAvWrap" class="relative shrink-0 z-20 no-frame">
           <img id="vppAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=p1" alt="Profile Picture" />
           <img id="vppFrameImg" src="./frame1.png" alt="Golden Wings Frame" style="display: none;" />
+          <video id="vppFrameVideo" src="./frame3.webm" autoplay loop muted playsinline style="display: none;"></video>
         </div>
 
         <!-- Name & Country on Right Side -->
