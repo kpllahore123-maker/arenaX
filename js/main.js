@@ -3854,14 +3854,44 @@ window.handleShopItemPurchase = async function() {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch('/api/shop/purchase', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        uid: profile.uid,
-        itemId: item.id
-      })
+    const isStaticHost = typeof window !== 'undefined' && (
+      window.location.hostname === 'arenax.cyou' || 
+      window.location.hostname.endsWith('github.io')
+    );
+    const vercelBase = 'https://arena-x-beta.vercel.app';
+    const primaryEndpoint = isStaticHost ? `${vercelBase}/api/shop/purchase` : '/api/shop/purchase';
+
+    const payload = JSON.stringify({
+      uid: profile.uid,
+      itemId: item.id
     });
+
+    let res;
+    try {
+      res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers,
+        body: payload
+      });
+      // Fallback to Vercel backend if relative endpoint on static host returned 404 or 405
+      if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith(vercelBase)) {
+        res = await fetch(`${vercelBase}/api/shop/purchase`, {
+          method: 'POST',
+          headers,
+          body: payload
+        });
+      }
+    } catch (fetchErr) {
+      if (!primaryEndpoint.startsWith(vercelBase)) {
+        res = await fetch(`${vercelBase}/api/shop/purchase`, {
+          method: 'POST',
+          headers,
+          body: payload
+        });
+      } else {
+        throw fetchErr;
+      }
+    }
 
     const data = await res.json().catch(() => null);
 
