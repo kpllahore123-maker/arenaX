@@ -3603,6 +3603,15 @@ window.ARENAX_SHOP_ITEMS = {
     image: "./frame3.webm",
     poster: "./frame3.png",
     type: "animated"
+  },
+  "pheonix": {
+    id: "pheonix",
+    name: "Pheonix",
+    price: 499,
+    category: "Decorations",
+    image: "./frame4.webm",
+    poster: "./frame4.png",
+    type: "animated"
   }
 };
 
@@ -3628,6 +3637,14 @@ window.isShopItemClaimed = function(itemId) {
       profile.eagleFrame?.permanentUnlocked ||
       profile.eagleFrame?.status === 'permanent' ||
       (profile.ownedShopItems && profile.ownedShopItems['eagle'])
+    );
+  }
+
+  if (itemId === 'pheonix') {
+    return !!(
+      profile.pheonixFrame?.permanentUnlocked ||
+      profile.pheonixFrame?.status === 'permanent' ||
+      (profile.ownedShopItems && profile.ownedShopItems['pheonix'])
     );
   }
 
@@ -3667,6 +3684,20 @@ window.updateShopItemsUI = function() {
   }
   const eagleAvEl = document.getElementById('shopPreviewAvatarEagle');
   if (eagleAvEl) eagleAvEl.src = userAvatar;
+
+  // 3. Pheonix Card
+  const isPheonixClaimed = window.isShopItemClaimed('pheonix');
+  const pheonixPriceRow = document.getElementById('shopCardPheonixPriceRow');
+  const pheonixBadge = document.getElementById('shopCardPheonixClaimedBadge');
+  if (isPheonixClaimed) {
+    if (pheonixPriceRow) pheonixPriceRow.classList.add('hidden');
+    if (pheonixBadge) pheonixBadge.classList.remove('hidden');
+  } else {
+    if (pheonixPriceRow) pheonixPriceRow.classList.remove('hidden');
+    if (pheonixBadge) pheonixBadge.classList.add('hidden');
+  }
+  const pheonixAvEl = document.getElementById('shopPreviewAvatarPheonix');
+  if (pheonixAvEl) pheonixAvEl.src = userAvatar;
 };
 
 window.openShopModal = function() {
@@ -3731,11 +3762,11 @@ window.openShopPurchaseModal = function(itemData) {
   }
 
   // Dynamic frame asset & layering: profile photo bottom, frame on top
-  if (itemData.id === 'eagle' || itemData.type === 'animated') {
+  if (itemData.id === 'eagle' || itemData.id === 'pheonix' || itemData.type === 'animated') {
     // Show animated WebM (autoplay, loop, muted, playsinline, transparent background)
     if (frameImgEl) frameImgEl.classList.add('hidden');
     if (frameVideoEl) {
-      frameVideoEl.src = itemData.image || './frame3.webm';
+      frameVideoEl.src = itemData.image || (itemData.id === 'pheonix' ? './frame4.webm' : './frame3.webm');
       frameVideoEl.classList.remove('hidden');
       frameVideoEl.style.display = 'block';
       frameVideoEl.currentTime = 0;
@@ -3954,6 +3985,20 @@ window.handleShopItemPurchase = async function() {
       profile.frameEquipped = true;
       profile.equippedFrameId = 'eagle';
       if (typeof window.updateAllAvatarFrames === 'function') window.updateAllAvatarFrames();
+    } else if (item.id === 'pheonix') {
+      profile.pheonixFrame = data.pheonixFrame || {
+        id: 'pheonix',
+        name: 'Pheonix',
+        asset: 'frame4.webm',
+        permanentUnlocked: true,
+        status: 'permanent',
+        equipped: true,
+        purchasedAt: new Date().toISOString()
+      };
+      profile.hasFrame = true;
+      profile.frameEquipped = true;
+      profile.equippedFrameId = 'pheonix';
+      if (typeof window.updateAllAvatarFrames === 'function') window.updateAllAvatarFrames();
     }
 
     // Update balances across entire application
@@ -4056,6 +4101,24 @@ if (shopCardEagleEl) {
       category: shopCardEagleEl.getAttribute('data-item-category') || 'Frames',
       image: shopCardEagleEl.getAttribute('data-item-image') || './frame3.webm',
       poster: shopCardEagleEl.getAttribute('data-item-poster') || './frame3.png',
+      type: 'animated'
+    };
+    window.openShopPurchaseModal(itemData);
+  });
+}
+
+// Click listener on Pheonix card in Shop grid
+const shopCardPheonixEl = document.getElementById('shopCardPheonix');
+if (shopCardPheonixEl) {
+  shopCardPheonixEl.addEventListener('click', () => {
+    const itemId = shopCardPheonixEl.getAttribute('data-item-id') || 'pheonix';
+    const itemData = window.ARENAX_SHOP_ITEMS[itemId] || {
+      id: itemId,
+      name: shopCardPheonixEl.getAttribute('data-item-name') || 'Pheonix',
+      price: Number(shopCardPheonixEl.getAttribute('data-item-price') || 499),
+      category: shopCardPheonixEl.getAttribute('data-item-category') || 'Decorations',
+      image: shopCardPheonixEl.getAttribute('data-item-image') || './frame4.webm',
+      poster: shopCardPheonixEl.getAttribute('data-item-poster') || './frame4.png',
       type: 'animated'
     };
     window.openShopPurchaseModal(itemData);
@@ -6761,6 +6824,13 @@ window.renderCustomizeProfileAvatarFrames = function() {
     profile.ownedShopItems?.['item-frame-eagle']
   );
 
+  const hasPheonix = Boolean(
+    profile.pheonixFrame?.permanentUnlocked ||
+    profile.pheonixFrame?.status === 'permanent' ||
+    profile.ownedShopItems?.['pheonix'] ||
+    profile.ownedShopItems?.['item-frame-pheonix']
+  );
+
   // Active equipped frame
   const currentEquipped = (typeof window.getEquippedFrameForUser === 'function')
     ? (window.getEquippedFrameForUser(profile) || 'none')
@@ -6769,7 +6839,8 @@ window.renderCustomizeProfileAvatarFrames = function() {
   // Update badge on button
   const badgeEl = $('custAvatarFrameEquippedBadge');
   if (badgeEl) {
-    if (currentEquipped === 'eagle') badgeEl.textContent = 'Eagle';
+    if (currentEquipped === 'pheonix') badgeEl.textContent = 'Pheonix';
+    else if (currentEquipped === 'eagle') badgeEl.textContent = 'Eagle';
     else if (currentEquipped === 'golden-wings') badgeEl.textContent = 'Golden Wings';
     else badgeEl.textContent = 'Default';
   }
@@ -6805,10 +6876,21 @@ window.renderCustomizeProfileAvatarFrames = function() {
     });
   }
 
+  if (hasPheonix) {
+    ownedFrames.push({
+      id: 'pheonix',
+      name: 'Pheonix',
+      type: 'video',
+      video: './frame4.webm',
+      poster: './frame4.png',
+      tag: 'Mythic Animated'
+    });
+  }
+
   // Check any additional frames from ownedShopItems
   if (profile.ownedShopItems) {
     Object.keys(profile.ownedShopItems).forEach(k => {
-      if (k !== 'golden-wings' && k !== 'eagle' && k !== 'item-frame-eagle') {
+      if (k !== 'golden-wings' && k !== 'eagle' && k !== 'item-frame-eagle' && k !== 'pheonix' && k !== 'item-frame-pheonix') {
         const itm = profile.ownedShopItems[k];
         if (itm && (itm.type === 'frame' || itm.type === 'animated' || itm.category === 'Frames')) {
           ownedFrames.push({
@@ -6960,15 +7042,22 @@ window.equipAvatarFrame = async function(frameId) {
     profile.equippedFrameId = targetFrameId;
     profile.hasFrame = (targetFrameId !== 'none');
     profile.frameEquipped = (targetFrameId !== 'none');
-    if (targetFrameId === 'eagle') {
+    if (targetFrameId === 'pheonix') {
+      profile.pheonixFrame = { ...(profile.pheonixFrame || {}), equipped: true };
+      if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = false;
+      if (profile.eagleFrame) profile.eagleFrame.equipped = false;
+    } else if (targetFrameId === 'eagle') {
       profile.eagleFrame = { ...(profile.eagleFrame || {}), equipped: true };
       if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = false;
+      if (profile.pheonixFrame) profile.pheonixFrame.equipped = false;
     } else if (targetFrameId === 'golden-wings') {
       profile.goldenWingsFrame = { ...(profile.goldenWingsFrame || {}), equipped: true };
       if (profile.eagleFrame) profile.eagleFrame.equipped = false;
+      if (profile.pheonixFrame) profile.pheonixFrame.equipped = false;
     } else {
       if (profile.eagleFrame) profile.eagleFrame.equipped = false;
       if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = false;
+      if (profile.pheonixFrame) profile.pheonixFrame.equipped = false;
     }
 
     if (userProfile) Object.assign(userProfile, profile);
