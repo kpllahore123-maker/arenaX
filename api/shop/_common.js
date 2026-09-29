@@ -19,6 +19,15 @@ export const ARENAX_SHOP_CATALOG = {
     image: 'frame3.webm',
     poster: 'frame3.png',
     category: 'Frames'
+  },
+  'pheonix': {
+    id: 'pheonix',
+    name: 'Pheonix',
+    price: 499,
+    type: 'animated',
+    image: 'frame4.webm',
+    poster: 'frame4.png',
+    category: 'Decorations'
   }
 };
 
