@@ -1210,6 +1210,117 @@ Generate personalized real-time advice strictly as a JSON object matching this s
     }
   });
 
+  app.post("/api/shop/equip", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ success: false, error: "Database not initialized." });
+      }
+
+      const uid = await getVerifiedRewardUid(req);
+      if (!uid) {
+        return res.status(401).json({ success: false, error: "Unauthorized. Please log in first." });
+      }
+
+      const { frameId, itemId } = req.body || {};
+      const requestedFrameId = String(frameId || itemId || "none").trim().toLowerCase();
+
+      const userRef = adminDb.collection("users").doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: "USER_NOT_FOUND", message: "User profile not found." });
+      }
+
+      const userData = userDoc.data() || {};
+      const ownedItems = userData.ownedShopItems || {};
+
+      const isDefault = requestedFrameId === "none" || requestedFrameId === "default";
+      const isGoldenWings = requestedFrameId === "golden-wings";
+      const isEagle = requestedFrameId === "eagle";
+
+      if (!isDefault) {
+        let isOwned = false;
+        if (isGoldenWings) {
+          isOwned = Boolean(
+            userData.goldenWingsFrame?.permanentUnlocked ||
+            userData.goldenWingsFrame?.status === "permanent" ||
+            ownedItems["golden-wings"]
+          );
+        } else if (isEagle) {
+          isOwned = Boolean(
+            userData.eagleFrame?.permanentUnlocked ||
+            userData.eagleFrame?.status === "permanent" ||
+            ownedItems["eagle"] ||
+            ownedItems["item-frame-eagle"]
+          );
+        } else {
+          isOwned = Boolean(ownedItems[requestedFrameId]);
+        }
+
+        if (!isOwned) {
+          return res.status(403).json({
+            success: false,
+            error: "FRAME_NOT_OWNED",
+            message: "You do not own this avatar frame. Purchase it from the Shop first."
+          });
+        }
+      }
+
+      const nowIso = new Date().toISOString();
+      const updatePayload: any = {
+        updatedAt: nowIso
+      };
+
+      if (isDefault) {
+        updatePayload.equippedFrameId = "none";
+        updatePayload.hasFrame = false;
+        updatePayload.frameEquipped = false;
+        if (userData.goldenWingsFrame) {
+          updatePayload["goldenWingsFrame.equipped"] = false;
+        }
+        if (userData.eagleFrame) {
+          updatePayload["eagleFrame.equipped"] = false;
+        }
+      } else if (isGoldenWings) {
+        updatePayload.equippedFrameId = "golden-wings";
+        updatePayload.hasFrame = true;
+        updatePayload.frameEquipped = true;
+        updatePayload["goldenWingsFrame.equipped"] = true;
+        if (userData.eagleFrame) {
+          updatePayload["eagleFrame.equipped"] = false;
+        }
+      } else if (isEagle) {
+        updatePayload.equippedFrameId = "eagle";
+        updatePayload.hasFrame = true;
+        updatePayload.frameEquipped = true;
+        updatePayload["eagleFrame.equipped"] = true;
+        if (userData.goldenWingsFrame) {
+          updatePayload["goldenWingsFrame.equipped"] = false;
+        }
+      } else {
+        updatePayload.equippedFrameId = requestedFrameId;
+        updatePayload.hasFrame = true;
+        updatePayload.frameEquipped = true;
+        if (userData.goldenWingsFrame) updatePayload["goldenWingsFrame.equipped"] = false;
+        if (userData.eagleFrame) updatePayload["eagleFrame.equipped"] = false;
+      }
+
+      await userRef.update(updatePayload);
+
+      return res.json({
+        success: true,
+        equippedFrameId: isDefault ? "none" : requestedFrameId,
+        message: "Avatar frame successfully equipped."
+      });
+    } catch (err: any) {
+      console.error("[ArenaX Shop Equip Error]:", err);
+      return res.status(500).json({
+        success: false,
+        error: "SERVER_ERROR",
+        message: err.message || "Failed to equip avatar frame."
+      });
+    }
+  });
+
   // FCM Push Notifications Relay
   app.post("/api/send-fcm-push", async (req, res) => {
     try {
