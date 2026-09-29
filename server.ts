@@ -1060,6 +1060,14 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       type: "animated",
       image: "frame3.webm",
       category: "Frames"
+    },
+    "pheonix": {
+      id: "pheonix",
+      name: "Pheonix",
+      price: 499,
+      type: "animated",
+      image: "frame4.webm",
+      category: "Decorations"
     }
   };
 
@@ -1095,7 +1103,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         const ownedItems = userData.ownedShopItems || {};
         const isGoldenWingsOwned = item.id === "golden-wings" && (userData.goldenWingsFrame?.permanentUnlocked || userData.goldenWingsFrame?.status === "permanent");
         const isEagleOwned = item.id === "eagle" && (userData.eagleFrame?.permanentUnlocked || userData.eagleFrame?.status === "permanent");
-        if (ownedItems[item.id] || isGoldenWingsOwned || isEagleOwned) {
+        const isPheonixOwned = item.id === "pheonix" && (userData.pheonixFrame?.permanentUnlocked || userData.pheonixFrame?.status === "permanent" || !!ownedItems["pheonix"]);
+        if (ownedItems[item.id] || isGoldenWingsOwned || isEagleOwned || isPheonixOwned) {
           throw new Error("ALREADY_OWNED");
         }
 
@@ -1134,6 +1143,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           updatePayload.hasFrame = true;
           updatePayload.frameEquipped = true;
           updatePayload.equippedFrameId = "golden-wings";
+          if (userData.eagleFrame) updatePayload["eagleFrame.equipped"] = false;
+          if (userData.pheonixFrame) updatePayload["pheonixFrame.equipped"] = false;
         } else if (item.id === "eagle") {
           updatePayload.eagleFrame = {
             id: "eagle",
@@ -1147,6 +1158,23 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           updatePayload.hasFrame = true;
           updatePayload.frameEquipped = true;
           updatePayload.equippedFrameId = "eagle";
+          if (userData.goldenWingsFrame) updatePayload["goldenWingsFrame.equipped"] = false;
+          if (userData.pheonixFrame) updatePayload["pheonixFrame.equipped"] = false;
+        } else if (item.id === "pheonix") {
+          updatePayload.pheonixFrame = {
+            id: "pheonix",
+            name: "Pheonix",
+            asset: "frame4.webm",
+            permanentUnlocked: true,
+            status: "permanent",
+            equipped: true,
+            purchasedAt: new Date(now).toISOString()
+          };
+          updatePayload.hasFrame = true;
+          updatePayload.frameEquipped = true;
+          updatePayload.equippedFrameId = "pheonix";
+          if (userData.goldenWingsFrame) updatePayload["goldenWingsFrame.equipped"] = false;
+          if (userData.eagleFrame) updatePayload["eagleFrame.equipped"] = false;
         }
 
         transaction.update(userRef, updatePayload);
@@ -1169,7 +1197,8 @@ Generate personalized real-time advice strictly as a JSON object matching this s
           itemName: item.name,
           ownedShopItems: updatedOwnedItems,
           goldenWingsFrame: updatePayload.goldenWingsFrame,
-          eagleFrame: updatePayload.eagleFrame
+          eagleFrame: updatePayload.eagleFrame,
+          pheonixFrame: updatePayload.pheonixFrame
         };
       });
 
@@ -1236,6 +1265,7 @@ Generate personalized real-time advice strictly as a JSON object matching this s
       const isDefault = requestedFrameId === "none" || requestedFrameId === "default";
       const isGoldenWings = requestedFrameId === "golden-wings";
       const isEagle = requestedFrameId === "eagle";
+      const isPheonix = requestedFrameId === "pheonix";
 
       if (!isDefault) {
         let isOwned = false;
@@ -1251,6 +1281,13 @@ Generate personalized real-time advice strictly as a JSON object matching this s
             userData.eagleFrame?.status === "permanent" ||
             ownedItems["eagle"] ||
             ownedItems["item-frame-eagle"]
+          );
+        } else if (isPheonix) {
+          isOwned = Boolean(
+            userData.pheonixFrame?.permanentUnlocked ||
+            userData.pheonixFrame?.status === "permanent" ||
+            ownedItems["pheonix"] ||
+            ownedItems["item-frame-pheonix"]
           );
         } else {
           isOwned = Boolean(ownedItems[requestedFrameId]);
@@ -1280,6 +1317,9 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         if (userData.eagleFrame) {
           updatePayload["eagleFrame.equipped"] = false;
         }
+        if (userData.pheonixFrame) {
+          updatePayload["pheonixFrame.equipped"] = false;
+        }
       } else if (isGoldenWings) {
         updatePayload.equippedFrameId = "golden-wings";
         updatePayload.hasFrame = true;
@@ -1287,6 +1327,9 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         updatePayload["goldenWingsFrame.equipped"] = true;
         if (userData.eagleFrame) {
           updatePayload["eagleFrame.equipped"] = false;
+        }
+        if (userData.pheonixFrame) {
+          updatePayload["pheonixFrame.equipped"] = false;
         }
       } else if (isEagle) {
         updatePayload.equippedFrameId = "eagle";
@@ -1296,12 +1339,27 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         if (userData.goldenWingsFrame) {
           updatePayload["goldenWingsFrame.equipped"] = false;
         }
+        if (userData.pheonixFrame) {
+          updatePayload["pheonixFrame.equipped"] = false;
+        }
+      } else if (isPheonix) {
+        updatePayload.equippedFrameId = "pheonix";
+        updatePayload.hasFrame = true;
+        updatePayload.frameEquipped = true;
+        updatePayload["pheonixFrame.equipped"] = true;
+        if (userData.goldenWingsFrame) {
+          updatePayload["goldenWingsFrame.equipped"] = false;
+        }
+        if (userData.eagleFrame) {
+          updatePayload["eagleFrame.equipped"] = false;
+        }
       } else {
         updatePayload.equippedFrameId = requestedFrameId;
         updatePayload.hasFrame = true;
         updatePayload.frameEquipped = true;
         if (userData.goldenWingsFrame) updatePayload["goldenWingsFrame.equipped"] = false;
         if (userData.eagleFrame) updatePayload["eagleFrame.equipped"] = false;
+        if (userData.pheonixFrame) updatePayload["pheonixFrame.equipped"] = false;
       }
 
       await userRef.update(updatePayload);
