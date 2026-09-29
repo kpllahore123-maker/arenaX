@@ -504,8 +504,9 @@ html, body {
   transform: none !important;
 }
 
-/* 2. When Eagle Animated Frame is Equipped (160x160 box, Left 14px, 40% below header) */
+/* 2. When Eagle or Pheonix Animated Frame is Equipped (160x160 box, Left 14px, 40% below header) */
 #vppAvWrap.has-frame-eagle,
+#vppAvWrap.has-frame-pheonix,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) {
   position: relative !important;
   width: 160px !important;
@@ -525,6 +526,7 @@ html, body {
 }
 
 #vppAvWrap.has-frame-eagle #vppAv,
+#vppAvWrap.has-frame-pheonix #vppAv,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) #vppAv {
   position: absolute !important;
   left: 22% !important;
@@ -548,6 +550,7 @@ html, body {
 }
 
 #vppAvWrap.has-frame-eagle #vppFrameVideo,
+#vppAvWrap.has-frame-pheonix #vppFrameVideo,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) #vppFrameVideo {
   position: absolute !important;
   inset: 0 !important;
@@ -575,6 +578,7 @@ html, body {
 }
 
 #vppAvWrap.has-frame-eagle #vppFrameImg,
+#vppAvWrap.has-frame-pheonix #vppFrameImg,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) #vppFrameImg {
   display: none !important;
 }
@@ -582,6 +586,8 @@ html, body {
 /* Username and location start about 186px from the left (14px + 160px + 12px gap = 186px) */
 #vppAvWrap.has-frame-eagle ~ #vppProfileInfoCol,
 #vppAvWrap.has-frame-eagle + #vppProfileInfoCol,
+#vppAvWrap.has-frame-pheonix ~ #vppProfileInfoCol,
+#vppAvWrap.has-frame-pheonix + #vppProfileInfoCol,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) ~ #vppProfileInfoCol,
 #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) + #vppProfileInfoCol {
   padding-left: 0 !important;
@@ -589,7 +595,7 @@ html, body {
 
 /* 3. When Frame is NOT Equipped (Standard Clean Round Avatar) */
 #vppAvWrap.no-frame,
-#vppAvWrap:not(.has-frame):not(.has-frame-eagle) {
+#vppAvWrap:not(.has-frame):not(.has-frame-eagle):not(.has-frame-pheonix) {
   width: 80px !important;
   height: 80px !important;
   min-width: 80px !important;
@@ -601,6 +607,7 @@ html, body {
 }
 @media (min-width: 640px) {
   #vppAvWrap.has-frame-eagle,
+  #vppAvWrap.has-frame-pheonix,
   #vppAvWrap:has(#vppFrameVideo:not([style*="display: none"])) {
     width: 160px !important;
     height: 160px !important;
@@ -613,7 +620,7 @@ html, body {
   }
 
   #vppAvWrap.no-frame,
-  #vppAvWrap:not(.has-frame):not(.has-frame-eagle) {
+  #vppAvWrap:not(.has-frame):not(.has-frame-eagle):not(.has-frame-pheonix) {
     width: 96px !important;
     height: 96px !important;
     min-width: 96px !important;
@@ -625,7 +632,7 @@ html, body {
 }
 
 #vppAvWrap.no-frame #vppAv,
-#vppAvWrap:not(.has-frame):not(.has-frame-eagle) #vppAv {
+#vppAvWrap:not(.has-frame):not(.has-frame-eagle):not(.has-frame-pheonix) #vppAv {
   position: relative !important;
   left: auto !important;
   top: auto !important;
@@ -646,7 +653,7 @@ html, body {
 }
 
 #vppAvWrap.no-frame #vppFrameImg,
-#vppAvWrap:not(.has-frame):not(.has-frame-eagle) #vppFrameImg {
+#vppAvWrap:not(.has-frame):not(.has-frame-eagle):not(.has-frame-pheonix) #vppFrameImg {
   display: none !important;
 }
 
@@ -4258,6 +4265,38 @@ html, body {
             </div>
             <!-- Claimed State Badge -->
             <div id="shopCardEagleClaimedBadge" class="hidden mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
+              <i class="fas fa-check-circle text-[9px]"></i> CLAIMED
+            </div>
+          </div>
+        </div>
+
+        <!-- Pheonix Product Card (Animated WebM Frame, 56px x 56px preview) -->
+        <div id="shopCardPheonix" data-item-id="pheonix" data-item-name="Pheonix" data-item-price="499" data-item-category="Decorations" data-item-image="./frame4.webm" data-item-poster="./frame4.png" data-item-type="animated" class="shop-item-card group flex flex-col items-center p-3 rounded-2xl bg-[#12162a] [data-theme='light']_:bg-slate-50 border border-white/10 [data-theme='light']_:border-slate-200 hover:border-gold/50 transition duration-300 shadow-lg cursor-pointer active:scale-95">
+          <!-- Frame Preview Tile (Squircle with padding around 56x56 frame) -->
+          <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-[#1b1c3b] via-[#13172e] to-[#0e1122] [data-theme='light']_:from-indigo-50 [data-theme='light']_:to-purple-50 border border-white/10 [data-theme='light']_:border-purple-200/60 p-2 flex items-center justify-center relative shadow-inner overflow-hidden group-hover:scale-[1.02] transition duration-300">
+            <!-- Ambient backdrop glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.18),transparent_70%)] pointer-events-none"></div>
+
+            <!-- Pheonix Frame Box at 56px x 56px perfectly square with padding -->
+            <div class="relative w-[56px] h-[56px] flex-shrink-0">
+              <!-- Profile photo inside with exact percentages: Left: 22%, Top: 21.5%, Width: 56%, Height: 54% -->
+              <img id="shopPreviewAvatarPheonix" src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" alt="Avatar Preview" class="absolute left-[22%] top-[21.5%] w-[56%] h-[54%] rounded-full object-cover shadow-sm bg-slate-800" />
+              <!-- Animated WebM Frame preview with loop + autoplay + muted and transparent background -->
+              <video src="./frame4.webm" poster="./frame4.png" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-contain pointer-events-none bg-transparent drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]"></video>
+            </div>
+          </div>
+
+          <!-- Product Info -->
+          <div class="w-full mt-2.5 text-center">
+            <h3 class="text-xs sm:text-sm font-bold text-white [data-theme='light']_:text-slate-900 tracking-tight truncate">Pheonix</h3>
+            <div id="shopCardPheonixPriceRow" class="flex items-center justify-center gap-1.5 mt-1">
+              <div class="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#f0c040] to-[#b8860b] flex items-center justify-center text-[#111420] text-[7px] font-black shadow-xs">
+                <i class="fas fa-coins"></i>
+              </div>
+              <span id="shopCardPheonixPriceText" class="text-xs font-black text-amber-400 [data-theme='light']_:text-amber-600">499 AX Coins</span>
+            </div>
+            <!-- Claimed State Badge -->
+            <div id="shopCardPheonixClaimedBadge" class="hidden mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
               <i class="fas fa-check-circle text-[9px]"></i> CLAIMED
             </div>
           </div>
