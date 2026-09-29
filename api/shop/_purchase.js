@@ -112,7 +112,12 @@ export default async function handler(req, res) {
         userData.eagleFrame?.status === 'permanent' ||
         !!ownedItems['eagle']
       );
-      const isAlreadyClaimed = Boolean(ownedItems[item.id] || isGwOwned || isEagleOwned);
+      const isPheonixOwned = item.id === 'pheonix' && (
+        userData.pheonixFrame?.permanentUnlocked ||
+        userData.pheonixFrame?.status === 'permanent' ||
+        !!ownedItems['pheonix']
+      );
+      const isAlreadyClaimed = Boolean(ownedItems[item.id] || isGwOwned || isEagleOwned || isPheonixOwned);
 
       if (isAlreadyClaimed) {
         throw new Error('ALREADY_OWNED');
@@ -155,6 +160,8 @@ export default async function handler(req, res) {
         updatePayload.hasFrame = true;
         updatePayload.frameEquipped = true;
         updatePayload.equippedFrameId = 'golden-wings';
+        if (userData.eagleFrame) updatePayload['eagleFrame.equipped'] = false;
+        if (userData.pheonixFrame) updatePayload['pheonixFrame.equipped'] = false;
       } else if (item.id === 'eagle') {
         updatePayload.eagleFrame = {
           id: 'eagle',
@@ -168,6 +175,23 @@ export default async function handler(req, res) {
         updatePayload.hasFrame = true;
         updatePayload.frameEquipped = true;
         updatePayload.equippedFrameId = 'eagle';
+        if (userData.goldenWingsFrame) updatePayload['goldenWingsFrame.equipped'] = false;
+        if (userData.pheonixFrame) updatePayload['pheonixFrame.equipped'] = false;
+      } else if (item.id === 'pheonix') {
+        updatePayload.pheonixFrame = {
+          id: 'pheonix',
+          name: 'Pheonix',
+          asset: 'frame4.webm',
+          permanentUnlocked: true,
+          status: 'permanent',
+          equipped: true,
+          purchasedAt: nowIso
+        };
+        updatePayload.hasFrame = true;
+        updatePayload.frameEquipped = true;
+        updatePayload.equippedFrameId = 'pheonix';
+        if (userData.goldenWingsFrame) updatePayload['goldenWingsFrame.equipped'] = false;
+        if (userData.eagleFrame) updatePayload['eagleFrame.equipped'] = false;
       }
 
       // Apply atomic user profile update
