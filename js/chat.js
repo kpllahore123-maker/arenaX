@@ -474,10 +474,13 @@ window.getEquippedFrameForUser = function(userData) {
   );
 
   // If user explicitly chose a frame
-  if (userData.equippedFrameId === 'eagle' && hasEagle) {
+  if (userData.equippedFrameId === 'none' || userData.equippedFrameId === 'default') {
+    return null;
+  }
+  if ((userData.equippedFrameId === 'eagle' || userData.equippedFrame === 'eagle' || userData.frame === 'eagle') && hasEagle) {
     return 'eagle';
   }
-  if (userData.equippedFrameId === 'golden-wings' && hasGoldenWings) {
+  if ((userData.equippedFrameId === 'golden-wings' || userData.equippedFrame === 'golden-wings' || userData.frame === 'golden-wings') && hasGoldenWings) {
     return 'golden-wings';
   }
 
@@ -485,8 +488,12 @@ window.getEquippedFrameForUser = function(userData) {
   if (userData.eagleFrame?.equipped && hasEagle) return 'eagle';
   if (userData.goldenWingsFrame?.equipped && hasGoldenWings) return 'golden-wings';
 
-  if (hasEagle) return 'eagle';
-  if (hasGoldenWings) return 'golden-wings';
+  if (userData.eagleFrame?.equipped === false && userData.goldenWingsFrame?.equipped === false) {
+    return null;
+  }
+
+  if (hasEagle && !userData.goldenWingsFrame?.equipped) return 'eagle';
+  if (hasGoldenWings && !userData.eagleFrame?.equipped) return 'golden-wings';
 
   return null;
 };
