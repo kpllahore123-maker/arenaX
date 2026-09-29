@@ -6414,12 +6414,15 @@ window.openCustomizeProfilePage = function(source = 'settings') {
     }
   }
 
-  // 5. Profile Effects
+  // 5. Avatar Frames
+  window.renderCustomizeProfileAvatarFrames();
+
+  // 6. Profile Effects
   window._selectedProfileEffect = profile.profileEffect || 'none';
   window.renderCustomizeProfileEffects();
   window.updateCustomizeAvatarEffectRing(window._selectedProfileEffect);
 
-  // 6. VIP Custom Font
+  // 7. VIP Custom Font
   window._selectedCustomizeFont = profile.selectedFont || 'font-poppins';
   window.renderCustomizeProfileFonts(isPremium);
 
@@ -6716,6 +6719,295 @@ if ($('bCloseCustomizeProfile')) {
 if ($('btnSaveCustomizeProfile')) {
   $('btnSaveCustomizeProfile').addEventListener('click', () => {
     window.saveCustomizeProfilePage();
+  });
+}
+
+// ── CUSTOMIZE PROFILE: AVATAR FRAME SYSTEM ──
+window.toggleAvatarFrameSection = function() {
+  const expandable = $('custAvatarFrameExpandable');
+  const chevron = $('iconAvatarFrameChevron');
+  if (!expandable) return;
+
+  const isHidden = expandable.classList.contains('hidden');
+  if (isHidden) {
+    expandable.classList.remove('hidden');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+    window.renderCustomizeProfileAvatarFrames();
+  } else {
+    expandable.classList.add('hidden');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  }
+};
+
+window.renderCustomizeProfileAvatarFrames = function() {
+  const container = $('custOwnedFramesGrid');
+  if (!container) return;
+
+  const profile = userProfile || guestProfile || {};
+  const userAvatar = profile.av || profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.uid || 'user'}`;
+
+  // Read ownership from real user profile
+  const hasGoldenWings = Boolean(
+    profile.goldenWingsFrame?.permanentUnlocked ||
+    profile.goldenWingsFrame?.status === 'permanent' ||
+    profile.ownedShopItems?.['golden-wings'] ||
+    (typeof window.isGoldenWingsEquippedForUser === 'function' && window.isGoldenWingsEquippedForUser(profile))
+  );
+
+  const hasEagle = Boolean(
+    profile.eagleFrame?.permanentUnlocked ||
+    profile.eagleFrame?.status === 'permanent' ||
+    profile.ownedShopItems?.['eagle'] ||
+    profile.ownedShopItems?.['item-frame-eagle']
+  );
+
+  // Active equipped frame
+  const currentEquipped = (typeof window.getEquippedFrameForUser === 'function')
+    ? (window.getEquippedFrameForUser(profile) || 'none')
+    : (profile.equippedFrameId || 'none');
+
+  // Update badge on button
+  const badgeEl = $('custAvatarFrameEquippedBadge');
+  if (badgeEl) {
+    if (currentEquipped === 'eagle') badgeEl.textContent = 'Eagle';
+    else if (currentEquipped === 'golden-wings') badgeEl.textContent = 'Golden Wings';
+    else badgeEl.textContent = 'Default';
+  }
+
+  // Construct owned frames array (ONLY OWNED FRAMES)
+  const ownedFrames = [
+    {
+      id: 'none',
+      name: 'Default',
+      type: 'default',
+      tag: 'Clean Avatar'
+    }
+  ];
+
+  if (hasGoldenWings) {
+    ownedFrames.push({
+      id: 'golden-wings',
+      name: 'Golden Wings',
+      type: 'image',
+      image: './frame1.png',
+      tag: 'Gold Wings'
+    });
+  }
+
+  if (hasEagle) {
+    ownedFrames.push({
+      id: 'eagle',
+      name: 'Eagle',
+      type: 'video',
+      video: './frame3.webm',
+      poster: './frame3.png',
+      tag: 'Mythic Animated'
+    });
+  }
+
+  // Check any additional frames from ownedShopItems
+  if (profile.ownedShopItems) {
+    Object.keys(profile.ownedShopItems).forEach(k => {
+      if (k !== 'golden-wings' && k !== 'eagle' && k !== 'item-frame-eagle') {
+        const itm = profile.ownedShopItems[k];
+        if (itm && (itm.type === 'frame' || itm.type === 'animated' || itm.category === 'Frames')) {
+          ownedFrames.push({
+            id: itm.id || k,
+            name: itm.name || 'Custom Frame',
+            type: (itm.image && itm.image.endsWith('.webm')) ? 'video' : 'image',
+            image: itm.image || './frame1.png',
+            video: itm.image || './frame3.webm',
+            poster: itm.poster || './frame3.png',
+            tag: 'Owned Frame'
+          });
+        }
+      }
+    });
+  }
+
+  // Render cards
+  container.innerHTML = ownedFrames.map(f => {
+    const isEquipped = (f.id === 'none' && (currentEquipped === 'none' || !currentEquipped)) || (f.id === currentEquipped);
+    let previewHtml = '';
+    if (f.type === 'video') {
+      previewHtml = `
+        <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+          <img src="${userAvatar}" alt="${f.name}" class="absolute rounded-full object-cover z-0" style="left: 22%; top: 21.5%; width: 56%; height: 54%;" />
+          <video src="${f.video}" poster="${f.poster || ''}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></video>
+        </div>
+      `;
+    } else if (f.type === 'image') {
+      previewHtml = `
+        <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+          <img src="${userAvatar}" alt="${f.name}" class="absolute rounded-full object-cover z-0" style="left: 20%; top: 22%; width: 60%; height: 56%;" />
+          <img src="${f.image}" alt="${f.name}" class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10" />
+        </div>
+      `;
+    } else {
+      // Default clean avatar
+      previewHtml = `
+        <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+          <img src="${userAvatar}" alt="Default Avatar" class="w-12 h-12 rounded-full object-cover border-2 border-slate-600 shadow-sm" />
+        </div>
+      `;
+    }
+
+    return `
+      <div onclick="window.equipAvatarFrame('${f.id}')" class="p-3 rounded-2xl border text-center transition-all duration-200 cursor-pointer flex flex-col justify-between relative group ${
+        isEquipped
+          ? 'bg-[#181d2f] border-amber-400 ring-2 ring-amber-400/40 shadow-lg shadow-amber-500/10'
+          : 'bg-[#121522] border-[#252a45] hover:border-slate-500 hover:bg-[#161a2b]'
+      }">
+        ${isEquipped ? '<div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>' : ''}
+        ${previewHtml}
+        <div class="mt-2.5">
+          <div class="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">${f.name}</div>
+          <div class="text-[9px] text-slate-400 truncate mt-0.5">${f.tag}</div>
+        </div>
+        <div class="mt-2 pt-2 border-t border-white/5">
+          ${
+            isEquipped
+              ? `<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase text-emerald-400">
+                   <i class="fas fa-check text-[9px]"></i> Currently Equipped
+                 </span>`
+              : `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 group-hover:text-amber-300">
+                   Tap to Equip
+                 </span>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.equipAvatarFrame = async function(frameId) {
+  const profile = userProfile || guestProfile;
+  if (!profile) return;
+
+  const targetFrameId = frameId === 'default' ? 'none' : frameId;
+
+  // Optimistic badge update
+  const badgeEl = $('custAvatarFrameEquippedBadge');
+  if (badgeEl) {
+    badgeEl.innerHTML = '<i class="fas fa-spinner fa-spin text-[8px]"></i>';
+  }
+
+  try {
+    let token = '';
+    const authUser = (typeof auth !== 'undefined' && auth?.currentUser) ? auth.currentUser : null;
+    if (authUser && typeof authUser.getIdToken === 'function') {
+      token = await authUser.getIdToken().catch(() => '');
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const isStaticHost = typeof window !== 'undefined' && (
+      window.location.hostname === 'arenax.cyou' || 
+      window.location.hostname.endsWith('github.io')
+    );
+    const vercelBase = 'https://arena-x-beta.vercel.app';
+    const primaryEndpoint = isStaticHost ? `${vercelBase}/api/shop/equip` : '/api/shop/equip';
+
+    const payload = JSON.stringify({
+      uid: profile.uid,
+      frameId: targetFrameId
+    });
+
+    let res;
+    try {
+      res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers,
+        body: payload
+      });
+      if ((res.status === 404 || res.status === 405) && !primaryEndpoint.startsWith(vercelBase)) {
+        res = await fetch(`${vercelBase}/api/shop/equip`, {
+          method: 'POST',
+          headers,
+          body: payload
+        });
+      }
+    } catch (fetchErr) {
+      if (!primaryEndpoint.startsWith(vercelBase)) {
+        res = await fetch(`${vercelBase}/api/shop/equip`, {
+          method: 'POST',
+          headers,
+          body: payload
+        });
+      } else {
+        throw fetchErr;
+      }
+    }
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data || !data.success) {
+      const errCode = (data && data.error) || '';
+      const errMsg = (data && data.message) || '';
+      if (errCode === 'FRAME_NOT_OWNED' || errMsg.includes('not own')) {
+        alert('You do not own this avatar frame. Please unlock it in the Shop first!');
+      } else if (errCode === 'UNAUTHORIZED') {
+        alert('Please sign in to equip avatar frames.');
+      } else {
+        alert(errMsg || 'Failed to equip avatar frame.');
+      }
+      window.renderCustomizeProfileAvatarFrames();
+      return;
+    }
+
+    // Success: immediately update local profile state
+    profile.equippedFrameId = targetFrameId;
+    profile.hasFrame = (targetFrameId !== 'none');
+    profile.frameEquipped = (targetFrameId !== 'none');
+    if (targetFrameId === 'eagle') {
+      profile.eagleFrame = { ...(profile.eagleFrame || {}), equipped: true };
+      if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = false;
+    } else if (targetFrameId === 'golden-wings') {
+      profile.goldenWingsFrame = { ...(profile.goldenWingsFrame || {}), equipped: true };
+      if (profile.eagleFrame) profile.eagleFrame.equipped = false;
+    } else {
+      if (profile.eagleFrame) profile.eagleFrame.equipped = false;
+      if (profile.goldenWingsFrame) profile.goldenWingsFrame.equipped = false;
+    }
+
+    if (userProfile) Object.assign(userProfile, profile);
+    if (guestProfile) Object.assign(guestProfile, profile);
+
+    // Re-render owned frames grid with updated status
+    window.renderCustomizeProfileAvatarFrames();
+
+    // Sync View Profile avatar immediately without page refresh
+    if (typeof window.renderViewProfileAvatar === 'function') {
+      window.renderViewProfileAvatar(profile);
+    }
+
+    // Update synced status pill
+    const badge = $('editProfileStatusBadge');
+    if (badge) {
+      badge.textContent = 'Frame Equipped ✓';
+      badge.classList.remove('hidden');
+      setTimeout(() => { if (badge) { badge.textContent = 'Synced'; badge.classList.add('hidden'); } }, 3000);
+    }
+  } catch (err) {
+    console.error('Error equipping avatar frame:', err);
+    alert('Error equipping avatar frame: ' + (err.message || 'Network error'));
+    window.renderCustomizeProfileAvatarFrames();
+  }
+};
+
+// Wire up Avatar Frame section buttons
+if ($('btnToggleAvatarFrameSection')) {
+  $('btnToggleAvatarFrameSection').addEventListener('click', () => {
+    window.toggleAvatarFrameSection();
+  });
+}
+
+if ($('btnCustVisitShop')) {
+  $('btnCustVisitShop').addEventListener('click', () => {
+    if (typeof window.openShopModal === 'function') {
+      window.openShopModal();
+    }
   });
 }
 
