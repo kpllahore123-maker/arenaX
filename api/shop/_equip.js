@@ -99,6 +99,7 @@ export default async function handler(req, res) {
     const isDefault = requestedFrameId === 'none' || requestedFrameId === 'default';
     const isGoldenWings = requestedFrameId === 'golden-wings';
     const isEagle = requestedFrameId === 'eagle';
+    const isPheonix = requestedFrameId === 'pheonix';
 
     if (!isDefault) {
       let isOwned = false;
@@ -115,6 +116,13 @@ export default async function handler(req, res) {
           userData.eagleFrame?.status === 'permanent' ||
           ownedItems['eagle'] ||
           ownedItems['item-frame-eagle']
+        );
+      } else if (isPheonix) {
+        isOwned = Boolean(
+          userData.pheonixFrame?.permanentUnlocked ||
+          userData.pheonixFrame?.status === 'permanent' ||
+          ownedItems['pheonix'] ||
+          ownedItems['item-frame-pheonix']
         );
       } else {
         // Any custom or future frame item
@@ -146,6 +154,9 @@ export default async function handler(req, res) {
       if (userData.eagleFrame) {
         updatePayload['eagleFrame.equipped'] = false;
       }
+      if (userData.pheonixFrame) {
+        updatePayload['pheonixFrame.equipped'] = false;
+      }
     } else if (isGoldenWings) {
       updatePayload.equippedFrameId = 'golden-wings';
       updatePayload.hasFrame = true;
@@ -153,6 +164,9 @@ export default async function handler(req, res) {
       updatePayload['goldenWingsFrame.equipped'] = true;
       if (userData.eagleFrame) {
         updatePayload['eagleFrame.equipped'] = false;
+      }
+      if (userData.pheonixFrame) {
+        updatePayload['pheonixFrame.equipped'] = false;
       }
     } else if (isEagle) {
       updatePayload.equippedFrameId = 'eagle';
@@ -162,12 +176,27 @@ export default async function handler(req, res) {
       if (userData.goldenWingsFrame) {
         updatePayload['goldenWingsFrame.equipped'] = false;
       }
+      if (userData.pheonixFrame) {
+        updatePayload['pheonixFrame.equipped'] = false;
+      }
+    } else if (isPheonix) {
+      updatePayload.equippedFrameId = 'pheonix';
+      updatePayload.hasFrame = true;
+      updatePayload.frameEquipped = true;
+      updatePayload['pheonixFrame.equipped'] = true;
+      if (userData.goldenWingsFrame) {
+        updatePayload['goldenWingsFrame.equipped'] = false;
+      }
+      if (userData.eagleFrame) {
+        updatePayload['eagleFrame.equipped'] = false;
+      }
     } else {
       updatePayload.equippedFrameId = requestedFrameId;
       updatePayload.hasFrame = true;
       updatePayload.frameEquipped = true;
       if (userData.goldenWingsFrame) updatePayload['goldenWingsFrame.equipped'] = false;
       if (userData.eagleFrame) updatePayload['eagleFrame.equipped'] = false;
+      if (userData.pheonixFrame) updatePayload['pheonixFrame.equipped'] = false;
     }
 
     await userRef.update(updatePayload);
