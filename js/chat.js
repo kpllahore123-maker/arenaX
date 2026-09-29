@@ -472,10 +472,22 @@ window.getEquippedFrameForUser = function(userData) {
     (userData.ownedShopItems && userData.ownedShopItems['golden-wings']) ||
     window.isGoldenWingsEquippedForUser(userData)
   );
+  const hasPheonix = !!(
+    userData.pheonixFrame?.permanentUnlocked ||
+    userData.pheonixFrame?.status === 'permanent' ||
+    userData.pheonixFrame?.equipped ||
+    userData.equippedFrameId === 'pheonix' ||
+    userData.equippedFrame === 'pheonix' ||
+    userData.frame === 'pheonix' ||
+    (userData.ownedShopItems && (userData.ownedShopItems['pheonix'] || userData.ownedShopItems['item-frame-pheonix']))
+  );
 
   // If user explicitly chose a frame
   if (userData.equippedFrameId === 'none' || userData.equippedFrameId === 'default') {
     return null;
+  }
+  if ((userData.equippedFrameId === 'pheonix' || userData.equippedFrame === 'pheonix' || userData.frame === 'pheonix') && hasPheonix) {
+    return 'pheonix';
   }
   if ((userData.equippedFrameId === 'eagle' || userData.equippedFrame === 'eagle' || userData.frame === 'eagle') && hasEagle) {
     return 'eagle';
@@ -485,15 +497,17 @@ window.getEquippedFrameForUser = function(userData) {
   }
 
   // If frame is marked equipped
+  if (userData.pheonixFrame?.equipped && hasPheonix) return 'pheonix';
   if (userData.eagleFrame?.equipped && hasEagle) return 'eagle';
   if (userData.goldenWingsFrame?.equipped && hasGoldenWings) return 'golden-wings';
 
-  if (userData.eagleFrame?.equipped === false && userData.goldenWingsFrame?.equipped === false) {
+  if (userData.eagleFrame?.equipped === false && userData.goldenWingsFrame?.equipped === false && userData.pheonixFrame?.equipped === false) {
     return null;
   }
 
-  if (hasEagle && !userData.goldenWingsFrame?.equipped) return 'eagle';
-  if (hasGoldenWings && !userData.eagleFrame?.equipped) return 'golden-wings';
+  if (hasPheonix && !userData.goldenWingsFrame?.equipped && !userData.eagleFrame?.equipped) return 'pheonix';
+  if (hasEagle && !userData.goldenWingsFrame?.equipped && !userData.pheonixFrame?.equipped) return 'eagle';
+  if (hasGoldenWings && !userData.eagleFrame?.equipped && !userData.pheonixFrame?.equipped) return 'golden-wings';
 
   return null;
 };
@@ -510,11 +524,11 @@ window.renderViewProfileAvatar = function(userData) {
 
   const equippedFrame = window.getEquippedFrameForUser ? window.getEquippedFrameForUser(userData) : (window.isGoldenWingsEquippedForUser(userData) ? 'golden-wings' : null);
 
-  if (equippedFrame === 'eagle') {
-    avWrap.className = 'relative shrink-0 z-20 has-frame-eagle';
+  if (equippedFrame === 'eagle' || equippedFrame === 'pheonix') {
+    avWrap.className = equippedFrame === 'pheonix' ? 'relative shrink-0 z-20 has-frame-eagle has-frame-pheonix' : 'relative shrink-0 z-20 has-frame-eagle';
     if (frameImg) frameImg.style.display = 'none';
     if (frameVideo) {
-      frameVideo.src = './frame3.webm';
+      frameVideo.src = equippedFrame === 'pheonix' ? './frame4.webm' : './frame3.webm';
       frameVideo.style.display = 'block';
       frameVideo.play().catch(() => {});
     }
