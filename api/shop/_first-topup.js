@@ -438,7 +438,9 @@ export async function firstTopupConfigHandler(req, res) {
 
       const body = req.body || {};
       const validPins = ["arenax2026", "arena2026", "arenaxmaster", "arenaxadmin", "admin123", "axpass2026", "master2026"];
-      const isPasscodeValid = body.passcode && validPins.includes(String(body.passcode).trim().toLowerCase());
+      const headerPasscode = req.headers && (req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'] || req.headers['x-admin-pin']);
+      const passedPasscode = body.passcode || headerPasscode;
+      const isPasscodeValid = passedPasscode && validPins.includes(String(passedPasscode).trim().toLowerCase());
       const isOwner = callerEmail && ['kpllahore123@gmail.com', 'admin@arenax.com', 'admin@arenax.gg'].includes(callerEmail.toLowerCase());
 
       if (!isPasscodeValid && !isOwner && !callerUid) {
