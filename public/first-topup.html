@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Topup Benefits</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:150px 16px 40px;font-family:"Nunito","Baloo 2",system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;
+background:radial-gradient(400px 300px at 15% 20%,#2a2f4a 0,transparent 70%),radial-gradient(400px 300px at 90% 80%,#3a2a4a 0,transparent 70%),#0b0d15}
+.stage{position:relative;display:grid;place-items:center;width:100%;max-width:380px}
+.stage>*{grid-area:1/1}
+
+/* Gift Pack button (public/giftpack.png) */
+.gift{display:block;width:170px;height:170px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 10px 18px rgba(255,60,170,.45));transition:transform .3s cubic-bezier(.3,1.5,.5,1),opacity .25s}
+.gift img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.gift:hover{transform:scale(1.07)}
+.gift:active{transform:scale(.94)}
+.gift.hide{transform:scale(.3) rotate(-14deg);opacity:0;pointer-events:none}
+.gift.pop{animation:popin .55s cubic-bezier(.3,1.5,.5,1)}
+
+/* modal open / close animation */
+.modal{position:relative;width:100%;max-width:380px;opacity:0;visibility:hidden;pointer-events:none;transform:scale(.3) translateY(30px);transform-origin:50% 50%;transition:transform .3s cubic-bezier(.5,0,.75,0),opacity .25s ease-in,visibility 0s linear .3s}
+.modal.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:transform .55s cubic-bezier(.2,1.35,.4,1),opacity .3s ease-out,visibility 0s}
+.modal.open .it{animation:itemin .5s cubic-bezier(.2,1.3,.4,1) .15s backwards}
+.modal.open .it:nth-child(2){animation-delay:.27s}
+.modal.open .cta{animation:ctain .5s cubic-bezier(.2,1.5,.4,1) .4s backwards}
+.modal.open .mascot{animation:mascotin .6s cubic-bezier(.2,1.2,.4,1) .12s backwards}
+.card{position:relative;isolation:isolate;overflow:hidden;border-radius:20px;padding:22px 20px 32px;background:linear-gradient(180deg,#17c2f3 0,#28dbd9 62%,#45e9c6 100%);box-shadow:0 20px 50px rgba(0,0,0,.55)}
+.card:before{content:"";position:absolute;left:-50%;top:-30%;width:200%;height:200%;background:repeating-conic-gradient(from 0deg at 50% 32%,rgba(255,255,255,.13) 0 7deg,transparent 7deg 14deg);animation:spin 70s linear infinite}
+.card>*{position:relative}
+.close{position:absolute;top:-46px;right:12px;width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25);cursor:pointer;display:grid;place-items:center}
+.close:after{content:"";position:absolute;left:50%;top:100%;width:1.5px;height:12px;background:rgba(255,255,255,.75)}
+.close:hover{background:rgba(255,255,255,.2)}
+.close svg{width:14px;height:14px}
+.hd{min-height:70px;padding-top:6px}
+h1{font-size:37px;line-height:1.04;font-weight:900;letter-spacing:.2px;text-shadow:0 3px 0 rgba(0,110,160,.35),0 6px 12px rgba(0,80,130,.25)}
+.worth{margin-top:8px;font-size:16px;font-weight:700;text-shadow:0 1px 3px rgba(0,80,130,.35)}
+
+/* girl character mascot (public/tp.png) */
+.mascot{position:absolute;top:-104px;right:4px;width:190px;height:240px;overflow:visible;z-index:6}
+.mascot .char{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 14px 10px rgba(0,40,70,.4))}
+
+.panel{margin-top:6px;padding:52px 18px 26px;border-radius:16px;border:3px solid #6f7cf2;background:linear-gradient(180deg,#e2f9ff,#a6ecf8);box-shadow:0 6px 16px rgba(20,80,140,.25)}
+.panel:before{content:"";position:absolute;inset:-4px;border:2px solid rgba(255,255,255,.9);border-radius:14px;transform:rotate(-1.8deg);z-index:-1}
+.panel:after{content:"";position:absolute;inset:9px;border:2px dashed rgba(111,124,242,.6);border-radius:12px;pointer-events:none}
+.tab{position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:88%;height:38px;display:grid;place-items:center;font-size:13.5px;font-weight:800;text-shadow:0 1px 2px rgba(20,80,140,.4);
+background:linear-gradient(#59c8ff,#8de4ff);clip-path:polygon(0 0,100% 0,94% 100%,6% 100%);white-space:nowrap}
+.grid{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:26px 34px;padding:0 6px}
+.it{position:relative;isolation:isolate;overflow:hidden;height:118px;border-radius:12px;background:linear-gradient(180deg,#49dcf0,#0f9fc2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),inset 0 -10px 16px rgba(0,40,60,.25),0 4px 10px rgba(10,60,90,.35);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:10px;transition:transform .2s}
+.it:before{content:"";position:absolute;left:50%;top:38%;width:80px;height:80px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);z-index:0}
+.it:after{content:"";position:absolute;top:-40%;bottom:-40%;left:-60%;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:shine 4.5s ease-in-out infinite}
+.it:nth-child(2):after{animation-delay:1.6s}
+.it:hover{transform:translateY(-3px)}
+.it .ic{position:relative;z-index:1;margin-bottom:6px;filter:drop-shadow(0 3px 4px rgba(0,60,90,.4))}
+.it svg{width:78px;height:62px;overflow:visible}
+.it span{position:relative;z-index:1;font-size:13px;font-weight:800;line-height:1.1;text-align:center;text-shadow:0 1px 2px rgba(0,60,90,.4)}
+.it span.amt{position:absolute;top:7px;left:0;right:0}
+.it svg.coin{margin-bottom:4px}
+.it span.gold{font-size:15px;font-weight:900;letter-spacing:.6px;color:transparent;background:linear-gradient(100deg,#b8740a 0%,#ffd84a 25%,#fff8c8 50%,#ffd84a 75%,#b8740a 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;text-shadow:none;filter:drop-shadow(0 1px 1px rgba(90,50,0,.6));animation:gshine 2.4s linear infinite}
+@keyframes gshine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.it video{position:relative;z-index:1;width:84px;height:68px;margin-bottom:4px;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,60,90,.4))}
+.it em{position:absolute;top:-9px;right:-8px;z-index:2;font-style:normal;font-size:11.5px;font-weight:900;color:#e59300;background:linear-gradient(#fffbe0,#fff0a8);padding:2px 10px;border-radius:999px;box-shadow:0 2px 0 rgba(200,140,0,.35),0 0 10px rgba(255,220,100,.7)}
+.bub{width:76px;padding:5px 0;margin-bottom:8px;border-radius:5px;background:linear-gradient(#ffc0dd,#ff9ac8);font-size:12px!important;font-weight:800!important;color:#fff;text-align:center;box-shadow:0 2px 0 #e56aa5}
+.cta{position:relative;display:block;margin:-18px auto 0;width:236px;height:60px;border:0;border-radius:999px;cursor:pointer;overflow:hidden;
+font:900 27px "Nunito","Baloo 2",system-ui,sans-serif;letter-spacing:1.2px;color:#fff;text-shadow:0 2px 0 #e58a00,1px 0 0 #e58a00,-1px 0 0 #e58a00,0 -1px 0 #e58a00;
+background:linear-gradient(#fff0a0,#ffc928 50%,#ffab1a);box-shadow:inset 0 3px 0 rgba(255,255,255,.7),inset 0 -5px 0 rgba(220,120,0,.35),0 0 0 4px rgba(255,255,255,.4),0 8px 18px rgba(0,80,130,.35),0 0 24px rgba(255,220,80,.7);transition:transform .15s}
+.cta:hover{transform:scale(1.04)}.cta:active{transform:scale(.97)}
+.cta:after{content:"";position:absolute;top:-20%;bottom:-20%;left:-40%;width:24%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-20deg);animation:shine 3.4s ease-in-out infinite}
+.ctaw{position:relative}
+.sp{position:absolute;background:#fff;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:tw 2s ease-in-out infinite;z-index:2}
+@keyframes popin{from{transform:scale(.3) rotate(-14deg);opacity:0}}
+@keyframes itemin{from{opacity:0;transform:translateY(18px) scale(.85)}}
+@keyframes ctain{from{opacity:0;transform:scale(.6)}}
+@keyframes mascotin{from{opacity:0;transform:translateX(40px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shine{0%,50%{left:-40%}100%{left:140%}}
+@keyframes tw{0%,100%{opacity:.2;transform:scale(.5)}50%{opacity:1;transform:scale(1.1)}}
+@media(max-width:360px){h1{font-size:31px}.mascot{width:155px;height:196px;top:-84px;right:0}.hd{min-height:60px}.grid{gap:24px 22px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="cgd" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#ffb800"/></radialGradient>
+  <symbol id="coin" viewBox="0 0 1024 1024"><circle cx="512" cy="512" r="500" fill="#e59a00"/><circle cx="512" cy="512" r="455" fill="#ffb800"/><circle cx="512" cy="512" r="400" fill="url(#cgd)"/>
+    <g transform="translate(512 512) scale(.55) translate(-512 -512)" stroke="#ff8a00" stroke-width="124" stroke-linecap="round"><line x1="350" y1="263" x2="495" y2="408"/><line x1="760" y1="350" x2="615" y2="495"/><line x1="263" y1="673" x2="408" y2="528"/><line x1="528" y1="615" x2="673" y2="760"/></g></symbol>
+</defs></svg>
+
+<div class="stage">
+<button class="gift" id="gift" aria-label="Open First Topup"><img src="/giftpack.png" alt="Gift Pack"></button>
+
+<div class="modal" id="modal" role="dialog" aria-labelledby="ttl" aria-hidden="true">
+  <button class="close" id="close" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
+  <div class="card">
+    <span class="sp" style="left:14px;top:150px;width:9px;height:9px"></span>
+    <span class="sp" style="left:190px;top:30px;width:7px;height:7px;animation-delay:.9s"></span>
+    <span class="sp" style="right:22px;top:210px;width:8px;height:8px;animation-delay:1.4s"></span>
+
+    <div class="hd">
+      <h1 id="ttl">First Topup<br>Benefits</h1>
+      <p class="worth" id="worth">Worth 500 AX Coins</p>
+    </div>
+
+    <div class="panel">
+      <div class="tab" id="hint">Topup 100 AX Coins or more</div>
+      <div class="grid" id="grid">
+        <div class="it">
+          <span class="amt">150</span>
+          <svg class="coin" viewBox="0 0 1024 1024"><use href="#coin"/></svg>
+          <span class="gold">150 Coins</span>
+        </div>
+        <div class="it">
+          <em>Mythic</em>
+          <video src="/frame4.webm" poster="/frame4.png" autoplay loop muted playsinline></video>
+          <span>Pheonix Frame</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctaw">
+      <button class="cta" id="cta">GET IT</button>
+    </div>
+  </div>
+
+  <div class="mascot">
+    <img src="/tp.png" class="char" alt="Mascot">
+  </div>
+</div>
+</div>
+
+<script>
+const gift = document.getElementById('gift');
+const modal = document.getElementById('modal');
+const close = document.getElementById('close');
+const cta = document.getElementById('cta');
+
+function openModal() {
+  gift.classList.add('hide');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeModal() {
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  gift.classList.remove('hide');
+  gift.classList.add('pop');
+}
+
+gift.addEventListener('click', openModal);
+close.addEventListener('click', closeModal);
+cta.addEventListener('click', () => {
+  if (window.opener || window.parent !== window) {
+    window.parent.postMessage({ type: 'FIRST_TOPUP_CTA' }, '*');
+  } else {
+    window.location.href = '/#Wallet';
+  }
+});
+</script>
+</body>
+</html>
