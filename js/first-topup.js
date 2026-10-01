@@ -149,58 +149,62 @@
       ? window.getActiveUserProfile()
       : (window.userProfile || window.currentUser);
 
-    // Requirement text
+    const minAX = ftOfferConfig.minTopup || 100;
+    const bonusAX = ftOfferConfig.bonusReward || 150;
+    const frameName = ftOfferConfig.rewardFrame || 'Pheonix';
+
+    // Requirement text in top tab
+    const hintEl = document.getElementById('hint');
+    if (hintEl) {
+      hintEl.textContent = `Topup ${minAX} AX Coins or more`;
+    }
     const reqTextEl = document.getElementById('ftModalRequirementText');
     if (reqTextEl) {
-      const minAX = ftOfferConfig.minTopup || 100;
       reqTextEl.innerHTML = `Top up <span class="text-amber-400 font-black">${minAX} AX Coins</span> or more`;
     }
 
-    // Avatar preview inside Phoenix Frame card
-    const previewAvEl = document.getElementById('ftPreviewAvatar');
-    if (previewAvEl) {
-      const avUrl = profile?.av || profile?.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=ax';
-      previewAvEl.src = avUrl;
-    }
+    // Dynamic reward labels if present
+    const bonusAmtEl = document.getElementById('ftBonusCoinsAmt');
+    if (bonusAmtEl) bonusAmtEl.textContent = String(bonusAX);
+
+    const bonusLabelEl = document.getElementById('ftBonusCoinsLabel');
+    if (bonusLabelEl) bonusLabelEl.textContent = `${bonusAX} Coins`;
+
+    const frameNameLabel = document.getElementById('ftFrameNameLabel');
+    if (frameNameLabel) frameNameLabel.textContent = `${frameName} Frame`;
 
     // Action button & Hint Box
-    const actionBtn = document.getElementById('btnFirstTopupAction');
-    const actionText = document.getElementById('ftActionBtnText');
-    const actionIcon = document.getElementById('ftActionBtnIcon');
+    const actionBtn = document.getElementById('btnFirstTopupAction') || document.getElementById('cta');
     const statusHint = document.getElementById('ftStatusHintText');
     const errBox = document.getElementById('ftErrorMsg');
 
-    if (errBox) errBox.classList.add('hidden');
+    if (errBox && !isFirstTopupClaiming) errBox.classList.add('hidden');
 
-    if (!actionBtn || !actionText || !actionIcon) return;
+    if (!actionBtn) return;
 
     if (ftUserStatus.hasClaimed) {
       // ── STATE 3: ALREADY CLAIMED ──
       actionBtn.disabled = true;
-      actionBtn.className = "w-full py-3 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black text-sm tracking-wide uppercase cursor-not-allowed flex items-center justify-center gap-2 shadow-xs";
-      actionText.textContent = "CLAIMED";
-      actionIcon.className = "fas fa-check text-xs";
+      actionBtn.className = "cta claimed";
+      actionBtn.textContent = "CLAIMED";
       if (statusHint) {
-        statusHint.innerHTML = `<i class="fas fa-check-circle text-emerald-400 mt-0.5 shrink-0 text-xs"></i> <span>Offer claimed! <strong>Pheonix Frame</strong> is equipped and permanently unlocked in Customize Profile.</span>`;
+        statusHint.innerHTML = `<span class="text-emerald-300 font-bold">✓ Offer Claimed!</span> Phoenix Frame is permanently equipped in Customize Profile.`;
       }
     } else if (ftUserStatus.eligibleToClaim || ftUserStatus.hasApprovedTopup) {
       // ── STATE 2: QUALIFYING TOP-UP APPROVED -> CLAIM ──
       actionBtn.disabled = false;
-      actionBtn.className = "w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm tracking-wide uppercase transition-all duration-200 shadow-[0_4px_24px_rgba(245,158,11,0.5)] active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse";
-      actionText.textContent = "CLAIM";
-      actionIcon.className = "fas fa-gift text-xs";
+      actionBtn.className = "cta claim-ready";
+      actionBtn.textContent = "CLAIM";
       if (statusHint) {
-        statusHint.innerHTML = `<i class="fas fa-sparkles text-amber-400 mt-0.5 shrink-0 text-xs"></i> <span>Top-up of <strong>${ftUserStatus.qualifyingTopupAmount || 100}+ AX</strong> verified! Click <strong>CLAIM</strong> now to receive your rewards!</span>`;
+        statusHint.innerHTML = `<span class="text-emerald-300 font-black">✓ Approved top-up (${ftUserStatus.qualifyingTopupAmount || minAX}+ AX) verified!</span> Click <strong>CLAIM</strong> now to receive your rewards!`;
       }
     } else {
       // ── STATE 1: NOT QUALIFIED YET -> GET IT ──
       actionBtn.disabled = false;
-      actionBtn.className = "w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm tracking-wide uppercase transition-all duration-200 shadow-[0_4px_20px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer flex items-center justify-center gap-2";
-      actionText.textContent = "GET IT";
-      actionIcon.className = "fas fa-arrow-right text-xs";
+      actionBtn.className = "cta";
+      actionBtn.textContent = "GET IT";
       if (statusHint) {
-        const minAX = ftOfferConfig.minTopup || 100;
-        statusHint.innerHTML = `<i class="fas fa-info-circle text-amber-400 mt-0.5 shrink-0 text-xs"></i> <span>Deposit <strong>${minAX}+ AX Coins</strong> in Wallet. Once admin approves your top-up, click <strong>CLAIM</strong>!</span>`;
+        statusHint.innerHTML = `<span>Deposit <strong>${minAX}+ AX Coins</strong> in Wallet. Once approved, click <strong>CLAIM</strong>!</span>`;
       }
     }
   }
@@ -210,7 +214,6 @@
    */
   window.openFirstTopupModal = function () {
     const modal = document.getElementById('mFirstTopupModal');
-    const card = document.getElementById('mFirstTopupCard');
     if (!modal) return;
 
     // Reset error box
@@ -224,10 +227,10 @@
     fetchFirstTopupStatus(true);
 
     modal.classList.remove('hidden');
-    if (card) {
-      card.classList.remove('first-topup-modal-exit');
-      card.classList.add('first-topup-modal-enter');
-    }
+    // Force reflow for smooth animation
+    void modal.offsetWidth;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
 
     // Start video playback
     const video = document.getElementById('ftFrameVideo');
@@ -242,17 +245,10 @@
    */
   window.closeFirstTopupModal = function () {
     const modal = document.getElementById('mFirstTopupModal');
-    const card = document.getElementById('mFirstTopupCard');
     if (!modal) return;
 
-    if (card) {
-      card.classList.remove('first-topup-modal-enter');
-      card.classList.add('first-topup-modal-exit');
-    }
-
-    setTimeout(() => {
-      modal.classList.add('hidden');
-    }, 200);
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
   };
 
   /**
