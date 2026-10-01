@@ -90,6 +90,13 @@ export async function getFirebaseAdmin() {
     return { app: cachedApp, db: cachedDb, auth: cachedAuth, error: null };
   }
 
+  if (typeof globalThis !== 'undefined' && globalThis.__ARENAX_ADMIN_DB__) {
+    cachedDb = globalThis.__ARENAX_ADMIN_DB__;
+    cachedAuth = globalThis.__ARENAX_ADMIN_AUTH__;
+    cachedApp = globalThis.__ARENAX_ADMIN_APP__;
+    return { app: cachedApp, db: cachedDb, auth: cachedAuth, error: null };
+  }
+
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = cleanKey(process.env.FIREBASE_PRIVATE_KEY);
   const projectId = process.env.FIREBASE_PROJECT_ID || 'arenax-c1586';
