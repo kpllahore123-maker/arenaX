@@ -33,6 +33,9 @@ try {
       : getAdminApps()[0];
     adminDb = getAdminFirestore(adminApp);
     adminAuth = getAdminAuth(adminApp);
+    (globalThis as any).__ARENAX_ADMIN_DB__ = adminDb;
+    (globalThis as any).__ARENAX_ADMIN_AUTH__ = adminAuth;
+    (globalThis as any).__ARENAX_ADMIN_APP__ = adminApp;
     console.log("[Firebase Admin] Firestore and Auth initialized successfully for project:", projectId);
 
     // Ensure app_config/version exists with the latest GitHub releases download link
@@ -1376,6 +1379,47 @@ Generate personalized real-time advice strictly as a JSON object matching this s
         error: "SERVER_ERROR",
         message: err.message || "Failed to equip avatar frame."
       });
+    }
+  });
+
+  // ── FIRST TOPUP BENEFITS SERVER RELAY ROUTES ──
+  app.all(["/api/shop/first-topup-status", "/api/first-topup/status"], async (req, res) => {
+    try {
+      const { firstTopupStatusHandler } = await import("./api/shop/_first-topup.js");
+      return await firstTopupStatusHandler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] first-topup-status error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal server error" });
+    }
+  });
+
+  app.post(["/api/shop/first-topup-claim", "/api/first-topup/claim"], async (req, res) => {
+    try {
+      const { firstTopupClaimHandler } = await import("./api/shop/_first-topup.js");
+      return await firstTopupClaimHandler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] first-topup-claim error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal server error" });
+    }
+  });
+
+  app.all(["/api/shop/first-topup-config", "/api/first-topup/config"], async (req, res) => {
+    try {
+      const { firstTopupConfigHandler } = await import("./api/shop/_first-topup.js");
+      return await firstTopupConfigHandler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] first-topup-config error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal server error" });
+    }
+  });
+
+  app.all("/api/shop", async (req, res) => {
+    try {
+      const { default: shopHandler } = await import("./api/shop/index.js");
+      return await shopHandler(req, res);
+    } catch (err: any) {
+      console.error("[Server Relay] /api/shop error:", err);
+      return res.status(500).json({ success: false, error: err?.message || "Internal server error" });
     }
   });
 
