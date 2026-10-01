@@ -1504,6 +1504,15 @@
           <i class="fas fa-sliders text-teal-400"></i>
           <span>Settings</span>
         </button>
+
+        <button
+          id="tabBtn-first-topup"
+          onclick="switchAdminTab('first-topup')"
+          class="px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer bg-[#141828] text-slate-400 hover:text-white border border-bdr"
+        >
+          <i class="fas fa-gift text-amber-400"></i>
+          <span>First Topup Offer</span>
+        </button>
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -2237,6 +2246,246 @@
           </div>
         </div>
 
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- TAB: FIRST TOPUP OFFER MANAGEMENT -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <section id="tabContent-first-topup" class="hidden space-y-6">
+        <div class="max-w-4xl mx-auto bg-cardBg border border-bdr rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          
+          <!-- Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bdr pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
+                <i class="fas fa-gift"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                  First Topup Offer Management
+                  <span id="ftAdminStatusBadge" class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
+                </h3>
+                <p class="text-xs text-slate-400">Configure target audience, duration timing, and rewards for the First Topup promotion</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onclick="loadFirstTopupAdminConfig()"
+                class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                <i class="fas fa-sync-alt"></i> Reload Config
+              </button>
+            </div>
+          </div>
+
+          <!-- Offer Configuration Form -->
+          <div class="space-y-5">
+            <!-- 1. Active State -->
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-white flex items-center gap-2">
+                  <i class="fas fa-power-off text-amber-400"></i> Offer Active Status
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Toggle to enable or disable the First Topup offer across ArenaX</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="ftAdminActive" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+
+            <!-- 2. Target Audience (All Users vs Specific User) -->
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl space-y-3">
+              <div class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fas fa-users text-sky-400"></i> Target Audience
+              </div>
+              <p class="text-[11px] text-slate-400">Choose whether all ArenaX players can claim the offer or target a specific user account</p>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label class="flex items-center gap-2.5 p-3 rounded-xl border border-bdr bg-darkBg cursor-pointer hover:border-amber-400/50 transition">
+                  <input type="radio" name="ftAdminAudience" value="all" id="ftAudienceAll" checked onchange="toggleFtAdminAudience()" class="text-amber-500 focus:ring-amber-400" />
+                  <div>
+                    <div class="text-xs font-bold text-white">All Users</div>
+                    <div class="text-[10px] text-slate-400">Every eligible player can claim after 100+ AX top-up</div>
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-2.5 p-3 rounded-xl border border-bdr bg-darkBg cursor-pointer hover:border-amber-400/50 transition">
+                  <input type="radio" name="ftAdminAudience" value="specific" id="ftAudienceSpecific" onchange="toggleFtAdminAudience()" class="text-amber-500 focus:ring-amber-400" />
+                  <div>
+                    <div class="text-xs font-bold text-white">Specific User</div>
+                    <div class="text-[10px] text-slate-400">Only the selected ArenaX user can view and claim</div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Specific User Search & Selector (hidden by default) -->
+              <div id="ftSpecificUserSection" class="hidden pt-2 space-y-2.5 border-t border-white/5">
+                <label class="text-[11px] font-semibold text-slate-300">Search and Select Existing ArenaX User:</label>
+                <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                  <input
+                    type="text"
+                    id="ftAdminUserSearchInput"
+                    oninput="handleFtUserSearch(this.value)"
+                    placeholder="Search by player name, @handle or UID..."
+                    class="w-full bg-darkBg border border-bdr rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                  <!-- Search Results Dropdown -->
+                  <div id="ftAdminUserSearchResults" class="hidden absolute left-0 right-0 top-full mt-1 bg-[#141828] border border-bdr rounded-xl shadow-2xl max-h-48 overflow-y-auto z-30 divide-y divide-white/5"></div>
+                </div>
+
+                <!-- Selected User Card -->
+                <div id="ftSelectedUserCard" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <img id="ftSelectedUserAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=u" class="w-9 h-9 rounded-full object-cover border border-amber-400/50" />
+                    <div class="min-w-0">
+                      <div id="ftSelectedUserName" class="text-xs font-bold text-white truncate">Player Name</div>
+                      <div class="text-[10px] text-amber-300 font-mono"><span id="ftSelectedUserHandle">@handle</span> • UID: <span id="ftSelectedUserUid">...</span></div>
+                    </div>
+                  </div>
+                  <button type="button" onclick="clearFtSelectedUser()" class="px-2 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-[10px] font-bold transition cursor-pointer">
+                    Change
+                  </button>
+                </div>
+
+                <input type="hidden" id="ftAdminTargetUid" value="" />
+                <input type="hidden" id="ftAdminTargetUserName" value="" />
+                <input type="hidden" id="ftAdminTargetUserHandle" value="" />
+              </div>
+            </div>
+
+            <!-- 3. Offer Timing (Start/End or Permanent) -->
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-bold text-white flex items-center gap-2">
+                  <i class="fas fa-clock text-amber-400"></i> Offer Timing & Duration
+                </div>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="ftAdminHasExpiration" onchange="toggleFtAdminTiming()" class="text-amber-500 focus:ring-amber-400 rounded" />
+                  <span class="text-[11px] font-semibold">Enable Schedule Expiration</span>
+                </label>
+              </div>
+              <p class="text-[11px] text-slate-400">If unchecked, the offer operates as permanent/active without expiration.</p>
+
+              <div id="ftAdminTimingFields" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 hidden">
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">Start Date & Time:</label>
+                  <input
+                    type="datetime-local"
+                    id="ftAdminStartDate"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white text-xs mt-1 outline-none focus:border-amber-400 font-mono"
+                  />
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">End Date & Time:</label>
+                  <input
+                    type="datetime-local"
+                    id="ftAdminEndDate"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white text-xs mt-1 outline-none focus:border-amber-400 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Offer Configuration (Coins & Frame) -->
+            <div class="p-4 bg-[#0d101a] border border-bdr rounded-2xl space-y-3">
+              <div class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fas fa-coins text-yellow-400"></i> Rewards Configuration
+              </div>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">Minimum Required Topup (AX Coins):</label>
+                  <input
+                    type="number"
+                    id="ftAdminMinTopup"
+                    value="100"
+                    min="1"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white text-xs mt-1 outline-none focus:border-amber-400 font-mono font-bold"
+                  />
+                  <span class="text-[9px] text-slate-500">Player must top up at least this amount in an approved deposit</span>
+                </div>
+
+                <div>
+                  <label class="text-[11px] text-slate-400 font-semibold">Bonus Reward (AX Coins):</label>
+                  <input
+                    type="number"
+                    id="ftAdminBonusReward"
+                    value="150"
+                    min="1"
+                    class="w-full bg-darkBg border border-bdr rounded-xl px-3 py-2 text-white text-xs mt-1 outline-none focus:border-amber-400 font-mono font-bold text-amber-400"
+                  />
+                  <span class="text-[9px] text-slate-500">Credited to player wallet upon claiming</span>
+                </div>
+              </div>
+
+              <!-- Frame Item Details with Live WebM Video Preview -->
+              <div class="p-3 bg-darkBg border border-bdr rounded-xl flex items-center justify-between gap-4 mt-2">
+                <div class="space-y-1 min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span class="text-amber-400">Reward Frame:</span> Pheonix
+                  </div>
+                  <div class="text-[10px] text-slate-400 font-mono">Asset: public/frame4.webm</div>
+                  <div class="text-[9px] text-emerald-400 font-bold">FREE — First Topup Reward (Permanent Ownership)</div>
+                </div>
+
+                <!-- WebM Video Preview Tile -->
+                <div class="relative w-14 h-14 shrink-0 rounded-xl bg-slate-900 border border-amber-500/30 flex items-center justify-center overflow-hidden">
+                  <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ax" class="absolute left-[22%] top-[21.5%] w-[56%] h-[54%] rounded-full object-cover shadow-sm bg-slate-800" />
+                  <video src="./frame4.webm" poster="./frame4.png" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow"></video>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Button -->
+            <button
+              type="button"
+              id="btnSaveFirstTopupConfig"
+              onclick="saveFirstTopupAdminConfig()"
+              class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-save"></i> Save First Topup Offer Settings
+            </button>
+          </div>
+
+          <!-- Claims Ledger Section -->
+          <div class="pt-6 border-t border-bdr space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-xs font-extrabold text-white flex items-center gap-2">
+                  <i class="fas fa-list-check text-cyan-400"></i> First Topup Claims Audit Ledger
+                </h4>
+                <p class="text-[10px] text-slate-400">Real-time log of users who completed qualifying top-ups and claimed rewards</p>
+              </div>
+              <button type="button" onclick="loadFirstTopupClaims()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1">
+                <i class="fas fa-sync-alt"></i> Refresh Ledger
+              </button>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-bdr">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#0b0e18] text-slate-400 font-semibold uppercase text-[10px] border-b border-bdr">
+                  <tr>
+                    <th class="py-2.5 px-3">Player</th>
+                    <th class="py-2.5 px-3">User ID</th>
+                    <th class="py-2.5 px-3">Qualifying Deposit</th>
+                    <th class="py-2.5 px-3">Reward Granted</th>
+                    <th class="py-2.5 px-3">Claimed Date</th>
+                  </tr>
+                </thead>
+                <tbody id="ftAdminClaimsTableBody" class="divide-y divide-white/5 text-slate-200">
+                  <tr>
+                    <td colspan="5" class="py-6 text-center text-slate-500 text-xs">Loading claims ledger...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
       </section>
 
       <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -3532,7 +3781,7 @@
     // 3. Tab Switching
     function switchAdminTab(tabName) {
       activeTab = tabName;
-      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'creator-requests', 'broadcast', 'bot', 'administrators', 'audit-logs', 'settings'];
+      const tabs = ['tournaments', 'deposits', 'withdrawals', 'users', 'profile-reports', 'reports', 'creator-requests', 'broadcast', 'bot', 'administrators', 'audit-logs', 'settings', 'first-topup'];
       
       tabs.forEach((t) => {
         const btn = $(`tabBtn-${t}`);
@@ -3556,6 +3805,9 @@
         loadAdminRoster();
       } else if (tabName === 'audit-logs') {
         loadAuditLogs();
+      } else if (tabName === 'first-topup') {
+        loadFirstTopupAdminConfig();
+        loadFirstTopupClaims();
       }
     }
 
@@ -5415,6 +5667,379 @@
 
     window.loadApkVersionConfig = loadApkVersionConfig;
     window.saveApkVersionConfig = saveApkVersionConfig;
+
+    // ── FIRST TOPUP OFFER ADMINISTRATION ──
+    async function loadFirstTopupAdminConfig() {
+      try {
+        const db = window.fbDb || window.db;
+        let config = null;
+
+        // Try API first
+        try {
+          const authUser = window.fbAuth?.currentUser || window.currentAuthUser;
+          let idToken = '';
+          if (authUser && typeof authUser.getIdToken === 'function') {
+            idToken = await authUser.getIdToken().catch(() => '');
+          }
+          const passcode = localStorage.getItem('ax_admin_passcode') || 'arenax2026';
+          const headers = { 'x-admin-passcode': passcode };
+          if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+          const res = await fetch('/api/shop/first-topup-config', { method: 'GET', headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && data.config) {
+              config = data.config;
+            }
+          }
+        } catch (_) {}
+
+        // Fallback to direct Firestore getDoc
+        if (!config && db) {
+          const { getDoc, doc } = window.fsTools;
+          const snap = await getDoc(doc(db, 'app_config', 'first_topup'));
+          if (snap.exists()) {
+            config = snap.data();
+          }
+        }
+
+        if (!config) {
+          config = {
+            active: true,
+            targetAudience: 'all',
+            targetUid: '',
+            targetUserName: '',
+            targetUserHandle: '',
+            minTopup: 100,
+            bonusReward: 150,
+            hasExpiration: false,
+            startDate: null,
+            endDate: null
+          };
+        }
+
+        // Populate Form
+        if ($('ftAdminActive')) $('ftAdminActive').checked = config.active !== false;
+        
+        // Status Badge
+        const badge = $('ftAdminStatusBadge');
+        if (badge) {
+          if (config.active !== false) {
+            badge.textContent = 'Active';
+            badge.className = 'text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          } else {
+            badge.textContent = 'Inactive';
+            badge.className = 'text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30';
+          }
+        }
+
+        // Audience
+        if (config.targetAudience === 'specific') {
+          if ($('ftAudienceSpecific')) $('ftAudienceSpecific').checked = true;
+          if ($('ftSpecificUserSection')) $('ftSpecificUserSection').classList.remove('hidden');
+          if (config.targetUid) {
+            setFtTargetUserUI(config.targetUid, config.targetUserName || 'User', config.targetUserHandle || '');
+          }
+        } else {
+          if ($('ftAudienceAll')) $('ftAudienceAll').checked = true;
+          if ($('ftSpecificUserSection')) $('ftSpecificUserSection').classList.add('hidden');
+          clearFtSelectedUser();
+        }
+
+        // Timing
+        if ($('ftAdminHasExpiration')) {
+          $('ftAdminHasExpiration').checked = !!config.hasExpiration;
+          toggleFtAdminTiming();
+        }
+        if ($('ftAdminStartDate')) $('ftAdminStartDate').value = config.startDate ? config.startDate.slice(0, 16) : '';
+        if ($('ftAdminEndDate')) $('ftAdminEndDate').value = config.endDate ? config.endDate.slice(0, 16) : '';
+
+        // Rewards
+        if ($('ftAdminMinTopup')) $('ftAdminMinTopup').value = config.minTopup || 100;
+        if ($('ftAdminBonusReward')) $('ftAdminBonusReward').value = config.bonusReward || 150;
+
+        showAdminToast("✅ Config Loaded", "First Topup settings loaded from server.");
+      } catch (err) {
+        console.error("Error loading First Topup config:", err);
+        showAdminToast("❌ Load Failed", err.message, "error");
+      }
+    }
+
+    function toggleFtAdminAudience() {
+      const isSpecific = $('ftAudienceSpecific')?.checked;
+      const section = $('ftSpecificUserSection');
+      if (section) {
+        if (isSpecific) section.classList.remove('hidden');
+        else section.classList.add('hidden');
+      }
+    }
+
+    function toggleFtAdminTiming() {
+      const hasExp = $('ftAdminHasExpiration')?.checked;
+      const fields = $('ftAdminTimingFields');
+      if (fields) {
+        if (hasExp) fields.classList.remove('hidden');
+        else fields.classList.add('hidden');
+      }
+    }
+
+    function handleFtUserSearch(query) {
+      const resultsEl = $('ftAdminUserSearchResults');
+      if (!resultsEl) return;
+      const q = (query || '').trim().toLowerCase();
+      if (!q || q.length < 2) {
+        resultsEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+        return;
+      }
+
+      // Search in rawUsers array
+      const matches = (rawUsers || []).filter(u => {
+        const name = (u.name || '').toLowerCase();
+        const handle = (u.handle || '').toLowerCase();
+        const uid = (u.uid || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        return name.includes(q) || handle.includes(q) || uid.includes(q) || email.includes(q);
+      }).slice(0, 8);
+
+      if (matches.length === 0) {
+        resultsEl.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">No ArenaX players found matching "${q}"</div>`;
+        resultsEl.classList.remove('hidden');
+        return;
+      }
+
+      resultsEl.innerHTML = matches.map(u => `
+        <div onclick='selectFtTargetUser(${JSON.stringify({ uid: u.uid, name: u.name, handle: u.handle, av: u.av || u.avatar || "" }).replace(/'/g, "&apos;")})' class="p-2.5 flex items-center gap-2.5 hover:bg-white/5 cursor-pointer transition">
+          <img src="${u.av || u.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + u.uid}" class="w-8 h-8 rounded-full object-cover border border-bdr" />
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-white truncate">${u.name || 'Unnamed'}</div>
+            <div class="text-[10px] text-slate-400 font-mono truncate">@${u.handle || 'player'} • UID: ${u.uid}</div>
+          </div>
+        </div>
+      `).join('');
+      resultsEl.classList.remove('hidden');
+    }
+
+    function selectFtTargetUser(user) {
+      if (!user || !user.uid) return;
+      setFtTargetUserUI(user.uid, user.name, user.handle, user.av);
+      const resultsEl = $('ftAdminUserSearchResults');
+      if (resultsEl) resultsEl.classList.add('hidden');
+      if ($('ftAdminUserSearchInput')) $('ftAdminUserSearchInput').value = '';
+    }
+
+    function setFtTargetUserUI(uid, name, handle, av) {
+      if ($('ftAdminTargetUid')) $('ftAdminTargetUid').value = uid;
+      if ($('ftAdminTargetUserName')) $('ftAdminTargetUserName').value = name || '';
+      if ($('ftAdminTargetUserHandle')) $('ftAdminTargetUserHandle').value = handle || '';
+
+      const card = $('ftSelectedUserCard');
+      if (card) {
+        card.classList.remove('hidden');
+        if ($('ftSelectedUserName')) $('ftSelectedUserName').textContent = name || uid;
+        if ($('ftSelectedUserHandle')) $('ftSelectedUserHandle').textContent = handle ? `@${handle}` : '';
+        if ($('ftSelectedUserUid')) $('ftSelectedUserUid').textContent = uid;
+        if ($('ftSelectedUserAv')) $('ftSelectedUserAv').src = av || `https://api.dicebear.com/7.x/bottts/svg?seed=${uid}`;
+      }
+    }
+
+    function clearFtSelectedUser() {
+      if ($('ftAdminTargetUid')) $('ftAdminTargetUid').value = '';
+      if ($('ftAdminTargetUserName')) $('ftAdminTargetUserName').value = '';
+      if ($('ftAdminTargetUserHandle')) $('ftAdminTargetUserHandle').value = '';
+      if ($('ftSelectedUserCard')) $('ftSelectedUserCard').classList.add('hidden');
+    }
+
+    async function saveFirstTopupAdminConfig() {
+      const saveBtn = $('btnSaveFirstTopupConfig');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Settings...';
+      }
+
+      try {
+        const active = !!$('ftAdminActive')?.checked;
+        const targetAudience = $('ftAudienceSpecific')?.checked ? 'specific' : 'all';
+        const targetUid = ($('ftAdminTargetUid')?.value || '').trim();
+        const targetUserName = ($('ftAdminTargetUserName')?.value || '').trim();
+        const targetUserHandle = ($('ftAdminTargetUserHandle')?.value || '').trim();
+        const hasExpiration = !!$('ftAdminHasExpiration')?.checked;
+        const startDate = ($('ftAdminStartDate')?.value || '').trim() || null;
+        const endDate = ($('ftAdminEndDate')?.value || '').trim() || null;
+        const minTopup = Math.max(1, Number($('ftAdminMinTopup')?.value || 100));
+        const bonusReward = Math.max(1, Number($('ftAdminBonusReward')?.value || 150));
+
+        if (targetAudience === 'specific') {
+          if (!targetUid) {
+            alert('Please search and select a registered ArenaX user for specific user targeting!');
+            return;
+          }
+          // Verify user exists in rawUsers or database
+          const userExists = (rawUsers || []).some(u => u.uid === targetUid);
+          if (!userExists && rawUsers.length > 0) {
+            alert('Target user does not exist in ArenaX registered accounts!');
+            return;
+          }
+        }
+
+        const payload = {
+          active,
+          targetAudience,
+          targetUid: targetAudience === 'specific' ? targetUid : '',
+          targetUserName: targetAudience === 'specific' ? targetUserName : '',
+          targetUserHandle: targetAudience === 'specific' ? targetUserHandle : '',
+          hasExpiration,
+          startDate,
+          endDate,
+          minTopup,
+          bonusReward,
+          rewardFrame: 'Pheonix',
+          frameAsset: 'public/frame4.webm',
+          passcode: localStorage.getItem('ax_admin_passcode') || 'arenax2026'
+        };
+
+        const authUser = window.fbAuth?.currentUser || window.currentAuthUser;
+        let idToken = '';
+        if (authUser && typeof authUser.getIdToken === 'function') {
+          idToken = await authUser.getIdToken().catch(() => '');
+        }
+
+        const headers = {
+          'Content-Type': 'application/json',
+          'x-admin-passcode': payload.passcode
+        };
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        let saved = false;
+
+        // 1. Try server API
+        try {
+          const res = await fetch('/api/shop/first-topup-config', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data && data.success) {
+            saved = true;
+          }
+        } catch (_) {}
+
+        // 2. Direct Firestore fallback
+        if (!saved && (window.fbDb || window.db)) {
+          const db = window.fbDb || window.db;
+          const { setDoc, doc, addDoc, collection } = window.fsTools;
+          await setDoc(doc(db, 'app_config', 'first_topup'), {
+            ...payload,
+            updatedAt: new Date().toISOString(),
+            updatedBy: authUser?.email || 'admin'
+          }, { merge: true });
+
+          try {
+            await addDoc(collection(db, 'admin_audit_logs'), {
+              action: 'update_first_topup_offer',
+              adminEmail: authUser?.email || 'admin',
+              adminUid: authUser?.uid || 'admin',
+              details: payload,
+              timestamp: new Date().toISOString()
+            });
+          } catch (_) {}
+
+          saved = true;
+        }
+
+        if (saved) {
+          showAdminToast("🎁 First Topup Saved", "Offer configuration successfully updated!");
+          const badge = $('ftAdminStatusBadge');
+          if (badge) {
+            if (active) {
+              badge.textContent = 'Active';
+              badge.className = 'text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            } else {
+              badge.textContent = 'Inactive';
+              badge.className = 'text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30';
+            }
+          }
+        } else {
+          throw new Error('Failed to update First Topup configuration on server.');
+        }
+      } catch (err) {
+        console.error("Save First Topup error:", err);
+        showAdminToast("❌ Save Failed", err.message, "error");
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-save"></i> Save First Topup Offer Settings';
+        }
+      }
+    }
+
+    async function loadFirstTopupClaims() {
+      const tbody = $('ftAdminClaimsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i> Loading claims ledger...</td></tr>`;
+
+      try {
+        const db = window.fbDb || window.db;
+        if (!db) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500 text-xs">Database not connected</td></tr>`;
+          return;
+        }
+
+        const { getDocs, collection, query, limit } = window.fsTools;
+        const q = query(collection(db, 'first_topup_claims'), limit(50));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500 text-xs">No claims recorded yet</td></tr>`;
+          return;
+        }
+
+        const rows = [];
+        snap.forEach(d => {
+          const c = d.data() || {};
+          const av = c.userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.userId || 'u'}`;
+          const dateStr = c.claimedAt ? new Date(c.claimedAt).toLocaleString() : 'Recently';
+
+          rows.push(`
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-2.5 px-3 flex items-center gap-2">
+                <img src="${av}" class="w-7 h-7 rounded-full object-cover border border-amber-400/40" />
+                <div class="min-w-0">
+                  <div class="font-bold text-white text-xs truncate">${c.userName || 'Player'}</div>
+                  <div class="text-[10px] text-slate-400">@${c.userHandle || 'player'}</div>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-300 select-all">${c.userId || d.id}</td>
+              <td class="py-2.5 px-3">
+                <span class="font-bold text-amber-400">${c.qualifyingAmountAX || 100} AX</span>
+                <span class="text-[10px] text-slate-500 block font-mono truncate">TID: ${c.qualifyingDepositId || 'verified'}</span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                  +${c.bonusCoins || 150} AX • ${c.rewardFrame || 'Pheonix'}
+                </span>
+              </td>
+              <td class="py-2.5 px-3 text-[11px] text-slate-400">${dateStr}</td>
+            </tr>
+          `);
+        });
+
+        tbody.innerHTML = rows.join('');
+      } catch (err) {
+        console.warn("Load claims ledger error:", err);
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-rose-400 text-xs">Error loading claims: ${err.message}</td></tr>`;
+      }
+    }
+
+    window.loadFirstTopupAdminConfig = loadFirstTopupAdminConfig;
+    window.saveFirstTopupAdminConfig = saveFirstTopupAdminConfig;
+    window.toggleFtAdminAudience = toggleFtAdminAudience;
+    window.toggleFtAdminTiming = toggleFtAdminTiming;
+    window.handleFtUserSearch = handleFtUserSearch;
+    window.selectFtTargetUser = selectFtTargetUser;
+    window.clearFtSelectedUser = clearFtSelectedUser;
+    window.loadFirstTopupClaims = loadFirstTopupClaims;
 
     // ── ARENAX ADMIN MODERATION & PUNISHMENT DOSSIER ENGINE ──
     let currentModeratingUid = null;
