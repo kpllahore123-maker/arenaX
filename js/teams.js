@@ -3162,6 +3162,16 @@ window.acceptTeamJoinRequest = async function(mailId, fromUserId, teamId, teamNa
       teamName: teamName,
       createdAt: serverTimestamp()
     });
+
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(fromUserId, {
+        type: "team_accepted",
+        senderName: teamName,
+        title: "Guild Application Accepted! ⚔️",
+        body: `Congratulations! Your request to join Guild "${teamName}" was accepted by the Guild Leader.`,
+        data: { teamId, teamName }
+      }).catch(console.warn);
+    }
     
     alert(`🎉 Successfully accepted! User has been added to "${teamName}".`);
     if (typeof window.renderInboxUI === 'function') window.renderInboxUI();
@@ -3562,6 +3572,16 @@ if (btnSendJoinRequestEl) {
         status: "pending",
         createdAt: serverTimestamp()
       });
+
+      if (typeof window.sendPersonalNotification === 'function') {
+        window.sendPersonalNotification(leaderId, {
+          type: "team_join_request",
+          senderName: userProfile.name || userProfile.handle,
+          title: "Guild Join Request 👥",
+          body: `@${userProfile.handle || userProfile.name} requested to join your Guild "${selectedGuild.name}"`,
+          data: { teamId: selectedGuild.id, fromUserId: userProfile.uid }
+        }).catch(console.warn);
+      }
       
       alert("Join request sent to the Guild Leader's Inbox successfully! 🛡️");
       if ($('mTeamJoinRequestMsgModal')) $('mTeamJoinRequestMsgModal').classList.add('hidden');
