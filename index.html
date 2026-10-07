@@ -2609,9 +2609,9 @@ html, body {
       </button>
 
       <!-- Notification Bell -->
-      <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition" title="Notifications">
+      <button id="bBell" class="relative w-9 h-9 bg-card border border-bdr rounded-full flex items-center justify-center text-sm text-t2 hover:text-gold transition cursor-pointer" title="Notifications" aria-label="Notifications">
         <i class="fas fa-bell"></i>
-        <span id="notifDot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red rounded-full ring-2 ring-panel hidden"></span>
+        <span id="notifDot" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-amber-400 rounded-full ring-2 ring-[#0c101b] shadow-[0_0_8px_rgba(251,191,36,0.9)] hidden"></span>
       </button>
 
       <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-gold flex-shrink-0 ml-1">
@@ -2619,6 +2619,65 @@ html, body {
       </div>
     </div>
   </nav>
+
+  <!-- ==================== IN-APP NOTIFICATIONS PANEL ==================== -->
+  <!-- Click-outside Backdrop -->
+  <div id="notificationsBackdrop" class="fixed inset-0 z-[290] bg-black/40 backdrop-blur-[2px] hidden transition-opacity duration-200 opacity-0 pointer-events-none"></div>
+
+  <!-- Notification Dropdown Panel (Dark ArenaX-style matching reference) -->
+  <aside
+    id="mNotificationsPanel"
+    class="fixed z-[295] top-16 right-3 sm:right-6 w-[calc(100vw-24px)] sm:w-[380px] max-w-[400px] bg-[#0c101b] border border-[#1e2638] rounded-2xl shadow-2xl shadow-black/95 overflow-hidden transition-all duration-200 ease-out opacity-0 scale-95 translate-y-[-8px] pointer-events-none hidden"
+    role="dialog"
+    aria-label="Notifications"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#182033] bg-[#0e1424]">
+      <h3 class="text-[17px] font-bold text-white tracking-tight flex items-center gap-2">
+        <span>Notifications</span>
+        <span id="notifsUnreadBadgeCount" class="hidden px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">0</span>
+      </h3>
+      <div class="flex items-center gap-3">
+        <button
+          id="btnMarkAllNotifsRead"
+          type="button"
+          class="text-[13px] font-semibold text-[#38bdf8] hover:text-white transition-colors cursor-pointer select-none active:scale-95"
+        >
+          Mark all read
+        </button>
+        <button
+          id="btnCloseNotifsPanel"
+          type="button"
+          class="sm:hidden text-slate-400 hover:text-white transition cursor-pointer p-1"
+          aria-label="Close notifications"
+        >
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Rows List -->
+    <div
+      id="notifsListContainer"
+      class="max-h-[440px] overflow-y-auto divide-y divide-[#182033] scrollbar-thin scrollbar-thumb-slate-700/60 scrollbar-track-transparent"
+    >
+      <div class="py-12 px-6 text-center text-slate-400">
+        <div class="w-10 h-10 rounded-full bg-slate-800/60 border border-slate-700/50 mx-auto mb-2.5 flex items-center justify-center text-base text-slate-400">
+          <i class="fas fa-spinner fa-spin text-amber-400"></i>
+        </div>
+        <p class="text-xs text-slate-400">Loading notifications...</p>
+      </div>
+    </div>
+
+    <!-- All Caught Up Bottom Banner -->
+    <div
+      id="notifsAllCaughtUpFooter"
+      class="py-3 px-4 text-center text-[12px] font-medium text-slate-400 border-t border-[#182033] bg-[#0c101b] flex items-center justify-center gap-1.5 hidden"
+    >
+      <span>You're all caught up</span>
+      <span>🎉</span>
+    </div>
+  </aside>
 
   <!-- GUEST & PREMIUM WARNING BANNERS -->
   <div id="gBanner" class="bg-gold/10 border-b border-gold/20 px-4 py-2 flex items-center gap-2 text-xs text-[#c0a030] flex-shrink-0 hidden">
