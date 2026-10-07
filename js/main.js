@@ -1713,6 +1713,21 @@ onAuthStateChanged(auth, async (fireUser) => {
         window.currentUser = userProfile;
         _verifiedServerPremium = Boolean(snap.data() && snap.data().premium === true);
         if (typeof window.updateProfileRoleBadges === 'function') window.updateProfileRoleBadges(userProfile);
+        if (typeof window.initInAppNotifications === 'function') window.initInAppNotifications(userProfile);
+        
+        // Real-time Level Milestone notification
+        if (window._lastSeenUserLevel !== undefined && userProfile.level && userProfile.level > window._lastSeenUserLevel) {
+          if (typeof window.sendPersonalNotification === 'function') {
+            window.sendPersonalNotification(fireUser.uid, {
+              type: 'level',
+              title: 'Level Up Reached! ⭐',
+              body: `Congratulations! You reached Level ${userProfile.level}!`,
+              senderName: 'ArenaX'
+            }).catch(console.warn);
+          }
+        }
+        window._lastSeenUserLevel = userProfile.level || 1;
+
         userProfileTransactionsList = userProfile.transactions || [];
         mergeAndRenderTransactions();
         
@@ -3040,6 +3055,15 @@ window.confirmBuyBlueTick = async function() {
         createdAt: serverTimestamp()
       });
 
+      if (typeof window.sendPersonalNotification === 'function') {
+        window.sendPersonalNotification(profile.uid, {
+          type: 'supporter',
+          title: 'Supporter Verification Activated! 🛡️',
+          body: 'ArenaX Blue Tick verified on your account! VIP tournament perks unlocked.',
+          senderName: 'ArenaX VIP'
+        }).catch(console.warn);
+      }
+
       alert('🎉 Congratulations! ArenaX Blue Tick verified on your account! You now get free entry into select tournaments.');
       window.closeBuyBlueTickModal();
       renderTournaments();
@@ -3342,6 +3366,16 @@ $('tregSubmit').addEventListener('click', async () => {
       submittedAt: serverTimestamp()
     });
 
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(userProfile.uid, {
+        type: 'tournament',
+        title: 'Tournament Slot Registered 🏆',
+        body: `Your slot application for "${activeRegisterTour.name}" has been submitted successfully!`,
+        senderName: 'ArenaX Esports',
+        data: { tournamentId: activeRegisterTour.id }
+      }).catch(console.warn);
+    }
+
     // Update user profile and complete Task 2
     if (userProfile && userProfile.uid) {
       try {
@@ -3458,6 +3492,16 @@ window.selfCancelRegistration = async function(regId, tournamentId, tournamentNa
       } catch (leadErr) {
         console.error('Error removing player from leaderboard on self-cancel:', leadErr);
       }
+    }
+
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(regData.userId || (userProfile && userProfile.uid), {
+        type: 'tournament',
+        title: 'Tournament Slot Cancelled 🏆',
+        body: `Your slot for "${tournamentName}" was cancelled.${wasApproved && feeAmount > 0 ? ` ${feeAmount} AX Coins refunded.` : ''}`,
+        senderName: 'ArenaX Esports',
+        data: { tournamentId }
+      }).catch(console.warn);
     }
 
     alert(`Successfully cancelled your slot for "${tournamentName}".${wasApproved && feeAmount > 0 ? ` ${feeAmount} AX Coins have been refunded to your wallet.` : ''} ✅`);
@@ -6209,55 +6253,9 @@ function loadLiveNotifications() {
   const profile = userProfile || guestProfile;
   if (!profile || guestProfile) return;
 
-  if (notificationsUnsub) {
-    try { notificationsUnsub(); } catch (e) {}
-    notificationsUnsub = null;
+  if (typeof window.initInAppNotifications === 'function') {
+    window.initInAppNotifications(profile);
   }
-
-  let isInitial = true;
-
-  const qNotifs = query(
-    collection(db, 'notifications'),
-    where('userId', '==', profile.uid)
-  );
-  notificationsUnsub = onSnapshot(qNotifs, (snap) => {
-    let unreadCount = 0;
-    const items = [];
-    snap.forEach(d => {
-      const n = d.data();
-      items.push({ id: d.id, ...n });
-      if (!n.read) unreadCount++;
-    });
-
-    const dot = $('notifDot');
-    if (unreadCount > 0) {
-      dot.classList.remove('hidden');
-    } else {
-      dot.classList.add('hidden');
-    }
-
-    // Trigger toast alert for newly added unread notifications in real time
-    snap.docChanges().forEach((change) => {
-      if (change.type === 'added' && !isInitial) {
-        const n = change.doc.data();
-        if (!n.read) {
-          const title = n.title || 'New Notification';
-          const body = n.message || n.body || '';
-          showToastNotification(title, body);
-        }
-      }
-    });
-
-    isInitial = false;
-  }, (err) => {
-    console.warn("Notifications listen warning:", err);
-    if (err.code === 'permission-denied') {
-      console.log("[Auth Engine] Attempting token refresh on notifications snapshot permission denied...");
-      if (auth.currentUser) {
-        auth.currentUser.getIdToken(true).catch(e => console.warn(e));
-      }
-    }
-  });
 }
 
 function showToastNotification(title, body) {
@@ -6319,39 +6317,15 @@ function showToastNotification(title, body) {
   }, 7000);
 }
 
-$('bBell').addEventListener('click', async () => {
-  if (guestProfile) {
-    alert('Log in to see your verified slot notifications!');
-    return;
-  }
-
-  try {
-    const qNotifs = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
-    const snap = await getDocs(qNotifs);
-    const unread = [];
-    const msgs = [];
-    
-    snap.forEach(d => {
-      const n = d.data();
-      const msgText = n.message || (n.title ? `${n.title}\n${n.body}` : n.body) || 'New Notification';
-      msgs.push(msgText);
-      if (!n.read) unread.push(d.id);
-    });
-
-    // Mark as read in Firestore
-    for (const id of unread) {
-      await updateDoc(doc(db, 'notifications', id), { read: true });
+const bellBtn = $('bBell');
+if (bellBtn) {
+  bellBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (typeof window.toggleNotificationsPanel === 'function') {
+      window.toggleNotificationsPanel();
     }
-
-    if (msgs.length === 0) {
-      alert('No new notifications yet!');
-    } else {
-      alert(`🔔 Notifications:\n\n${msgs.map(m => `• ${m}`).join('\n\n')}`);
-    }
-  } catch (err) {
-    alert('No notifications loaded.');
-  }
-});
+  });
+}
 
 // Button upgrades redirections
 $('gUpgradeBtn').addEventListener('click', () => alert('Exit guest profile, and connect real Google or email ID to save AX earnings!'));
@@ -7319,7 +7293,10 @@ if ($('btnSendResetPassword')) {
 }
 if ($('btnProfileNotifications')) {
   $('btnProfileNotifications').addEventListener('click', () => {
-    if ($('mEnableNotifications')) $('mEnableNotifications').classList.remove('hidden');
+    if ($('mSettings')) $('mSettings').classList.add('hidden');
+    if (typeof window.openNotificationsPanel === 'function') {
+      window.openNotificationsPanel();
+    }
   });
 }
 if ($('btnProfileLanguage')) {
@@ -8577,6 +8554,15 @@ async function claimMailGift(mailId, badgeId, buttonEl) {
       collected: true,
       read: true
     });
+
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(userProfile.uid, {
+        type: 'badge',
+        title: 'Badge Unlocked! ⭐',
+        body: `You unlocked the "${badgeId.replace(/_/g, ' ')}" badge! Added to your profile credentials.`,
+        senderName: 'ArenaX'
+      }).catch(console.warn);
+    }
 
     alert('🎁 Congratulations! Your gifted badge has been successfully added to your profile credentials!');
     renderInboxUI();
