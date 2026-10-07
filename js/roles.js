@@ -584,6 +584,16 @@ window.sendTeamRecruitInvite = async function(targetUid, targetName, teamId, tea
       createdAt: fs.serverTimestamp()
     });
 
+    if (typeof window.sendPersonalNotification === 'function') {
+      window.sendPersonalNotification(targetUid, {
+        type: 'team_invite',
+        title: `Team Invitation: ${teamName} 👥`,
+        body: `${myProfile?.name || 'Team Leader'} invited you to join Esports squad "${teamName}"${roleMsg}!`,
+        senderName: myProfile?.name || 'Team Leader',
+        data: { teamId, teamName, fromUserId: myProfile?.uid || '' }
+      }).catch(console.warn);
+    }
+
     if (btnEl) {
       btnEl.className = 'px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase cursor-default';
       btnEl.innerHTML = `<i class="fas fa-check mr-1"></i> Invited`;
